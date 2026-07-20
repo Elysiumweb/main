@@ -13,11 +13,17 @@ export default function Home() {
   const [matches, setMatches] = useState([]);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      setMatches(list.slice(0, 3));
-    }, (e) => console.error(e));
+    if (!db || db._isFake) return;
+    try {
+      return onSnapshot(collection(db, "matches"), (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+        setMatches(list.slice(0, 3));
+      }, (e) => console.error(e));
+    } catch (e) {
+      console.error("[Home] Firestore listener failed", e);
+      return () => {};
+    }
   }, []);
 
   return (

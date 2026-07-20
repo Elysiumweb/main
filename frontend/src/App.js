@@ -5,6 +5,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Home from "@/pages/Home";
 import Results from "@/pages/Results";
 import Support from "@/pages/Support";
@@ -26,9 +27,10 @@ const PublicLayout = () => (
 
 function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <BrowserRouter>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <AuthProvider>
+          <BrowserRouter>
           <Navbar />
           <Routes>
             <Route element={<PublicLayout />}>
@@ -52,6 +54,7 @@ function App() {
         </BrowserRouter>
       </AuthProvider>
     </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 
