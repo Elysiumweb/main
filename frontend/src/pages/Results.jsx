@@ -10,11 +10,18 @@ export default function Results() {
   const [matches, setMatches] = useState(null);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      setMatches(list);
-    }, (e) => { console.error(e); setMatches([]); });
+    if (!db || db._isFake) { setMatches([]); return; }
+    try {
+      return onSnapshot(collection(db, "matches"), (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+        setMatches(list);
+      }, (e) => { console.error(e); setMatches([]); });
+    } catch (e) {
+      console.error("[Results] Firestore failed", e);
+      setMatches([]);
+      return () => {};
+    }
   }, []);
 
   return (
