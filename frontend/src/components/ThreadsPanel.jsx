@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, doc, updateDoc } from "firebase/firestore";
 import { MessageSquare } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ChatMessages } from "./ChatMessages";
 
-export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, prefix }) => {
+const STATUS_CLS = {
+  open: "text-[#D8CA82] border-[#D8CA82]/40",
+  closed: "text-[#f7f7f7]/40 border-white/20",
+  pending: "text-orange-300 border-orange-300/40",
+  reviewing: "text-sky-300 border-sky-300/40",
+  accepted: "text-emerald-300 border-emerald-300/40",
+  rejected: "text-red-400 border-red-400/40",
+};
+
+export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, prefix, statusOptions = null, canSetStatus = false }) => {
   const { user } = useAuth();
   const { t } = useLang();
   const [threads, setThreads] = useState([]);
@@ -37,7 +46,14 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
         {threads.map((th) => (
           <button key={th.id} onClick={() => setSelected(th.id)} data-testid={`${prefix}-thread-${th.id}`}
             className={`w-full text-left px-4 py-3 border-b border-white/5 transition-colors ${selected === th.id ? "bg-[#D8CA82]/10 border-l-2 border-l-[#D8CA82]" : "hover:bg-white/5"}`}>
-            <p className="text-sm font-semibold text-[#f7f7f7] truncate">{th[titleField]}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-[#f7f7f7] truncate flex-1">{th[titleField]}</p>
+              {th.status && (
+                <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_CLS[th.status] || "text-[#f7f7f7]/40 border-white/20"}`} data-testid={`${prefix}-status-${th.id}`}>
+                  {t(`status.${th.status}`)}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#f7f7f7]/40 truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString("fr-FR") : ""}</p>
           </button>
         ))}
@@ -45,11 +61,20 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
       <div className="md:col-span-8 flex flex-col min-h-0">
         {current && (
           <>
-            <div className="px-4 py-3 border-b border-white/10 bg-[#1A1A1A] shrink-0">
-              <p className="text-sm font-display text-[#D8CA82] uppercase tracking-wider flex items-center gap-2">
-                <MessageSquare size={14} /> {current[titleField]}
-              </p>
-              {current.meta && <p className="text-xs text-[#f7f7f7]/50 mt-1 whitespace-pre-wrap">{current.meta}</p>}
+            <div className="px-4 py-3 border-b border-white/10 bg-[#1A1A1A] shrink-0 flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-display text-[#D8CA82] uppercase tracking-wider flex items-center gap-2">
+                  <MessageSquare size={14} /> {current[titleField]}
+                </p>
+                {current.meta && <p className="text-xs text-[#f7f7f7]/50 mt-1 whitespace-pre-wrap">{current.meta}</p>}
+              </div>
+              {canSetStatus && statusOptions && (
+                <select value={current.status || statusOptions[0]} data-testid={`${prefix}-status-select`}
+                  onChange={async (e) => { try { await updateDoc(doc(db, collectionName, current.id), { status: e.target.value }); } catch (err) { console.error(err); } }}
+                  className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] shrink-0">
+                  {statusOptions.map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}
+                </select>
+              )}
             </div>
             <ChatMessages path={`${collectionName}/${current.id}/messages`} testId={`${prefix}-chat`} />
           </>

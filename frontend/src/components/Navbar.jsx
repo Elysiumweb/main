@@ -15,6 +15,7 @@ export const Navbar = () => {
 
   const links = [
     { to: "/", label: t("nav.home") },
+    { to: "/equipe", label: t("nav.team") },
     { to: "/resultats", label: t("nav.results") },
     { to: "/support", label: t("nav.support") },
     { to: "/recrutement", label: t("nav.recruitment") },
@@ -51,7 +52,8 @@ export const Navbar = () => {
           </button>
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="hidden sm:block text-sm text-[#D8CA82] font-semibold max-w-[120px] truncate" data-testid="nav-username">{displayName}</span>
+              <Link to="/profil" data-testid="nav-username" title={t("nav.profile")}
+                className="hidden sm:block text-sm text-[#D8CA82] font-semibold max-w-[120px] truncate hover:underline">{displayName}</Link>
               <button onClick={() => { logout(); navigate("/"); }} data-testid="nav-logout-btn"
                 className="text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors" title={t("nav.logout")}>
                 <LogOut size={18} />

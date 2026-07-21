@@ -71,7 +71,8 @@ export default function Support() {
               <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6" data-testid="support-threads-title">
                 {canSeeSupport ? t("support.allTickets") : t("support.myTickets")}
               </h2>
-              <ThreadsPanel collectionName="supportThreads" canSeeAll={canSeeSupport} emptyKey="support.noTickets" titleField="subject" prefix="support" />
+              <ThreadsPanel collectionName="supportThreads" canSeeAll={canSeeSupport} emptyKey="support.noTickets" titleField="subject" prefix="support"
+                statusOptions={["open", "closed"]} canSetStatus={canSeeSupport} />
             </>
           )}
         </div>

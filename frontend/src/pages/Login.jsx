@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signInWithPopup, updateProfile, sendPasswordResetEmail,
+  signInWithPopup, updateProfile, sendPasswordResetEmail, sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ export default function Login() {
         const name = pseudo.trim() || email.split("@")[0];
         await setDoc(doc(db, "users", cred.user.uid), { displayName: name, email, role: "visitor", game: null }, { merge: true });
         await updateProfile(cred.user, { displayName: name });
+        try { await sendEmailVerification(cred.user); } catch (e) { console.error(e); }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
