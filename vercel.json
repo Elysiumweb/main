@@ -1,0 +1,10 @@
+{
+  "framework": "create-react-app",
+  "outputDirectory": "build",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
