@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB5hOyqmo4FCLrvDuWP88OLIPYRkqCNh2I",
-  authDomain: "elysium-9220d.firebaseapp.com",
-  projectId: "elysium-9220d",
-  storageBucket: "elysium-9220d.firebasestorage.app",
-  messagingSenderId: "122785030418",
-  appId: "1:122785030418:web:e56ca2c42a0136847fd3cb",
-  measurementId: "G-CTLVE5V5XN"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = getApps()[0] || initializeApp(firebaseConfig);
