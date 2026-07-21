@@ -10,7 +10,7 @@ const CONTENT = {
       <>
         <P>Le présent site est édité par l'équipe esport <strong>Elysium</strong> (ci-après « l'Éditeur »).</P>
         <H>Éditeur du site</H>
-        <P>Elysium — Équipe esport française, éditée par l'association Elysium, association régie par la loi du 1er juillet 1901, dont le siège social est situé 22 Avenue Lamartine, 77380 Combs-la-Ville (numéro RNA en cours d'attribution auprès de la préfecture). Directeur de la publication : Nathan Martins, Président de l'association.</P>
+        <P>Elysium — Équipe esport française, éditée par l'association Elysium, association régie par la loi du 1er juillet 1901, dont le siège social est situé 22 Avenue Lamartine, 77380 Combs-la-Ville (numéro RNA : W772011943). Directeur de la publication : Nathan Martins, Président de l'association.</P>
         <P>Contact : via la page Support du site ou le serveur Discord officiel (https://discord.gg/RH3ZZkMJsw).</P>
         <H>Hébergement</H>
         <P>Le site est hébergé par Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis (vercel.com). Les données applicatives sont stockées par Google Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande).</P>
