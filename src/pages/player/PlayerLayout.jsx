@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 
 export default function PlayerLayout() {
-  const { user, loading, hasPlayerAccess, game, role, isOfficial } = useAuth();
+  const { user, loading, hasPlayerAccess, game, roster, role, isOfficial } = useAuth();
   const { t } = useLang();
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
@@ -29,7 +29,7 @@ export default function PlayerLayout() {
         <div className="p-4 border-b border-white/10 hidden sm:block">
           <p className="text-[10px] uppercase tracking-[0.3em] text-[#f7f7f7]/40">{t("nav.playerSpace")}</p>
           <p className="text-sm font-display text-[#D8CA82] mt-1 uppercase" data-testid="player-game-badge">
-            {isOfficial ? "OFFICIEL" : `${t(`admin.role.${role}`)}${game ? ` · ${game}` : ""}`}
+            {isOfficial ? "OFFICIEL" : `${t(`admin.role.${role}`)}${game ? ` · ${game}` : ""}${roster ? ` · ${roster}` : ""}`}
           </p>
         </div>
         <nav className="flex-1 py-4 space-y-1">

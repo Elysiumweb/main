@@ -15,7 +15,7 @@ import {
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
 export default function Profile() {
-  const { user, profile, loading, role, game, isOfficial } = useAuth();
+  const { user, profile, loading, role, game, roster, isOfficial } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
   const [pseudo, setPseudo] = useState(profile?.displayName || user?.displayName || "");
@@ -70,8 +70,13 @@ export default function Profile() {
         <div>
           <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="profile-title">{t("profile.title")}</h1>
           <p className="text-[#D8CA82] text-sm uppercase tracking-[0.3em] mt-3" data-testid="profile-role">
-            {isOfficial ? "Compte officiel" : t(`admin.role.${role}`)}{game ? ` · ${game}` : ""}
+            {isOfficial ? "Compte officiel" : t(`admin.role.${role}`)}{game ? ` · ${game}` : ""}{roster ? ` · ${roster}` : ""}
           </p>
+          {game === "Rocket League" && (
+            <p className="text-[#f7f7f7]/40 text-xs uppercase tracking-[0.2em] mt-1" data-testid="profile-roster">
+              {t("profile.roster")} : {roster || t("profile.roster.none")}
+            </p>
+          )}
         </div>
 
         <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-3" data-testid="profile-email-status">

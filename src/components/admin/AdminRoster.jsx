@@ -4,10 +4,10 @@ import { toast } from "sonner";
 import { Trash2, Pencil } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
-import { GAMES } from "../../lib/constants";
+import { GAMES, ROSTERS } from "../../lib/constants";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { pseudo: "", game: "EVA", ingameRole: "", status: "player", photo: "", bio: "", statsText: "", x: "", twitch: "", instagram: "", youtube: "" };
+const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", statsText: "", x: "", twitch: "", instagram: "", youtube: "" };
 
 export const AdminRoster = () => {
   const { t } = useLang();
@@ -34,7 +34,7 @@ export const AdminRoster = () => {
 
   const edit = (m) => {
     setEditId(m.id);
-    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", statsText: m.statsText || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "" });
+    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", statsText: m.statsText || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "" });
   };
 
   const del = async (id) => {
@@ -49,9 +49,15 @@ export const AdminRoster = () => {
         <div className="grid grid-cols-2 gap-4">
           <input value={form.pseudo} onChange={set("pseudo")} placeholder="Pseudo" required className={inputCls} data-testid="admin-roster-pseudo" />
           <input value={form.ingameRole} onChange={set("ingameRole")} placeholder="Rôle in-game" className={inputCls} data-testid="admin-roster-role" />
-          <select value={form.game} onChange={set("game")} className={inputCls} data-testid="admin-roster-game">
+          <select value={form.game} onChange={(e) => setForm((f) => ({ ...f, game: e.target.value, roster: "" }))} className={inputCls} data-testid="admin-roster-game">
             {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
+          {(ROSTERS[form.game] || []).length > 0 && (
+            <select value={form.roster} onChange={set("roster")} className={inputCls} data-testid="admin-roster-roster">
+              <option value="">— Roster —</option>
+              {(ROSTERS[form.game] || []).map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          )}
           <select value={form.status} onChange={set("status")} className={inputCls} data-testid="admin-roster-status">
             <option value="player">{t("team.status.player")}</option>
             <option value="sub">{t("team.status.sub")}</option>
@@ -84,7 +90,7 @@ export const AdminRoster = () => {
           <div key={m.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7]">{m.pseudo}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{m.game} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
+              <p className="text-xs text-[#f7f7f7]/40">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
             </div>
             <button onClick={() => edit(m)} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-roster-edit-${m.id}`}><Pencil size={15} /></button>
             <button onClick={() => del(m.id)} className="text-red-400/70 hover:text-red-400" data-testid={`admin-roster-delete-${m.id}`}><Trash2 size={15} /></button>
