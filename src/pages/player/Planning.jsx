@@ -90,7 +90,8 @@ export default function Planning(){
       }
     }
     return list;
-  }, [events, gameFilter, rosterFilter, game, roster, isOfficial]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, gameFilter, rosterFilter, game, isOfficial]);
 
   // events by day
   const eventsByDate = useMemo(()=>{
