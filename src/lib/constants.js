@@ -1,5 +1,5 @@
 export const OFFICIAL_UID = process.env.REACT_APP_OFFICIAL_UID;
-export const GAMES = ["EVA"];
+export const GAMES = ["EVA", "Rocket League"];
 export const ROLES = ["visitor", "player", "manager", "bureau"];
 
 export const SOCIALS = [

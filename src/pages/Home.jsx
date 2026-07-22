@@ -96,14 +96,41 @@ export default function Home() {
           <div className="flex-1 h-px bg-white/10" />
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="relative border border-[#D8CA82]/30 bg-[#1A1A1A] p-8 group overflow-hidden" data-testid="home-game-eva">
+          <div className="relative border border-[#D8CA82]/30 bg-[#1A1A1A] p-8 group overflow-hidden flex flex-col" data-testid="home-game-eva">
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-[#D8CA82]/10 to-transparent pointer-events-none" />
-            <p className="font-display font-black text-4xl text-[#D8CA82]">EVA</p>
-            <p className="text-xs tracking-[0.3em] uppercase text-[#f7f7f7]/40 mt-1">Esports Virtual Arenas</p>
-            <p className="text-[#f7f7f7]/60 mt-4 leading-relaxed">{t("home.games.eva")}</p>
+            <div className="flex items-start justify-between">
+              <p className="font-display font-black text-4xl text-[#D8CA82]">EVA</p>
+              <span className="text-[10px] uppercase tracking-[0.3em] border border-[#D8CA82]/30 text-[#D8CA82]/70 px-2 py-1">{t("home.games.eva.team")}</span>
+            </div>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#f7f7f7]/40 mt-2">{t("home.games.eva.short")}</p>
+            <p className="text-[#f7f7f7]/60 mt-4 leading-relaxed flex-1">{t("home.games.eva")}</p>
+            <Link to="/equipe?game=EVA" className="mt-6 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline">
+              {t("home.games.discover")} <ArrowRight size={12} />
+            </Link>
           </div>
-          <div className="border border-white/10 bg-[#141414] p-8 flex items-center justify-center min-h-[180px]">
-            <p className="font-display text-[#f7f7f7]/25 tracking-[0.3em] uppercase text-sm">Coming soon</p>
+          <div className="relative border border-white/10 bg-[#141414] p-8 group overflow-hidden flex flex-col hover:border-[#D8CA82]/40 transition-colors" data-testid="home-game-rl">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-[#D8CA82]/[0.07] to-transparent pointer-events-none" />
+            <div className="absolute -right-6 -top-6 w-24 h-24 opacity-10 pointer-events-none">
+              <div className="w-full h-full border-2 border-[#D8CA82] rotate-12" />
+            </div>
+            <div className="flex items-start justify-between">
+              <p className="font-display font-black text-4xl text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">RL</p>
+              <span className="text-[10px] uppercase tracking-[0.3em] border border-white/15 text-white/50 group-hover:text-[#D8CA82]/80 group-hover:border-[#D8CA82]/40 px-2 py-1 transition-colors">{t("home.games.rl.team")}</span>
+            </div>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#f7f7f7]/40 mt-2">{t("home.games.rl.short")}</p>
+            <p className="text-[#f7f7f7]/60 mt-4 leading-relaxed flex-1">{t("home.games.rl")}</p>
+            <div className="mt-6 flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2.5 py-1 font-bold">Nouveau</span>
+              <Link to="/equipe?game=Rocket%20League" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors">
+                {t("home.games.discover")} <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+          <div className="border border-white/10 bg-[#0c0c0c] p-8 flex flex-col justify-center relative overflow-hidden">
+            <p className="font-display text-[#f7f7f7]/20 tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
+            <p className="text-[#f7f7f7]/50 text-sm leading-relaxed">Deux pôles compétitifs, même ADN. EVA en arène, Rocket League en arène volante.</p>
+            <div className="mt-6 h-px bg-white/10" />
+            <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-[#D8CA82]/50">Not given. Earned.</p>
           </div>
         </div>
       </section>
