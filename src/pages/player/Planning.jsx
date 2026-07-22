@@ -54,7 +54,7 @@ function normalizeEvent(ev){
 }
 
 export default function Planning(){
-  const { user, game, isOfficial, canManage, role, displayName } = useAuth();
+  const { user, game, roster, isOfficial, canManage, role, displayName } = useAuth();
   const { t, lang } = useLang();
   const [eventsRaw, setEventsRaw] = useState([]);
   const [availDocs, setAvailDocs] = useState([]); // all availabilities in range

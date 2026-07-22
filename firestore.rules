@@ -1,0 +1,161 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== Compte officiel Elysium =====
+    function isOfficial() {
+      return request.auth != null && request.auth.uid == '9IzGlpp6DHhrN9GW72haeb869Om1';
+    }
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function hasPlayerAccess() {
+      return isAuth() && (isOfficial() || userRole() in ['player', 'manager', 'bureau']);
+    }
+
+    function isBureau() {
+      return isAuth() && (isOfficial() || userRole() == 'bureau');
+    }
+
+    function isManagerPlus() {
+      return isAuth() && (isOfficial() || userRole() in ['manager', 'bureau']);
+    }
+
+    // ===== Utilisateurs =====
+    match /users/{uid} {
+      allow read: if isAuth();
+
+      allow create: if isAuth() && request.auth.uid == uid
+        && request.resource.data.role == 'visitor'
+        && request.resource.data.game == null;
+
+      // Official can change anything; user can only change displayName/photoURL (not role/game/roster)
+      allow update: if isOfficial()
+        || (request.auth.uid == uid
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.game == resource.data.game
+            && request.resource.data.roster == resource.data.roster);
+
+      allow delete: if isOfficial() || request.auth.uid == uid;
+    }
+
+    // ===== Roster public =====
+    match /roster/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Postes =====
+    match /positions/{id} {
+      allow read: if true;
+      allow create, update, delete: if isManagerPlus();
+    }
+
+    // ===== Matchs =====
+    match /matches/{id} {
+      allow read: if true;
+      allow create, update, delete: if isOfficial();
+    }
+
+    // ===== Chats (game + roster + global) =====
+    // Channels: game_EVA, game_Rocket League, roster_Espoir, roster_Académique, roster_Esport, global
+    match /chats/{channel}/messages/{id} {
+      allow read, create: if hasPlayerAccess();
+      allow delete: if isOfficial();
+    }
+
+    // ===== Planning =====
+    match /events/{id} {
+      allow read: if hasPlayerAccess();
+      allow create, delete: if isManagerPlus();
+      allow update: if isManagerPlus()
+        || (hasPlayerAccess() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendance']));
+    }
+
+    // ===== Disponibilités =====
+    match /availabilities/{id} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if hasPlayerAccess()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.date is string
+        && request.resource.data.hours is list;
+      allow delete: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
+    }
+
+    // ===== Actualités =====
+    match /articles/{id} {
+      allow read: if resource.data.status == 'published' || isBureau();
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Médiathèque =====
+    match /media/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Calendrier communautaire =====
+    match /communityEvents/{id} {
+      allow read: if true;
+      allow create, update, delete: if isManagerPlus();
+    }
+
+    // ===== Notifications =====
+    match /notifications/{id} {
+      allow read, create, update: if isAuth();
+      allow delete: if isBureau();
+    }
+
+    // ===== Journal d'activité =====
+    match /activity/{id} {
+      allow read, create: if hasPlayerAccess();
+      allow delete: if isBureau();
+    }
+
+    // ===== Notes =====
+    match /notes/{id} {
+      allow read: if hasPlayerAccess()
+        && (resource.data.type == 'collective' || resource.data.ownerUid == request.auth.uid);
+      allow create: if hasPlayerAccess() && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if hasPlayerAccess()
+        && (resource.data.type == 'collective' || resource.data.ownerUid == request.auth.uid);
+    }
+
+    // ===== Canvas =====
+    match /canvases/{id} {
+      allow read, create, update, delete: if hasPlayerAccess();
+    }
+
+    // ===== Support =====
+    match /supportThreads/{id} {
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isBureau());
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update: if isBureau() || (isAuth() && resource.data.uid == request.auth.uid);
+      allow delete: if isBureau();
+
+      match /messages/{mid} {
+        allow read, create: if isAuth()
+          && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau());
+      }
+    }
+
+    // ===== Recrutement =====
+    match /recruitThreads/{id} {
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
+      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
+      allow update: if isManagerPlus() || (isAuth() && resource.data.uid == request.auth.uid);
+      allow delete: if isManagerPlus();
+
+      match /messages/{mid} {
+        allow read, create: if isAuth()
+          && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus());
+      }
+    }
+  }
+}
