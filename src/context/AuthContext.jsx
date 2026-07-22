@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }) => {
   const isOfficial = !!user && user.uid === OFFICIAL_UID;
   const role = isOfficial ? "bureau" : profile?.role || "visitor";
   const game = profile?.game || null;
+  const roster = profile?.roster || null;
   const hasPlayerAccess = isOfficial || ["player", "manager", "bureau"].includes(profile?.role);
   const canSeeSupport = isOfficial || profile?.role === "bureau";
   const canSeeRecruit = isOfficial || ["manager", "bureau"].includes(profile?.role);
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, logout }}>
       {children}
     </AuthContext.Provider>
   );

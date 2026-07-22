@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Clock, Edit2, X, Plus,
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
-import { GAMES } from "../../lib/constants";
+import { GAMES, ROSTERS } from "../../lib/constants";
 import { createNotification, logActivity } from "../../lib/notify";
 
 // ----- helpers -----
@@ -54,17 +54,18 @@ function normalizeEvent(ev){
 }
 
 export default function Planning(){
-  const { user, game, isOfficial, canManage, role, displayName } = useAuth();
+  const { user, game, roster, isOfficial, canManage, role, displayName } = useAuth();
   const { t, lang } = useLang();
   const [eventsRaw, setEventsRaw] = useState([]);
   const [availDocs, setAvailDocs] = useState([]); // all availabilities in range
   const [view, setView] = useState("week"); // month | week | day
   const [tab, setTab] = useState("calendar"); // calendar | availability
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [gameFilter, setGameFilter] = useState("all"); // all | EVA | Rocket League | global
+  const [gameFilter, setGameFilter] = useState(game === "Rocket League" ? "Rocket League" : "all");
+  const [rosterFilter, setRosterFilter] = useState(roster || "all");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title:"", description:"", color:"#D8CA82", game: game || "EVA", start:"", end:"", allDay:false });
+  const [form, setForm] = useState({ title:"", description:"", color:"#D8CA82", game: game || "EVA", roster: null, start:"", end:"", allDay:false });
   const [isDraggingAvail, setIsDraggingAvail] = useState(false);
   const dragValueRef = useRef(true);
 
@@ -77,8 +78,19 @@ export default function Planning(){
     } else {
       if(gameFilter!=="all") list = list.filter(ev=> ev.game===gameFilter || (gameFilter==="global" && ev.game==="global"));
     }
+    // roster filter
+    if(rosterFilter!=="all"){
+      list = list.filter(ev=> ev.roster===rosterFilter || !ev.roster || ev.game==="global");
+    } else {
+      // no roster filter: for RL players, default to their own roster
+      if(!isOfficial && roster){
+        list = list.filter(ev=> !ev.roster || ev.roster===roster || ev.game==="global");
+      } else if(!isOfficial){
+        list = list.filter(ev=> !ev.roster || ev.game==="global");
+      }
+    }
     return list;
-  }, [events, gameFilter, game, isOfficial]);
+  }, [events, gameFilter, rosterFilter, game, roster, isOfficial]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // events by day
   const eventsByDate = useMemo(()=>{
@@ -151,6 +163,7 @@ export default function Planning(){
       description:"",
       color: game==="Rocket League" || gameFilter==="Rocket League" ? "#F4511E" : "#D8CA82",
       game: gameFilter!=="all" ? gameFilter : (game || "EVA"),
+      roster: rosterFilter!=="all" ? rosterFilter : (roster || null),
       start: toLocalInput(d),
       end: toLocalInput(end),
       allDay:false,
@@ -168,6 +181,7 @@ export default function Planning(){
       description: ev.description||"",
       color: ev.color||"#D8CA82",
       game: ev.game||"EVA",
+      roster: ev.roster||null,
       start: !isNaN(s.getTime()) ? toLocalInput(s) : "",
       end: !isNaN(e.getTime()) ? toLocalInput(e) : "",
       allDay: !!ev.allDay,
@@ -180,6 +194,7 @@ export default function Planning(){
   const saveEvent = async (e)=>{
     e.preventDefault();
     if(!form.title.trim()){ toast.error(t("planning.noTitle")); return; }
+    if(form.game==="Rocket League" && !form.roster){ toast.error(t("planning.rosterRequired")); return; }
     const startDate = parseInput(form.start);
     const endDate = parseInput(form.end);
     if(!startDate || !endDate){ toast.error("Dates invalides"); return; }
@@ -190,6 +205,7 @@ export default function Planning(){
         description: form.description || "",
         color: form.color,
         game: form.game,
+        roster: form.roster || null,
         start: startDate.toISOString(),
         end: endDate.toISOString(),
         allDay: !!form.allDay,
@@ -343,6 +359,7 @@ export default function Planning(){
         <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: ev.color}} />
         {!compact && <span className="opacity-70 shrink-0">{time}</span>}
         <span className="truncate font-medium text-[#f7f7f7]">{ev.title}</span>
+        {ev.roster && <span className="text-[8px] uppercase tracking-widest opacity-50 shrink-0 border border-white/15 px-1">{ev.roster}</span>}
         {ev.game && <span className="ml-auto text-[9px] uppercase tracking-widest opacity-50 shrink-0">{ev.game==="Rocket League"?"RL":ev.game}</span>}
       </div>
     );
@@ -615,12 +632,21 @@ export default function Planning(){
           </div>
 
           {/* game filter */}
-          <select value={gameFilter} onChange={(e)=> setGameFilter(e.target.value)} data-testid="planning-game-filter"
+          <select value={gameFilter} onChange={(e)=> { setGameFilter(e.target.value); setRosterFilter("all"); }} data-testid="planning-game-filter"
             className="bg-[#141414] border border-white/15 text-[#f7f7f7] text-xs px-2.5 py-2 focus:outline-none focus:border-[#D8CA82]">
             <option value="all">Tous les pôles</option>
             {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
             <option value="global">Global</option>
           </select>
+
+          {/* roster filter - only when game is RL or all */}
+          {(gameFilter==="all" || gameFilter==="Rocket League") && (
+            <select value={rosterFilter} onChange={(e)=> setRosterFilter(e.target.value)} data-testid="planning-roster-filter"
+              className="bg-[#141414] border border-white/15 text-[#f7f7f7] text-xs px-2.5 py-2 focus:outline-none focus:border-[#D8CA82]">
+              <option value="all">{t("planning.roster.none")}</option>
+              {(ROSTERS["Rocket League"]||[]).map(r=> <option key={r} value={r}>{t(`planning.roster.${r.toLowerCase()}`)}</option>)}
+            </select>
+          )}
 
           {/* view switcher - only for calendar tab */}
           {tab==="calendar" && (
@@ -662,15 +688,28 @@ export default function Planning(){
                 <div className="space-y-2">
                   {GAMES.map(g=>(
                     <label key={g} className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer">
-                      <input type="checkbox" checked={gameFilter==="all" || gameFilter===g} onChange={()=> setGameFilter(gameFilter===g?"all":g)} className="accent-[#D8CA82]" />
+                      <input type="checkbox" checked={gameFilter==="all" || gameFilter===g} onChange={()=> { setGameFilter(gameFilter===g?"all":g); setRosterFilter("all"); }} className="accent-[#D8CA82]" />
                       <span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: g==="Rocket League"?"#F4511E":"#D8CA82"}} />
                       {g}
                     </label>
                   ))}
                   <label className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer">
-                    <input type="checkbox" checked={gameFilter==="all" || gameFilter==="global"} onChange={()=> setGameFilter(gameFilter==="global"?"all":"global")} className="accent-[#D8CA82]" />
+                    <input type="checkbox" checked={gameFilter==="all" || gameFilter==="global"} onChange={()=> { setGameFilter(gameFilter==="global"?"all":"global"); setRosterFilter("all"); }} className="accent-[#D8CA82]" />
                     <span className="w-2.5 h-2.5 rounded-full bg-[#4285F4]" /> Global
                   </label>
+                  {/* roster sub-filters for RL */}
+                  {(gameFilter==="all" || gameFilter==="Rocket League") && (
+                    <div className="ml-4 mt-2 space-y-1.5 border-l border-white/10 pl-3">
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-[#f7f7f7]/30 mb-1">Rosters RL</p>
+                      {(ROSTERS["Rocket League"]||[]).map(r=>(
+                        <label key={r} className="flex items-center gap-2 text-[11px] text-[#f7f7f7]/60 cursor-pointer">
+                          <input type="checkbox" checked={rosterFilter===r} onChange={()=> setRosterFilter(rosterFilter===r?"all":r)} className="accent-[#F4511E]" />
+                          <span className="w-2 h-2 rounded-full bg-[#F4511E]/60" />
+                          {r}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -796,12 +835,22 @@ export default function Planning(){
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-2 block">{t("planning.game")}</label>
-                  <select value={form.game} onChange={e=> setForm(f=>({...f,game:e.target.value}))}
+                  <select value={form.game} onChange={e=> setForm(f=>({...f,game:e.target.value, roster: e.target.value==="Rocket League" ? (f.roster || roster) : null}))}
                     className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                     {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
                     <option value="global">Global</option>
                   </select>
                 </div>
+                {form.game==="Rocket League" && (
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-2 block">{t("planning.roster")} *</label>
+                    <select value={form.roster||""} onChange={e=> setForm(f=>({...f,roster: e.target.value||null}))}
+                      className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                      <option value="">— {t("planning.rosterRequired")} —</option>
+                      {(ROSTERS["Rocket League"]||[]).map(r=> <option key={r} value={r}>{t(`planning.roster.${r.toLowerCase()}`)}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-2 block">{t("planning.color")}</label>
                   <div className="flex items-center gap-2 flex-wrap">

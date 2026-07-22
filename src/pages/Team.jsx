@@ -6,7 +6,7 @@ import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
-import { GAMES } from "../lib/constants";
+import { GAMES, ROSTERS } from "../lib/constants";
 
 const ORDER = ["player", "sub", "staff"];
 
@@ -29,6 +29,7 @@ export default function Team() {
   const [retryKey, setRetryKey] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const gameFilter = searchParams.get("game") || "all";
+  const rosterFilter = searchParams.get("roster") || "all";
 
   useEffect(() => {
     setError(false); setMembers(null);
@@ -41,9 +42,11 @@ export default function Team() {
 
   const filtered = useMemo(()=>{
     if(!members) return [];
-    if(gameFilter==="all") return members;
-    return members.filter(m=> (m.game||"").toLowerCase() === gameFilter.toLowerCase() || m.game===gameFilter);
-  }, [members, gameFilter]);
+    let list = members;
+    if(gameFilter!=="all") list = list.filter(m=> (m.game||"").toLowerCase() === gameFilter.toLowerCase() || m.game===gameFilter);
+    if(rosterFilter!=="all") list = list.filter(m=> m.roster===rosterFilter);
+    return list;
+  }, [members, gameFilter, rosterFilter]);
 
   const groups = ORDER.map((s) => ({ status: s, list: filtered.filter((m) => m.status === s) })).filter((g) => g.list.length);
 
@@ -63,18 +66,34 @@ export default function Team() {
               <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="team-title">{t("team.title")}</h1>
               <p className="text-[#f7f7f7]/50 mt-4 tracking-wide max-w-xl">{t("team.sub")}</p>
             </div>
-            <div className="flex items-center gap-2 border border-white/10 bg-[#141414] p-1 self-end">
-              <button onClick={()=> setSearchParams({})} data-testid="filter-all"
-                className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors ${gameFilter==="all"?"bg-[#D8CA82] text-[#111111] font-bold":"text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
-                {t("team.filter.all")} ({byGame.all})
-              </button>
-              {GAMES.map(g=>(
-                <button key={g} onClick={()=> setSearchParams({game:g})} data-testid={`filter-${g}`}
-                  className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors flex items-center gap-2 ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: g==="Rocket League"?"#F4511E":"#D8CA82"}} />
-                  {g==="Rocket League"? t("team.filter.rl") : t("team.filter.eva")} ({byGame[g]||0})
+            <div className="flex flex-col items-end gap-2 self-end">
+              <div className="flex items-center gap-2 border border-white/10 bg-[#141414] p-1">
+                <button onClick={()=> setSearchParams({})} data-testid="filter-all"
+                  className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors ${gameFilter==="all"?"bg-[#D8CA82] text-[#111111] font-bold":"text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                  {t("team.filter.all")} ({byGame.all})
                 </button>
-              ))}
+                {GAMES.map(g=>(
+                  <button key={g} onClick={()=> setSearchParams({game:g})} data-testid={`filter-${g}`}
+                    className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors flex items-center gap-2 ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: g==="Rocket League"?"#F4511E":"#D8CA82"}} />
+                    {g==="Rocket League"? t("team.filter.rl") : t("team.filter.eva")} ({byGame[g]||0})
+                  </button>
+                ))}
+              </div>
+              {/* Roster sub-filters for Rocket League */}
+              {(gameFilter==="all" || gameFilter==="Rocket League") && (
+                <div className="flex items-center gap-1.5">
+                  {(ROSTERS["Rocket League"]||[]).map(r=>{
+                    const count = members?.filter(m=> m.roster===r).length||0;
+                    return (
+                      <button key={r} onClick={()=> setSearchParams(rosterFilter===r ? (gameFilter==="all"?{}:{game:"Rocket League"}) : {game:"Rocket League",roster:r})} data-testid={`filter-roster-${r}`}
+                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] border transition-colors ${rosterFilter===r ? "border-[#F4511E] text-[#F4511E] bg-[#F4511E]/10 font-bold" : "border-white/15 text-[#f7f7f7]/40 hover:text-[#f7f7f7]/70"}`}>
+                        {r} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -118,7 +137,10 @@ export default function Team() {
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-display font-bold text-lg text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{m.pseudo}</p>
-                          <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${m.game==="Rocket League" ? "border-[#F4511E]/50 text-[#F4511E] bg-[#F4511E]/10" : "border-[#D8CA82]/30 text-[#D8CA82]/70"}`}>{m.game==="Rocket League" ? "RL" : m.game}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {m.roster && <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 border border-white/15 text-[#f7f7f7]/50">{m.roster}</span>}
+                            <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${m.game==="Rocket League" ? "border-[#F4511E]/50 text-[#F4511E] bg-[#F4511E]/10" : "border-[#D8CA82]/30 text-[#D8CA82]/70"}`}>{m.game==="Rocket League" ? "RL" : m.game}</span>
+                          </div>
                         </div>
                         {m.ingameRole && <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/60 mt-1">{m.ingameRole}</p>}
                         {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{m.bio}</p>}

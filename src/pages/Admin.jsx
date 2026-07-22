@@ -5,7 +5,7 @@ import { Shield, Users, Trophy } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { GAMES, ROLES, OFFICIAL_UID } from "../lib/constants";
+import { GAMES, ROLES, ROSTERS, OFFICIAL_UID } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
@@ -63,7 +63,11 @@ export default function Admin() {
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
   const setGame = async (uid, game) => {
-    try { await updateDoc(doc(db, "users", uid), { game: game === "none" ? null : game }); toast.success(t("common.saved")); }
+    try { await updateDoc(doc(db, "users", uid), { game: game === "none" ? null : game, roster: null }); toast.success(t("common.saved")); }
+    catch (e) { console.error(e); toast.error(t("common.error")); }
+  };
+  const setRoster = async (uid, roster) => {
+    try { await updateDoc(doc(db, "users", uid), { roster: roster === "none" ? null : roster }); toast.success(t("common.saved")); }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
 
@@ -146,6 +150,7 @@ export default function Admin() {
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">{t("admin.role")}</th>
                   <th className="px-4 py-3">{t("admin.game")}</th>
+                  <th className="px-4 py-3">{t("admin.roster")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,6 +174,18 @@ export default function Admin() {
                         <option value="none">—</option>
                         {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
                       </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      {(ROSTERS[u.game] || []).length > 0 ? (
+                        <select value={u.roster || "none"} onChange={(e) => setRoster(u.id, e.target.value)}
+                          data-testid={`admin-roster-select-${u.id}`}
+                          className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                          <option value="none">{t("admin.roster.none")}</option>
+                          {(ROSTERS[u.game] || []).map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-[#f7f7f7]/30">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
