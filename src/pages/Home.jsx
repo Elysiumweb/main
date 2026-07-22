@@ -102,8 +102,11 @@ export default function Home() {
             <p className="text-xs tracking-[0.3em] uppercase text-[#f7f7f7]/40 mt-1">Esports Virtual Arenas</p>
             <p className="text-[#f7f7f7]/60 mt-4 leading-relaxed">{t("home.games.eva")}</p>
           </div>
-          <div className="border border-white/10 bg-[#141414] p-8 flex items-center justify-center min-h-[180px]">
-            <p className="font-display text-[#f7f7f7]/25 tracking-[0.3em] uppercase text-sm">Coming soon</p>
+          <div className="relative border border-[#9146FF]/30 bg-[#1A1A1A] p-8 group overflow-hidden" data-testid="home-game-rocketleague">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-[#9146FF]/10 to-transparent pointer-events-none" />
+            <p className="font-display font-black text-4xl text-[#9146FF]">RL</p>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#f7f7f7]/40 mt-1">Rocket League</p>
+            <p className="text-[#f7f7f7]/60 mt-4 leading-relaxed">{t("home.games.rocketleague")}</p>
           </div>
         </div>
       </section>

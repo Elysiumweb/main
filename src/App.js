@@ -20,6 +20,8 @@ import { CookieConsent } from "@/components/CookieConsent";
 import PlayerLayout from "@/pages/player/PlayerLayout";
 import ChatSpace from "@/pages/player/ChatSpace";
 import Planning from "@/pages/player/Planning";
+import FreePlanning from "@/pages/player/FreePlanning";
+import AvailabilitySheet from "@/pages/player/AvailabilitySheet";
 import Notes from "@/pages/player/Notes";
 import CanvasSpace from "@/pages/player/CanvasSpace";
 import ActivityLog from "@/pages/player/ActivityLog";
@@ -65,6 +67,8 @@ function App() {
               <Route index element={<Navigate to="chat" replace />} />
               <Route path="chat" element={<ChatSpace />} />
               <Route path="planning" element={<Planning />} />
+              <Route path="planning-free" element={<FreePlanning />} />
+              <Route path="availabilities" element={<AvailabilitySheet />} />
               <Route path="notes" element={<Notes />} />
               <Route path="tableau" element={<CanvasSpace />} />
               <Route path="activite" element={<ActivityLog />} />

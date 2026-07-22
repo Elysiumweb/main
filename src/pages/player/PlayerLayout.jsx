@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Navigate } from "react-router-dom";
-import { MessageSquare, CalendarDays, StickyNote, LayoutDashboard, Activity } from "lucide-react";
+import { MessageSquare, CalendarDays, StickyNote, LayoutDashboard, Activity, Users } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 
@@ -15,13 +15,23 @@ export default function PlayerLayout() {
     </div>
   );
 
-  const tabs = [
+  // Tabs de base pour EVA
+  const baseTabs = [
     { to: "chat", label: t("player.chat"), icon: MessageSquare },
     { to: "planning", label: t("player.planning"), icon: CalendarDays },
     { to: "notes", label: t("player.notes"), icon: StickyNote },
     { to: "tableau", label: t("player.canvas"), icon: LayoutDashboard },
     { to: "activite", label: t("player.activity"), icon: Activity },
   ];
+
+  // Tabs spécifiques pour Rocket League (planning libre + disponibilités)
+  const rlTabs = [
+    { to: "planning-free", label: "Planning", icon: CalendarDays },
+    { to: "availabilities", label: t("player.availability"), icon: Users },
+    { to: "activite", label: t("player.activity"), icon: Activity },
+  ];
+
+  const tabs = game === "Rocket League" ? rlTabs : baseTabs;
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-[#111111]" data-testid="player-space">
