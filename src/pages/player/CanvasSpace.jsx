@@ -6,6 +6,7 @@ import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { InfiniteCanvas } from "../../components/InfiniteCanvas";
+import { logActivity } from "../../lib/notify";
 
 export default function CanvasSpace() {
   const { user, game, isOfficial, displayName } = useAuth();
@@ -35,6 +36,7 @@ export default function CanvasSpace() {
         createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       });
       setName(""); setOpenId(ref.id);
+      logActivity({ game: gameKey, type: "canvas_created", label: name.trim(), byUid: user.uid, byName: displayName });
     } catch (err) { console.error(err); toast.error(t("common.error")); }
   };
 
@@ -48,7 +50,11 @@ export default function CanvasSpace() {
   };
 
   const del = async (id) => {
-    try { await deleteDoc(doc(db, "canvases", id)); } catch (e) { toast.error(t("common.error")); }
+    try {
+      const c = canvases.find((x) => x.id === id);
+      await deleteDoc(doc(db, "canvases", id));
+      if (c) logActivity({ game: gameKey, type: "canvas_deleted", label: c.title, byUid: user.uid, byName: displayName });
+    } catch (e) { toast.error(t("common.error")); }
   };
 
   const current = canvases.find((c) => c.id === openId);

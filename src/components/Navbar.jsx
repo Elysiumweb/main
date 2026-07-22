@@ -3,9 +3,10 @@ import { useState } from "react";
 import { Menu, X, Shield, LogOut, Gamepad2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { NotificationsBell } from "./NotificationsBell";
 
 const linkCls = ({ isActive }) =>
-  `text-sm uppercase tracking-[0.2em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
+  `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
 
 export const Navbar = () => {
   const { user, hasPlayerAccess, isOfficial, displayName, logout } = useAuth();
@@ -17,6 +18,9 @@ export const Navbar = () => {
     { to: "/", label: t("nav.home") },
     { to: "/equipe", label: t("nav.team") },
     { to: "/resultats", label: t("nav.results") },
+    { to: "/actus", label: t("nav.news") },
+    { to: "/medias", label: t("nav.media") },
+    { to: "/calendrier", label: t("nav.calendar") },
     { to: "/support", label: t("nav.support") },
     { to: "/recrutement", label: t("nav.recruitment") },
   ];
@@ -28,7 +32,7 @@ export const Navbar = () => {
           <img src="/brand/logo-horizontal-white.png" alt="Elysium" className="h-9 hidden sm:block" />
           <img src="/brand/logo-icon-gold.png" alt="Elysium" className="h-9 sm:hidden" />
         </Link>
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-5">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
               {l.label}
@@ -46,6 +50,7 @@ export const Navbar = () => {
           )}
         </nav>
         <div className="flex items-center gap-3">
+          {user && <NotificationsBell />}
           <button onClick={toggle} data-testid="lang-toggle-btn"
             className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#f7f7f7]/70 hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors">
             {lang === "fr" ? "EN" : "FR"}
@@ -65,13 +70,13 @@ export const Navbar = () => {
               {t("nav.login")}
             </Link>
           )}
-          <button className="md:hidden text-[#f7f7f7]" onClick={() => setOpen(!open)} data-testid="nav-mobile-toggle">
+          <button className="lg:hidden text-[#f7f7f7]" onClick={() => setOpen(!open)} data-testid="nav-mobile-toggle">
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
       {open && (
-        <nav className="md:hidden border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-[#111111]" data-testid="nav-mobile-menu">
+        <nav className="lg:hidden border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-[#111111]" data-testid="nav-mobile-menu">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={linkCls} onClick={() => setOpen(false)}>{l.label}</NavLink>
           ))}

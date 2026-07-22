@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { EmptyState } from "../components/States";
+import { createNotification } from "../lib/notify";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const AGE_RANGES = ["-16", "16-17", "18-24", "25+"];
@@ -56,6 +57,7 @@ export default function Recruitment() {
       await addDoc(collection(db, "recruitThreads", ref.id, "messages"), {
         uid: user.uid, name: displayName, text: meta, createdAt: serverTimestamp(),
       });
+      createNotification({ targetRoles: ["manager", "bureau"], type: "recruit_new", extra: form.position.trim(), link: "/recrutement" });
       setForm(EMPTY_FORM); setConsent(false);
       toast.success(t("recruit.confirmation"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }

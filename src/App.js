@@ -22,6 +22,11 @@ import ChatSpace from "@/pages/player/ChatSpace";
 import Planning from "@/pages/player/Planning";
 import Notes from "@/pages/player/Notes";
 import CanvasSpace from "@/pages/player/CanvasSpace";
+import ActivityLog from "@/pages/player/ActivityLog";
+import News from "@/pages/News";
+import ArticleDetail from "@/pages/ArticleDetail";
+import MediaGallery from "@/pages/MediaGallery";
+import CommunityCalendar from "@/pages/CommunityCalendar";
 
 const PublicLayout = () => (
   <>
@@ -43,6 +48,10 @@ function App() {
               <Route path="/resultats" element={<Results />} />
               <Route path="/equipe" element={<Team />} />
               <Route path="/equipe/:id" element={<PlayerDetail />} />
+              <Route path="/actus" element={<News />} />
+              <Route path="/actus/:id" element={<ArticleDetail />} />
+              <Route path="/medias" element={<MediaGallery />} />
+              <Route path="/calendrier" element={<CommunityCalendar />} />
               <Route path="/support" element={<Support />} />
               <Route path="/recrutement" element={<Recruitment />} />
               <Route path="/connexion" element={<Login />} />
@@ -58,6 +67,7 @@ function App() {
               <Route path="planning" element={<Planning />} />
               <Route path="notes" element={<Notes />} />
               <Route path="tableau" element={<CanvasSpace />} />
+              <Route path="activite" element={<ActivityLog />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

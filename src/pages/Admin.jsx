@@ -9,18 +9,36 @@ import { GAMES, ROLES, OFFICIAL_UID } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
+import { AdminArticles } from "../components/admin/AdminArticles";
+import { AdminMedia } from "../components/admin/AdminMedia";
+import { AdminEvents } from "../components/admin/AdminEvents";
+
+const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", mapsText: "", mvp: "", vodUrl: "" };
 
 export default function Admin() {
-  const { isOfficial, loading } = useAuth();
+  const { isOfficial, role, loading } = useAuth();
   const { t } = useLang();
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [form, setForm] = useState(EMPTY_MATCH);
+  const [editMatchId, setEditMatchId] = useState(null);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const isBureau = isOfficial || role === "bureau";
+  const isStaff = isBureau || role === "manager";
+  const allowed = {
+    users: isOfficial, matches: isOfficial, roster: isBureau,
+    articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
+  };
+  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events"].filter((k) => allowed[k]);
+
+  useEffect(() => {
+    if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
+  }, [role, isOfficial]); // eslint-disable-line
 
   useEffect(() => {
     if (!isOfficial) return;
@@ -34,7 +52,7 @@ export default function Admin() {
   }, [isOfficial]);
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
-  if (!isOfficial) return (
+  if (!isStaff) return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <p className="text-[#f7f7f7]/50" data-testid="admin-denied">{t("player.noAccess")}</p>
     </div>
@@ -51,6 +69,10 @@ export default function Admin() {
 
   const addMatch = async (e) => {
     e.preventDefault();
+    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl) || !isUrl(form.vodUrl)) {
+      toast.error("URL invalide (doit commencer par http:// ou https://)");
+      return;
+    }
     try {
       const { mapsText, ...rest } = form;
       const maps = mapsText.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -58,10 +80,31 @@ export default function Admin() {
         const m = score.match(/(\d+)\s*-\s*(\d+)/);
         return { name, us: m ? Number(m[1]) : null, them: m ? Number(m[2]) : null };
       });
-      await addDoc(collection(db, "matches"), { ...rest, maps, createdAt: serverTimestamp() });
-      setForm(EMPTY_MATCH);
+      if (editMatchId) await updateDoc(doc(db, "matches", editMatchId), { ...rest, maps });
+      else await addDoc(collection(db, "matches"), { ...rest, maps, createdAt: serverTimestamp() });
+      setForm(EMPTY_MATCH); setEditMatchId(null);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
+  };
+
+  const editMatch = (m) => {
+    setEditMatchId(m.id);
+    setForm({
+      opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
+      date: m.date || "", competition: m.competition || "", game: m.game || "EVA", status: m.status || "finished",
+      time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
+      mapsText: (m.maps || []).map((x) => `${x.name} | ${x.us ?? ""}-${x.them ?? ""}`).join("\n"), mvp: m.mvp || "", vodUrl: m.vodUrl || "",
+    });
+  };
+
+  const opponents = [...new Map(matches.filter((m) => m.opponentName).map((m) => [m.opponentName, m])).values()];
+
+  const onOpponentChange = (e) => {
+    const val = e.target.value;
+    setForm((f) => {
+      const known = opponents.find((o) => o.opponentName === val);
+      return { ...f, opponentName: val, opponentLogo: known && !f.opponentLogo ? known.opponentLogo || "" : f.opponentLogo };
+    });
   };
 
   const delMatch = async (id) => {
@@ -81,7 +124,7 @@ export default function Admin() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
         <div className="flex gap-1 border-b border-white/10 mb-10 flex-wrap" data-testid="admin-tabs">
-          {["users", "matches", "roster", "positions"].map((k) => (
+          {tabs.map((k) => (
             <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
               className={`px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
               {t(`admin.tab.${k}`)}
@@ -152,11 +195,17 @@ export default function Admin() {
               </div>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.opponent")}</label>
-                <input value={form.opponentName} onChange={set("opponentName")} required className={inputCls} data-testid="admin-match-opponent" />
+                <input value={form.opponentName} onChange={onOpponentChange} required list="admin-opponents" className={inputCls} data-testid="admin-match-opponent" />
+                <datalist id="admin-opponents">
+                  {opponents.map((o) => <option key={o.opponentName} value={o.opponentName} />)}
+                </datalist>
               </div>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.logo")}</label>
                 <input value={form.opponentLogo} onChange={set("opponentLogo")} placeholder="https://..." className={inputCls} data-testid="admin-match-logo" />
+                {form.opponentLogo && /^https?:\/\//.test(form.opponentLogo) && (
+                  <img src={form.opponentLogo} alt="" className="h-10 mt-2 object-contain border border-white/10 p-1" onError={(e) => { e.target.style.display = "none"; }} data-testid="admin-match-logo-preview" />
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -233,7 +282,7 @@ export default function Admin() {
                 <p className="text-[#f7f7f7]/40" data-testid="admin-matches-empty">{t("results.empty")}</p>
               ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {matches.map((m) => <MatchCard key={m.id} match={m} onDelete={delMatch} />)}
+                  {matches.map((m) => <MatchCard key={m.id} match={m} onDelete={delMatch} onEdit={editMatch} />)}
                 </div>
               )}
             </div>
@@ -243,6 +292,9 @@ export default function Admin() {
 
         {tab === "roster" && <AdminRoster />}
         {tab === "positions" && <AdminPositions />}
+        {tab === "articles" && <AdminArticles />}
+        {tab === "media" && <AdminMedia />}
+        {tab === "events" && <AdminEvents />}
       </section>
     </div>
   );

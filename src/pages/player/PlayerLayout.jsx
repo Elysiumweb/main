@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Navigate } from "react-router-dom";
-import { MessageSquare, CalendarDays, StickyNote, LayoutDashboard } from "lucide-react";
+import { MessageSquare, CalendarDays, StickyNote, LayoutDashboard, Activity } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 
@@ -20,6 +20,7 @@ export default function PlayerLayout() {
     { to: "planning", label: t("player.planning"), icon: CalendarDays },
     { to: "notes", label: t("player.notes"), icon: StickyNote },
     { to: "tableau", label: t("player.canvas"), icon: LayoutDashboard },
+    { to: "activite", label: t("player.activity"), icon: Activity },
   ];
 
   return (

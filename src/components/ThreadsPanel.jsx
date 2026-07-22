@@ -6,6 +6,7 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ChatMessages } from "./ChatMessages";
+import { createNotification } from "../lib/notify";
 
 const STATUS_CLS = {
   open: "text-[#D8CA82] border-[#D8CA82]/40",
@@ -76,7 +77,12 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
                 </select>
               )}
             </div>
-            <ChatMessages path={`${collectionName}/${current.id}/messages`} testId={`${prefix}-chat`} />
+            <ChatMessages path={`${collectionName}/${current.id}/messages`} testId={`${prefix}-chat`}
+              onSent={() => {
+                if (current.uid !== user.uid) {
+                  createNotification({ targetUid: current.uid, type: "thread_reply", extra: current[titleField], link: prefix === "support" ? "/support" : "/recrutement" });
+                }
+              }} />
           </>
         )}
       </div>

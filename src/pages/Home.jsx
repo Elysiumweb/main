@@ -1,16 +1,32 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
+import { videoEmbedUrl } from "./MediaGallery";
 
 export default function Home() {
   const { t } = useLang();
   const [matches, setMatches] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [discord, setDiscord] = useState(null);
+
+  useEffect(() => {
+    const u = onSnapshot(collection(db, "media"), (snap) => {
+      const vids = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.type === "video");
+      vids.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setVideos(vids.slice(0, 2));
+    }, () => {});
+    fetch("https://discord.com/api/v9/invites/RH3ZZkMJsw?with_counts=true")
+      .then((r) => r.json())
+      .then((d) => setDiscord({ online: d.approximate_presence_count, members: d.approximate_member_count }))
+      .catch(() => {});
+    return u;
+  }, []);
 
   useEffect(() => {
     return onSnapshot(collection(db, "matches"), (snap) => {
@@ -110,6 +126,88 @@ export default function Home() {
               {matches.map((m) => <MatchCard key={m.id} match={m} />)}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* LIVE TWITCH / YOUTUBE */}
+      <section className="border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-live">
+          <div className="flex items-center gap-4 mb-10 flex-wrap">
+            <Radio className="text-[#D8CA82]" size={20} />
+            <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.live.title")}</h2>
+            <div className="flex-1 h-px bg-white/10" />
+            <a href="https://www.twitch.tv/elysiumxeva" target="_blank" rel="noopener noreferrer" data-testid="home-live-twitch-cta"
+              className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
+              <PlayCircle size={14} /> {t("home.live.watch")}
+            </a>
+            <a href="https://www.youtube.com/@elysiumfr" target="_blank" rel="noopener noreferrer" data-testid="home-live-youtube-cta"
+              className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+              <Youtube size={14} /> {t("home.live.youtube")}
+            </a>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div className="border border-white/10 bg-[#0d0d0d]">
+              <iframe title="Twitch Elysium" data-testid="home-twitch-embed"
+                src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=true`}
+                className="w-full aspect-video" allowFullScreen />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">{t("home.live.replays")}</p>
+              {videos.length === 0 ? (
+                <p className="text-[#f7f7f7]/40" data-testid="home-replays-empty">{t("home.live.noReplays")}</p>
+              ) : (
+                <div className="space-y-4" data-testid="home-replays">
+                  {videos.map((v) => {
+                    const embed = videoEmbedUrl(v.url);
+                    return embed ? (
+                      <iframe key={v.id} title={v.title} src={embed} className="w-full aspect-video border border-white/10" allowFullScreen />
+                    ) : (
+                      <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="block text-[#D8CA82] underline text-sm">{v.title}</a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* DISCORD */}
+      <section className="border-t border-white/10 bg-[#0c0c0c] relative overflow-hidden">
+        <div className="pattern-overlay" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 relative grid lg:grid-cols-2 gap-12 items-center" data-testid="home-discord">
+          <div>
+            <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7] mb-6">{t("home.discord.title")}</h2>
+            {discord && (
+              <div className="flex gap-8 mb-8" data-testid="home-discord-stats">
+                <div>
+                  <p className="font-display font-black text-4xl text-[#D8CA82]">{discord.online}</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/40 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> {t("home.discord.online")}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-display font-black text-4xl text-[#f7f7f7]">{discord.members}</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/40">{t("home.discord.members")}</p>
+                </div>
+              </div>
+            )}
+            <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta"
+              className="inline-flex items-center gap-3 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow">
+              <SocialIcon name="discord" size={18} /> {t("home.discord.cta")}
+            </a>
+          </div>
+          <div className="border border-white/10 bg-[#141414] p-8" data-testid="home-discord-rules">
+            <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-5">{t("home.discord.faq")}</p>
+            <ul className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <li key={i} className="flex gap-4 text-sm text-[#f7f7f7]/70">
+                  <span className="font-display font-bold text-[#D8CA82] shrink-0">0{i}</span>
+                  {t(`home.discord.rule${i}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 

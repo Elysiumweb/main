@@ -25,6 +25,7 @@ export const Footer = () => {
           <Link to="/mentions-legales" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-mentions">{t("legal.mentions")}</Link>
           <Link to="/confidentialite" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-privacy">{t("legal.privacy")}</Link>
           <Link to="/cgu" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-terms">{t("legal.terms")}</Link>
+          <a href="mailto:contact@elysium-esport.fr" className="text-[11px] uppercase tracking-widest text-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors" data-testid="footer-contact-email">{t("footer.contact")} : contact@elysium-esport.fr</a>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLang } from "../lib/i18n";
-import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award } from "lucide-react";
+import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 const OppLogo = ({ src, name, className }) => {
@@ -9,7 +9,7 @@ const OppLogo = ({ src, name, className }) => {
   return <img src={src} alt={name} onError={() => setErr(true)} className={`${className} object-contain`} />;
 };
 
-export const MatchCard = ({ match, onDelete }) => {
+export const MatchCard = ({ match, onDelete, onEdit }) => {
   const { t } = useLang();
   const upcoming = match.status === "upcoming";
   const us = Number(match.scoreUs);
@@ -67,6 +67,12 @@ export const MatchCard = ({ match, onDelete }) => {
             </a>
           )}
         </div>
+      )}
+      {onEdit && (
+        <button onClick={(e) => { e.stopPropagation(); onEdit(match); }} data-testid={`match-edit-${match.id}`}
+          className="absolute top-2 right-8 opacity-0 group-hover:opacity-100 text-[#D8CA82]/80 hover:text-[#D8CA82] transition-opacity z-10">
+          <Pencil size={13} />
+        </button>
       )}
       {onDelete && (
         <button onClick={(e) => { e.stopPropagation(); onDelete(match.id); }} data-testid={`match-delete-${match.id}`}

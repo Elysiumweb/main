@@ -5,7 +5,7 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 
-export const ChatMessages = ({ path, testId = "chat" }) => {
+export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
   const { user, displayName, role } = useAuth();
   const { t } = useLang();
   const [messages, setMessages] = useState([]);
@@ -29,6 +29,7 @@ export const ChatMessages = ({ path, testId = "chat" }) => {
     await addDoc(collection(db, ...path.split("/")), {
       uid: user.uid, name: displayName, role, text: trimmed, createdAt: serverTimestamp(),
     });
+    if (onSent) onSent(trimmed);
   };
 
   return (
