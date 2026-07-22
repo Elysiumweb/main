@@ -61,8 +61,8 @@ export default function Planning(){
   const [view, setView] = useState("week"); // month | week | day
   const [tab, setTab] = useState("calendar"); // calendar | availability
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [gameFilter, setGameFilter] = useState("all"); // all | EVA | Rocket League | global
-  const [rosterFilter, setRosterFilter] = useState("all"); // all | Espoir | Académique | Esport
+  const [gameFilter, setGameFilter] = useState(game === "Rocket League" ? "Rocket League" : "all");
+  const [rosterFilter, setRosterFilter] = useState(roster || "all");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title:"", description:"", color:"#D8CA82", game: game || "EVA", roster: null, start:"", end:"", allDay:false });
@@ -80,9 +80,9 @@ export default function Planning(){
     }
     // roster filter
     if(rosterFilter!=="all"){
-      list = list.filter(ev=> ev.roster===rosterFilter);
+      list = list.filter(ev=> ev.roster===rosterFilter || !ev.roster || ev.game==="global");
     } else {
-      // when no roster filter, show global/roster-less events + events matching user's roster
+      // no roster filter: for RL players, default to their own roster
       if(!isOfficial && roster){
         list = list.filter(ev=> !ev.roster || ev.roster===roster || ev.game==="global");
       } else if(!isOfficial){
@@ -163,7 +163,7 @@ export default function Planning(){
       description:"",
       color: game==="Rocket League" || gameFilter==="Rocket League" ? "#F4511E" : "#D8CA82",
       game: gameFilter!=="all" ? gameFilter : (game || "EVA"),
-      roster: rosterFilter!=="all" ? rosterFilter : null,
+      roster: rosterFilter!=="all" ? rosterFilter : (roster || null),
       start: toLocalInput(d),
       end: toLocalInput(end),
       allDay:false,
