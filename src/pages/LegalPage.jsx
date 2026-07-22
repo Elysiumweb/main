@@ -10,7 +10,8 @@ const CONTENT = {
       <>
         <P>Le présent site est édité par l'équipe esport <strong>Elysium</strong> (ci-après « l'Éditeur »).</P>
         <H>Éditeur du site</H>
-        <P>Elysium — Équipe esport française. Contact : <a href="mailto:contact@elysium-esport.fr" className="text-[#D8CA82] underline">contact@elysium-esport.fr</a>, via la page Support du site ou le serveur Discord officiel (https://discord.gg/RH3ZZkMJsw). <em>[À compléter : forme juridique, adresse du siège, SIRET et directeur de la publication le cas échéant.]</em></P>
+        <P>Elysium — Équipe esport française, éditée par l'association Elysium, association régie par la loi du 1er juillet 1901, dont le siège social est situé 22 Avenue Lamartine, 77380 Combs-la-Ville (numéro RNA : W772011943). Directeur de la publication : Nathan Martins, Président de l'association.</P>
+        <P>Contact : via la page Support du site ou le serveur Discord officiel (https://discord.gg/RH3ZZkMJsw).</P>
         <H>Hébergement</H>
         <P>Le site est hébergé par Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis (vercel.com). Les données applicatives sont stockées par Google Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande).</P>
         <H>Propriété intellectuelle</H>
@@ -25,6 +26,7 @@ const CONTENT = {
     body: (
       <>
         <P>Cette politique décrit comment Elysium collecte et traite vos données personnelles, conformément au Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et Libertés.</P>
+        <P>Responsable du traitement : l'association Elysium, dont le siège social est situé 22 Avenue Lamartine, 77380 Combs-la-Ville.</P>
         <H>Données collectées</H>
         <P>• Compte : email, pseudo, photo de profil (via Firebase Authentication — email/mot de passe ou Google).<br />• Support : sujet et description de votre demande, messages échangés.<br />• Candidature : pseudo, tranche d'âge, pays/fuseau horaire, expérience, liens vidéo, disponibilités, identifiant Discord.<br />• Espace joueur (membres) : messages, notes, planning, tableaux collaboratifs.</P>
         <H>Finalités et base légale</H>
@@ -36,7 +38,7 @@ const CONTENT = {
         <H>Cookies</H>
         <P>Le site utilise uniquement des cookies et stockages locaux essentiels : session d'authentification Firebase, préférence de langue et choix de consentement. Aucun cookie publicitaire ou de suivi tiers n'est déposé.</P>
         <H>Vos droits</H>
-        <P>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition. Vous pouvez supprimer votre compte à tout moment depuis la page « Mon profil ». Pour toute demande : <a href="mailto:contact@elysium-esport.fr" className="text-[#D8CA82] underline">contact@elysium-esport.fr</a>, la page Support ou Discord. Vous pouvez également saisir la CNIL (cnil.fr).</P>
+        <P>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition. Vous pouvez supprimer votre compte à tout moment depuis la page « Mon profil ». Pour toute demande : contactez-nous via la page Support ou Discord. Vous pouvez également saisir la CNIL (cnil.fr).</P>
         <H>Mineurs</H>
         <P>Si vous avez moins de 15 ans, l'accord d'un titulaire de l'autorité parentale est requis pour créer un compte ou candidater.</P>
       </>
@@ -75,7 +77,7 @@ export default function LegalPage({ kind }) {
       </section>
       <section className="max-w-4xl mx-auto px-4 sm:px-8 py-12" data-testid={`legal-content-${kind}`}>
         {c.body}
-        <p className="text-xs text-[#f7f7f7]/30 mt-12">Dernière mise à jour : juin 2026</p>
+        <p className="text-xs text-[#f7f7f7]/30 mt-12">Dernière mise à jour : juillet 2026</p>
       </section>
     </div>
   );
