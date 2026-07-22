@@ -194,6 +194,7 @@ export default function Planning(){
   const saveEvent = async (e)=>{
     e.preventDefault();
     if(!form.title.trim()){ toast.error(t("planning.noTitle")); return; }
+    if(form.game==="Rocket League" && !form.roster){ toast.error(t("planning.rosterRequired")); return; }
     const startDate = parseInput(form.start);
     const endDate = parseInput(form.end);
     if(!startDate || !endDate){ toast.error("Dates invalides"); return; }
@@ -834,7 +835,7 @@ export default function Planning(){
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-2 block">{t("planning.game")}</label>
-                  <select value={form.game} onChange={e=> setForm(f=>({...f,game:e.target.value, roster: e.target.value==="Rocket League" ? f.roster : null}))}
+                  <select value={form.game} onChange={e=> setForm(f=>({...f,game:e.target.value, roster: e.target.value==="Rocket League" ? (f.roster || roster) : null}))}
                     className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                     {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
                     <option value="global">Global</option>
@@ -842,10 +843,10 @@ export default function Planning(){
                 </div>
                 {form.game==="Rocket League" && (
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-2 block">{t("planning.roster")}</label>
-                    <select value={form.roster||"none"} onChange={e=> setForm(f=>({...f,roster: e.target.value==="none"?null:e.target.value}))}
+                    <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-2 block">{t("planning.roster")} *</label>
+                    <select value={form.roster||""} onChange={e=> setForm(f=>({...f,roster: e.target.value||null}))}
                       className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
-                      <option value="none">{t("planning.roster.none")}</option>
+                      <option value="">— {t("planning.rosterRequired")} —</option>
                       {(ROSTERS["Rocket League"]||[]).map(r=> <option key={r} value={r}>{t(`planning.roster.${r.toLowerCase()}`)}</option>)}
                     </select>
                   </div>
