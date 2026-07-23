@@ -1,0 +1,27 @@
+{
+  "name": "ELYSIUM Esport",
+  "short_name": "Elysium",
+  "description": "ELYSIUM Esport — Not given. Earned. Équipe esport française.",
+  "start_url": "/espace-joueur",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/brand/logo-icon-gold.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/logo-icon-gold.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "sports"],
+  "lang": "fr",
+  "dir": "ltr"
+}

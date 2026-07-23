@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Share2, BarChart3, History } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { usePlayerSEO } from "../lib/useSEO";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
@@ -40,6 +41,8 @@ export default function PlayerDetail() {
     try { await navigator.clipboard.writeText(window.location.href); toast.success(t("playerpage.copied")); }
     catch { toast.error(t("common.error")); }
   };
+
+  usePlayerSEO(player && player.id ? player : null);
 
   if (error) return <div className="max-w-4xl mx-auto px-4 py-20"><ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="player-error" /></div>;
   if (player === undefined) return <LoadingState testId="player-loading" />;
