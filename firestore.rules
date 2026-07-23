@@ -153,16 +153,16 @@ service cloud.firestore {
 
     // ===== Demandes de partenariat =====
     match /partner_requests/{id} {
-      allow create: if true; // Public form
+      allow create: if true;
       allow read, update, delete: if isBureau();
     }
 
     // ===== Newsletter =====
     match /newsletter/{id} {
       allow read: if isBureau();
-      allow create: if true; // Public subscription form
+      allow create: if true;
       allow update, delete: if isBureau()
-        || request.resource.data.email == resource.data.email; // Self-unsubscribe
+        || request.resource.data.email == resource.data.email;
     }
 
     // ===== Recrutement =====
