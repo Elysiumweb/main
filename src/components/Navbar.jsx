@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Shield, LogOut, Gamepad2 } from "lucide-react";
+import { Menu, X, Shield, LogOut, Gamepad2, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
@@ -21,9 +21,16 @@ export const Navbar = () => {
     { to: "/actus", label: t("nav.news") },
     { to: "/medias", label: t("nav.media") },
     { to: "/calendrier", label: t("nav.calendar") },
+    { to: "/statistiques", label: t("nav.stats") },
     { to: "/support", label: t("nav.support") },
     { to: "/recrutement", label: t("nav.recruitment") },
+    { to: "/partenaires", label: t("nav.partners") },
   ];
+
+  const openSearch = (e) => {
+    e.preventDefault();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#111111]/80 backdrop-blur-xl border-b border-white/10">
@@ -32,7 +39,7 @@ export const Navbar = () => {
           <img src="/brand/logo-horizontal-white.png" alt="Elysium" className="h-9 hidden sm:block" />
           <img src="/brand/logo-icon-gold.png" alt="Elysium" className="h-9 sm:hidden" />
         </Link>
-        <nav className="hidden lg:flex items-center gap-5">
+        <nav className="hidden xl:flex items-center gap-5">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
               {l.label}
@@ -50,6 +57,13 @@ export const Navbar = () => {
           )}
         </nav>
         <div className="flex items-center gap-3">
+          {/* Global Search Button */}
+          <button onClick={openSearch} data-testid="nav-search-btn"
+            className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors hidden sm:flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-xs"
+            title={`${t("search.title")} (${t("search.shortcut")})`}>
+            <Search size={14} />
+            <span className="hidden md:inline text-[#f7f7f7]/30 text-[10px] tracking-wider">{t("search.shortcut")}</span>
+          </button>
           {user && <NotificationsBell />}
           <button onClick={toggle} data-testid="lang-toggle-btn"
             className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#f7f7f7]/70 hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors">
@@ -70,16 +84,19 @@ export const Navbar = () => {
               {t("nav.login")}
             </Link>
           )}
-          <button className="lg:hidden text-[#f7f7f7]" onClick={() => setOpen(!open)} data-testid="nav-mobile-toggle">
+          <button className="xl:hidden text-[#f7f7f7]" onClick={() => setOpen(!open)} data-testid="nav-mobile-toggle">
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
       {open && (
-        <nav className="lg:hidden border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-[#111111]" data-testid="nav-mobile-menu">
+        <nav className="xl:hidden border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-[#111111]" data-testid="nav-mobile-menu">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={linkCls} onClick={() => setOpen(false)}>{l.label}</NavLink>
           ))}
+          <button onClick={(e) => { setOpen(false); openSearch(e); }} className="text-xs uppercase tracking-[0.18em] text-[#f7f7f7]/70 hover:text-[#D8CA82] flex items-center gap-2 py-2">
+            <Search size={14} /> {t("search.title")}
+          </button>
           {hasPlayerAccess && <NavLink to="/espace-joueur" className={linkCls} onClick={() => setOpen(false)}>{t("nav.playerSpace")}</NavLink>}
           {isOfficial && <NavLink to="/admin" className={linkCls} onClick={() => setOpen(false)}>{t("nav.admin")}</NavLink>}
         </nav>

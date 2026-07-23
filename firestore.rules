@@ -145,6 +145,26 @@ service cloud.firestore {
       }
     }
 
+    // ===== Partenaires =====
+    match /partners/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Demandes de partenariat =====
+    match /partner_requests/{id} {
+      allow create: if true; // Public form
+      allow read, update, delete: if isBureau();
+    }
+
+    // ===== Newsletter =====
+    match /newsletter/{id} {
+      allow read: if isBureau();
+      allow create: if true; // Public subscription form
+      allow update, delete: if isBureau()
+        || request.resource.data.email == resource.data.email; // Self-unsubscribe
+    }
+
     // ===== Recrutement =====
     match /recruitThreads/{id} {
       allow read: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());

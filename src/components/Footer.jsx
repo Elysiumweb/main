@@ -2,12 +2,25 @@ import { SOCIALS } from "../lib/constants";
 import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { SocialIcon } from "./SocialIcon";
+import { NewsletterSignup } from "./NewsletterSignup";
 
 export const Footer = () => {
   const { t } = useLang();
   return (
     <footer className="border-t border-white/10 bg-[#0c0c0c] relative overflow-hidden">
       <div className="pattern-overlay" />
+      {/* Newsletter row */}
+      <div className="border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10 grid md:grid-cols-2 gap-8 items-start">
+          <div>
+            <img src="/brand/wordmark-gold.png" alt="Elysium" className="h-6 mb-4" />
+            <p className="text-xs text-[#f7f7f7]/40 tracking-widest uppercase">{t("newsletter.title")}</p>
+            <p className="text-xs text-[#f7f7f7]/30 mt-1">{t("newsletter.sub")}</p>
+          </div>
+          <NewsletterSignup compact />
+        </div>
+      </div>
+      {/* Main footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 flex flex-col sm:flex-row items-center justify-between gap-8">
         <img src="/brand/wordmark-gold.png" alt="Elysium" className="h-6" />
         <div className="flex items-center gap-5" data-testid="footer-socials">
@@ -25,6 +38,7 @@ export const Footer = () => {
           <Link to="/mentions-legales" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-mentions">{t("legal.mentions")}</Link>
           <Link to="/confidentialite" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-privacy">{t("legal.privacy")}</Link>
           <Link to="/cgu" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-terms">{t("legal.terms")}</Link>
+          <Link to="/newsletter" className="text-[11px] uppercase tracking-widest text-[#f7f7f7]/35 hover:text-[#D8CA82] transition-colors" data-testid="footer-link-newsletter">{t("newsletter.title")}</Link>
           <a href="mailto:contact@elysium-esport.fr" className="text-[11px] uppercase tracking-widest text-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors" data-testid="footer-contact-email">{t("footer.contact")} : contact@elysium-esport.fr</a>
         </div>
       </div>

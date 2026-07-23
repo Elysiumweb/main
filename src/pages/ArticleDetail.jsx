@@ -4,6 +4,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { ArrowLeft } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { useArticleSEO } from "../lib/useSEO";
 import { LoadingState } from "../components/States";
 import { ArticleCover } from "./News";
 
@@ -17,6 +18,8 @@ export default function ArticleDetail() {
       (s) => setArticle(s.exists() ? { id: s.id, ...s.data() } : null),
       (e) => { console.error(e); setArticle(null); });
   }, [id]);
+
+  useArticleSEO(article && article.id ? article : null);
 
   if (article === undefined) return <LoadingState testId="article-loading" />;
   if (article === null || article.status === "deleted") return (
