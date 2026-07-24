@@ -102,6 +102,23 @@ body {
     body {
         @apply bg-background text-foreground;
     }
+
+    /* Keyboard focus state — visible golden ring */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [role="button"]:focus-visible,
+    [role="link"]:focus-visible,
+    [role="menuitem"]:focus-visible,
+    [role="option"]:focus-visible,
+    [role="tab"]:focus-visible,
+    [tabindex]:focus-visible {
+        outline: 2px solid #D8CA82 !important;
+        outline-offset: 2px !important;
+        box-shadow: 0 0 10px rgba(216, 202, 130, 0.6) !important;
+    }
 }
 
 @layer base {

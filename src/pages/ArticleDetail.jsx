@@ -7,6 +7,7 @@ import { useLang } from "../lib/i18n";
 import { useArticleSEO } from "../lib/useSEO";
 import { LoadingState } from "../components/States";
 import { ArticleCover } from "./News";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 export default function ArticleDetail() {
   const { id } = useParams();
@@ -31,6 +32,9 @@ export default function ArticleDetail() {
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
+        <PageBreadcrumb items={[{ label: t("nav.news"), to: "/actus" }, { label: article.title }]} />
+      </div>
       <section className="relative border-b border-white/10 overflow-hidden">
         <ArticleCover src={article.coverUrl} className="w-full h-64 sm:h-80 opacity-50" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/40 to-transparent" />

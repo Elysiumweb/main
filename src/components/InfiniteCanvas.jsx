@@ -52,7 +52,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
   const addItem = (item) => { setItems((arr) => [...arr, item]); setSelected(item.id); };
 
   const onBgPointerDown = (e) => {
-    if (e.target.dataset?.canvasbg !== "1") return;
+    if (e.target.closest('[data-canvas-item="1"]')) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const w = toWorld(e);
     if (tool === "select") {
@@ -181,7 +181,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
             )}
           </svg>
           {items.filter((i) => i.type !== "draw").map((it) => (
-            <div key={it.id} onPointerDown={(e) => onItemPointerDown(e, it)} onDoubleClick={() => it.type !== "image" && setEditing(it.id)}
+            <div key={it.id} data-canvas-item="1" onPointerDown={(e) => onItemPointerDown(e, it)} onDoubleClick={() => it.type !== "image" && setEditing(it.id)}
               data-testid={`canvas-item-${it.id}`}
               className={`absolute select-none ${selected === it.id ? "ring-1 ring-[#D8CA82]" : ""} ${tool === "select" ? "cursor-move" : ""}`}
               style={{ left: it.x, top: it.y, width: it.w }}>

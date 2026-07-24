@@ -2,9 +2,9 @@ export const OFFICIAL_UID = process.env.REACT_APP_OFFICIAL_UID;
 export const GAMES = ["EVA", "Rocket League"];
 export const ROLES = ["visitor", "player", "manager", "bureau"];
 
-// Rosters per game — EVA has no rosters, RL has Espoir / Académique / Esport
+// Rosters per game — EVA has no rosters, RL has Junior / Espoir / Académique / Esport
 export const ROSTERS = {
-  "Rocket League": ["Espoir", "Académique", "Esport"],
+  "Rocket League": ["Junior", "Espoir", "Académique", "Esport"],
   "EVA": [],
 };
 
