@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { GAMES, ROLES, ROSTERS, OFFICIAL_UID } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
 import { AdminArticles } from "../components/admin/AdminArticles";
@@ -120,9 +121,12 @@ export default function Admin() {
     <div className="min-h-[80vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative flex items-center gap-4">
-          <Shield className="text-[#D8CA82]" size={32} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="admin-title">{t("admin.title")}</h1>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 relative">
+          <PageBreadcrumb items={[{ label: t("nav.admin") }]} />
+          <div className="flex items-center gap-4">
+            <Shield className="text-[#D8CA82]" size={32} />
+            <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="admin-title">{t("admin.title")}</h1>
+          </div>
         </div>
       </section>
 

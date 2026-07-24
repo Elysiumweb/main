@@ -7,6 +7,7 @@ import { BadgeCheck, MailWarning, KeyRound, Trash2 } from "lucide-react";
 import { auth, db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -67,6 +68,7 @@ export default function Profile() {
   return (
     <div className="min-h-[70vh] bg-[#111111] py-16 px-4">
       <div className="max-w-2xl mx-auto space-y-10">
+        <PageBreadcrumb items={[{ label: t("nav.profile") }]} />
         <div>
           <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="profile-title">{t("profile.title")}</h1>
           <p className="text-[#D8CA82] text-sm uppercase tracking-[0.3em] mt-3" data-testid="profile-role">

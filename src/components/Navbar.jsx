@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X, Shield, LogOut, Gamepad2, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
@@ -8,10 +8,14 @@ import { NotificationsBell } from "./NotificationsBell";
 const linkCls = ({ isActive }) =>
   `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
 
+const mobileLinkCls = ({ isActive }) =>
+  `text-xs uppercase tracking-[0.18em] transition-colors min-h-[44px] flex items-center ${isActive ? "text-[#D8CA82] font-semibold" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
+
 export const Navbar = () => {
   const { user, hasPlayerAccess, isOfficial, displayName, logout } = useAuth();
   const { t, lang, toggle } = useLang();
   const [open, setOpen] = useState(false);
+  const headerRef = useRef(null);
   const navigate = useNavigate();
 
   const links = [
@@ -32,10 +36,36 @@ export const Navbar = () => {
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
   };
 
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" || e.key === "Esc") {
+        setOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [open]);
+
   return (
-    <header className="sticky top-0 z-50 bg-[#111111]/80 backdrop-blur-xl border-b border-white/10">
+    <header ref={headerRef} className="sticky top-0 z-50 bg-[#111111]/80 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
-        <Link to="/" data-testid="nav-logo-link" className="flex items-center gap-3 shrink-0">
+        <Link to="/" data-testid="nav-logo-link" className="flex items-center gap-3 shrink-0 min-h-[44px]">
           <img src="/brand/logo-horizontal-white.png" alt="Elysium" className="h-9 hidden sm:block" />
           <img src="/brand/logo-icon-gold.png" alt="Elysium" className="h-9 sm:hidden" />
         </Link>
@@ -59,14 +89,14 @@ export const Navbar = () => {
         <div className="flex items-center gap-3">
           {/* Global Search Button */}
           <button onClick={openSearch} data-testid="nav-search-btn"
-            className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors hidden sm:flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-xs"
+            className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors hidden sm:flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-xs min-h-[44px]"
             title={`${t("search.title")} (${t("search.shortcut")})`}>
             <Search size={14} />
             <span className="hidden md:inline text-[#f7f7f7]/30 text-[10px] tracking-wider">{t("search.shortcut")}</span>
           </button>
           {user && <NotificationsBell />}
           <button onClick={toggle} data-testid="lang-toggle-btn"
-            className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#f7f7f7]/70 hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors">
+            className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#f7f7f7]/70 hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
             {lang === "fr" ? "EN" : "FR"}
           </button>
           {user ? (
@@ -74,31 +104,57 @@ export const Navbar = () => {
               <Link to="/profil" data-testid="nav-username" title={t("nav.profile")}
                 className="hidden sm:block text-sm text-[#D8CA82] font-semibold max-w-[120px] truncate hover:underline">{displayName}</Link>
               <button onClick={() => { logout(); navigate("/"); }} data-testid="nav-logout-btn"
-                className="text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors" title={t("nav.logout")}>
+                className="text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title={t("nav.logout")}>
                 <LogOut size={18} />
               </button>
             </div>
           ) : (
             <Link to="/connexion" data-testid="nav-login-btn"
-              className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+              className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow min-h-[44px] flex items-center justify-center">
               {t("nav.login")}
             </Link>
           )}
-          <button className="xl:hidden text-[#f7f7f7]" onClick={() => setOpen(!open)} data-testid="nav-mobile-toggle">
+          <button
+            id="nav-mobile-toggle-btn"
+            aria-expanded={open}
+            aria-controls="nav-mobile-menu"
+            aria-label={open ? t("nav.menu.close") : t("nav.menu.open")}
+            className="xl:hidden text-[#f7f7f7] min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none"
+            onClick={() => setOpen(!open)}
+            data-testid="nav-mobile-toggle"
+          >
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
       {open && (
-        <nav className="xl:hidden border-t border-white/10 px-6 py-4 flex flex-col gap-4 bg-[#111111]" data-testid="nav-mobile-menu">
+        <nav
+          id="nav-mobile-menu"
+          aria-label={t("nav.menu.open")}
+          className="xl:hidden border-t border-white/10 px-6 py-4 flex flex-col bg-[#111111]"
+          data-testid="nav-mobile-menu"
+        >
           {links.map((l) => (
-            <NavLink key={l.to} to={l.to} className={linkCls} onClick={() => setOpen(false)}>{l.label}</NavLink>
+            <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)}>
+              {l.label}
+            </NavLink>
           ))}
-          <button onClick={(e) => { setOpen(false); openSearch(e); }} className="text-xs uppercase tracking-[0.18em] text-[#f7f7f7]/70 hover:text-[#D8CA82] flex items-center gap-2 py-2">
+          <button
+            onClick={(e) => { setOpen(false); openSearch(e); }}
+            className="text-xs uppercase tracking-[0.18em] text-[#f7f7f7]/70 hover:text-[#D8CA82] flex items-center gap-2 min-h-[44px]"
+          >
             <Search size={14} /> {t("search.title")}
           </button>
-          {hasPlayerAccess && <NavLink to="/espace-joueur" className={linkCls} onClick={() => setOpen(false)}>{t("nav.playerSpace")}</NavLink>}
-          {isOfficial && <NavLink to="/admin" className={linkCls} onClick={() => setOpen(false)}>{t("nav.admin")}</NavLink>}
+          {hasPlayerAccess && (
+            <NavLink to="/espace-joueur" className={mobileLinkCls} onClick={() => setOpen(false)}>
+              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} />{t("nav.playerSpace")}</span>
+            </NavLink>
+          )}
+          {isOfficial && (
+            <NavLink to="/admin" className={mobileLinkCls} onClick={() => setOpen(false)}>
+              <span className="inline-flex items-center gap-1.5"><Shield size={14} />{t("nav.admin")}</span>
+            </NavLink>
+          )}
         </nav>
       )}
     </header>

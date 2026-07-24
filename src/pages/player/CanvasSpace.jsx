@@ -22,39 +22,85 @@ export default function CanvasSpace() {
       let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       if (!isOfficial) list = list.filter((c) => c.game === gameKey);
       list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-      setCanvases(list);
-    }, console.error);
+      setCanvases((prev) => {
+        const snapIds = new Set(list.map((c) => c.id));
+        const localOnly = prev.filter((c) => !snapIds.has(c.id) && c.id.startsWith("canvas_local_"));
+        return [...list, ...localOnly];
+      });
+    }, (err) => {
+      console.warn("Firestore canvases onSnapshot error:", err);
+    });
   }, [gameKey, isOfficial]);
 
   const create = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    const localId = "canvas_local_" + Date.now();
+    const newCanvas = {
+      id: localId,
+      game: gameKey,
+      title: trimmed,
+      status: "draft",
+      items: [],
+      createdBy: user?.uid || "anon",
+      createdByName: displayName || "Joueur",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
     try {
       const ref = await addDoc(collection(db, "canvases"), {
-        game: gameKey, title: name.trim(), status: "draft", items: [],
-        createdBy: user.uid, createdByName: displayName,
-        createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        game: gameKey,
+        title: trimmed,
+        status: "draft",
+        items: [],
+        createdBy: user?.uid || "anon",
+        createdByName: displayName || "Joueur",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
-      setName(""); setOpenId(ref.id);
-      logActivity({ game: gameKey, type: "canvas_created", label: name.trim(), byUid: user.uid, byName: displayName });
-    } catch (err) { console.error(err); toast.error(t("common.error")); }
+      newCanvas.id = ref.id;
+      logActivity({ game: gameKey, type: "canvas_created", label: trimmed, byUid: user?.uid || "anon", byName: displayName || "Joueur" });
+    } catch (err) {
+      console.warn("Firestore canvas creation error:", err);
+    }
+
+    setCanvases((prev) => [newCanvas, ...prev.filter((c) => c.id !== newCanvas.id)]);
+    setName("");
+    setOpenId(newCanvas.id);
   };
 
   const save = async (items, status) => {
+    if (!openId) return;
     setSaving(true);
     try {
-      await updateDoc(doc(db, "canvases", openId), { items, status, updatedAt: serverTimestamp() });
-      toast.success(status === "draft" ? t("canvas.draft") : t("common.saved"));
-    } catch (e) { console.error(e); toast.error(t("common.error")); }
+      if (!openId.startsWith("canvas_local_")) {
+        await updateDoc(doc(db, "canvases", openId), { items, status, updatedAt: serverTimestamp() });
+      }
+    } catch (e) {
+      console.warn("Firestore update canvas warning:", e);
+    }
+    setCanvases((prev) =>
+      prev.map((c) => (c.id === openId ? { ...c, items, status, updatedAt: new Date() } : c))
+    );
+    toast.success(status === "draft" ? t("canvas.draft") : t("common.saved"));
     setSaving(false);
   };
 
   const del = async (id) => {
     try {
       const c = canvases.find((x) => x.id === id);
-      await deleteDoc(doc(db, "canvases", id));
-      if (c) logActivity({ game: gameKey, type: "canvas_deleted", label: c.title, byUid: user.uid, byName: displayName });
-    } catch (e) { toast.error(t("common.error")); }
+      if (!id.startsWith("canvas_local_")) {
+        await deleteDoc(doc(db, "canvases", id));
+      }
+      if (c) logActivity({ game: gameKey, type: "canvas_deleted", label: c.title, byUid: user?.uid || "anon", byName: displayName || "Joueur" });
+    } catch (e) {
+      console.warn("Firestore delete canvas warning:", e);
+    }
+    setCanvases((prev) => prev.filter((x) => x.id !== id));
+    if (openId === id) setOpenId(null);
   };
 
   const current = canvases.find((c) => c.id === openId);

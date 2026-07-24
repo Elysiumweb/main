@@ -10,6 +10,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -60,8 +61,9 @@ export default function PlayerDetail() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <Link to="/equipe" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors mb-8" data-testid="player-back-link">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 relative">
+          <PageBreadcrumb items={[{ label: t("team.title"), to: "/equipe" }, { label: player.pseudo }]} />
+          <Link to="/equipe" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors mb-6" data-testid="player-back-link">
             <ArrowLeft size={14} /> {t("team.title")}
           </Link>
           <div className="flex flex-col sm:flex-row gap-10 items-start">
