@@ -65,11 +65,11 @@ export const Navbar = () => {
   return (
     <header ref={headerRef} className="sticky top-0 z-50 bg-[#111111]/80 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
-        <Link to="/" data-testid="nav-logo-link" className="flex items-center gap-3 shrink-0 min-h-[44px]">
-          <img src="/brand/logo-horizontal-white.png" alt="Elysium" className="h-9 hidden sm:block" />
-          <img src="/brand/logo-icon-gold.png" alt="Elysium" className="h-9 sm:hidden" />
+        <Link to="/" data-testid="nav-logo-link" aria-label="Elysium — Accueil" className="flex items-center gap-3 shrink-0 min-h-[44px]">
+          <img src="/brand/logo-horizontal-white.png" alt="" aria-hidden="true" className="h-9 hidden sm:block" />
+          <img src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" className="h-9 sm:hidden" />
         </Link>
-        <nav className="hidden xl:flex items-center gap-5">
+        <nav className="hidden xl:flex items-center gap-5" aria-label="Navigation principale">
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
               {l.label}
@@ -77,40 +77,53 @@ export const Navbar = () => {
           ))}
           {hasPlayerAccess && (
             <NavLink to="/espace-joueur" className={linkCls} data-testid="nav-link-player-space">
-              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} />{t("nav.playerSpace")}</span>
+              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
             </NavLink>
           )}
           {isOfficial && (
             <NavLink to="/admin" className={linkCls} data-testid="nav-link-admin">
-              <span className="inline-flex items-center gap-1.5"><Shield size={14} />{t("nav.admin")}</span>
+              <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
             </NavLink>
           )}
         </nav>
         <div className="flex items-center gap-3">
           {/* Global Search Button */}
-          <button onClick={openSearch} data-testid="nav-search-btn"
-            className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors hidden sm:flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-xs min-h-[44px]"
-            title={`${t("search.title")} (${t("search.shortcut")})`}>
-            <Search size={14} />
-            <span className="hidden md:inline text-[#f7f7f7]/30 text-[10px] tracking-wider">{t("search.shortcut")}</span>
+          <button
+            onClick={openSearch}
+            data-testid="nav-search-btn"
+            aria-label={`${t("search.title")} (${t("search.shortcut")})`}
+            className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors hidden sm:flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-xs min-h-[44px] motion-reduce:transition-none"
+            title={`${t("search.title")} (${t("search.shortcut")})`}
+          >
+            <Search size={14} aria-hidden="true" />
+            <span className="hidden md:inline text-[#c8c8c8] text-[10px] tracking-wider">{t("search.shortcut")}</span>
           </button>
           {user && <NotificationsBell />}
-          <button onClick={toggle} data-testid="lang-toggle-btn"
-            className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#f7f7f7]/70 hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
-            {lang === "fr" ? "EN" : "FR"}
+          <button
+            onClick={toggle}
+            data-testid="lang-toggle-btn"
+            aria-label={lang === "fr" ? "Switch to English" : "Passer en français"}
+            className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#c8c8c8] hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center motion-reduce:transition-none"
+          >
+            <span aria-hidden="true">{lang === "fr" ? "EN" : "FR"}</span>
           </button>
           {user ? (
             <div className="flex items-center gap-3">
               <Link to="/profil" data-testid="nav-username" title={t("nav.profile")}
                 className="hidden sm:block text-sm text-[#D8CA82] font-semibold max-w-[120px] truncate hover:underline">{displayName}</Link>
-              <button onClick={() => { logout(); navigate("/"); }} data-testid="nav-logout-btn"
-                className="text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title={t("nav.logout")}>
-                <LogOut size={18} />
+              <button
+                onClick={() => { logout(); navigate("/"); }}
+                data-testid="nav-logout-btn"
+                aria-label={t("nav.logout")}
+                className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center motion-reduce:transition-none"
+                title={t("nav.logout")}
+              >
+                <LogOut size={18} aria-hidden="true" />
               </button>
             </div>
           ) : (
             <Link to="/connexion" data-testid="nav-login-btn"
-              className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow min-h-[44px] flex items-center justify-center">
+              className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow min-h-[44px] flex items-center justify-center motion-reduce:transition-none">
               {t("nav.login")}
             </Link>
           )}
@@ -119,11 +132,11 @@ export const Navbar = () => {
             aria-expanded={open}
             aria-controls="nav-mobile-menu"
             aria-label={open ? t("nav.menu.close") : t("nav.menu.open")}
-            className="xl:hidden text-[#f7f7f7] min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none"
+            className="xl:hidden text-[#f7f7f7] min-w-[44px] min-h-[44px] flex items-center justify-center"
             onClick={() => setOpen(!open)}
             data-testid="nav-mobile-toggle"
           >
-            {open ? <X size={22} /> : <Menu size={22} />}
+            {open ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>
         </div>
       </div>
@@ -141,18 +154,18 @@ export const Navbar = () => {
           ))}
           <button
             onClick={(e) => { setOpen(false); openSearch(e); }}
-            className="text-xs uppercase tracking-[0.18em] text-[#f7f7f7]/70 hover:text-[#D8CA82] flex items-center gap-2 min-h-[44px]"
+            className="text-xs uppercase tracking-[0.18em] text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-2 min-h-[44px]"
           >
-            <Search size={14} /> {t("search.title")}
+            <Search size={14} aria-hidden="true" /> {t("search.title")}
           </button>
           {hasPlayerAccess && (
             <NavLink to="/espace-joueur" className={mobileLinkCls} onClick={() => setOpen(false)}>
-              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} />{t("nav.playerSpace")}</span>
+              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
             </NavLink>
           )}
           {isOfficial && (
             <NavLink to="/admin" className={mobileLinkCls} onClick={() => setOpen(false)}>
-              <span className="inline-flex items-center gap-1.5"><Shield size={14} />{t("nav.admin")}</span>
+              <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
             </NavLink>
           )}
         </nav>

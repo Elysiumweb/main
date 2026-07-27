@@ -37,9 +37,17 @@ import CommunityCalendar from "@/pages/CommunityCalendar";
 // Register service worker on load
 registerSW();
 
+const SkipLink = () => (
+  <a href="#main-content" className="skip-link" data-testid="skip-link">
+    Aller au contenu
+  </a>
+);
+
 const PublicLayout = () => (
   <>
-    <Outlet />
+    <main id="main-content" tabIndex={-1} className="outline-none focus-visible:outline-none">
+      <Outlet />
+    </main>
     <Footer />
   </>
 );
@@ -49,6 +57,7 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <BrowserRouter>
+          <SkipLink />
           <Navbar />
           <VerifyEmailBanner />
           <GlobalSearch />

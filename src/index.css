@@ -70,6 +70,88 @@ body {
     animation: fadeUp 0.6s ease-out both;
 }
 
+/* =====================================================================
+   ACCESSIBILITY — A11Y
+   ===================================================================== */
+
+/* --- Contrast tiers ---
+   text-primary   : #f7f7f7  → 17.6:1  (AAA, large & body)
+   text-secondary : #a0a0a0  →  7.2:1  (AAA, body)        — décoratif
+   text-tertiary  : #c8c8c8  → 11.3:1  (AAA)             — métadonnées essentielles
+   text-gold      : #d8ca82  → 11.4:1  (AAA)             — accent interactif
+   Sur fond #111111.
+*/
+.text-primary-token  { color: #f7f7f7; }
+.text-secondary-token { color: #a0a0a0; }
+.text-tertiary-token { color: #c8c8c8; }
+.text-gold-token     { color: #d8ca82; }
+
+/* --- Visually hidden but available to screen readers --- */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* --- Skip link: only visible when focused via keyboard --- */
+.skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -3rem;
+    z-index: 100;
+    background: #d8ca82;
+    color: #111111;
+    padding: 0.75rem 1.25rem;
+    font-family: "Orbitron", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.75rem;
+    border: 1px solid #d8ca82;
+    transition: top 0.15s ease-out;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+    top: 0.5rem;
+    outline: 2px solid #f7f7f7;
+    outline-offset: 2px;
+}
+
+/* --- prefers-reduced-motion: respect user OS setting --- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+    .anim-fade-up {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+    /* Désactive les effets de survole "lifts" et fondus */
+    .hover-lift,
+    .hover-fade,
+    [class*="hover:scale-"],
+    [class*="hover:-translate-"] {
+        transform: none !important;
+        transition: none !important;
+    }
+    /* Désactive les fondus d'opacity en hover */
+    [class*="group-hover:opacity-"] {
+        opacity: 1 !important;
+    }
+}
+
 @layer base {
     :root {
         --background: 0 0% 6.7%;
@@ -83,7 +165,7 @@ body {
         --secondary: 0 0% 13.3%;
         --secondary-foreground: 0 0% 96.9%;
         --muted: 0 0% 13.3%;
-        --muted-foreground: 0 0% 62.7%;
+        --muted-foreground: 0 0% 78%;     /* #c8c8c8 — bumped from 62.7% for AA */
         --accent: 50 52% 68%;
         --accent-foreground: 0 0% 6.7%;
         --destructive: 4 67% 32%;
@@ -103,7 +185,7 @@ body {
         @apply bg-background text-foreground;
     }
 
-    /* Keyboard focus state — visible golden ring */
+    /* Keyboard focus state — visible golden ring (high contrast) */
     a:focus-visible,
     button:focus-visible,
     input:focus-visible,
@@ -118,6 +200,20 @@ body {
         outline: 2px solid #D8CA82 !important;
         outline-offset: 2px !important;
         box-shadow: 0 0 10px rgba(216, 202, 130, 0.6) !important;
+    }
+
+    /* Ensure form-error text always meets AA contrast on dark surfaces */
+    .form-error {
+        color: #ff8a8a;       /* ~6.5:1 on #1A1A1A */
+        font-size: 0.8125rem;
+        margin-top: 0.375rem;
+        line-height: 1.3;
+    }
+    .form-hint {
+        color: #c8c8c8;        /* tertiary — essential info */
+        font-size: 0.75rem;
+        margin-top: 0.375rem;
+        line-height: 1.3;
     }
 }
 

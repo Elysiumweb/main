@@ -5,7 +5,7 @@ import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { GAMES } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
-import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame } from "lucide-react";
+import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -153,27 +153,31 @@ export default function Stats() {
             {/* KPI Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12" data-testid="stats-kpis">
               <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#D8CA82]/70 mb-1">{t("stats.winRate")}</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[#D8CA82]/80 mb-1">{t("stats.winRate")}</p>
                 <p className="font-display font-black text-3xl text-[#D8CA82]">{stats.winRate}%</p>
               </div>
               <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">{t("stats.totalMatches")}</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.totalMatches")}</p>
                 <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.total}</p>
               </div>
-              <div className="border border-emerald-400/30 bg-emerald-400/5 p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-400/70 mb-1">{t("stats.wins")}</p>
-                <p className="font-display font-black text-3xl text-emerald-400">{stats.wins}</p>
+              <div className="border border-emerald-300/40 bg-emerald-300/5 p-5 text-center">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300 mb-1 flex items-center justify-center gap-1.5">
+                  <Trophy size={11} aria-hidden="true" />{t("stats.wins")}
+                </p>
+                <p className="font-display font-black text-3xl text-emerald-300">{stats.wins}</p>
               </div>
-              <div className="border border-red-400/30 bg-red-400/5 p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-red-400/70 mb-1">{t("stats.losses")}</p>
-                <p className="font-display font-black text-3xl text-red-400">{stats.losses}</p>
+              <div className="border border-red-300/40 bg-red-300/5 p-5 text-center">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-red-300 mb-1 flex items-center justify-center gap-1.5">
+                  <Skull size={11} aria-hidden="true" />{t("stats.losses")}
+                </p>
+                <p className="font-display font-black text-3xl text-red-300">{stats.losses}</p>
               </div>
               <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">{t("stats.mapsWon")}</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.mapsWon")}</p>
                 <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.mapsWon}</p>
               </div>
               <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">{t("stats.mapsLost")}</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.mapsLost")}</p>
                 <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.mapsLost}</p>
               </div>
             </div>
@@ -185,8 +189,13 @@ export default function Stats() {
                   <Flame className="text-[#D8CA82]" size={16} />
                   <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.currentStreak")}</h3>
                 </div>
-                <p className="font-display font-black text-2xl">
-                  <span className={stats.currentType === "W" ? "text-emerald-400" : "text-red-400"}>
+                <p className="font-display font-black text-2xl flex items-center gap-2">
+                  {stats.currentType === "W" ? (
+                    <Trophy size={20} className="text-emerald-300" aria-hidden="true" />
+                  ) : (
+                    <Skull size={20} className="text-red-300" aria-hidden="true" />
+                  )}
+                  <span className={stats.currentType === "W" ? "text-emerald-300" : "text-red-300"}>
                     {stats.currentStreak} {stats.currentType === "W" ? t("stats.series.wins") : t("stats.series.losses")}
                   </span>
                 </p>
