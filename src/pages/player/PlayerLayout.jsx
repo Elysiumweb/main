@@ -25,7 +25,7 @@ export default function PlayerLayout() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-[#111111]" data-testid="player-space">
-      <aside className="w-16 sm:w-56 border-r border-white/10 bg-[#0c0c0c] flex flex-col shrink-0">
+      <aside className="w-16 sm:w-56 border-r border-white/10 bg-[#0c0c0c] flex flex-col shrink-0" aria-label={t("nav.playerSpace")}>
         <div className="p-4 border-b border-white/10 hidden sm:block">
           <p className="text-[10px] uppercase tracking-[0.3em] text-[#f7f7f7]/40">{t("nav.playerSpace")}</p>
           <p className="text-sm font-display text-[#D8CA82] mt-1 uppercase" data-testid="player-game-badge">
@@ -43,7 +43,7 @@ export default function PlayerLayout() {
           ))}
         </nav>
       </aside>
-      <main className="flex-1 min-w-0 min-h-0 overflow-hidden">
+      <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 min-h-0 overflow-hidden outline-none focus-visible:outline-none">
         <Outlet />
       </main>
     </div>

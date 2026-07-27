@@ -17,14 +17,25 @@ const tiers = ["gold", "silver", "bronze"];
 
 const PartnerLogo = ({ src, name, className }) => {
   const [err, setErr] = useState(false);
+  const safeName = (name || "Partenaire").trim();
   if (!src || err) {
+    const initials = safeName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() || "")
+      .join("") || "?";
     return (
-      <div className={`${className} bg-[#1A1A1A] flex items-center justify-center`}>
-        <Handshake className="w-10 text-[#D8CA82]/30" />
+      <div
+        role="img"
+        aria-label={`Logo du partenaire indisponible : ${safeName}`}
+        className={`${className} bg-[#0c0c0c] flex items-center justify-center text-[#a0a0a0] font-display tracking-widest text-sm uppercase border border-white/10`}
+      >
+        <span aria-hidden="true">{initials}</span>
       </div>
     );
   }
-  return <img src={src} alt={name} onError={() => setErr(true)} className={`${className} object-contain`} />;
+  return <img src={src} alt={`Logo du partenaire : ${safeName}`} onError={() => setErr(true)} className={`${className} object-contain`} />;
 };
 
 export default function Partners() {
@@ -77,7 +88,7 @@ export default function Partners() {
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
+          <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
         </div>
       </section>
 
@@ -155,36 +166,36 @@ export default function Partners() {
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" data-testid="partners-contact-form">
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-2">{t("partners.contact.name")}</label>
-              <input name="name" required data-testid="partner-form-name"
+              <label htmlFor="partner-name" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.name")}</label>
+              <input id="partner-name" name="name" required data-testid="partner-form-name"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-2">{t("partners.contact.company")}</label>
-              <input name="company" required data-testid="partner-form-company"
+              <label htmlFor="partner-company" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.company")}</label>
+              <input id="partner-company" name="company" required data-testid="partner-form-company"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-2">{t("partners.contact.email")}</label>
-              <input name="email" type="email" required data-testid="partner-form-email"
+              <label htmlFor="partner-email" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.email")}</label>
+              <input id="partner-email" name="email" type="email" required data-testid="partner-form-email"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-2">{t("partners.contact.budget")}</label>
-              <input name="budget" placeholder={t("partners.contact.budget.placeholder")} data-testid="partner-form-budget"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#f7f7f7]/20" />
+              <label htmlFor="partner-budget" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.budget")}</label>
+              <input id="partner-budget" name="budget" placeholder={t("partners.contact.budget.placeholder")} data-testid="partner-form-budget"
+                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0]" />
             </div>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-2">{t("partners.contact.message")}</label>
-            <textarea name="message" rows={5} required placeholder={t("partners.contact.message.placeholder")} data-testid="partner-form-message"
-              className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#f7f7f7]/20 resize-none" />
+            <label htmlFor="partner-message" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.message")}</label>
+            <textarea id="partner-message" name="message" rows={5} required placeholder={t("partners.contact.message.placeholder")} data-testid="partner-form-message"
+              className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0] resize-none" />
           </div>
           <button type="submit" data-testid="partner-form-submit"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow">
-            <Mail size={16} /> {t("partners.contact.submit")}
+            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none">
+            <Mail size={16} aria-hidden="true" /> {t("partners.contact.submit")}
           </button>
         </form>
       </section>

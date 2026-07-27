@@ -49,44 +49,55 @@ export default function Results() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("results.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="results-title">{t("results.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("results.sub")}</p>
+          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("results.sub")}</p>
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div className="flex gap-1 border-b border-white/10 mb-8" data-testid="results-tabs">
+        <div
+          className="flex gap-1 border-b border-white/10 mb-8"
+          data-testid="results-tabs"
+          role="tablist"
+          aria-label={t("results.title")}
+        >
           {[["finished", Trophy], ["upcoming", CalendarClock]].map(([k, Icon]) => (
-            <button key={k} onClick={() => setTab(k)} data-testid={`results-tab-${k}`}
-              className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
-              <Icon size={14} /> {t(`results.tab.${k}`)}
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              data-testid={`results-tab-${k}`}
+              role="tab"
+              aria-selected={tab === k}
+              className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#c8c8c8] hover:text-[#f7f7f7]"}`}
+            >
+              <Icon size={14} aria-hidden="true" /> {t(`results.tab.${k}`)}
             </button>
           ))}
         </div>
 
         <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="results-filters">
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("common.game")}</label>
-            <select value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="results-filter-game">
+            <label htmlFor="filter-game" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("common.game")}</label>
+            <select id="filter-game" value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="results-filter-game">
               <option value="all">{t("results.filter.all")}</option>
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("results.filter.competition")}</label>
-            <select value={competition} onChange={(e) => setCompetition(e.target.value)} className={selectCls} data-testid="results-filter-competition">
+            <label htmlFor="filter-competition" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.competition")}</label>
+            <select id="filter-competition" value={competition} onChange={(e) => setCompetition(e.target.value)} className={selectCls} data-testid="results-filter-competition">
               <option value="all">{t("results.filter.all")}</option>
               {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("results.filter.from")}</label>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} data-testid="results-filter-from" />
+            <label htmlFor="filter-from" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.from")}</label>
+            <input id="filter-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} data-testid="results-filter-from" />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("results.filter.to")}</label>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
+            <label htmlFor="filter-to" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.to")}</label>
+            <input id="filter-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
           </div>
           <button onClick={resetFilters} data-testid="results-filter-reset"
-            className="border border-white/20 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+            className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none">
             {t("results.filter.reset")}
           </button>
         </div>

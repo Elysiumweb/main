@@ -97,7 +97,7 @@ export const GlobalSearch = () => {
               onSelect={() => runCommand(() => navigate(`/equipe/${p.id}`))}>
               <Users size={14} className="mr-2 text-[#D8CA82]" />
               <span className="font-bold">{p.pseudo}</span>
-              {p.game && <span className="ml-2 text-xs text-[#f7f7f7]/40">{p.game}</span>}
+              {p.game && <span className="ml-2 text-xs text-[#c8c8c8]">{p.game}</span>}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -113,8 +113,8 @@ export const GlobalSearch = () => {
                 onSelect={() => runCommand(() => navigate("/resultats"))}>
                 <Trophy size={14} className="mr-2 text-[#D8CA82]" />
                 <span>Elysium vs {m.opponentName}</span>
-                {m.competition && <span className="ml-2 text-xs text-[#f7f7f7]/40">{m.competition}</span>}
-                <span className="ml-2 text-xs text-[#f7f7f7]/30">{m.date}</span>
+                {m.competition && <span className="ml-2 text-xs text-[#c8c8c8]">{m.competition}</span>}
+                <span className="ml-2 text-xs text-[#a0a0a0]">{m.date}</span>
               </CommandItem>
             );
           })}

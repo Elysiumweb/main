@@ -82,13 +82,13 @@ export default function Profile() {
         </div>
 
         <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-3" data-testid="profile-email-status">
-          <p className="text-sm text-[#f7f7f7]/70">{user.email}</p>
+          <p className="text-sm text-[#c8c8c8]">{user.email}</p>
           {isPassword && (user.emailVerified ? (
-            <p className="text-sm text-emerald-400 flex items-center gap-2"><BadgeCheck size={15} /> {t("profile.emailVerified")}</p>
+            <p className="text-sm text-emerald-300 flex items-center gap-2"><BadgeCheck size={15} aria-hidden="true" /> {t("profile.emailVerified")}</p>
           ) : (
             <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-sm text-orange-300 flex items-center gap-2"><MailWarning size={15} /> {t("profile.emailNotVerified")}</p>
-              <button onClick={resendVerify} className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid="profile-resend-btn">
+              <p className="text-sm text-orange-300 flex items-center gap-2"><MailWarning size={15} aria-hidden="true" /> {t("profile.emailNotVerified")}</p>
+              <button onClick={resendVerify} className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="profile-resend-btn">
                 {t("profile.resend")}
               </button>
             </div>
@@ -97,33 +97,33 @@ export default function Profile() {
 
         <form onSubmit={save} className="border border-white/10 bg-[#1A1A1A] p-6 space-y-5" data-testid="profile-form">
           <div>
-            <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("login.pseudo")}</label>
-            <input value={pseudo} onChange={(e) => setPseudo(e.target.value)} required className={inputCls} data-testid="profile-pseudo-input" />
+            <label htmlFor="profile-pseudo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("login.pseudo")}</label>
+            <input id="profile-pseudo" value={pseudo} onChange={(e) => setPseudo(e.target.value)} required autoComplete="username" className={inputCls} data-testid="profile-pseudo-input" />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("profile.photo")}</label>
-            <input value={photo} onChange={(e) => setPhoto(e.target.value)} placeholder="https://..." className={inputCls} data-testid="profile-photo-input" />
+            <label htmlFor="profile-photo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("profile.photo")}</label>
+            <input id="profile-photo" type="url" value={photo} onChange={(e) => setPhoto(e.target.value)} placeholder="https://..." className={inputCls} data-testid="profile-photo-input" />
           </div>
           <button type="submit" disabled={busy} data-testid="profile-save-btn"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
             {t("notes.save")}
           </button>
         </form>
 
         {isPassword && (
           <button onClick={resetPassword} data-testid="profile-reset-password-btn"
-            className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
-            <KeyRound size={14} /> {t("profile.resetPassword")}
+            className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+            <KeyRound size={14} aria-hidden="true" /> {t("profile.resetPassword")}
           </button>
         )}
 
-        <div className="border border-red-400/30 bg-[#1A1A1A] p-6">
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-red-400 mb-4">{t("profile.danger")}</p>
+        <div className="border border-red-300/40 bg-[#1A1A1A] p-6">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-red-300 mb-4">{t("profile.danger")}</p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button data-testid="profile-delete-btn"
-                className="border border-red-400/50 text-red-400 text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:bg-red-400/10 transition-colors">
-                <Trash2 size={14} /> {t("profile.delete")}
+                className="border border-red-300/50 text-red-300 text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:bg-red-300/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                <Trash2 size={14} aria-hidden="true" /> {t("profile.delete")}
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent className="bg-[#1A1A1A] border border-white/10 rounded-none" data-testid="profile-delete-dialog">

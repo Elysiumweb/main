@@ -463,6 +463,13 @@ const dict = {
     "nav.stats": "Statistiques",
     "nav.partners": "Partenaires",
     "nav.newsletter": "Newsletter",
+    /* ---- A11y ---- */
+    "a11y.skipLink": "Aller au contenu",
+    "a11y.opponentLogoFallback": "Logo de l'équipe adverse indisponible",
+    "a11y.opponentLogo": "Logo de l'équipe adverse",
+    "a11y.partnerLogoFallback": "Logo du partenaire indisponible",
+    "a11y.partnerLogo": "Logo du partenaire",
+    "a11y.deleteAccount": "Supprimer le compte",
   },
   en: {
     "nav.home": "Home",
@@ -926,6 +933,13 @@ const dict = {
     "nav.stats": "Statistics",
     "nav.partners": "Partners",
     "nav.newsletter": "Newsletter",
+    /* ---- A11y ---- */
+    "a11y.skipLink": "Skip to content",
+    "a11y.opponentLogoFallback": "Opponent team logo unavailable",
+    "a11y.opponentLogo": "Opponent team logo",
+    "a11y.partnerLogoFallback": "Partner logo unavailable",
+    "a11y.partnerLogo": "Partner logo",
+    "a11y.deleteAccount": "Delete account",
   },
 };
 

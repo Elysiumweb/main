@@ -80,7 +80,7 @@ export default function Recruitment() {
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="recruit-title">{t("recruit.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("recruit.sub")}</p>
+          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("recruit.sub")}</p>
         </div>
       </section>
 
@@ -130,37 +130,37 @@ export default function Recruitment() {
           {!user ? (
             <LoginPrompt messageKey="recruit.loginRequired" prefix="recruit" />
           ) : (
-            <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="recruit-form">
+            <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="recruit-form" noValidate>
               {fields.slice(0, 2).map((f) => (
                 <div key={f.key}>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{f.label}</label>
-                  <input type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+                  <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
+                  <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                 </div>
               ))}
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("recruit.form.age")}</label>
-                <select value={form.ageRange} onChange={set("ageRange")} required className={inputCls} data-testid="recruit-ageRange-input">
+                <label htmlFor="recruit-ageRange" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.age")}</label>
+                <select id="recruit-ageRange" value={form.ageRange} onChange={set("ageRange")} required className={inputCls} data-testid="recruit-ageRange-input">
                   <option value="">—</option>
                   {AGE_RANGES.map((a) => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               {fields.slice(2).map((f) => (
                 <div key={f.key}>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{f.label}</label>
+                  <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
                   {f.type === "textarea" ? (
-                    <textarea value={form[f.key]} onChange={set(f.key)} required={f.required} rows={3} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+                    <textarea id={`recruit-${f.key}`} value={form[f.key]} onChange={set(f.key)} required={f.required} rows={3} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                   ) : (
-                    <input type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+                    <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                   )}
                 </div>
               ))}
-              <label className="flex items-start gap-3 cursor-pointer" data-testid="recruit-consent-label">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} data-testid="recruit-consent-checkbox"
+              <label htmlFor="recruit-consent" className="flex items-start gap-3 cursor-pointer" data-testid="recruit-consent-label">
+                <input id="recruit-consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} data-testid="recruit-consent-checkbox"
                   className="mt-1 accent-[#D8CA82]" />
-                <span className="text-xs text-[#f7f7f7]/60 leading-relaxed">{t("recruit.form.consent")}</span>
+                <span className="text-xs text-[#c8c8c8] leading-relaxed">{t("recruit.form.consent")}</span>
               </label>
               <button type="submit" disabled={sending} data-testid="recruit-submit-btn"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
                 {t("recruit.form.submit")}
               </button>
             </form>

@@ -48,7 +48,7 @@ export default function Support() {
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="support-title">{t("support.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("support.sub")}</p>
+          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("support.sub")}</p>
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12">
@@ -57,44 +57,45 @@ export default function Support() {
           {!user ? (
             <LoginPrompt messageKey="support.loginRequired" prefix="support" />
           ) : (
-            <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="support-form">
+            <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="support-form" noValidate>
+              <p id="support-form-error" role="alert" aria-live="polite" className="sr-only" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("support.form.category")}</label>
-                  <select value={category} onChange={(e) => setCategory(e.target.value)} data-testid="support-category-select"
+                  <label htmlFor="support-category" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.category")}</label>
+                  <select id="support-category" value={category} onChange={(e) => setCategory(e.target.value)} data-testid="support-category-select"
                     className="w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                     {CATS.map((c) => <option key={c} value={c}>{t(`support.cat.${c}`)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("support.form.priority")}</label>
-                  <select value={priority} onChange={(e) => setPriority(e.target.value)} data-testid="support-priority-select"
+                  <label htmlFor="support-priority" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.priority")}</label>
+                  <select id="support-priority" value={priority} onChange={(e) => setPriority(e.target.value)} data-testid="support-priority-select"
                     className="w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                     {PRIOS.map((p) => <option key={p} value={p}>{t(`support.prio.${p}`)}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("support.form.subject")}</label>
-                <input value={subject} onChange={(e) => setSubject(e.target.value)} required data-testid="support-subject-input"
+                <label htmlFor="support-subject" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.subject")}</label>
+                <input id="support-subject" value={subject} onChange={(e) => setSubject(e.target.value)} required data-testid="support-subject-input"
                   className="w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("support.form.desc")}</label>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={5} data-testid="support-desc-input"
+                <label htmlFor="support-desc" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.desc")}</label>
+                <textarea id="support-desc" value={description} onChange={(e) => setDescription(e.target.value)} required rows={5} data-testid="support-desc-input"
                   className="w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("support.form.attachment")}</label>
-                <input value={attachment} onChange={(e) => setAttachment(e.target.value)} placeholder="https://..." data-testid="support-attachment-input"
+                <label htmlFor="support-attachment" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.attachment")}</label>
+                <input id="support-attachment" type="url" value={attachment} onChange={(e) => setAttachment(e.target.value)} placeholder="https://..." data-testid="support-attachment-input"
                   className="w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
               </div>
               <button type="submit" disabled={sending} data-testid="support-submit-btn"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
                 {t("support.form.submit")}
               </button>
-              <p className="text-xs text-[#f7f7f7]/40">
-                {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline" data-testid="support-contact-email">{CONTACT_EMAIL}</a>
+              <p className="text-xs text-[#c8c8c8]">
+                {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="support-contact-email">{CONTACT_EMAIL}</a>
               </p>
             </form>
           )}
