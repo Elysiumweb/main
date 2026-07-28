@@ -4,7 +4,8 @@ import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink } from "lucide-react";
+import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart } from "lucide-react";
+import { DonateBlock } from "../components/DonateButton";
 
 const values = [
   { key: "compete", icon: Trophy },
@@ -156,6 +157,18 @@ export default function Partners() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* DON — PARTICULIERS */}
+      <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="partners-donate-h2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-donate">
+          <div className="flex items-center gap-4 mb-10">
+            <Heart className="text-[#D8CA82]" size={20} aria-hidden="true" />
+            <h2 id="partners-donate-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          <DonateBlock testId="partners-donate-block" />
         </div>
       </section>
 

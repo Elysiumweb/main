@@ -20,6 +20,7 @@ import Profile from "@/pages/Profile";
 import LegalPage from "@/pages/LegalPage";
 import Stats from "@/pages/Stats";
 import Partners from "@/pages/Partners";
+import Donate from "@/pages/Donate";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
@@ -75,6 +76,8 @@ function App() {
               <Route path="/recrutement" element={<Recruitment />} />
               <Route path="/statistiques" element={<Stats />} />
               <Route path="/partenaires" element={<Partners />} />
+              <Route path="/soutenir" element={<Donate />} />
+              <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />
               <Route path="/connexion" element={<Login />} />
               <Route path="/profil" element={<Profile />} />

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
+import { DonateBlock } from "../components/DonateButton";
 import { videoEmbedUrl } from "./MediaGallery";
 
 export default function Home() {
@@ -236,6 +237,18 @@ export default function Home() {
               ))}
             </ul>
           </div>
+        </div>
+      </section>
+
+      {/* SOUTENIR / DONS */}
+      <section className="border-t border-white/10" aria-labelledby="donate-block-h2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-donate">
+          <div className="flex items-center gap-4 mb-10">
+            <Heart className="text-[#D8CA82]" size={20} aria-hidden="true" />
+            <h2 id="donate-block-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          <DonateBlock testId="home-donate-block" />
         </div>
       </section>
 

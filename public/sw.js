@@ -26,6 +26,10 @@ self.addEventListener("fetch", (event) => {
   if (event.request.url.includes("firestore") || event.request.url.includes("identitytoolkit") || event.request.url.includes("securetoken")) {
     return; // Let network requests pass through for Firebase
   }
+  // Never cache PayPal: the SDK and checkout flows must always hit the network
+  if (event.request.url.includes("paypal.com") || event.request.url.includes("paypalobjects.com")) {
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

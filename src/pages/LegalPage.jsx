@@ -34,10 +34,13 @@ const CONTENT = {
         <P>Les données sont traitées pour : la gestion des comptes et l'authentification (exécution du contrat), le traitement des demandes de support et des candidatures (mesures précontractuelles / intérêt légitime), et le fonctionnement des espaces d'équipe (intérêt légitime).</P>
         <H>Destinataires</H>
         <P>Les demandes de support sont accessibles uniquement aux membres du bureau et au compte officiel. Les candidatures sont accessibles uniquement aux manageurs, aux membres du bureau et au compte officiel. Les données sont hébergées par Google Firebase.</P>
+        <H>Dons et paiements</H>
+        <P>Les dons sont traités par PayPal (PayPal (Europe) S.à r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxembourg), qui agit en tant que responsable de traitement indépendant pour l'opération de paiement. Elysium ne collecte, ne traite ni ne conserve aucune donnée bancaire : celles-ci sont saisies directement sur les interfaces sécurisées de PayPal. Nous recevons uniquement la confirmation du paiement (montant, date, nom et email du donateur) via notre compte PayPal, conservée à des fins de comptabilité associative pendant la durée légale applicable.</P>
+        <P>Le module de paiement PayPal n'est chargé que sur les sections de don du site (page « Soutenir », encart de don de l'accueil et de la page Partenaires), et uniquement lorsque celles-ci s'affichent réellement à l'écran. Il est susceptible de déposer des cookies tiers relevant de la sécurité et de la lutte contre la fraude, régis par la politique de confidentialité de PayPal (paypal.com). Les autres pages du site n'émettent aucune requête vers PayPal.</P>
         <H>Durée de conservation</H>
         <P>Les données de compte sont conservées tant que le compte est actif. Les candidatures et demandes de support sont conservées au maximum 24 mois après leur clôture.</P>
         <H>Cookies</H>
-        <P>Le site utilise uniquement des cookies et stockages locaux essentiels : session d'authentification Firebase, préférence de langue et choix de consentement. Aucun cookie publicitaire ou de suivi tiers n'est déposé.</P>
+        <P>Le site utilise uniquement des cookies et stockages locaux essentiels : session d'authentification Firebase, préférence de langue et choix de consentement. Aucun cookie publicitaire ou de suivi tiers n'est déposé. Seules les sections de don chargent le module de paiement PayPal, qui peut déposer ses propres cookies techniques et anti-fraude lors de son affichage.</P>
         <H>Vos droits</H>
         <P>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition. Vous pouvez supprimer votre compte à tout moment depuis la page « Mon profil ». Pour toute demande : contactez-nous via la page Support ou Discord. Vous pouvez également saisir la CNIL (cnil.fr).</P>
         <H>Mineurs</H>
@@ -56,8 +59,11 @@ const CONTENT = {
         <P>Vous vous engagez à ne pas publier de contenus illicites, haineux, diffamatoires ou portant atteinte aux droits de tiers dans les espaces de discussion, notes et tableaux. L'équipe se réserve le droit de supprimer tout contenu inapproprié et de suspendre les comptes concernés.</P>
         <H>Compte</H>
         <P>Vous êtes responsable de la confidentialité de vos identifiants. Vous pouvez supprimer votre compte à tout moment depuis la page « Mon profil ».</P>
+        <H>Dons</H>
+        <P>Le site permet de soutenir l'association par un don volontaire, traité par PayPal. Un don est un soutien libre : il ne constitue ni un achat, ni une adhésion, et n'ouvre droit à aucune contrepartie, avantage ou statut particulier au sein de l'association. En l'état, il n'ouvre pas droit à une réduction d'impôt.</P>
+        <P>Les dons sont définitifs et non remboursables, sauf erreur manifeste (double débit, montant erroné) : contactez-nous dans ce cas à contact@elysium-esport.fr et nous procéderons au remboursement. Les mineurs doivent obtenir l'accord d'un titulaire de l'autorité parentale avant tout don. Les fonds sont exclusivement affectés au fonctionnement sportif et associatif d'Elysium.</P>
         <H>Disponibilité</H>
-        <P>Le service est fourni « en l'état ». Elysium ne garantit pas une disponibilité continuous et peut faire évoluer le site à tout moment.</P>
+        <P>Le service est fourni « en l'état ». Elysium ne garantit pas une disponibilité continue et peut faire évoluer le site à tout moment.</P>
         <H>Droit applicable</H>
         <P>Les présentes conditions sont soumises au droit français.</P>
       </>

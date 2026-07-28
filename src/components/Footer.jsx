@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { SocialIcon } from "./SocialIcon";
 import { NewsletterSignup } from "./NewsletterSignup";
-import { MessageSquare, Mail } from "lucide-react";
+import { MessageSquare, Mail, Heart } from "lucide-react";
 
 export const Footer = () => {
   const { t } = useLang();
@@ -99,6 +99,11 @@ export const Footer = () => {
             <li>
               <Link to="/partenaires" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-nav-partners">
                 {t("nav.partners")}
+              </Link>
+            </li>
+            <li>
+              <Link to="/soutenir" className="text-[#D8CA82] font-semibold hover:underline transition-colors motion-reduce:transition-none inline-flex items-center gap-1.5" data-testid="footer-nav-donate">
+                <Heart size={12} aria-hidden="true" /> {t("nav.donate")}
               </Link>
             </li>
           </ul>
