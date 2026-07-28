@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Shield, LogOut, Gamepad2, Search } from "lucide-react";
+import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
@@ -87,6 +87,16 @@ export const Navbar = () => {
           )}
         </nav>
         <div className="flex items-center gap-3">
+          {/* Donation CTA */}
+          <Link
+            to="/soutenir"
+            data-testid="nav-donate-btn"
+            title={t("donate.cta")}
+            className="border border-[#D8CA82]/50 text-[#D8CA82] text-[11px] font-display font-bold uppercase tracking-widest px-3 py-2 hidden sm:flex items-center gap-1.5 hover:bg-[#D8CA82]/10 hover:border-[#D8CA82] transition-colors motion-reduce:transition-none min-h-[44px] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+          >
+            <Heart size={13} aria-hidden="true" />
+            <span className="hidden lg:inline">{t("nav.donate")}</span>
+          </Link>
           {/* Global Search Button */}
           <button
             onClick={openSearch}
@@ -152,6 +162,9 @@ export const Navbar = () => {
               {l.label}
             </NavLink>
           ))}
+          <NavLink to="/soutenir" className={mobileLinkCls} onClick={() => setOpen(false)} data-testid="nav-mobile-donate-link">
+            <span className="inline-flex items-center gap-1.5"><Heart size={14} aria-hidden="true" />{t("nav.donate")}</span>
+          </NavLink>
           <button
             onClick={(e) => { setOpen(false); openSearch(e); }}
             className="text-xs uppercase tracking-[0.18em] text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-2 min-h-[44px]"
