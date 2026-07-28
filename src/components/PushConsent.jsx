@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { X } from "lucide-react";
+import { ActionButton } from "./ui/action-button";
 
 export const PushConsent = () => {
   const { user, hasPlayerAccess } = useAuth();
@@ -47,20 +48,20 @@ export const PushConsent = () => {
 
   return (
     <div className="fixed bottom-20 right-4 z-50 max-w-sm border border-[#D8CA82]/30 bg-[#1A1A1A] p-5 shadow-2xl" data-testid="push-consent-banner">
-      <button onClick={handleDecline} className="absolute top-2 right-2 text-[#f7f7f7]/30 hover:text-[#f7f7f7]/60" data-testid="push-consent-close">
-        <X size={14} />
+      <button onClick={handleDecline} aria-label={t("pwa.push.decline")}
+        className="absolute top-1 right-1 w-9 h-9 flex items-center justify-center text-[#c8c8c8] hover:text-[#f7f7f7] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+        data-testid="push-consent-close">
+        <X size={14} aria-hidden="true" />
       </button>
       <p className="font-display text-sm font-bold text-[#D8CA82] mb-2">{t("pwa.push.consent.title")}</p>
-      <p className="text-xs text-[#f7f7f7]/50 mb-4">{t("pwa.push.consent.text")}</p>
+      <p className="text-xs text-[#c8c8c8] mb-4">{t("pwa.push.consent.text")}</p>
       <div className="flex gap-3">
-        <button onClick={handleAccept} data-testid="push-consent-accept"
-          className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2">
+        <ActionButton variant="primary" size="sm" onClick={handleAccept} data-testid="push-consent-accept">
           {t("pwa.push.accept")}
-        </button>
-        <button onClick={handleDecline} data-testid="push-consent-decline"
-          className="border border-white/20 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-4 py-2 hover:border-white/40 transition-colors">
+        </ActionButton>
+        <ActionButton variant="secondary" size="sm" onClick={handleDecline} data-testid="push-consent-decline">
           {t("pwa.push.decline")}
-        </button>
+        </ActionButton>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { Menu, X, Shield, LogOut, Gamepad2, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
+import { DonateLink } from "./DonateButton";
 
 const linkCls = ({ isActive }) =>
   `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
@@ -98,6 +99,7 @@ export const Navbar = () => {
             <Search size={14} aria-hidden="true" />
             <span className="hidden md:inline text-[#c8c8c8] text-[10px] tracking-wider">{t("search.shortcut")}</span>
           </button>
+          <DonateLink className="hidden lg:inline-flex" testId="nav-donate-btn" label={t("donate.cta")} />
           {user && <NotificationsBell />}
           <button
             onClick={toggle}
@@ -168,6 +170,9 @@ export const Navbar = () => {
               <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
             </NavLink>
           )}
+          <div className="pt-4 mt-2 border-t border-white/10">
+            <DonateLink className="w-full justify-center" testId="nav-mobile-donate-btn" label={t("donate.cta")} />
+          </div>
         </nav>
       )}
     </header>

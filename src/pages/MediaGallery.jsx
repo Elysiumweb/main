@@ -4,7 +4,10 @@ import { Image as ImageIcon, PlayCircle } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { GAMES } from "../lib/constants";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonGrid, SkeletonMediaCard } from "../components/Skeletons";
+import { Pagination, usePagination } from "../components/Pagination";
+import { BrandImage, RATIOS } from "../components/BrandImage";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
@@ -50,6 +53,8 @@ export default function MediaGallery() {
     (player === "all" || m.playerTag === player) &&
     (event === "all" || m.event === event));
 
+  const pager = usePagination(filtered, 12, `${type}|${game}|${player}|${event}`);
+
   return (
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
@@ -82,31 +87,37 @@ export default function MediaGallery() {
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="media-error" />
         ) : media === null ? (
-          <LoadingState testId="media-loading" />
+          <SkeletonGrid count={6} Card={SkeletonMediaCard} testId="media-loading" label={t("common.loading")} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={ImageIcon} text={t("media.empty")} testId="media-empty" />
         ) : (
+          <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="media-grid">
-            {filtered.map((m) => {
+            {pager.items.map((m) => {
               const embed = m.type === "video" ? videoEmbedUrl(m.url) : null;
               return (
                 <Dialog key={m.id}>
                   <DialogTrigger asChild>
                     <button className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/60 transition-colors text-left overflow-hidden" data-testid={`media-item-${m.id}`}>
-                      <div className="relative h-48 bg-[#0d0d0d] flex items-center justify-center overflow-hidden">
-                        {m.type === "photo" ? (
-                          <img src={m.url} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => { e.target.style.display = "none"; }} />
-                        ) : (
-                          <>
-                            {m.thumbnail ? <img src={m.thumbnail} alt="" className="w-full h-full object-cover opacity-60" /> : <div className="absolute inset-0 canvas-dots" />}
-                            <PlayCircle size={44} className="absolute text-[#D8CA82] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" />
-                          </>
+                      <BrandImage
+                        src={m.type === "photo" ? m.url : m.thumbnail}
+                        alt={m.type === "photo" ? m.title : ""}
+                        ratio={RATIOS.card}
+                        className="w-full"
+                        imgClassName={`group-hover:scale-105 transition-transform duration-300 motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${m.type === "video" ? "opacity-60" : ""}`}
+                        fallbackLabel={m.type === "photo" ? `Image indisponible : ${m.title}` : undefined}
+                      >
+                        {m.type === "video" && (
+                          <PlayCircle
+                            size={44}
+                            className="absolute inset-0 m-auto text-[#D8CA82] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] pointer-events-none"
+                            aria-hidden="true"
+                          />
                         )}
-                      </div>
+                      </BrandImage>
                       <div className="p-4">
                         <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
-                        <p className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 mt-1">
+                        <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mt-1">
                           {t(`media.type.${m.type}`)}{m.game ? ` · ${m.game}` : ""}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}
                         </p>
                       </div>
@@ -126,6 +137,8 @@ export default function MediaGallery() {
               );
             })}
           </div>
+          <Pagination {...pager} testId="media-pagination" label="médias" />
+          </>
         )}
       </section>
     </div>

@@ -1,9 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { collection, addDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { toast } from "sonner";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonGrid, SkeletonMediaCard } from "../components/Skeletons";
+import { ActionButton } from "../components/ui/action-button";
+import { Field, FormErrorSummary, SuccessBanner, useFormValidation, rules } from "../components/FormControls";
 import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink } from "lucide-react";
 
 const values = [
@@ -60,25 +63,45 @@ export default function Partners() {
     list: partners.filter((p) => (p.tier || "bronze") === tier),
   })).filter((g) => g.list.length > 0) : [];
 
+  const MESSAGE_MAX = 1200;
+  const validation = useMemo(() => ({
+    name: rules.compose(rules.required("Indiquez votre nom."), rules.maxLength(60)),
+    company: rules.compose(rules.required("Indiquez le nom de votre structure."), rules.maxLength(80)),
+    email: rules.compose(rules.required("Indiquez votre email."), rules.email()),
+    budget: rules.maxLength(60),
+    message: rules.compose(
+      rules.required("Décrivez votre projet."),
+      rules.minLength(20, "Décrivez votre projet en 20 caractères minimum."),
+      rules.maxLength(MESSAGE_MAX)
+    ),
+  }), []);
+
+  const contactForm = useFormValidation(
+    { name: "", company: "", email: "", budget: "", message: "" },
+    validation
+  );
+  const { values, fieldProps, isValid, touchAll, visibleErrors, reset } = contactForm;
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    const data = {
-      name: fd.get("name"),
-      company: fd.get("company"),
-      email: fd.get("email"),
-      budget: fd.get("budget"),
-      message: fd.get("message"),
-      createdAt: serverTimestamp(),
-    };
+    touchAll();
+    if (!isValid) {
+      toast.error("Merci de corriger les champs signalés.");
+      return;
+    }
+    setSending(true);
     try {
-      await addDoc(collection(db, "partner_requests"), data);
+      await addDoc(collection(db, "partner_requests"), { ...values, createdAt: serverTimestamp() });
       toast.success(t("partners.contact.success"));
-      e.target.reset();
+      setSent(true);
+      reset();
     } catch (err) {
       console.error(err);
       toast.error(t("partners.contact.error"));
     }
+    setSending(false);
   };
 
   return (
@@ -129,7 +152,7 @@ export default function Partners() {
           {error ? (
             <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="partners-error" />
           ) : partners === null ? (
-            <LoadingState testId="partners-loading" />
+            <SkeletonGrid count={8} Card={SkeletonMediaCard} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6" testId="partners-loading" label={t("common.loading")} />
           ) : grouped.length === 0 ? (
             <EmptyState icon={Handshake} text={t("partners.empty")} testId="partners-empty" />
           ) : (
@@ -162,41 +185,40 @@ export default function Partners() {
       {/* CONTACT FORM */}
       <section className="max-w-3xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-contact">
         <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-3">{t("partners.contact.title")}</h2>
-        <p className="text-[#f7f7f7]/50 mb-10">{t("partners.contact.sub")}</p>
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" data-testid="partners-contact-form">
+        <p className="text-[#c8c8c8] mb-10">{t("partners.contact.sub")}</p>
+        {sent && (
+          <div className="mb-8">
+            <SuccessBanner
+              testId="partners-contact-success"
+              title="Demande envoyée"
+              message="Merci ! Votre demande de partenariat a bien été transmise. Notre équipe revient vers vous par email sous quelques jours."
+              onDismiss={() => setSent(false)}
+            />
+          </div>
+        )}
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" data-testid="partners-contact-form" noValidate>
+          <FormErrorSummary errors={visibleErrors} testId="partners-form-errors" />
           <div className="grid sm:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="partner-name" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.name")}</label>
-              <input id="partner-name" name="name" required data-testid="partner-form-name"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
-            </div>
-            <div>
-              <label htmlFor="partner-company" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.company")}</label>
-              <input id="partner-company" name="company" required data-testid="partner-form-company"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
-            </div>
+            <Field id="partner-name" label={t("partners.contact.name")} required max={60}
+              testId="partner-form-name" {...fieldProps("name")} />
+            <Field id="partner-company" label={t("partners.contact.company")} required max={80}
+              testId="partner-form-company" {...fieldProps("company")} />
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="partner-email" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.email")}</label>
-              <input id="partner-email" name="email" type="email" required data-testid="partner-form-email"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
-            </div>
-            <div>
-              <label htmlFor="partner-budget" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.budget")}</label>
-              <input id="partner-budget" name="budget" placeholder={t("partners.contact.budget.placeholder")} data-testid="partner-form-budget"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0]" />
-            </div>
+            <Field id="partner-email" type="email" label={t("partners.contact.email")} required
+              testId="partner-form-email" {...fieldProps("email")} />
+            <Field id="partner-budget" label={t("partners.contact.budget")} max={60}
+              placeholder={t("partners.contact.budget.placeholder")} testId="partner-form-budget" {...fieldProps("budget")} />
           </div>
-          <div>
-            <label htmlFor="partner-message" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.message")}</label>
-            <textarea id="partner-message" name="message" rows={5} required placeholder={t("partners.contact.message.placeholder")} data-testid="partner-form-message"
-              className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0] resize-none" />
-          </div>
-          <button type="submit" data-testid="partner-form-submit"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none">
-            <Mail size={16} aria-hidden="true" /> {t("partners.contact.submit")}
-          </button>
+          <Field id="partner-message" as="textarea" rows={5} label={t("partners.contact.message")} required
+            showCounter max={MESSAGE_MAX} min={20} placeholder={t("partners.contact.message.placeholder")}
+            testId="partner-form-message" className="[&_textarea]:resize-none" {...fieldProps("message")} />
+          <ActionButton type="submit" variant="primary" size="lg" icon={Mail} loading={sending} loadingLabel="Envoi en cours…"
+            disabled={!isValid && Object.keys(visibleErrors).length > 0}
+            disabledReason="Corrigez les champs signalés pour envoyer votre demande"
+            data-testid="partner-form-submit">
+            {t("partners.contact.submit")}
+          </ActionButton>
         </form>
       </section>
     </div>

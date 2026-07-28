@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
+import { ActionButton } from "../ui/action-button";
+import { ConfirmDelete } from "../ConfirmDelete";
+import { SkeletonList } from "../Skeletons";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { title: "", type: "tournament", date: "", description: "", link: "" };
@@ -11,7 +13,8 @@ const TYPES = ["tournament", "training", "stream", "community"];
 
 export const AdminEvents = () => {
   const { t } = useLang();
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -20,22 +23,22 @@ export const AdminEvents = () => {
       const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
       list.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
       setEvents(list);
-    }, console.error);
+    }, (e) => { console.error(e); setEvents([]); });
   }, []);
 
   const submit = async (e) => {
     e.preventDefault();
     if (form.link && !/^https?:\/\/.+/.test(form.link)) { toast.error("URL invalide"); return; }
+    setSaving(true);
     try {
       await addDoc(collection(db, "communityEvents"), { ...form, createdAt: serverTimestamp() });
       setForm(EMPTY);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
+    setSaving(false);
   };
 
-  const del = async (id) => {
-    try { await deleteDoc(doc(db, "communityEvents", id)); } catch { toast.error(t("common.error")); }
-  };
+  const del = async (id) => { await deleteDoc(doc(db, "communityEvents", id)); };
 
   return (
     <div className="grid lg:grid-cols-12 gap-10">
@@ -50,22 +53,33 @@ export const AdminEvents = () => {
         </div>
         <input value={form.link} onChange={set("link")} placeholder="Lien (Twitch, inscription... optionnel)" className={inputCls} data-testid="admin-event-link" />
         <textarea value={form.description} onChange={set("description")} placeholder="Description" rows={3} className={inputCls} data-testid="admin-event-desc" />
-        <button type="submit" data-testid="admin-event-submit"
-          className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+        <ActionButton type="submit" variant="primary" size="md" loading={saving} loadingLabel="Enregistrement…"
+          disabled={!form.title.trim() || !form.date} disabledReason="Le titre et la date sont obligatoires" data-testid="admin-event-submit">
           {t("notes.save")}
-        </button>
+        </ActionButton>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-events-list">
-        {events.length === 0 && <p className="text-[#f7f7f7]/40">{t("cal.empty")}</p>}
-        {events.map((ev) => (
-          <div key={ev.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#f7f7f7] truncate">{ev.title}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{t(`cal.type.${ev.type}`)} · {ev.date ? new Date(ev.date).toLocaleString("fr-FR") : ""}</p>
+        {events === null ? (
+          <SkeletonList count={4} testId="admin-events-loading" label={t("common.loading")} />
+        ) : events.length === 0 ? (
+          <p className="text-[#c8c8c8]">{t("cal.empty")}</p>
+        ) : (
+          events.map((ev) => (
+            <div key={ev.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3">
+              <div className="flex-1 min-w-[140px]">
+                <p className="text-sm font-semibold text-[#f7f7f7] break-words">{ev.title}</p>
+                <p className="text-xs text-[#c8c8c8]">{t(`cal.type.${ev.type}`)} · {ev.date ? new Date(ev.date).toLocaleString("fr-FR") : ""}</p>
+              </div>
+              <ConfirmDelete
+                className="ml-auto"
+                testId={`admin-event-delete-${ev.id}`}
+                itemLabel={`l'événement « ${ev.title} »`}
+                onConfirm={() => del(ev.id)}
+                errorMessage={t("common.error")}
+              />
             </div>
-            <button onClick={() => del(ev.id)} className="text-red-400/70 hover:text-red-400" data-testid={`admin-event-delete-${ev.id}`}><Trash2 size={15} /></button>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

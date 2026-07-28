@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { MousePointer2, Type, Square, Pencil, Image as ImageIcon, Crosshair, Trash2, ArrowLeft } from "lucide-react";
+import { MousePointer2, Type, Square, Pencil, Image as ImageIcon, Crosshair, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "../lib/i18n";
+import { ActionButton } from "./ui/action-button";
+import { ConfirmDelete } from "./ConfirmDelete";
 
 const genId = () => Math.random().toString(36).slice(2, 10);
 const COLORS = ["#D8CA82", "#f7f7f7", "#e05252", "#5aa9e6"];
@@ -146,18 +148,22 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
         <button onClick={center} title={t("canvas.center")} data-testid="canvas-center-btn"
           className="p-2 border border-white/15 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors"><Crosshair size={15} /></button>
         {selected && (
-          <button onClick={deleteSelected} title={t("canvas.delete")} data-testid="canvas-delete-btn"
-            className="p-2 border border-red-400/40 text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 size={15} /></button>
+          <ConfirmDelete
+            className="w-10 h-10 min-w-[40px] min-h-[40px]"
+            testId="canvas-delete-btn"
+            itemLabel="l'élément sélectionné du tableau"
+            onConfirm={deleteSelected}
+          />
         )}
         <div className="flex-1" />
-        <button onClick={() => onSave(items, "draft")} disabled={saving} data-testid="canvas-save-draft-btn"
-          className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors disabled:opacity-50">
+        <ActionButton variant="secondary" size="sm" loading={saving} loadingLabel="Enregistrement…"
+          onClick={() => onSave(items, "draft")} data-testid="canvas-save-draft-btn">
           {t("canvas.draft")}
-        </button>
-        <button onClick={() => onSave(items, "saved")} disabled={saving} data-testid="canvas-save-btn"
-          className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50">
+        </ActionButton>
+        <ActionButton variant="primary" size="sm" loading={saving} loadingLabel="Enregistrement…"
+          onClick={() => onSave(items, "saved")} data-testid="canvas-save-btn">
           {t("canvas.save")}
-        </button>
+        </ActionButton>
       </div>
       <div ref={containerRef} data-canvasbg="1" data-testid="canvas-area"
         className={`flex-1 relative overflow-hidden canvas-dots bg-[#0d0d0d] touch-none ${tool === "draw" ? "cursor-crosshair" : tool === "select" ? "cursor-grab" : "cursor-copy"}`}

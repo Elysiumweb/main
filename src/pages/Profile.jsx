@@ -13,6 +13,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 
+import { ActionButton } from "../components/ui/action-button";
+import { SkeletonList } from "../components/Skeletons";
+
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
 export default function Profile() {
@@ -24,7 +27,11 @@ export default function Profile() {
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
+  if (loading) return (
+    <div className="max-w-2xl mx-auto px-4 py-16">
+      <SkeletonList count={3} testId="profile-loading" label={t("common.loading")} />
+    </div>
+  );
   if (!user && deleting) return <Navigate to="/" replace />;
   if (!user) return <Navigate to="/connexion" replace />;
 
@@ -104,36 +111,34 @@ export default function Profile() {
             <label htmlFor="profile-photo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("profile.photo")}</label>
             <input id="profile-photo" type="url" value={photo} onChange={(e) => setPhoto(e.target.value)} placeholder="https://..." className={inputCls} data-testid="profile-photo-input" />
           </div>
-          <button type="submit" disabled={busy} data-testid="profile-save-btn"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
+          <ActionButton type="submit" variant="primary" size="md" loading={busy} loadingLabel="Enregistrement…"
+            disabled={!pseudo.trim()} disabledReason="Le pseudo est obligatoire" data-testid="profile-save-btn">
             {t("notes.save")}
-          </button>
+          </ActionButton>
         </form>
 
         {isPassword && (
-          <button onClick={resetPassword} data-testid="profile-reset-password-btn"
-            className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-            <KeyRound size={14} aria-hidden="true" /> {t("profile.resetPassword")}
-          </button>
+          <ActionButton variant="secondary" size="md" icon={KeyRound} onClick={resetPassword} data-testid="profile-reset-password-btn">
+            {t("profile.resetPassword")}
+          </ActionButton>
         )}
 
         <div className="border border-red-300/40 bg-[#1A1A1A] p-6">
           <p className="font-display text-sm uppercase tracking-[0.3em] text-red-300 mb-4">{t("profile.danger")}</p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <button data-testid="profile-delete-btn"
-                className="border border-red-300/50 text-red-300 text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:bg-red-300/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-                <Trash2 size={14} aria-hidden="true" /> {t("profile.delete")}
-              </button>
+              <ActionButton variant="dangerOutline" size="md" icon={Trash2} data-testid="profile-delete-btn">
+                {t("profile.delete")}
+              </ActionButton>
             </AlertDialogTrigger>
             <AlertDialogContent className="bg-[#1A1A1A] border border-white/10 rounded-none" data-testid="profile-delete-dialog">
               <AlertDialogHeader>
                 <AlertDialogTitle className="font-display text-[#f7f7f7]">{t("profile.deleteTitle")}</AlertDialogTitle>
-                <AlertDialogDescription className="text-[#f7f7f7]/60">{t("profile.deleteText")}</AlertDialogDescription>
+                <AlertDialogDescription className="text-[#c8c8c8]">{t("profile.deleteText")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-none bg-transparent border-white/25 text-[#f7f7f7]" data-testid="profile-delete-cancel">{t("common.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={deleteAccount} className="rounded-none bg-red-500 hover:bg-red-600 text-white" data-testid="profile-delete-confirm">
+                <AlertDialogCancel className="rounded-none bg-transparent border-white/25 text-[#f7f7f7] font-display uppercase tracking-widest text-xs min-h-[44px] px-6" data-testid="profile-delete-cancel">{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteAccount} className="rounded-none bg-[#8c1d18] hover:bg-[#a52a24] text-white font-display font-bold uppercase tracking-widest text-xs min-h-[44px] px-6" data-testid="profile-delete-confirm">
                   {t("common.delete")}
                 </AlertDialogAction>
               </AlertDialogFooter>

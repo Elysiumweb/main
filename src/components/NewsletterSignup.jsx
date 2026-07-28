@@ -3,6 +3,7 @@ import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, delete
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
+import { ActionButton } from "./ui/action-button";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -95,15 +96,20 @@ export const NewsletterSignup = ({ compact = false }) => {
               data-testid="newsletter-email-input"
               className={inputCls + " placeholder:text-[#a0a0a0]"}
             />
-            <button
+            <ActionButton
               type="submit"
-              disabled={status === "loading"}
+              variant="primary"
+              size="sm"
+              icon={Mail}
+              loading={status === "loading"}
+              loadingLabel="Inscription…"
+              disabled={!consent || !email.trim()}
+              disabledReason={!consent ? t("newsletter.consentRequired") : "Saisissez votre email"}
               aria-describedby={status === "error" ? errorId : undefined}
               data-testid="newsletter-submit-btn"
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50 flex items-center gap-2 motion-reduce:transition-none"
             >
-              <Mail size={14} aria-hidden="true" /> {t("newsletter.submit")}
-            </button>
+              {t("newsletter.submit")}
+            </ActionButton>
           </form>
         )}
         {status === "error" && (
@@ -127,7 +133,7 @@ export const NewsletterSignup = ({ compact = false }) => {
             type="checkbox"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
-            className="mt-0.5 accent-[#D8CA82]"
+            className="mt-0.5 w-4 h-4 accent-[#D8CA82]"
             data-testid="newsletter-consent-checkbox"
           />
           <span className="text-[11px] text-[#c8c8c8] leading-relaxed">{t("newsletter.consent")}</span>
@@ -200,14 +206,19 @@ export const NewsletterSignup = ({ compact = false }) => {
                 {message}
               </p>
             )}
-            <button
+            <ActionButton
               type="submit"
-              disabled={status === "loading"}
+              variant="primary"
+              size="lg"
+              icon={Mail}
+              loading={status === "loading"}
+              loadingLabel="Inscription…"
+              disabled={!consent || !email.trim()}
+              disabledReason={!consent ? t("newsletter.consentRequired") : "Saisissez votre email"}
               data-testid="newsletter-page-submit"
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow disabled:opacity-50 motion-reduce:transition-none"
             >
-              <Mail size={16} aria-hidden="true" /> {t("newsletter.submit")}
-            </button>
+              {t("newsletter.submit")}
+            </ActionButton>
           </form>
         )}
 
@@ -286,14 +297,18 @@ const UnsubscribeForm = () => {
             data-testid="unsubscribe-email-input"
             className="flex-1 bg-[#1A1A1A] border border-white/20 px-4 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0]"
           />
-          <button
+          <ActionButton
             type="submit"
-            disabled={status === "loading"}
+            variant="dangerOutline"
+            size="sm"
+            loading={status === "loading"}
+            loadingLabel="Désinscription…"
+            disabled={!email.trim()}
+            disabledReason="Saisissez l'email à désinscrire"
             data-testid="unsubscribe-submit"
-            className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 hover:border-red-300 hover:text-red-300 transition-colors disabled:opacity-50 motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
           >
             {t("newsletter.unsubscribe.submit")}
-          </button>
+          </ActionButton>
         </form>
       )}
       {status === "error" && (

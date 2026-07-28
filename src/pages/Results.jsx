@@ -3,7 +3,10 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { MatchCard } from "../components/MatchCard";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonGrid, SkeletonMatchCard } from "../components/Skeletons";
+import { Pagination, usePagination } from "../components/Pagination";
+import { ActionButton } from "../components/ui/action-button";
 import { Trophy, CalendarClock } from "lucide-react";
 import { GAMES } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
@@ -39,6 +42,8 @@ export default function Results() {
     list.sort((a, b) => tab === "upcoming" ? (a.date || "").localeCompare(b.date || "") : (b.date || "").localeCompare(a.date || ""));
     return list;
   }, [matches, tab, game, competition, from, to]);
+
+  const pager = usePagination(filtered, 12, `${tab}|${game}|${competition}|${from}|${to}`);
 
   const resetFilters = () => { setGame("all"); setCompetition("all"); setFrom(""); setTo(""); };
 
@@ -96,23 +101,32 @@ export default function Results() {
             <label htmlFor="filter-to" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.to")}</label>
             <input id="filter-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
           </div>
-          <button onClick={resetFilters} data-testid="results-filter-reset"
-            className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none">
+          <ActionButton
+            variant="secondary"
+            size="sm"
+            onClick={resetFilters}
+            data-testid="results-filter-reset"
+            disabled={game === "all" && competition === "all" && !from && !to}
+            disabledReason="Aucun filtre actif"
+          >
             {t("results.filter.reset")}
-          </button>
+          </ActionButton>
         </div>
 
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="results-error" />
         ) : matches === null ? (
-          <LoadingState testId="results-loading" />
+          <SkeletonGrid count={6} Card={SkeletonMatchCard} testId="results-loading" label={t("common.loading")} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={tab === "upcoming" ? CalendarClock : Trophy}
             text={tab === "upcoming" ? t("results.noUpcoming") : t("results.empty")} testId="results-empty" />
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
-            {filtered.map((m) => <MatchCard key={m.id} match={m} />)}
-          </div>
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
+              {pager.items.map((m) => <MatchCard key={m.id} match={m} />)}
+            </div>
+            <Pagination {...pager} testId="results-pagination" label="matchs" />
+          </>
         )}
       </section>
     </div>

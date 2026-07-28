@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonStatCards, SkeletonGrid, SkeletonMatchCard } from "../components/Skeletons";
 import { GAMES } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
@@ -125,14 +126,14 @@ export default function Stats() {
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="stats-filters">
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("stats.filter.game")}</label>
+            <label className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("stats.filter.game")}</label>
             <select value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="stats-filter-game">
               <option value="all">{t("results.filter.all")}</option>
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("stats.filter.period")}</label>
+            <label className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("stats.filter.period")}</label>
             <select value={period} onChange={(e) => setPeriod(e.target.value)} className={selectCls} data-testid="stats-filter-period">
               <option value="all">{t("stats.period.all")}</option>
               <option value="month">{t("stats.period.month")}</option>
@@ -145,7 +146,10 @@ export default function Stats() {
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="stats-error" />
         ) : matches === null ? (
-          <LoadingState testId="stats-loading" />
+          <div className="space-y-8" data-testid="stats-loading">
+            <SkeletonStatCards count={6} testId="stats-loading-kpis" />
+            <SkeletonGrid count={3} Card={SkeletonMatchCard} testId="stats-loading-cards" />
+          </div>
         ) : stats === null ? (
           <EmptyState icon={Trophy} text={t("stats.empty")} testId="stats-empty" />
         ) : (

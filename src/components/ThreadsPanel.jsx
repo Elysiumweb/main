@@ -7,6 +7,9 @@ import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ChatMessages } from "./ChatMessages";
 import { createNotification } from "../lib/notify";
+import { useProgressiveList } from "./Pagination";
+import { SkeletonList } from "./Skeletons";
+import { ActionButton } from "./ui/action-button";
 
 const STATUS_CLS = {
   open: "text-[#D8CA82] border-[#D8CA82]/40",
@@ -20,7 +23,7 @@ const STATUS_CLS = {
 export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, prefix, statusOptions = null, canSetStatus = false }) => {
   const { user } = useAuth();
   const { t } = useLang();
-  const [threads, setThreads] = useState([]);
+  const [threads, setThreads] = useState(null);
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
@@ -32,21 +35,28 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
       list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setThreads(list);
       setSelected((s) => s && list.find((x) => x.id === s) ? s : list[0]?.id || null);
-    }, (e) => console.error(e));
+    }, (e) => { console.error(e); setThreads([]); });
   }, [user, canSeeAll, collectionName]);
 
-  const current = threads.find((x) => x.id === selected);
+  const list = threads || [];
+  const progressive = useProgressiveList(list, 10, collectionName);
+  const current = list.find((x) => x.id === selected);
 
-  if (threads.length === 0) {
+  if (threads === null) {
+    return <SkeletonList count={4} testId={`${prefix}-threads-loading`} label={t("common.loading")} />;
+  }
+
+  if (list.length === 0) {
     return <p className="text-[#f7f7f7]/40 tracking-wide py-8" data-testid={`${prefix}-threads-empty`}>{t(emptyKey)}</p>;
   }
 
   return (
     <div className="grid md:grid-cols-12 border border-white/10 bg-[#141414] h-[560px]">
       <div className="md:col-span-4 border-r border-white/10 overflow-y-auto" data-testid={`${prefix}-threads-list`}>
-        {threads.map((th) => (
+        {progressive.items.map((th) => (
           <button key={th.id} onClick={() => setSelected(th.id)} data-testid={`${prefix}-thread-${th.id}`}
-            className={`w-full text-left px-4 py-3 border-b border-white/5 transition-colors ${selected === th.id ? "bg-[#D8CA82]/10 border-l-2 border-l-[#D8CA82]" : "hover:bg-white/5"}`}>
+            aria-current={selected === th.id ? "true" : undefined}
+            className={`w-full text-left px-4 py-3 min-h-[56px] border-b border-white/5 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#D8CA82] ${selected === th.id ? "bg-[#D8CA82]/10 border-l-2 border-l-[#D8CA82]" : "hover:bg-white/5"}`}>
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate flex-1">{th[titleField]}</p>
               {th.status && (
@@ -55,9 +65,25 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#f7f7f7]/40 truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString("fr-FR") : ""}</p>
+            <p className="text-xs text-[#c8c8c8] truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString("fr-FR") : ""}</p>
           </button>
         ))}
+        <div className="px-3 py-4 flex flex-col items-center gap-2 border-t border-white/5">
+          <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8]" aria-live="polite">
+            {progressive.shown} / {progressive.total}
+          </p>
+          {progressive.hasMore && (
+            <ActionButton
+              variant="secondary"
+              size="sm"
+              onClick={progressive.loadMore}
+              data-testid={`${prefix}-threads-load-more`}
+              className="w-full"
+            >
+              Charger plus ({progressive.remaining})
+            </ActionButton>
+          )}
+        </div>
       </div>
       <div className="md:col-span-8 flex flex-col min-h-0">
         {current && (

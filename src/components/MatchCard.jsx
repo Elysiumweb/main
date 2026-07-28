@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLang } from "../lib/i18n";
 import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { ActionButton } from "./ui/action-button";
+import { ConfirmDelete } from "./ConfirmDelete";
 
 /* -----------------------------------------------------------------------
  * OpponentLogo
@@ -164,30 +166,13 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
           )}
         </div>
       )}
-      {onEdit && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(match); }}
-          data-testid={`match-edit-${match.id}`}
-          aria-label={`Modifier le match contre ${match.opponentName}`}
-          className="absolute top-2 right-8 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-[#D8CA82]/80 hover:text-[#D8CA82] transition-opacity z-10 motion-reduce:transition-none"
-        >
-          <Pencil size={13} aria-hidden="true" />
-        </button>
-      )}
-      {onDelete && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(match.id); }}
-          data-testid={`match-delete-${match.id}`}
-          aria-label={`Supprimer le match contre ${match.opponentName}`}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-red-400 text-xs uppercase tracking-wider transition-opacity z-10 motion-reduce:transition-none"
-        >
-          <span aria-hidden="true">✕</span>
-        </button>
-      )}
     </div>
   );
 
+  const hasAdminActions = Boolean(onEdit || onDelete);
+
   return (
+    <div className={hasAdminActions ? "flex flex-col" : "contents"}>
     <Dialog>
       <DialogTrigger asChild>{card}</DialogTrigger>
       <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg" data-testid={`match-detail-${match.id}`}>
@@ -254,5 +239,38 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Actions d'administration : toujours visibles (pas de survol requis),
+        cibles tactiles 44px et confirmation explicite pour la suppression. */}
+    {hasAdminActions && (
+      <div
+        className="flex items-stretch gap-2 border border-t-0 border-white/10 bg-[#141414] p-2"
+        data-testid={`match-actions-${match.id}`}
+      >
+        {onEdit && (
+          <ActionButton
+            variant="secondary"
+            size="sm"
+            icon={Pencil}
+            onClick={() => onEdit(match)}
+            data-testid={`match-edit-${match.id}`}
+            className="flex-1"
+            aria-label={`Modifier le match contre ${match.opponentName}`}
+          >
+            Modifier
+          </ActionButton>
+        )}
+        {onDelete && (
+          <ConfirmDelete
+            variant="button"
+            className="flex-1"
+            testId={`match-delete-${match.id}`}
+            itemLabel={`le match Elysium vs ${match.opponentName || "adversaire"}${match.date ? ` du ${match.date}` : ""}`}
+            onConfirm={() => onDelete(match.id)}
+          />
+        )}
+      </div>
+    )}
+    </div>
   );
 };

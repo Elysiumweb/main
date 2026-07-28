@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Plus, Trash2, Users, Lock, Search } from "lucide-react";
+import { Plus, Users, Lock, Search } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { logActivity } from "../../lib/notify";
+import { ActionButton } from "../../components/ui/action-button";
+import { ConfirmDelete } from "../../components/ConfirmDelete";
 
 export default function Notes() {
   const { user, game, isOfficial, displayName } = useAuth();
@@ -59,12 +61,10 @@ export default function Notes() {
   };
 
   const del = async (id) => {
-    try {
-      const n = notes.find((x) => x.id === id);
-      await deleteDoc(doc(db, "notes", id));
-      if (n?.type === "collective") logActivity({ game: gameKey, type: "note_deleted", label: n.title, byUid: user.uid, byName: displayName });
-      if (selected === id) setSelected(null);
-    } catch (e) { toast.error(t("common.error")); }
+    const n = notes.find((x) => x.id === id);
+    await deleteDoc(doc(db, "notes", id));
+    if (n?.type === "collective") logActivity({ game: gameKey, type: "note_deleted", label: n.title, byUid: user.uid, byName: displayName });
+    if (selected === id) setSelected(null);
   };
 
   const visible = notes.filter((n) => {
@@ -84,10 +84,9 @@ export default function Notes() {
             </button>
           ))}
         </div>
-        <button onClick={create} data-testid="notes-new-btn"
-          className="m-3 border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest py-2 flex items-center justify-center gap-2 hover:bg-[#D8CA82]/10 transition-colors shrink-0">
-          <Plus size={14} /> {t("notes.new")}
-        </button>
+        <ActionButton variant="secondary" size="sm" icon={Plus} onClick={create} data-testid="notes-new-btn" className="m-3 shrink-0">
+          {t("notes.new")}
+        </ActionButton>
         <div className="mx-3 mb-2 relative shrink-0">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("notes.search")} data-testid="notes-search-input"
@@ -104,9 +103,13 @@ export default function Notes() {
                   {(n.tags || []).length > 0 && <span className="text-[#D8CA82]/60"> · {n.tags.join(", ")}</span>}
                 </p>
               </button>
-              <button onClick={() => del(n.id)} className="opacity-0 group-hover:opacity-100 px-2 text-red-400/70 hover:text-red-400 transition-opacity" data-testid={`notes-delete-${n.id}`}>
-                <Trash2 size={13} />
-              </button>
+              <ConfirmDelete
+                className="mr-1 w-10 h-10 min-w-[40px] min-h-[40px]"
+                testId={`notes-delete-${n.id}`}
+                itemLabel={`la note « ${n.title || "sans titre"} »`}
+                onConfirm={() => del(n.id)}
+                errorMessage={t("common.error")}
+              />
             </div>
           ))}
         </div>
@@ -117,14 +120,12 @@ export default function Notes() {
             <div className="border-b border-white/10 p-3 flex gap-3 items-center shrink-0 bg-[#141414]">
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("notes.title")} data-testid="notes-title-input"
                 className="flex-1 bg-transparent font-display text-lg text-[#f7f7f7] focus:outline-none" />
-              <button onClick={() => save("draft")} data-testid="notes-draft-btn"
-                className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-4 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+              <ActionButton variant="secondary" size="sm" onClick={() => save("draft")} data-testid="notes-draft-btn">
                 {t("notes.draft")}
-              </button>
-              <button onClick={() => save("saved")} data-testid="notes-save-btn"
-                className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
+              </ActionButton>
+              <ActionButton variant="primary" size="sm" onClick={() => save("saved")} data-testid="notes-save-btn">
                 {t("notes.save")}
-              </button>
+              </ActionButton>
             </div>
             <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder={t("notes.content")} data-testid="notes-content-input"
               className="flex-1 bg-[#111111] p-6 text-[#f7f7f7]/90 text-sm leading-relaxed resize-none focus:outline-none" />

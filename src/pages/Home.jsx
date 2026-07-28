@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, HeartHandshake } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { videoEmbedUrl } from "./MediaGallery";
+import { DonateCard } from "../components/DonateButton";
+import { ActionButton } from "../components/ui/action-button";
+import { SkeletonGrid, SkeletonMatchCard } from "../components/Skeletons";
 
 export default function Home() {
   const { t } = useLang();
-  const [matches, setMatches] = useState([]);
+  const [matches, setMatches] = useState(null);
   const [videos, setVideos] = useState([]);
   const [discord, setDiscord] = useState(null);
 
@@ -33,7 +36,7 @@ export default function Home() {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming");
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list.slice(0, 3));
-    }, (e) => console.error(e));
+    }, (e) => { console.error(e); setMatches([]); });
   }, []);
 
   return (
@@ -60,14 +63,12 @@ export default function Home() {
               {t("home.heroSub")}
             </p>
             <div className="anim-fade-up motion-reduce:animate-none flex flex-wrap gap-4 mt-10" style={{ animationDelay: "0.4s" }}>
-              <Link to="/recrutement" data-testid="home-cta-join"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+              <ActionButton as={Link} to="/recrutement" variant="primary" size="lg" data-testid="home-cta-join">
                 {t("home.cta.join")} <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-              <Link to="/resultats" data-testid="home-cta-results"
-                className="border border-white/25 text-[#f7f7f7] font-display uppercase tracking-widest text-sm px-8 py-4 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+              </ActionButton>
+              <ActionButton as={Link} to="/resultats" variant="secondary" size="lg" data-testid="home-cta-results">
                 {t("home.cta.results")}
-              </Link>
+              </ActionButton>
             </div>
           </div>
         </div>
@@ -146,7 +147,9 @@ export default function Home() {
               {t("home.latest.all")}
             </Link>
           </div>
-          {matches.length === 0 ? (
+          {matches === null ? (
+            <SkeletonGrid count={3} Card={SkeletonMatchCard} className="grid md:grid-cols-3 gap-6" testId="home-latest-skeleton" label={t("common.loading")} />
+          ) : matches.length === 0 ? (
             <p className="text-[#c8c8c8] tracking-wide" data-testid="home-latest-empty">{t("home.latest.empty")}</p>
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
@@ -163,14 +166,14 @@ export default function Home() {
             <Radio className="text-[#D8CA82]" size={20} aria-hidden="true" />
             <h2 id="home-live-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.live.title")}</h2>
             <div className="flex-1 h-px bg-white/10" />
-            <a href="https://www.twitch.tv/elysiumxeva" target="_blank" rel="noopener noreferrer" data-testid="home-live-twitch-cta"
-              className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-              <PlayCircle size={14} aria-hidden="true" /> {t("home.live.watch")}
-            </a>
-            <a href="https://www.youtube.com/@elysiumfr" target="_blank" rel="noopener noreferrer" data-testid="home-live-youtube-cta"
-              className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-              <Youtube size={14} aria-hidden="true" /> {t("home.live.youtube")}
-            </a>
+            <ActionButton as="a" href="https://www.twitch.tv/elysiumxeva" target="_blank" rel="noopener noreferrer"
+              variant="primary" size="sm" icon={PlayCircle} data-testid="home-live-twitch-cta">
+              {t("home.live.watch")}
+            </ActionButton>
+            <ActionButton as="a" href="https://www.youtube.com/@elysiumfr" target="_blank" rel="noopener noreferrer"
+              variant="secondary" size="sm" icon={Youtube} data-testid="home-live-youtube-cta">
+              {t("home.live.youtube")}
+            </ActionButton>
           </div>
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="border border-white/10 bg-[#0d0d0d]">
@@ -220,10 +223,10 @@ export default function Home() {
                 </div>
               </div>
             )}
-            <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta"
-              className="inline-flex items-center gap-3 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+            <ActionButton as="a" href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer"
+              variant="primary" size="lg" data-testid="home-discord-cta">
               <SocialIcon name="discord" size={18} aria-hidden="true" /> {t("home.discord.cta")}
-            </a>
+            </ActionButton>
           </div>
           <div className="border border-white/10 bg-[#141414] p-8" data-testid="home-discord-rules">
             <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-5">{t("home.discord.faq")}</p>
@@ -235,6 +238,31 @@ export default function Home() {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* SOUTENIR / DONS */}
+      <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="home-donate-h2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 grid lg:grid-cols-12 gap-12 items-center" data-testid="home-donate">
+          <div className="lg:col-span-7">
+            <div className="flex items-center gap-4 mb-6">
+              <HeartHandshake className="text-[#D8CA82]" size={20} aria-hidden="true" />
+              <h2 id="home-donate-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+            <p className="text-[#c8c8c8] text-lg leading-relaxed max-w-xl">{t("donate.sub")}</p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <ActionButton as={Link} to="/soutenir" variant="primary" size="lg" icon={HeartHandshake} data-testid="home-donate-cta">
+                {t("donate.cta")}
+              </ActionButton>
+              <ActionButton as={Link} to="/partenaires" variant="secondary" size="lg" data-testid="home-partners-cta">
+                {t("nav.partners")} <ArrowRight size={16} aria-hidden="true" />
+              </ActionButton>
+            </div>
+          </div>
+          <div className="lg:col-span-5">
+            <DonateCard testId="home-donate-card" title={t("donate.panel.title")} description={t("donate.panel.sub")} />
           </div>
         </div>
       </section>

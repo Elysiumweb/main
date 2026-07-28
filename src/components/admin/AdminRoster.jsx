@@ -1,27 +1,34 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Trash2, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { GAMES, ROSTERS } from "../../lib/constants";
+import { ActionButton } from "../ui/action-button";
+import { ConfirmDelete } from "../ConfirmDelete";
+import { SkeletonList } from "../Skeletons";
+import { BrandImage, RATIOS } from "../BrandImage";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", statsText: "", x: "", twitch: "", instagram: "", youtube: "" };
 
 export const AdminRoster = () => {
   const { t } = useLang();
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
-    return onSnapshot(collection(db, "roster"), (s) => setMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    return onSnapshot(collection(db, "roster"), (s) => setMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), (e) => { console.error(e); setMembers([]); });
   }, []);
+
+  const [saving, setSaving] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     const { x, twitch, instagram, youtube, ...rest } = form;
     const data = { ...rest, socials: { x, twitch, instagram, youtube } };
     try {
@@ -30,6 +37,7 @@ export const AdminRoster = () => {
       setForm(EMPTY); setEditId(null);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
+    setSaving(false);
   };
 
   const edit = (m) => {
@@ -38,8 +46,8 @@ export const AdminRoster = () => {
   };
 
   const del = async (id) => {
-    try { await deleteDoc(doc(db, "roster", id)); if (editId === id) { setEditId(null); setForm(EMPTY); } }
-    catch { toast.error(t("common.error")); }
+    await deleteDoc(doc(db, "roster", id));
+    if (editId === id) { setEditId(null); setForm(EMPTY); }
   };
 
   return (
@@ -73,29 +81,45 @@ export const AdminRoster = () => {
           <input value={form.instagram} onChange={set("instagram")} placeholder="Instagram (URL)" className={inputCls} />
           <input value={form.youtube} onChange={set("youtube")} placeholder="YouTube (URL)" className={inputCls} />
         </div>
-        <div className="flex gap-3">
-          <button type="submit" data-testid="admin-roster-submit"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+        <div className="flex flex-wrap gap-3">
+          <ActionButton type="submit" variant="primary" size="md" loading={saving} loadingLabel="Enregistrement…"
+            disabled={!form.pseudo.trim()} disabledReason="Le pseudo est obligatoire" data-testid="admin-roster-submit">
             {t("notes.save")}
-          </button>
+          </ActionButton>
           {editId && (
-            <button type="button" onClick={() => { setEditId(null); setForm(EMPTY); }} data-testid="admin-roster-cancel"
-              className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-5">{t("common.cancel")}</button>
+            <ActionButton variant="secondary" size="md" onClick={() => { setEditId(null); setForm(EMPTY); }} data-testid="admin-roster-cancel">
+              {t("common.cancel")}
+            </ActionButton>
           )}
         </div>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-roster-list">
-        {members.length === 0 && <p className="text-[#f7f7f7]/40">{t("team.empty")}</p>}
-        {members.map((m) => (
-          <div key={m.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#f7f7f7]">{m.pseudo}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
+        {members === null ? (
+          <SkeletonList count={5} testId="admin-roster-loading" label={t("common.loading")} />
+        ) : members.length === 0 ? (
+          <p className="text-[#c8c8c8]">{t("team.empty")}</p>
+        ) : (
+          members.map((m) => (
+            <div key={m.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3">
+              <BrandImage src={m.photo} alt="" ratio={RATIOS.square} className="w-12 shrink-0 border border-white/10" />
+              <div className="flex-1 min-w-[140px]">
+                <p className="text-sm font-semibold text-[#f7f7f7] break-words">{m.pseudo}</p>
+                <p className="text-xs text-[#c8c8c8]">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 ml-auto">
+                <ActionButton variant="secondary" size="sm" icon={Pencil} onClick={() => edit(m)} data-testid={`admin-roster-edit-${m.id}`}>
+                  Modifier
+                </ActionButton>
+                <ConfirmDelete
+                  testId={`admin-roster-delete-${m.id}`}
+                  itemLabel={`le membre « ${m.pseudo} »`}
+                  onConfirm={() => del(m.id)}
+                  errorMessage={t("common.error")}
+                />
+              </div>
             </div>
-            <button onClick={() => edit(m)} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-roster-edit-${m.id}`}><Pencil size={15} /></button>
-            <button onClick={() => del(m.id)} className="text-red-400/70 hover:text-red-400" data-testid={`admin-roster-delete-${m.id}`}><Trash2 size={15} /></button>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

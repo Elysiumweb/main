@@ -3,7 +3,9 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { CalendarDays, Download, ExternalLink, Trophy, Dumbbell, Radio, PartyPopper } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonList } from "../components/Skeletons";
+import { LoadMore, useProgressiveList } from "../components/Pagination";
 
 const TYPE_ICONS = { tournament: Trophy, training: Dumbbell, stream: Radio, community: PartyPopper };
 
@@ -48,6 +50,7 @@ export default function CommunityCalendar() {
   const now = new Date().toISOString().slice(0, 16);
   const upcoming = (events || []).filter((e) => (e.date || "") >= now);
   const past = (events || []).filter((e) => (e.date || "") < now).reverse();
+  const pastProgressive = useProgressiveList(past, 10, "cal-past");
 
   const EventRow = ({ ev, dim }) => {
     const Icon = TYPE_ICONS[ev.type] || PartyPopper;
@@ -100,7 +103,7 @@ export default function CommunityCalendar() {
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="cal-error" />
         ) : events === null ? (
-          <LoadingState testId="cal-loading" />
+          <SkeletonList count={6} testId="cal-loading" label={t("common.loading")} />
         ) : upcoming.length === 0 && past.length === 0 ? (
           <EmptyState icon={CalendarDays} text={t("cal.empty")} testId="cal-empty" />
         ) : (
@@ -109,8 +112,17 @@ export default function CommunityCalendar() {
             {upcoming.map((ev) => <EventRow key={ev.id} ev={ev} />)}
             {past.length > 0 && (
               <>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#f7f7f7]/30 pt-8 pb-2">{t("cal.past")}</p>
-                {past.slice(0, 10).map((ev) => <EventRow key={ev.id} ev={ev} dim />)}
+                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] pt-8 pb-2">{t("cal.past")}</p>
+                {pastProgressive.items.map((ev) => <EventRow key={ev.id} ev={ev} dim />)}
+                <LoadMore
+                  hasMore={pastProgressive.hasMore}
+                  remaining={pastProgressive.remaining}
+                  shown={pastProgressive.shown}
+                  total={pastProgressive.total}
+                  onLoadMore={pastProgressive.loadMore}
+                  testId="cal-past-load-more"
+                  label="événements passés"
+                />
               </>
             )}
           </div>

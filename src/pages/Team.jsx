@@ -4,24 +4,29 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { Users } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonGrid, SkeletonPlayerCard } from "../components/Skeletons";
+import { BrandImage, RATIOS } from "../components/BrandImage";
+import { LoadMore, useProgressiveList } from "../components/Pagination";
 import { SocialIcon } from "../components/SocialIcon";
 import { GAMES, ROSTERS } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 const ORDER = ["player", "sub", "staff"];
 
-export const PlayerPhoto = ({ src, alt, className }) => {
-  const [error, setError] = useState(false);
-  if (!src || error) {
-    return (
-      <div className={`${className} bg-[#111111] flex items-center justify-center`}>
-        <img src="/brand/logo-icon-gold.png" alt="" className="w-1/3 opacity-40" />
-      </div>
-    );
-  }
-  return <img src={src} alt={alt} onError={() => setError(true)} className={`${className} object-cover`} />;
-};
+/**
+ * Photo de joueur — ratio fixe 3/4, recadrage centré uniforme,
+ * repli sur l'icône Elysium si la photo manque ou échoue.
+ */
+export const PlayerPhoto = ({ src, alt, className = "", ratio = RATIOS.portrait }) => (
+  <BrandImage
+    src={src}
+    alt={alt ? `Photo de ${alt}` : ""}
+    ratio={ratio}
+    className={`w-full ${className}`}
+    fallbackLabel={alt ? `Photo de ${alt} indisponible` : undefined}
+  />
+);
 
 export default function Team() {
   const { t } = useLang();
@@ -49,7 +54,13 @@ export default function Team() {
     return list;
   }, [members, gameFilter, rosterFilter]);
 
-  const groups = ORDER.map((s) => ({ status: s, list: filtered.filter((m) => m.status === s) })).filter((g) => g.list.length);
+  // Chargement progressif : évite d'afficher 60 fiches d'un coup sur mobile
+  const progressive = useProgressiveList(filtered, 12, `${gameFilter}|${rosterFilter}`);
+  const groups = ORDER.map((s) => ({
+    status: s,
+    list: progressive.items.filter((m) => m.status === s),
+    total: filtered.filter((m) => m.status === s).length,
+  })).filter((g) => g.list.length);
 
   const byGame = useMemo(()=>{
     const map = { all: members?.length||0 };
@@ -70,13 +81,13 @@ export default function Team() {
             </div>
             <div className="flex flex-col items-end gap-2 self-end">
               <div className="flex items-center gap-2 border border-white/10 bg-[#141414] p-1">
-                <button onClick={()=> setSearchParams({})} data-testid="filter-all"
-                  className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors ${gameFilter==="all"?"bg-[#D8CA82] text-[#111111] font-bold":"text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                <button onClick={()=> setSearchParams({})} data-testid="filter-all" aria-pressed={gameFilter==="all"}
+                  className={`px-4 py-2 min-h-[44px] text-[11px] uppercase tracking-[0.25em] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#D8CA82] ${gameFilter==="all"?"bg-[#D8CA82] text-[#111111] font-bold":"text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
                   {t("team.filter.all")} ({byGame.all})
                 </button>
                 {GAMES.map(g=>(
-                  <button key={g} onClick={()=> setSearchParams({game:g})} data-testid={`filter-${g}`}
-                    className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors flex items-center gap-2 ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                  <button key={g} onClick={()=> setSearchParams({game:g})} data-testid={`filter-${g}`} aria-pressed={gameFilter===g}
+                    className={`px-4 py-2 min-h-[44px] text-[11px] uppercase tracking-[0.25em] transition-colors motion-reduce:transition-none flex items-center gap-2 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#D8CA82] ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
                     <span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: g==="Rocket League"?"#F4511E":"#D8CA82"}} />
                     {g==="Rocket League"? t("team.filter.rl") : t("team.filter.eva")} ({byGame[g]||0})
                   </button>
@@ -119,23 +130,24 @@ export default function Team() {
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="team-error" />
         ) : members === null ? (
-          <LoadingState testId="team-loading" />
+          <SkeletonGrid count={8} Card={SkeletonPlayerCard} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" testId="team-loading" label={t("common.loading")} />
         ) : filtered.length === 0 ? (
           <EmptyState icon={Users} text={t("team.empty")} testId="team-empty" />
         ) : (
-          <div className="space-y-16" data-testid="team-grid">
+          <div data-testid="team-grid">
+           <div className="space-y-16">
             {groups.map((g) => (
               <div key={g.status}>
                 <div className="flex items-center gap-4 mb-8">
                   <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t(`team.status.${g.status}`)}</h2>
                   <div className="flex-1 h-px bg-white/10" />
-                  <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{g.list.length} joueurs</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#c8c8c8]">{g.list.length}{g.total !== g.list.length ? ` / ${g.total}` : ""} membres</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {g.list.map((m) => (
                     <Link key={m.id} to={`/equipe/${m.id}`} data-testid={`team-card-${m.id}`}
                       className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/60 transition-colors overflow-hidden">
-                      <PlayerPhoto src={m.photo} alt={m.pseudo} className="w-full h-52" />
+                      <PlayerPhoto src={m.photo} alt={m.pseudo} />
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-display font-bold text-lg text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{m.pseudo}</p>
@@ -158,6 +170,16 @@ export default function Team() {
                 </div>
               </div>
             ))}
+           </div>
+           <LoadMore
+             hasMore={progressive.hasMore}
+             remaining={progressive.remaining}
+             shown={progressive.shown}
+             total={progressive.total}
+             onLoadMore={progressive.loadMore}
+             testId="team-load-more"
+             label="membres"
+           />
           </div>
         )}
       </section>

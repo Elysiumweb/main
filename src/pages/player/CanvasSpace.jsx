@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Plus, Trash2, LayoutDashboard } from "lucide-react";
+import { Plus, LayoutDashboard } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { InfiniteCanvas } from "../../components/InfiniteCanvas";
 import { logActivity } from "../../lib/notify";
+import { ConfirmDelete } from "../../components/ConfirmDelete";
 
 export default function CanvasSpace() {
   const { user, game, isOfficial, displayName } = useAuth();
@@ -137,10 +138,15 @@ export default function CanvasSpace() {
                     {c.status === "draft" ? t("canvas.draft") : t("common.saved")} · {c.game} · {(c.items || []).length} él.
                   </p>
                 </button>
-                <button onClick={() => del(c.id)} data-testid={`canvas-delete-${c.id}`}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-red-400/70 hover:text-red-400 transition-opacity">
-                  <Trash2 size={14} />
-                </button>
+                <div className="mt-4 pt-3 border-t border-white/10 flex justify-end">
+                  <ConfirmDelete
+                    variant="button"
+                    testId={`canvas-delete-${c.id}`}
+                    itemLabel={`le tableau « ${c.title} »`}
+                    onConfirm={() => del(c.id)}
+                    errorMessage={t("common.error")}
+                  />
+                </div>
               </div>
             ))}
           </div>

@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { useArticleSEO } from "../lib/useSEO";
-import { LoadingState } from "../components/States";
+import { SkeletonArticleCard } from "../components/Skeletons";
 import { ArticleCover } from "./News";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
@@ -22,7 +22,11 @@ export default function ArticleDetail() {
 
   useArticleSEO(article && article.id ? article : null);
 
-  if (article === undefined) return <LoadingState testId="article-loading" />;
+  if (article === undefined) return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-8 py-16">
+      <SkeletonArticleCard />
+    </div>
+  );
   if (article === null || article.status === "deleted") return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6">
       <p className="text-[#f7f7f7]/50" data-testid="article-not-found">{t("news.notFound")}</p>
@@ -36,7 +40,7 @@ export default function ArticleDetail() {
         <PageBreadcrumb items={[{ label: t("nav.news"), to: "/actus" }, { label: article.title }]} />
       </div>
       <section className="relative border-b border-white/10 overflow-hidden">
-        <ArticleCover src={article.coverUrl} className="w-full h-64 sm:h-80 opacity-50" />
+        <ArticleCover src={article.coverUrl} ratio="aspect-[21/9]" className="opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/40 to-transparent" />
         <div className="absolute bottom-0 inset-x-0">
           <div className="max-w-4xl mx-auto px-4 sm:px-8 pb-10">

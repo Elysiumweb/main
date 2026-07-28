@@ -4,6 +4,7 @@ import { Send } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { ActionButton } from "./ui/action-button";
 
 export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
   const { user, displayName, role } = useAuth();
@@ -61,11 +62,19 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
       <form onSubmit={send} className="border-t border-white/10 p-3 flex gap-2 shrink-0">
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t("chat.placeholder")}
           data-testid={`${testId}-input`}
-          className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] placeholder:text-[#f7f7f7]/30 focus:outline-none focus:border-[#D8CA82]" />
-        <button type="submit" data-testid={`${testId}-send-btn`}
-          className="bg-[#D8CA82] text-[#111111] px-4 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
-          <Send size={16} />
-        </button>
+          aria-label={t("chat.placeholder")}
+          className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2 min-h-[44px] text-sm text-[#f7f7f7] placeholder:text-[#a0a0a0] focus:outline-none focus:border-[#D8CA82]" />
+        <ActionButton
+          type="submit"
+          variant="primary"
+          size="icon"
+          icon={Send}
+          disabled={!text.trim()}
+          disabledReason="Écrivez un message avant d'envoyer"
+          data-testid={`${testId}-send-btn`}
+        >
+          {t("chat.send")}
+        </ActionButton>
       </form>
     </div>
   );

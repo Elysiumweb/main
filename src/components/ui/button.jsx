@@ -5,7 +5,11 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  // Désactivé : surface + bordure pointillée explicites (jamais un simple opacity-50)
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8CA82] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] " +
+    "disabled:pointer-events-none disabled:bg-[#232323] disabled:text-[#9a9a9a] disabled:border disabled:border-dashed disabled:border-white/25 disabled:shadow-none " +
+    "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {

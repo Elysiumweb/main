@@ -6,7 +6,8 @@ import { ArrowLeft, Share2, BarChart3, History } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { usePlayerSEO } from "../lib/useSEO";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { ErrorState, EmptyState } from "../components/States";
+import { SkeletonPlayerCard, SkeletonList } from "../components/Skeletons";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
@@ -46,7 +47,12 @@ export default function PlayerDetail() {
   usePlayerSEO(player && player.id ? player : null);
 
   if (error) return <div className="max-w-4xl mx-auto px-4 py-20"><ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="player-error" /></div>;
-  if (player === undefined) return <LoadingState testId="player-loading" />;
+  if (player === undefined) return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-8 py-16 grid sm:grid-cols-3 gap-8" data-testid="player-loading">
+      <SkeletonPlayerCard />
+      <div className="sm:col-span-2"><SkeletonList count={4} /></div>
+    </div>
+  );
   if (player === null) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6">
       <p className="text-[#f7f7f7]/50" data-testid="player-not-found">{t("playerpage.notFound")}</p>
@@ -67,7 +73,7 @@ export default function PlayerDetail() {
             <ArrowLeft size={14} /> {t("team.title")}
           </Link>
           <div className="flex flex-col sm:flex-row gap-10 items-start">
-            <PlayerPhoto src={player.photo} alt={player.pseudo} className="w-44 h-44 border border-[#D8CA82]/30" />
+            <PlayerPhoto src={player.photo} alt={player.pseudo} ratio="aspect-square" className="w-44 shrink-0 border border-[#D8CA82]/30" />
             <div className="flex-1">
               <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`team.status.${player.status || "player"}`)}</span>
               <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase mt-4" data-testid="player-pseudo">{player.pseudo}</h1>

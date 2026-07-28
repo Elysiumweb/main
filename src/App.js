@@ -33,6 +33,7 @@ import News from "@/pages/News";
 import ArticleDetail from "@/pages/ArticleDetail";
 import MediaGallery from "@/pages/MediaGallery";
 import CommunityCalendar from "@/pages/CommunityCalendar";
+import Donate from "@/pages/Donate";
 
 // Register service worker on load
 registerSW();
@@ -75,6 +76,8 @@ function App() {
               <Route path="/recrutement" element={<Recruitment />} />
               <Route path="/statistiques" element={<Stats />} />
               <Route path="/partenaires" element={<Partners />} />
+              <Route path="/soutenir" element={<Donate />} />
+              <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />
               <Route path="/connexion" element={<Login />} />
               <Route path="/profil" element={<Profile />} />

@@ -8,6 +8,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { auth, db, googleProvider } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { ActionButton } from "../components/ui/action-button";
 
 const errMsg = (code) => {
   const map = {
@@ -185,14 +186,17 @@ export default function Login() {
               6 caractères minimum.
             </p>
           </div>
-          <button
+          <ActionButton
             type="submit"
-            disabled={busy}
+            variant="primary"
+            size="md"
+            loading={busy}
+            loadingLabel={mode === "login" ? "Connexion…" : "Création du compte…"}
+            className="w-full"
             data-testid="login-submit-btn"
-            className="w-full bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none"
           >
             {mode === "login" ? t("login.submit") : t("login.submitRegister")}
-          </button>
+          </ActionButton>
         </form>
 
         <div className="flex items-center gap-4 my-6" role="separator" aria-orientation="horizontal">
@@ -206,7 +210,12 @@ export default function Login() {
           disabled={busy}
           data-testid="login-google-btn"
           aria-label={t("login.google")}
-          className="w-full border border-white/25 text-[#f7f7f7] text-sm py-3 flex items-center justify-center gap-3 hover:border-[#D8CA82] transition-colors motion-reduce:transition-none"
+          className={`w-full border text-sm py-3 min-h-[44px] flex items-center justify-center gap-3 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D8CA82] ${
+            busy
+              ? "bg-[#232323] text-[#9a9a9a] border-dashed border-white/25 cursor-not-allowed"
+              : "bg-transparent text-[#f7f7f7] border-white/25 hover:border-[#D8CA82] hover:text-[#D8CA82] hover:bg-[#D8CA82]/[0.07]"
+          }`}
+          aria-disabled={busy || undefined}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

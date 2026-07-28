@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { SocialIcon } from "./SocialIcon";
 import { NewsletterSignup } from "./NewsletterSignup";
+import { DonateLink } from "./DonateButton";
 import { MessageSquare, Mail } from "lucide-react";
 
 export const Footer = () => {
@@ -101,7 +102,16 @@ export const Footer = () => {
                 {t("nav.partners")}
               </Link>
             </li>
+            <li>
+              <Link to="/soutenir" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-nav-donate">
+                {t("nav.donate")}
+              </Link>
+            </li>
           </ul>
+
+          <div className="pt-4">
+            <DonateLink testId="footer-donate-cta" label={t("donate.cta")} />
+          </div>
 
           <div className="pt-3">
             <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mb-1">{t("footer.contact")}</p>

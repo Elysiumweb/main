@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Cookie } from "lucide-react";
 import { useLang } from "../lib/i18n";
+import { ActionButton } from "./ui/action-button";
 
 export const CookieConsent = () => {
   const { t } = useLang();
@@ -22,20 +23,12 @@ export const CookieConsent = () => {
           <Link to="/confidentialite" className="text-[#D8CA82] underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="cookie-privacy-link">{t("legal.privacy")}</Link>
         </p>
         <div className="flex gap-3 shrink-0">
-          <button
-            onClick={() => decide("declined")}
-            data-testid="cookie-decline-btn"
-            className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2 hover:border-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
-          >
+          <ActionButton variant="secondary" size="sm" onClick={() => decide("declined")} data-testid="cookie-decline-btn">
             {t("cookie.decline")}
-          </button>
-          <button
-            onClick={() => decide("accepted")}
-            data-testid="cookie-accept-btn"
-            className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-4 py-2 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#111111]"
-          >
+          </ActionButton>
+          <ActionButton variant="primary" size="sm" onClick={() => decide("accepted")} data-testid="cookie-accept-btn">
             {t("cookie.accept")}
-          </button>
+          </ActionButton>
         </div>
       </div>
     </div>

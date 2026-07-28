@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Clock, Edit2, X, Plus, Users, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Clock, Edit2, X, Plus, Users, Check } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { GAMES, ROSTERS } from "../../lib/constants";
 import { createNotification, logActivity } from "../../lib/notify";
+import { ConfirmDelete } from "../../components/ConfirmDelete";
 
 // ----- helpers -----
 const pad = (n) => String(n).padStart(2, "0");
@@ -233,13 +234,9 @@ export default function Planning(){
 
   const deleteEvent = async ()=>{
     if(!selectedEvent) return;
-    if(!window.confirm("Supprimer cet événement ?")) return;
-    try{
-      await deleteDoc(doc(db,"events", selectedEvent.id));
-      logActivity({ game: selectedEvent.game, type:"event_deleted", label: selectedEvent.title, byUid: user.uid, byName: displayName });
-      toast.success(t("planning.eventDeleted"));
-      closeModal();
-    }catch(e){ console.error(e); toast.error(t("common.error")); }
+    await deleteDoc(doc(db,"events", selectedEvent.id));
+    logActivity({ game: selectedEvent.game, type:"event_deleted", label: selectedEvent.title, byUid: user.uid, byName: displayName });
+    closeModal();
   };
 
   // ---- availability toggle ----
@@ -873,10 +870,15 @@ export default function Planning(){
 
               <div className="flex items-center justify-between pt-2">
                 {selectedEvent && canManage ? (
-                  <button type="button" onClick={deleteEvent} data-testid="event-delete-btn"
-                    className="flex items-center gap-2 border border-red-500/30 text-red-300 text-xs uppercase tracking-widest px-4 py-2.5 hover:bg-red-500/10 transition-colors">
-                    <Trash2 size={14} /> {t("planning.delete")}
-                  </button>
+                  <ConfirmDelete
+                    variant="button"
+                    testId="event-delete-btn"
+                    triggerLabel={t("planning.delete")}
+                    itemLabel={`l'événement « ${selectedEvent.title || "sans titre"} »`}
+                    successMessage={t("planning.eventDeleted")}
+                    errorMessage={t("common.error")}
+                    onConfirm={deleteEvent}
+                  />
                 ) : <div/>}
                 <div className="flex gap-2">
                   <button type="button" onClick={closeModal}
