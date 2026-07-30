@@ -78,13 +78,38 @@ service cloud.firestore {
         || (hasPlayerAccess() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendance']));
     }
 
-    // ===== Disponibilités =====
+    // ===== Disponibilités (exceptions hebdomadaires) =====
+    // Legacy docs store the full hours list. New docs store delta lists
+    // (added/removed) applied on top of the recurring weekly template.
     match /availabilities/{id} {
       allow read: if hasPlayerAccess();
       allow create, update: if hasPlayerAccess()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.date is string
-        && request.resource.data.hours is list;
+        && (!request.resource.data.keys().hasAny(['hours'])
+            || request.resource.data.hours is list)
+        && (!request.resource.data.keys().hasAny(['added'])
+            || request.resource.data.added is list)
+        && (!request.resource.data.keys().hasAny(['removed'])
+            || request.resource.data.removed is list);
+      allow delete: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
+    }
+
+    // ===== Disponibilités récurrentes (semaine type, appliquée chaque semaine) =====
+    match /recurringAvailabilities/{id} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if hasPlayerAccess()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.days is map;
+      allow delete: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
+    }
+
+    // ===== Absences déclarées =====
+    match /absences/{id} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if hasPlayerAccess()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.date is string;
       allow delete: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
     }
 
