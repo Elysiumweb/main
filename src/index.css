@@ -56,6 +56,39 @@ body {
     background-size: 32px 32px;
 }
 
+/* =====================================================================
+   MICRO-INTERACTIONS — rapide (~200ms), précis, sans rebond.
+   Cible explicitement les propriétés (jamais `transition: all`).
+   Désactivé via prefers-reduced-motion (voir bloc A11Y plus bas).
+   ===================================================================== */
+.u-micro {
+    transition-property: color, background-color, border-color, transform, opacity;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+.u-micro-shadow {
+    transition-property: box-shadow, transform;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+}
+
+/* Disponibilités : hachures nettes pour un jour d'absence (destructive #8c1d18) */
+.absence-hatch {
+    background-image: repeating-linear-gradient(
+        -45deg,
+        rgba(140, 29, 24, 0.32) 0,
+        rgba(140, 29, 24, 0.32) 5px,
+        transparent 5px,
+        transparent 11px
+    );
+}
+
+/* Disponibilités récurrentes : pointillés réguliers (base hebdomadaire) */
+.recurring-dots {
+    background-image: radial-gradient(rgba(52, 211, 153, 0.5) 1px, transparent 1px);
+    background-size: 6px 6px;
+}
+
 @keyframes fadeUp {
     from {
         opacity: 0;
@@ -144,6 +177,11 @@ body {
     [class*="hover:scale-"],
     [class*="hover:-translate-"] {
         transform: none !important;
+        transition: none !important;
+    }
+    /* Désactive les micro-interactions 200ms */
+    .u-micro,
+    .u-micro-shadow {
         transition: none !important;
     }
     /* Désactive les fondus d'opacity en hover */
