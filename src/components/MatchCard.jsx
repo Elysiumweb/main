@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useLang } from "../lib/i18n";
 import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import { OptimizedImage } from "./OptimizedImage";
 
 /* -----------------------------------------------------------------------
  * OpponentLogo
@@ -37,6 +39,8 @@ const OpponentLogo = ({ src, name, className = "" }) => {
       src={src}
       alt={`Logo de l'équipe adverse : ${safeName}`}
       onError={() => setErr(true)}
+      loading="lazy"
+      decoding="async"
       className={`${className} object-contain`}
     />
   );
@@ -128,7 +132,7 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
-          <img src="/brand/logo-icon-gold.png" alt="Logo Elysium" className="h-12 object-contain" />
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt="Logo Elysium" width="48" height="48" loading="lazy" className="h-12 object-contain" />
           <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7]">Elysium</span>
         </div>
         <div className="text-center">
@@ -157,7 +161,7 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
         <div className="mt-3 flex items-center justify-between gap-2">
           {match.platform && <span className="text-xs text-[#c8c8c8]">{t("results.platform")} : {match.platform}</span>}
           {match.watchUrl && (
-            <a href={match.watchUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} data-testid={`match-watch-${match.id}`}
+            <a href={match.watchUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_card", matchId: match.id, platform: match.platform || "watchUrl" }); }} data-testid={`match-watch-${match.id}`}
               className="text-xs text-[#D8CA82] uppercase tracking-widest flex items-center gap-1.5 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               <PlayCircle size={13} aria-hidden="true" /> {t("results.watch")}
             </a>
@@ -188,7 +192,11 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
   );
 
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => {
+      if (open) {
+        trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
+      }
+    }}>
       <DialogTrigger asChild>{card}</DialogTrigger>
       <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg" data-testid={`match-detail-${match.id}`}>
         <DialogHeader>
@@ -199,7 +207,7 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
         <div className="space-y-4 text-sm">
           <div className="flex items-center justify-between border border-white/10 p-4">
             <div className="flex flex-col items-center gap-1 w-1/3">
-              <img src="/brand/logo-icon-gold.png" alt="Logo Elysium" className="h-10 object-contain" />
+              <OptimizedImage src="/brand/logo-icon-gold.png" alt="Logo Elysium" width="40" height="40" loading="lazy" className="h-10 object-contain" />
               <span className="text-xs font-display uppercase">Elysium</span>
             </div>
             <p className="font-display font-black text-3xl" aria-label={upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
@@ -246,6 +254,7 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
             )}
             {match.watchUrl && upcoming && (
               <a href={match.watchUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_detail", matchId: match.id, platform: match.platform || "watchUrl" })}
                 className="text-xs text-[#D8CA82] uppercase tracking-widest flex items-center gap-1.5 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                 <ExternalLink size={13} aria-hidden="true" /> {t("results.watch")}
               </a>

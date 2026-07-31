@@ -7,6 +7,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Trophy, CalendarClock } from "lucide-react";
 import { GAMES } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { SITE_URL, useSEO } from "../lib/useSEO";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -39,6 +40,37 @@ export default function Results() {
     list.sort((a, b) => tab === "upcoming" ? (a.date || "").localeCompare(b.date || "") : (b.date || "").localeCompare(a.date || ""));
     return list;
   }, [matches, tab, game, competition, from, to]);
+
+  const sportsEventsJsonLd = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${SITE_URL}/resultats#matches`,
+    name: "Matchs Elysium Esport",
+    itemListElement: (matches || []).slice(0, 30).map((m, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "SportsEvent",
+        "@id": `${SITE_URL}/resultats#match-${m.id}`,
+        name: `Elysium vs ${m.opponentName || "adversaire"}`,
+        startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
+        eventStatus: m.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
+        sport: m.game || "Esport",
+        competitor: [
+          { "@id": `${SITE_URL}/#organization` },
+          { "@type": "SportsTeam", name: m.opponentName || "Adversaire", logo: m.opponentLogo },
+        ],
+        location: m.platform ? { "@type": "VirtualLocation", name: m.platform, url: m.watchUrl } : undefined,
+      },
+    })),
+  }), [matches]);
+
+  useSEO({
+    title: "Résultats & matchs — ELYSIUM Esport",
+    description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA et Rocket League.",
+    url: "/resultats",
+    jsonLd: sportsEventsJsonLd,
+  });
 
   const resetFilters = () => { setGame("all"); setCompetition("all"); setFrom(""); setTo(""); };
 

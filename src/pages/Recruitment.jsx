@@ -8,6 +8,7 @@ import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { EmptyState } from "../components/States";
 import { createNotification } from "../lib/notify";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const AGE_RANGES = ["-16", "16-17", "18-24", "25+"];
@@ -21,7 +22,16 @@ export default function Recruitment() {
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const formRef = useRef(null);
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const applicationStartedRef = useRef(false);
+  const markApplicationStarted = (source = "form") => {
+    if (applicationStartedRef.current) return;
+    applicationStartedRef.current = true;
+    trackEvent(ANALYTICS_EVENTS.APPLICATION_STARTED, { source });
+  };
+  const set = (k) => (e) => {
+    markApplicationStarted(`field_${k}`);
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+  };
 
   useEffect(() => {
     return onSnapshot(collection(db, "positions"), (snap) => {
@@ -32,6 +42,8 @@ export default function Recruitment() {
   }, []);
 
   const applyTo = (p) => {
+    trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "position_card", positionId: p.id, game: p.game });
+    markApplicationStarted("position_card");
     setForm((f) => ({ ...f, position: p.title }));
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -58,7 +70,9 @@ export default function Recruitment() {
         uid: user.uid, name: displayName, text: meta, createdAt: serverTimestamp(),
       });
       createNotification({ targetRoles: ["manager", "bureau"], type: "recruit_new", extra: form.position.trim(), link: "/recrutement" });
+      trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMITTED, { position: form.position, ageRange: form.ageRange, country: form.country });
       setForm(EMPTY_FORM); setConsent(false);
+      applicationStartedRef.current = false;
       toast.success(t("recruit.confirmation"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
     setSending(false);

@@ -4,7 +4,9 @@ import { useLang } from "../lib/i18n";
 import { useSEO } from "../lib/useSEO";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { DonateButton, DonateSecureNote } from "../components/DonateButton";
+import { OptimizedImage } from "../components/OptimizedImage";
 import { CONTACT_EMAIL } from "../lib/notify";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const USES = [
   { key: "gear", icon: Wrench },
@@ -27,7 +29,7 @@ export default function Donate() {
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
         <div className="absolute -right-20 top-1/2 -translate-y-1/2 opacity-[0.06] pointer-events-none">
-          <img src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" className="w-[520px] max-w-none" />
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" width="520" height="520" loading="lazy" className="w-[520px] max-w-none" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
           <PageBreadcrumb items={[{ label: t("donate.title") }]} />
@@ -40,10 +42,13 @@ export default function Donate() {
           >
             {t("donate.title")}
           </h1>
-          <img
+          <OptimizedImage
             src="/brand/accent-blade.png"
             alt=""
             aria-hidden="true"
+            width="160"
+            height="27"
+            loading="lazy"
             className="w-40 my-7 opacity-80"
           />
           <p className="text-[#c8c8c8] text-base sm:text-lg tracking-wide max-w-2xl leading-relaxed">
@@ -89,10 +94,13 @@ export default function Donate() {
             className="lg:sticky lg:top-24 relative border border-[#D8CA82]/30 bg-[#1A1A1A] p-8 overflow-hidden"
             data-testid="donate-card"
           >
-            <img
+            <OptimizedImage
               src="/brand/accent-brackets-gold.png"
               alt=""
               aria-hidden="true"
+              width="176"
+              height="176"
+              loading="lazy"
               className="pointer-events-none absolute -right-10 -bottom-10 w-44 opacity-[0.06]"
             />
             <div className="relative">
@@ -181,6 +189,7 @@ export default function Donate() {
             target="_blank"
             rel="noopener noreferrer"
             data-testid="donate-alt-discord"
+            onClick={() => trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "donate_alt" })}
             className="group border border-white/10 bg-[#1A1A1A] p-6 hover:border-[#D8CA82]/40 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
           >
             <Users className="text-[#D8CA82] mb-4" size={22} aria-hidden="true" />
