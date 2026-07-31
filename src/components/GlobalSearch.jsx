@@ -13,6 +13,7 @@ import {
   CommandSeparator,
 } from "./ui/command";
 import { Users, Newspaper, Trophy, FileText } from "lucide-react";
+import { getElysiumTeamName } from "../lib/constants";
 
 const PAGE_LINKS = [
   { path: "/", key: "nav.home" },
@@ -108,12 +109,14 @@ export const GlobalSearch = () => {
         {/* Matches */}
         <CommandGroup heading={t("search.matches")}>
           {matches.slice(0, 30).map((m) => {
-            const label = `Elysium vs ${m.opponentName || ""} ${m.competition || ""} ${m.date || ""}`;
+            const teamName = getElysiumTeamName(m.roster);
+            const label = `${teamName} vs ${m.opponentName || ""} ${m.roster || ""} ${m.competition || ""} ${m.date || ""}`;
             return (
               <CommandItem key={`match-${m.id}`} value={label}
                 onSelect={() => runCommand(() => navigate("/resultats"))}>
                 <Trophy size={14} className="mr-2 text-[#D8CA82]" />
-                <span>Elysium vs {m.opponentName}</span>
+                <span>{teamName} vs {m.opponentName}</span>
+                {m.roster && <span className="ml-2 text-xs text-[#D8CA82]">{m.roster}</span>}
                 {m.competition && <span className="ml-2 text-xs text-[#c8c8c8]">{m.competition}</span>}
                 <span className="ml-2 text-xs text-[#a0a0a0]">{m.date}</span>
               </CommandItem>

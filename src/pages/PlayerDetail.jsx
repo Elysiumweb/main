@@ -55,7 +55,10 @@ export default function PlayerDetail() {
   );
 
   const stats = parseStats(player.statsText);
-  const history = matches.filter((m) => m.game === player.game).slice(0, 6);
+  const history = matches.filter((m) => (
+    m.game === player.game
+    && (player.game !== "Rocket League" || !player.roster || !m.roster || m.roster === player.roster)
+  )).slice(0, 6);
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">

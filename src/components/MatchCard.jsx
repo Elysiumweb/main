@@ -4,6 +4,7 @@ import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trop
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
+import { getElysiumTeamName } from "../lib/constants";
 
 /* -----------------------------------------------------------------------
  * OpponentLogo
@@ -102,11 +103,13 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
   const them = Number(match.scoreThem);
   const result = us > them ? "win" : us < them ? "loss" : "draw";
   const maps = (match.maps || []).filter((m) => m.name);
+  const roster = typeof match.roster === "string" ? match.roster.trim() : "";
+  const teamName = getElysiumTeamName(roster);
 
   // Accessible description for the card
   const ariaDesc = upcoming
-    ? `Match à venir : Elysium contre ${match.opponentName || "adversaire"}`
-    : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} d'Elysium ${us}-${them} contre ${match.opponentName || "adversaire"}`;
+    ? `Match à venir : ${teamName} contre ${match.opponentName || "adversaire"}`
+    : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || "adversaire"}`;
 
   const card = (
     <div
@@ -126,14 +129,21 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
       <span id={`match-desc-${match.id}`} className="sr-only">
         {ariaDesc}
       </span>
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game || "EVA"}</span>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game || "EVA"}</span>
+          {roster && (
+            <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
+              {roster}
+            </span>
+          )}
+        </div>
         <ResultBadge result={result} t={t} upcoming={upcoming} />
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
-          <OptimizedImage src="/brand/logo-icon-gold.png" alt="Logo Elysium" width="48" height="48" loading="lazy" className="h-12 object-contain" />
-          <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7]">Elysium</span>
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="48" height="48" loading="lazy" className="h-12 object-contain" />
+          <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7] text-center leading-tight" data-testid={`match-team-name-${match.id}`}>{teamName}</span>
         </div>
         <div className="text-center">
           {upcoming ? (
@@ -201,14 +211,14 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
       <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg" data-testid={`match-detail-${match.id}`}>
         <DialogHeader>
           <DialogTitle className="font-display uppercase tracking-widest text-[#D8CA82]">
-            Elysium vs {match.opponentName}
+            {teamName} vs {match.opponentName}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 text-sm">
           <div className="flex items-center justify-between border border-white/10 p-4">
             <div className="flex flex-col items-center gap-1 w-1/3">
-              <OptimizedImage src="/brand/logo-icon-gold.png" alt="Logo Elysium" width="40" height="40" loading="lazy" className="h-10 object-contain" />
-              <span className="text-xs font-display uppercase">Elysium</span>
+              <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="40" height="40" loading="lazy" className="h-10 object-contain" />
+              <span className="text-xs font-display uppercase text-center leading-tight">{teamName}</span>
             </div>
             <p className="font-display font-black text-3xl" aria-label={upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
               {upcoming ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
@@ -222,6 +232,11 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
             {match.date}{match.time ? ` · ${match.time}` : ""}{match.timezone ? ` (${match.timezone})` : ""}
             {match.competition ? ` — ${match.competition}` : ""}{match.platform ? ` — ${match.platform}` : ""}
           </p>
+          {roster && (
+            <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50" data-testid={`match-detail-roster-${match.id}`}>
+              {t("results.roster")} : <span className="text-[#D8CA82]">{roster}</span>
+            </p>
+          )}
           {maps.length > 0 && (
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2">{t("results.maps")}</p>

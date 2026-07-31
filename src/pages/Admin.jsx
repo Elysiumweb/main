@@ -5,7 +5,7 @@ import { Shield, Users, Trophy } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { GAMES, ROLES, ROSTERS, OFFICIAL_UID } from "../lib/constants";
+import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRoster } from "../components/admin/AdminRoster";
@@ -17,7 +17,7 @@ import { AdminEvents } from "../components/admin/AdminEvents";
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", mapsText: "", mvp: "", vodUrl: "" };
+const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", mapsText: "", mvp: "", vodUrl: "" };
 
 export default function Admin() {
   const { isOfficial, role, loading } = useAuth();
@@ -28,6 +28,15 @@ export default function Admin() {
   const [form, setForm] = useState(EMPTY_MATCH);
   const [editMatchId, setEditMatchId] = useState(null);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const matchRosters = ROSTERS[form.game] || [];
+  const onMatchGameChange = (e) => {
+    const game = e.target.value;
+    setForm((f) => ({
+      ...f,
+      game,
+      roster: (ROSTERS[game] || []).includes(f.roster) ? f.roster : "",
+    }));
+  };
 
   const isBureau = isOfficial || role === "bureau";
   const isStaff = isBureau || role === "manager";
@@ -74,19 +83,26 @@ export default function Admin() {
 
   const addMatch = async (e) => {
     e.preventDefault();
+    const rosterOptions = ROSTERS[form.game] || [];
+    const roster = rosterOptions.includes(form.roster) ? form.roster : "";
+    if (rosterOptions.length > 0 && !roster) {
+      toast.error(t("admin.match.rosterRequired"));
+      return;
+    }
     if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl) || !isUrl(form.vodUrl)) {
       toast.error("URL invalide (doit commencer par http:// ou https://)");
       return;
     }
     try {
       const { mapsText, ...rest } = form;
+      const matchData = { ...rest, roster: rosterOptions.length > 0 ? roster : null };
       const maps = mapsText.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
         const [name, score = ""] = l.split("|").map((s) => s.trim());
         const m = score.match(/(\d+)\s*-\s*(\d+)/);
         return { name, us: m ? Number(m[1]) : null, them: m ? Number(m[2]) : null };
       });
-      if (editMatchId) await updateDoc(doc(db, "matches", editMatchId), { ...rest, maps });
-      else await addDoc(collection(db, "matches"), { ...rest, maps, createdAt: serverTimestamp() });
+      if (editMatchId) await updateDoc(doc(db, "matches", editMatchId), { ...matchData, maps });
+      else await addDoc(collection(db, "matches"), { ...matchData, maps, createdAt: serverTimestamp() });
       setForm(EMPTY_MATCH); setEditMatchId(null);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
@@ -96,7 +112,7 @@ export default function Admin() {
     setEditMatchId(m.id);
     setForm({
       opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
-      date: m.date || "", competition: m.competition || "", game: m.game || "EVA", status: m.status || "finished",
+      date: m.date || "", competition: m.competition || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
       time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
       mapsText: (m.maps || []).map((x) => `${x.name} | ${x.us ?? ""}-${x.them ?? ""}`).join("\n"), mvp: m.mvp || "", vodUrl: m.vodUrl || "",
     });
@@ -210,10 +226,22 @@ export default function Admin() {
             <form onSubmit={addMatch} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-match-form">
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("common.game")}</label>
-                <select value={form.game} onChange={set("game")} className={inputCls} data-testid="admin-match-game">
+                <select value={form.game} onChange={onMatchGameChange} className={inputCls} data-testid="admin-match-game">
                   {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
+              {matchRosters.length > 0 && (
+                <div>
+                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.roster")}</label>
+                  <select value={form.roster || ""} onChange={set("roster")} required className={inputCls} data-testid="admin-match-roster">
+                    <option value="">{t("admin.roster.none")}</option>
+                    {matchRosters.map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
+                  </select>
+                  <p className="text-[11px] text-[#f7f7f7]/40 mt-2" data-testid="admin-match-roster-preview">
+                    {t("admin.match.rosterPreview")} <span className="text-[#D8CA82]">{getElysiumTeamName(form.roster)}</span>
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.opponent")}</label>
                 <input value={form.opponentName} onChange={onOpponentChange} required list="admin-opponents" className={inputCls} data-testid="admin-match-opponent" />

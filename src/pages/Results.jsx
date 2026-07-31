@@ -5,7 +5,7 @@ import { useLang } from "../lib/i18n";
 import { MatchCard } from "../components/MatchCard";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Trophy, CalendarClock } from "lucide-react";
-import { GAMES } from "../lib/constants";
+import { GAMES, getElysiumTeamName } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
@@ -46,23 +46,26 @@ export default function Results() {
     "@type": "ItemList",
     "@id": `${SITE_URL}/resultats#matches`,
     name: "Matchs Elysium Esport",
-    itemListElement: (matches || []).slice(0, 30).map((m, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      item: {
-        "@type": "SportsEvent",
-        "@id": `${SITE_URL}/resultats#match-${m.id}`,
-        name: `Elysium vs ${m.opponentName || "adversaire"}`,
-        startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
-        eventStatus: m.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
-        sport: m.game || "Esport",
-        competitor: [
-          { "@id": `${SITE_URL}/#organization` },
-          { "@type": "SportsTeam", name: m.opponentName || "Adversaire", logo: m.opponentLogo },
-        ],
-        location: m.platform ? { "@type": "VirtualLocation", name: m.platform, url: m.watchUrl } : undefined,
-      },
-    })),
+    itemListElement: (matches || []).slice(0, 30).map((m, index) => {
+      const teamName = getElysiumTeamName(m.roster);
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "SportsEvent",
+          "@id": `${SITE_URL}/resultats#match-${m.id}`,
+          name: `${teamName} vs ${m.opponentName || "adversaire"}`,
+          startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
+          eventStatus: m.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
+          sport: m.game || "Esport",
+          competitor: [
+            { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
+            { "@type": "SportsTeam", name: m.opponentName || "Adversaire", logo: m.opponentLogo },
+          ],
+          location: m.platform ? { "@type": "VirtualLocation", name: m.platform, url: m.watchUrl } : undefined,
+        },
+      };
+    }),
   }), [matches]);
 
   useSEO({
