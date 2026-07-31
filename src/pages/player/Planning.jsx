@@ -769,6 +769,41 @@ export default function Planning(){
           {availMode==="week" ? t("planning.avail.recurring.applied") : t("planning.avail.recurring.subtitle")} {t("planning.absence.hint")}
         </p>
 
+        {availMode==="week" && (
+          <div className="mx-4 my-3 border border-red-400/30 bg-[#8c1d18]/10 p-3" data-testid="absence-quick-panel">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex items-start gap-3 lg:w-[300px]">
+                <CalendarOff size={18} className="text-red-300 mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="font-display text-xs uppercase tracking-[0.25em] text-red-200">{t("planning.absence.quickTitle")}</p>
+                  <p className="text-xs text-[#f7f7f7]/55 mt-1 leading-relaxed">{t("planning.absence.quickSub")}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 flex-1">
+                {days.map((d)=>{
+                  const key = toDateKey(d);
+                  const myAbsence = user ? absenceIndex[`${user.uid}_${key}`] : null;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={()=> openAbsenceModal(key)}
+                      data-testid={`absence-quick-${key}`}
+                      className={`border px-3 py-2 text-left u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 ${myAbsence ? "border-red-300/60 bg-red-500/15" : "border-white/10 bg-[#111111] hover:border-red-300/60 hover:bg-red-500/10"}`}
+                    >
+                      <span className="block text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/45">{d.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short"})}</span>
+                      <span className={`block font-display text-sm mt-0.5 ${myAbsence ? "text-red-200" : "text-[#f7f7f7]"}`}>{d.getDate()}</span>
+                      <span className={`block text-[9px] uppercase tracking-widest mt-1 ${myAbsence ? "text-red-200" : "text-red-300/80"}`}>
+                        {myAbsence ? t("planning.absence.editDay") : t("planning.absence.declare")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {availMode==="recurring" ? (
           <RecurringGrid />
         ) : (
@@ -969,6 +1004,16 @@ export default function Planning(){
         </div>
 
         <div className="ml-auto flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => { setTab("availability"); setAvailMode("week"); openAbsenceModal(toDateKey(currentDate)); }}
+            data-testid="planning-absence-shortcut"
+            className="bg-[#8c1d18] text-white font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(220,38,38,0.3)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300"
+            title={t("planning.absence.shortcutHelp")}
+          >
+            <CalendarOff size={14} aria-hidden="true" /> {t("planning.absence.shortcut")}
+          </button>
+
           {/* tab switcher */}
           <div className="flex border border-white/10 bg-[#141414] p-1">
             <button onClick={()=> setTab("calendar")} data-testid="tab-calendar"

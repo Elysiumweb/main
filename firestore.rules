@@ -27,16 +27,36 @@ service cloud.firestore {
       return isAuth() && (isOfficial() || userRole() in ['manager', 'bureau']);
     }
 
+    function isValidRole(role) {
+      return role in ['visitor', 'player', 'manager', 'bureau'];
+    }
+
+    function publicWriteThrottleFields() {
+      return request.resource.data.keys().hasOnly(['name', 'company', 'email', 'budget', 'message', 'createdAt'])
+        || request.resource.data.keys().hasOnly(['email', 'confirmed', 'confirmToken', 'lang', 'subscribedAt', 'consentGivenAt']);
+    }
+
+    function isShortString(value, max) {
+      return value is string && value.size() <= max;
+    }
+
     // ===== Utilisateurs =====
     match /users/{uid} {
-      allow read: if isAuth();
+      // Un joueur lit uniquement son propre profil privé. Managers/bureau lisent
+      // la collection pour le planning d'équipe et l'administration des rôles.
+      allow read: if isAuth() && (request.auth.uid == uid || isManagerPlus());
 
       allow create: if isAuth() && request.auth.uid == uid
         && request.resource.data.role == 'visitor'
-        && request.resource.data.game == null;
+        && request.resource.data.game == null
+        && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null);
 
-      // Official can change anything; user can only change displayName/photoURL (not role/game/roster)
-      allow update: if isOfficial()
+      // Rôles validés côté règles. Les utilisateurs ne peuvent jamais s'auto-promouvoir
+      // ni changer leur pôle/roster : séparation stricte joueur/staff côté serveur.
+      allow update: if (isOfficial()
+          && isValidRole(request.resource.data.role)
+          && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League'])
+          && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null || request.resource.data.roster is string))
         || (request.auth.uid == uid
             && request.resource.data.role == resource.data.role
             && request.resource.data.game == resource.data.game
@@ -66,7 +86,10 @@ service cloud.firestore {
     // ===== Chats (game + roster + global) =====
     // Channels: game_EVA, game_Rocket League, roster_Espoir, roster_Académique, roster_Esport, global
     match /chats/{channel}/messages/{id} {
-      allow read, create: if hasPlayerAccess();
+      allow read: if hasPlayerAccess();
+      allow create: if hasPlayerAccess()
+        && request.resource.data.uid == request.auth.uid
+        && isShortString(request.resource.data.text, 2000);
       allow delete: if isOfficial();
     }
 
@@ -109,7 +132,8 @@ service cloud.firestore {
       allow read: if hasPlayerAccess();
       allow create, update: if hasPlayerAccess()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.date is string;
+        && request.resource.data.date is string
+        && (!request.resource.data.keys().hasAny(['reason']) || isShortString(request.resource.data.reason, 120));
       allow delete: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
     }
 
@@ -160,13 +184,25 @@ service cloud.firestore {
     // ===== Support =====
     match /supportThreads/{id} {
       allow read: if isAuth() && (resource.data.uid == request.auth.uid || isBureau());
-      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
-      allow update: if isBureau() || (isAuth() && resource.data.uid == request.auth.uid);
+      allow create: if isAuth()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt == request.time
+        && isShortString(request.resource.data.subject, 140)
+        && isShortString(request.resource.data.meta, 4000);
+      allow update: if isBureau()
+        || (isAuth() && resource.data.uid == request.auth.uid
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.status == resource.data.status);
       allow delete: if isBureau();
 
       match /messages/{mid} {
-        allow read, create: if isAuth()
+        allow read: if isAuth()
           && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau());
+        allow create: if isAuth()
+          && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau())
+          && request.resource.data.uid == request.auth.uid
+          && isShortString(request.resource.data.text, 4000);
       }
     }
 
@@ -178,28 +214,53 @@ service cloud.firestore {
 
     // ===== Demandes de partenariat =====
     match /partner_requests/{id} {
-      allow create: if true;
+      // Public form: field allow-list, mandatory timestamp and length caps to reduce spam/abuse.
+      allow create: if publicWriteThrottleFields()
+        && request.resource.data.createdAt == request.time
+        && isShortString(request.resource.data.name, 120)
+        && isShortString(request.resource.data.company, 160)
+        && isShortString(request.resource.data.email, 180)
+        && isShortString(request.resource.data.message, 3000);
       allow read, update, delete: if isBureau();
     }
 
     // ===== Newsletter =====
     match /newsletter/{id} {
       allow read: if isBureau();
-      allow create: if true;
-      allow update, delete: if isBureau()
+      allow create: if publicWriteThrottleFields()
+        && request.resource.data.confirmed == false
+        && request.resource.data.subscribedAt == request.time
+        && request.resource.data.consentGivenAt == request.time
+        && isShortString(request.resource.data.email, 180)
+        && isShortString(request.resource.data.confirmToken, 160);
+      allow update: if isBureau()
         || request.resource.data.email == resource.data.email;
+      allow delete: if isBureau();
     }
 
     // ===== Recrutement =====
     match /recruitThreads/{id} {
       allow read: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
-      allow create: if isAuth() && request.resource.data.uid == request.auth.uid;
-      allow update: if isManagerPlus() || (isAuth() && resource.data.uid == request.auth.uid);
+      allow create: if isAuth()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.consent == true
+        && request.resource.data.createdAt == request.time
+        && isShortString(request.resource.data.position, 140)
+        && isShortString(request.resource.data.meta, 4000);
+      allow update: if isManagerPlus()
+        || (isAuth() && resource.data.uid == request.auth.uid
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.status == resource.data.status);
       allow delete: if isManagerPlus();
 
       match /messages/{mid} {
-        allow read, create: if isAuth()
+        allow read: if isAuth()
           && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus());
+        allow create: if isAuth()
+          && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus())
+          && request.resource.data.uid == request.auth.uid
+          && isShortString(request.resource.data.text, 4000);
       }
     }
   }

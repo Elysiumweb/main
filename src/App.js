@@ -24,6 +24,7 @@ import Donate from "@/pages/Donate";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
+import { SEOManager } from "@/components/SEOManager";
 import PlayerLayout from "@/pages/player/PlayerLayout";
 import ChatSpace from "@/pages/player/ChatSpace";
 import Planning from "@/pages/player/Planning";
@@ -34,6 +35,7 @@ import News from "@/pages/News";
 import ArticleDetail from "@/pages/ArticleDetail";
 import MediaGallery from "@/pages/MediaGallery";
 import CommunityCalendar from "@/pages/CommunityCalendar";
+import NotFound from "@/pages/NotFound";
 
 // Register service worker on load
 registerSW();
@@ -58,6 +60,7 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <BrowserRouter>
+          <SEOManager />
           <SkipLink />
           <Navbar />
           <VerifyEmailBanner />
@@ -94,7 +97,9 @@ function App() {
               <Route path="tableau" element={<CanvasSpace />} />
               <Route path="activite" element={<ActivityLog />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route element={<PublicLayout />}>
+              <Route path="*" element={<NotFound />} />
+            </Route>
           </Routes>
           <PushConsent />
           <CookieConsent />

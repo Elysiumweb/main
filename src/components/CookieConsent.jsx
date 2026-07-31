@@ -2,12 +2,21 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Cookie } from "lucide-react";
 import { useLang } from "../lib/i18n";
+import { setAnalyticsConsent } from "../lib/analytics";
 
 export const CookieConsent = () => {
   const { t } = useLang();
-  const [choice, setChoice] = useState(() => localStorage.getItem("elysium_cookie_consent"));
+  const [choice, setChoice] = useState(() => {
+    const saved = localStorage.getItem("elysium_cookie_consent");
+    if (saved) setAnalyticsConsent(saved === "accepted");
+    return saved;
+  });
   if (choice) return null;
-  const decide = (v) => { localStorage.setItem("elysium_cookie_consent", v); setChoice(v); };
+  const decide = (v) => {
+    localStorage.setItem("elysium_cookie_consent", v);
+    setAnalyticsConsent(v === "accepted");
+    setChoice(v);
+  };
   return (
     <div
       className="fixed bottom-0 inset-x-0 z-[60] bg-[#111111]/95 backdrop-blur-xl border-t border-[#D8CA82]/30 px-4 sm:px-8 py-4 motion-reduce:backdrop-blur-0"

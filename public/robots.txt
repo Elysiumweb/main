@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profil
+Disallow: /connexion
+Disallow: /espace-joueur
+
+Sitemap: https://elysium-esport.fr/sitemap.xml

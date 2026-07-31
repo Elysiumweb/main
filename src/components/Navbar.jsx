@@ -4,6 +4,7 @@ import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const linkCls = ({ isActive }) =>
   `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
@@ -71,7 +72,8 @@ export const Navbar = () => {
         </Link>
         <nav className="hidden xl:flex items-center gap-5" aria-label="Navigation principale">
           {links.map((l) => (
-            <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
+            <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}
+              onClick={() => l.to === "/recrutement" && trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "navbar" })}>
               {l.label}
             </NavLink>
           ))}
@@ -158,7 +160,7 @@ export const Navbar = () => {
           data-testid="nav-mobile-menu"
         >
           {links.map((l) => (
-            <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)}>
+            <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => { setOpen(false); if (l.to === "/recrutement") trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "mobile_navbar" }); }}>
               {l.label}
             </NavLink>
           ))}

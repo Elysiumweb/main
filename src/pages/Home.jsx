@@ -7,7 +7,9 @@ import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { DonateBlock } from "../components/DonateButton";
+import { OptimizedImage } from "../components/OptimizedImage";
 import { videoEmbedUrl } from "./MediaGallery";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 /* Neutral initials plate when the opponent logo is missing/broken
    (mirrors MatchCard behavior, without implying any partnership). */
@@ -94,7 +96,7 @@ export default function Home() {
       <section className="relative overflow-hidden min-h-[88vh] flex items-center" data-testid="home-hero" aria-labelledby="home-h1">
         <div className="pattern-overlay" />
         <div className="absolute -right-10 sm:-right-16 lg:-right-24 top-1/2 -translate-y-1/2 opacity-[0.07] pointer-events-none" aria-hidden="true">
-          <img src="/brand/logo-icon-gold.png" alt="" loading="lazy" decoding="async" className="w-[260px] sm:w-[400px] lg:w-[560px] xl:w-[640px] max-w-none" />
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt="" width="640" height="640" loading="lazy" className="w-[260px] sm:w-[400px] lg:w-[560px] xl:w-[640px] max-w-none" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 relative w-full">
           <div className="max-w-3xl">
@@ -107,12 +109,13 @@ export default function Home() {
             <p className="anim-fade-up motion-reduce:animate-none font-display text-[#D8CA82] text-lg sm:text-2xl tracking-[0.3em] uppercase mt-4" style={{ animationDelay: "0.2s" }} data-testid="home-tagline">
               {t("home.tagline")}
             </p>
-            <img src="/brand/accent-blade.png" alt="" aria-hidden="true" loading="lazy" decoding="async" className="anim-fade-up motion-reduce:animate-none w-48 my-8 opacity-80" style={{ animationDelay: "0.25s" }} />
+            <OptimizedImage src="/brand/accent-blade.png" alt="" aria-hidden="true" width="192" height="32" loading="lazy" className="anim-fade-up motion-reduce:animate-none w-48 my-8 opacity-80" style={{ animationDelay: "0.25s" }} />
             <p className="anim-fade-up motion-reduce:animate-none text-[#c8c8c8] text-base sm:text-lg max-w-xl leading-relaxed" style={{ animationDelay: "0.3s" }}>
               {t("home.heroSub")}
             </p>
             <div className="anim-fade-up motion-reduce:animate-none flex flex-wrap gap-4 mt-10" style={{ animationDelay: "0.4s" }}>
               <Link to="/recrutement" data-testid="home-cta-join"
+                onClick={() => trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "home_hero" })}
                 className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                 {t("home.cta.join")} <ArrowRight size={16} aria-hidden="true" />
               </Link>
@@ -129,7 +132,7 @@ export default function Home() {
       <section className="border-y border-white/10 bg-[#0c0c0c] relative overflow-hidden" data-testid="home-manifesto" aria-labelledby="home-manifesto-h2">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 grid lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-4">
-            <img src="/brand/logo-vertical-gold.png" alt="Logo vertical Elysium" loading="lazy" decoding="async" className="w-40 sm:w-48 lg:w-56 mx-auto lg:mx-0 gold-glow" />
+            <OptimizedImage src="/brand/logo-vertical-gold.png" alt="Logo vertical Elysium" width="224" height="280" loading="lazy" className="w-40 sm:w-48 lg:w-56 mx-auto lg:mx-0 gold-glow" />
           </div>
           <div className="lg:col-span-8">
             <h2 id="home-manifesto-h2" className="font-display text-[#D8CA82] text-base md:text-lg tracking-[0.4em] uppercase mb-6">{t("home.manifesto.title")}</h2>
@@ -200,7 +203,7 @@ export default function Home() {
             {/* PROCHAIN MATCH — grande tuile */}
             <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative border border-white/10 bg-[#111111] overflow-hidden flex flex-col group hover:border-[#D8CA82]/40 u-micro" data-testid="home-proof-next-match">
               <img src="https://images.pexels.com/photos/9072212/pexels-photo-9072212.jpeg?auto=compress&cs=tinysrgb&w=1200"
-                alt="" aria-hidden="true" loading="lazy" decoding="async"
+                alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800"
                 className="absolute inset-0 w-full h-full object-cover opacity-25 saturate-[0.4] contrast-125" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0c] via-[#0c0c0c]/80 to-[#0c0c0c]/40" aria-hidden="true" />
               <div className="relative p-8 lg:p-12 flex flex-col flex-1">
@@ -211,7 +214,7 @@ export default function Home() {
                   <div className="flex-1 flex flex-col justify-between gap-8">
                     <div className="flex items-center justify-center gap-6 sm:gap-12">
                       <div className="flex flex-col items-center gap-3">
-                        <img src="/brand/logo-icon-gold.png" alt="Logo Elysium" loading="lazy" decoding="async" className="h-16 sm:h-20 object-contain gold-glow" />
+                        <OptimizedImage src="/brand/logo-icon-gold.png" alt="Logo Elysium" width="80" height="80" loading="lazy" className="h-16 sm:h-20 object-contain gold-glow" />
                         <span className="font-display uppercase tracking-[0.25em] text-sm text-[#f7f7f7]">Elysium</span>
                       </div>
                       <span className="font-display font-black text-3xl sm:text-5xl text-[#D8CA82]" aria-hidden="true">VS</span>
@@ -226,6 +229,7 @@ export default function Home() {
                       <span className="text-xs text-[#f7f7f7]/60">{fmtMatchDate(nextMatch)}{nextMatch.timezone ? ` (${nextMatch.timezone})` : ""}</span>
                       {nextMatch.watchUrl && (
                         <a href={nextMatch.watchUrl} target="_blank" rel="noopener noreferrer" data-testid="home-proof-watch-link"
+                          onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_next_match", matchId: nextMatch.id, platform: nextMatch.platform || "watchUrl" })}
                           className="ml-auto inline-flex items-center gap-2 bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                           <PlayCircle size={13} aria-hidden="true" /> {t("home.proof.watch")}
                         </a>
@@ -322,10 +326,12 @@ export default function Home() {
             <h2 id="home-live-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.live.title")}</h2>
             <div className="flex-1 h-px bg-white/10" />
             <a href="https://www.twitch.tv/elysiumxeva" target="_blank" rel="noopener noreferrer" data-testid="home-live-twitch-cta"
+              onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_live", platform: "twitch" })}
               className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               <PlayCircle size={14} aria-hidden="true" /> {t("home.live.watch")}
             </a>
             <a href="https://www.youtube.com/@elysiumfr" target="_blank" rel="noopener noreferrer" data-testid="home-live-youtube-cta"
+              onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_live", platform: "youtube" })}
               className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               <Youtube size={14} aria-hidden="true" /> {t("home.live.youtube")}
             </a>
@@ -379,6 +385,7 @@ export default function Home() {
               </div>
             )}
             <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta"
+              onClick={() => trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_discord" })}
               className="inline-flex items-center gap-3 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               <SocialIcon name="discord" size={18} aria-hidden="true" /> {t("home.discord.cta")}
             </a>
@@ -415,6 +422,7 @@ export default function Home() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {SOCIALS.map((s) => (
             <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" data-testid={`home-social-${s.icon}`} aria-label={`${s.name} (ouvre dans un nouvel onglet)`}
+              onClick={() => s.icon === "discord" && trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_socials" })}
               className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/60 hover:-translate-y-1 motion-reduce:hover:translate-y-0 u-micro group focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               <span className="text-[#c8c8c8] group-hover:text-[#D8CA82] u-micro" aria-hidden="true"><SocialIcon name={s.icon} size={28} /></span>
               <span className="text-xs font-display uppercase tracking-widest text-[#c8c8c8]">{s.name}</span>
