@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { getElysiumTeamName } from "./constants";
 
 export const SITE_URL = (process.env.REACT_APP_SITE_URL || "https://elysium-esport.fr").replace(/\/$/, "");
 export const SITE_NAME = "ELYSIUM Esport";
@@ -158,7 +159,8 @@ export const usePlayerSEO = (player) => {
 };
 
 export const useMatchSEO = (match) => {
-  const title = match ? `Elysium vs ${match.opponentName} — ${match.competition || "Match"}` : undefined;
+  const teamName = match ? getElysiumTeamName(match.roster) : "Elysium";
+  const title = match ? `${teamName} vs ${match.opponentName} — ${match.competition || "Match"}` : undefined;
   const description = match ? `${match.scoreUs ?? "?"} – ${match.scoreThem ?? "?"} · ${match.date || ""}${match.competition ? ` · ${match.competition}` : ""}` : undefined;
   const image = match?.opponentLogo || undefined;
   const startDate = match?.date ? `${match.date}${match.time ? `T${match.time}` : ""}` : undefined;
@@ -166,12 +168,12 @@ export const useMatchSEO = (match) => {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     "@id": `${SITE_URL}/resultats#match-${match.id}`,
-    name: `Elysium vs ${match.opponentName || "adversaire"}`,
+    name: `${teamName} vs ${match.opponentName || "adversaire"}`,
     startDate,
     eventStatus: match.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
     sport: match.game || "Esport",
     competitor: [
-      { "@id": `${SITE_URL}/#organization` },
+      { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
       { "@type": "SportsTeam", name: match.opponentName || "Adversaire", logo: absoluteUrl(match.opponentLogo) },
     ],
     location: match.platform ? { "@type": "VirtualLocation", name: match.platform, url: match.watchUrl } : undefined,

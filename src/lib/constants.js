@@ -11,6 +11,11 @@ export const ROSTERS = {
 // Flat list of all rosters (for selects / validation)
 export const ALL_ROSTERS = Object.values(ROSTERS).flat();
 
+export const getElysiumTeamName = (roster) => {
+  const label = typeof roster === "string" ? roster.trim() : "";
+  return label ? `Elysium ${label}` : "Elysium";
+};
+
 /* ---- Dons / PayPal ----
    Bouton hébergé (« no-code checkout ») PayPal. Les identifiants peuvent être
    surchargés par variables d'environnement pour changer de compte sans toucher au code. */

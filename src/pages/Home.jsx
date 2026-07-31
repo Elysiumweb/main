@@ -4,7 +4,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { SOCIALS, GAMES } from "../lib/constants";
+import { SOCIALS, GAMES, getElysiumTeamName } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { DonateBlock } from "../components/DonateButton";
 import { OptimizedImage } from "../components/OptimizedImage";
@@ -214,8 +214,8 @@ export default function Home() {
                   <div className="flex-1 flex flex-col justify-between gap-8">
                     <div className="flex items-center justify-center gap-6 sm:gap-12">
                       <div className="flex flex-col items-center gap-3">
-                        <OptimizedImage src="/brand/logo-icon-gold.png" alt="Logo Elysium" width="80" height="80" loading="lazy" className="h-16 sm:h-20 object-contain gold-glow" />
-                        <span className="font-display uppercase tracking-[0.25em] text-sm text-[#f7f7f7]">Elysium</span>
+                        <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${getElysiumTeamName(nextMatch.roster)}`} width="80" height="80" loading="lazy" className="h-16 sm:h-20 object-contain gold-glow" />
+                        <span className="font-display uppercase tracking-[0.25em] text-sm text-[#f7f7f7] text-center leading-tight">{getElysiumTeamName(nextMatch.roster)}</span>
                       </div>
                       <span className="font-display font-black text-3xl sm:text-5xl text-[#D8CA82]" aria-hidden="true">VS</span>
                       <div className="flex flex-col items-center gap-3">
@@ -225,6 +225,7 @@ export default function Home() {
                     </div>
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-6">
                       <span className="text-[10px] font-display uppercase tracking-[0.3em] text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{nextMatch.game || "EVA"}</span>
+                      {nextMatch.roster && <span className="text-[10px] font-display uppercase tracking-[0.25em] text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5">{nextMatch.roster}</span>}
                       {nextMatch.competition && <span className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/70">{nextMatch.competition}</span>}
                       <span className="text-xs text-[#f7f7f7]/60">{fmtMatchDate(nextMatch)}{nextMatch.timezone ? ` (${nextMatch.timezone})` : ""}</span>
                       {nextMatch.watchUrl && (
@@ -274,7 +275,7 @@ export default function Home() {
                   </div>
                   {palmares.last && (
                     <p className="mt-auto pt-5 text-[11px] text-[#f7f7f7]/50 leading-snug">
-                      {t("home.proof.lastResult")} : <span className="text-[#f7f7f7]/80">{palmares.last.scoreUs}—{palmares.last.scoreThem}</span> vs {palmares.last.opponentName || "?"}
+                      {t("home.proof.lastResult")} : <span className="text-[#f7f7f7]/80">{palmares.last.scoreUs}—{palmares.last.scoreThem}</span> {getElysiumTeamName(palmares.last.roster)} vs {palmares.last.opponentName || "?"}
                     </p>
                   )}
                 </>
