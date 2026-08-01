@@ -11,6 +11,7 @@ import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { computePlayerStats, isPlayerInMatch } from "../lib/constants";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -54,11 +55,35 @@ export default function PlayerDetail() {
     </div>
   );
 
-  const stats = parseStats(player.statsText);
-  const history = matches.filter((m) => (
-    m.game === player.game
-    && (player.game !== "Rocket League" || !player.roster || !m.roster || m.roster === player.roster)
-  )).slice(0, 6);
+  const computedStats = computePlayerStats(player, matches);
+  const manualStats = parseStats(player.statsText);
+
+  let stats = [];
+  if (computedStats && computedStats.length > 0) {
+    stats = [...computedStats];
+    const computedLabels = new Set(computedStats.map((s) => (s.label || "").toLowerCase()));
+    manualStats.forEach((s) => {
+      if (!computedLabels.has((s.label || "").toLowerCase())) {
+        stats.push(s);
+      }
+    });
+    const gamesPlayedLabel = t("playerpage.gamesPlayed");
+    if (computedStats[0]?.games && !computedLabels.has(gamesPlayedLabel.toLowerCase())) {
+      stats.push({ label: gamesPlayedLabel, value: computedStats[0].games.toString() });
+    }
+  } else {
+    stats = manualStats;
+  }
+
+  const history = matches.filter((m) => {
+    if (m.players && Array.isArray(m.players) && m.players.length > 0) {
+      return isPlayerInMatch(m, player);
+    }
+    return (
+      m.game === player.game
+      && (player.game !== "Rocket League" || !player.roster || !m.roster || m.roster === player.roster)
+    );
+  }).slice(0, 6);
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">

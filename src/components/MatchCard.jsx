@@ -4,7 +4,7 @@ import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trop
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
-import { getElysiumTeamName } from "../lib/constants";
+import { getElysiumTeamName, getStatFieldsForGame } from "../lib/constants";
 
 /* -----------------------------------------------------------------------
  * OpponentLogo
@@ -252,6 +252,54 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+          {match.players && Array.isArray(match.players) && match.players.length > 0 && (
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2">
+                {t("results.playersStats")}
+              </p>
+              <div
+                className="border border-white/10 divide-y divide-white/5 bg-[#141414]"
+                data-testid={`match-players-stats-${match.id}`}
+              >
+                {match.players.map((p, idx) => {
+                  const games = Array.isArray(p.games) && p.games.length > 0 ? p.games : [p];
+                  const fields = getStatFieldsForGame(match.game || "EVA");
+                  const sums = {};
+                  fields.forEach((f) => {
+                    sums[f.key] = 0;
+                  });
+                  games.forEach((g) => {
+                    if (g && typeof g === "object") {
+                      fields.forEach((f) => {
+                        sums[f.key] += Number(g[f.key]) || 0;
+                      });
+                    }
+                  });
+
+                  return (
+                    <div key={idx} className="p-3 text-xs space-y-1">
+                      <div className="flex items-center justify-between font-display font-bold text-[#f7f7f7]">
+                        <span>{p.pseudo || "Joueur"}</span>
+                        {games.length > 1 && (
+                          <span className="text-[10px] text-[#D8CA82] font-normal uppercase tracking-wider">
+                            {games.length} parties
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[#c8c8c8]">
+                        {fields.map((f) => (
+                          <span key={f.key}>
+                            <span className="text-[#f7f7f7]/50">{f.label}:</span>{" "}
+                            <span className="font-semibold text-[#D8CA82]">{sums[f.key]}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
