@@ -150,9 +150,32 @@ service cloud.firestore {
     }
 
     // ===== Calendrier communautaire =====
+    // RSVP « je participe » : tout visiteur (connecté ou non) peut mettre à jour
+    // UNIQUEMENT la liste des participants. Le reste de l'événement reste
+    // réservé aux managers. Chaque entrée est validée (id + pseudo bornés).
     match /communityEvents/{id} {
       allow read: if true;
-      allow create, update, delete: if isManagerPlus();
+      allow create, delete: if isManagerPlus();
+      allow update: if isManagerPlus()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
+            && request.resource.data.participants is list
+            && request.resource.data.participants.size() <= 500
+            && request.resource.data.participants.all(p => p is map
+                && p.id is string && p.id.size() >= 1 && p.id.size() <= 64
+                && p.name is string && p.name.size() >= 1 && p.name.size() <= 60));
+    }
+
+    // ===== Compétitions (page /competitions) =====
+    match /competitions/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Campagnes / objectifs de financement (barre de progression) =====
+    // Données saisies manuellement en admin (comptabilité de l'association).
+    match /campaigns/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Notifications =====
