@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { GAMES } from "../lib/constants";
+import { GAMES, computePlayerLeaderboard, getPlayerOfTheMonth, getPrimaryStatKey } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
-import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
+import { PlayerPhoto } from "./Team";
+import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull, Crown } from "lucide-react";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -30,6 +32,7 @@ const getPeriodStart = (period) => {
 export default function Stats() {
   const { t } = useLang();
   const [matches, setMatches] = useState(null);
+  const [roster, setRoster] = useState([]);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [game, setGame] = useState("all");
@@ -37,12 +40,24 @@ export default function Stats() {
 
   useEffect(() => {
     setError(false); setMatches(null);
-    return onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming");
+    const u1 = onSnapshot(collection(db, "matches"), (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && m.status !== "live");
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, (e) => { console.error(e); setError(true); });
+    const u2 = onSnapshot(collection(db, "roster"), (snap) => setRoster(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    return () => { u1(); u2(); };
   }, [retryKey]);
+
+  // Leaderboard par joueur (alimenté par les stats des matchs)
+  const leaderboard = useMemo(() => {
+    if (!matches || !roster) return [];
+    let list = computePlayerLeaderboard(roster, matches);
+    if (game !== "all") list = list.filter((p) => p.game === game);
+    return list;
+  }, [matches, roster, game]);
+
+  const playerOfMonth = useMemo(() => getPlayerOfTheMonth(roster || [], matches || []), [roster, matches]);
 
   const filtered = useMemo(() => {
     if (!matches) return [];
@@ -248,6 +263,105 @@ export default function Stats() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Joueur du mois */}
+            {playerOfMonth && (
+              <div className="mb-12 border border-[#D8CA82]/40 bg-gradient-to-br from-[#D8CA82]/10 to-transparent p-6" data-testid="stats-player-of-month">
+                <div className="flex items-center gap-3 mb-6">
+                  <Crown size={18} className="text-[#D8CA82]" aria-hidden="true" />
+                  <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.playerOfMonth")}</h3>
+                </div>
+                <div className="flex items-center gap-6 flex-wrap">
+                  <PlayerPhoto src={playerOfMonth.photo} alt={playerOfMonth.pseudo} className="h-24 w-24 border border-[#D8CA82]/40" />
+                  <div className="flex-1 min-w-[200px]">
+                    <p className="font-display font-black text-2xl text-[#D8CA82] uppercase">{playerOfMonth.pseudo}</p>
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50 mt-1">
+                      {playerOfMonth.game}{playerOfMonth.roster ? ` · ${playerOfMonth.roster}` : ""}{playerOfMonth.ingameRole ? ` — ${playerOfMonth.ingameRole}` : ""}
+                    </p>
+                    <div className="flex flex-wrap gap-x-8 gap-y-2 mt-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">{t("stats.playerWinRate")}</p>
+                        <p className="font-display font-bold text-xl text-emerald-300">{playerOfMonth.winRate}%</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">{getPrimaryStatKey(playerOfMonth.game) === "kills" ? t("stats.kd") : t("stats.goalsPerGame")}</p>
+                        <p className="font-display font-bold text-xl text-[#D8CA82]">{playerOfMonth.ratio}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">{t("stats.playerGames")}</p>
+                        <p className="font-display font-bold text-xl text-[#f7f7f7]">{playerOfMonth.matchesPlayed}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">W/L</p>
+                        <p className="font-display font-bold text-xl text-[#f7f7f7]">
+                          <span className="text-emerald-300">{playerOfMonth.wins}</span> / <span className="text-red-300">{playerOfMonth.losses}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Link to={`/equipe/${playerOfMonth.id}`} className="text-xs font-display uppercase tracking-widest text-[#D8CA82] hover:underline border border-[#D8CA82]/40 px-4 py-2 hover:bg-[#D8CA82]/10 transition-colors">
+                    {t("team.view")} →
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Leaderboard joueurs */}
+            <div className="mb-12" data-testid="stats-leaderboard">
+              <div className="flex items-center gap-3 mb-2">
+                <Trophy className="text-[#D8CA82]" size={16} />
+                <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.leaderboard")}</h3>
+              </div>
+              <p className="text-xs text-[#f7f7f7]/40 mb-6">{t("stats.leaderboard.sub")}</p>
+              {leaderboard.length === 0 ? (
+                <p className="text-[#f7f7f7]/40 text-sm" data-testid="stats-leaderboard-empty">{t("stats.empty")}</p>
+              ) : (
+                <div className="border border-white/10 bg-[#141414] overflow-x-auto" data-testid="stats-leaderboard-table">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-widest text-[#f7f7f7]/40">
+                        <th className="px-4 py-3">{t("stats.rank")}</th>
+                        <th className="px-4 py-3">Joueur</th>
+                        <th className="px-4 py-3 text-center">{t("stats.playerGames")}</th>
+                        <th className="px-4 py-3 text-center">W</th>
+                        <th className="px-4 py-3 text-center">L</th>
+                        <th className="px-4 py-3 text-center">{t("stats.playerWinRate")}</th>
+                        <th className="px-4 py-3 text-center">{getPrimaryStatKey(game !== "all" ? game : "EVA") === "kills" ? t("stats.kd") : t("stats.goalsPerGame")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboard.slice(0, 15).map((p, i) => (
+                        <tr key={p.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`stats-leaderboard-row-${p.id}`}>
+                          <td className="px-4 py-2.5">
+                            <span className={`font-display font-black ${i === 0 ? "text-[#D8CA82] text-lg" : i < 3 ? "text-[#f7f7f7] font-bold" : "text-[#f7f7f7]/40"}`}>
+                              {i === 0 ? <Crown size={14} className="inline -mt-0.5 mr-1 text-[#D8CA82]" aria-hidden="true" /> : null}
+                              {i + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <Link to={`/equipe/${p.id}`} className="flex items-center gap-3 group">
+                              <PlayerPhoto src={p.photo} alt={p.pseudo} className="h-9 w-9" />
+                              <span className="font-display font-bold text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{p.pseudo}</span>
+                              <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{p.game === "Rocket League" ? "RL" : p.game}</span>
+                            </Link>
+                          </td>
+                          <td className="px-4 py-2.5 text-center text-[#f7f7f7]/60">{p.matchesPlayed}</td>
+                          <td className="px-4 py-2.5 text-center text-emerald-300 font-bold">{p.wins}</td>
+                          <td className="px-4 py-2.5 text-center text-red-300 font-bold">{p.losses}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            <span className="font-display font-bold text-[#D8CA82]">{p.winRate}%</span>
+                            <div className="w-16 mx-auto mt-1 h-1 bg-white/10 overflow-hidden">
+                              <div className="h-full bg-[#D8CA82]" style={{ width: `${p.winRate}%` }} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 text-center font-display font-bold text-[#f7f7f7]">{p.ratio}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* Match History */}

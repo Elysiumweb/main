@@ -1,14 +1,25 @@
 import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
+import { HelpCircle, LifeBuoy } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { createNotification, CONTACT_EMAIL } from "../lib/notify";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 
 const CATS = ["account", "technical", "team", "other"];
 const PRIOS = ["low", "normal", "high"];
+
+/* Groupes de questions de la FAQ (clés i18n `support.faq.q{n}` / `a{n}`). */
+const FAQ_GROUPS = [
+  { key: "account", from: 1, to: 3 },
+  { key: "apply", from: 4, to: 6 },
+  { key: "donate", from: 7, to: 9 },
+  { key: "player", from: 10, to: 12 },
+  { key: "discord", from: 13, to: 15 },
+];
 
 export default function Support() {
   const { user, displayName, canSeeSupport } = useAuth();
@@ -51,6 +62,45 @@ export default function Support() {
           <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("support.sub")}</p>
         </div>
       </section>
+
+      {/* FAQ — auto-assistance */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-8 py-16" aria-labelledby="support-faq-h2" data-testid="support-faq">
+        <div className="flex items-center gap-3 mb-3">
+          <HelpCircle className="text-[#D8CA82]" size={20} aria-hidden="true" />
+          <h2 id="support-faq-h2" className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("support.faq.title")}</h2>
+        </div>
+        <p className="text-sm text-[#f7f7f7]/50 mb-8">{t("support.faq.sub")}</p>
+
+        <div className="grid md:grid-cols-2 gap-x-10 gap-y-8">
+          {FAQ_GROUPS.map((group) => (
+            <div key={group.key} data-testid={`support-faq-group-${group.key}`}>
+              <h3 className="text-xs font-display uppercase tracking-[0.3em] text-[#D8CA82] border-b border-white/10 pb-3 mb-2">
+                {t(`support.faq.${group.key}`)}
+              </h3>
+              <Accordion type="single" collapsible className="w-full">
+                {Array.from({ length: group.to - group.from + 1 }, (_, i) => group.from + i).map((n) => (
+                  <AccordionItem key={n} value={`q-${n}`} className="border-white/10" data-testid={`support-faq-item-${n}`}>
+                    <AccordionTrigger className="text-sm text-[#f7f7f7]/90 hover:text-[#D8CA82] hover:no-underline text-left">
+                      {t(`support.faq.q${n}`)}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-[#c8c8c8] leading-relaxed">
+                      {t(`support.faq.a${n}`)}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 border border-[#D8CA82]/25 bg-[#D8CA82]/5 px-6 py-4 flex items-center gap-3">
+          <LifeBuoy size={18} className="text-[#D8CA82] shrink-0" aria-hidden="true" />
+          <p className="text-sm text-[#c8c8c8]">
+            {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline">{CONTACT_EMAIL}</a>
+          </p>
+        </div>
+      </section>
+
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12">
         <div className="lg:col-span-5">
           <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6">{t("support.newTicket")}</h2>

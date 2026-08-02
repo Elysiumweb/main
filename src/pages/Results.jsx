@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { MatchCard } from "../components/MatchCard";
+import { MatchCountdown } from "../components/MatchCountdown";
+import { HeadToHeadPanel } from "../components/HeadToHead";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Trophy, CalendarClock } from "lucide-react";
+import { Trophy, CalendarClock, ChevronDown, CalendarDays } from "lucide-react";
 import { GAMES, getElysiumTeamName } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const PAGE_SIZE = 9;
 
 export default function Results() {
   const { t } = useLang();
@@ -21,6 +25,7 @@ export default function Results() {
   const [competition, setCompetition] = useState("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     setError(false); setMatches(null);
@@ -31,8 +36,17 @@ export default function Results() {
 
   const competitions = useMemo(() => [...new Set((matches || []).map((m) => m.competition).filter(Boolean))], [matches]);
 
+  // Matchs en direct — affichés en section dédiée, hors des onglets
+  const liveMatches = useMemo(() => (matches || []).filter((m) => m.status === "live"), [matches]);
+
+  // Prochain match (pour le compte à rebours)
+  const nextMatch = useMemo(() => {
+    const upcoming = (matches || []).filter((m) => m.status === "upcoming").sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    return upcoming[0] || null;
+  }, [matches]);
+
   const filtered = useMemo(() => {
-    let list = (matches || []).filter((m) => (tab === "upcoming" ? m.status === "upcoming" : m.status !== "upcoming"));
+    let list = (matches || []).filter((m) => (tab === "upcoming" ? m.status === "upcoming" : m.status === "finished"));
     if (game !== "all") list = list.filter((m) => m.game === game);
     if (competition !== "all") list = list.filter((m) => m.competition === competition);
     if (from) list = list.filter((m) => (m.date || "") >= from);
@@ -40,6 +54,8 @@ export default function Results() {
     list.sort((a, b) => tab === "upcoming" ? (a.date || "").localeCompare(b.date || "") : (b.date || "").localeCompare(a.date || ""));
     return list;
   }, [matches, tab, game, competition, from, to]);
+
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [tab, game, competition, from, to]);
 
   const sportsEventsJsonLd = useMemo(() => ({
     "@context": "https://schema.org",
@@ -56,7 +72,7 @@ export default function Results() {
           "@id": `${SITE_URL}/resultats#match-${m.id}`,
           name: `${teamName} vs ${m.opponentName || "adversaire"}`,
           startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
-          eventStatus: m.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
+          eventStatus: m.status === "upcoming" || m.status === "live" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
           sport: m.game || "Esport",
           competitor: [
             { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
@@ -85,9 +101,45 @@ export default function Results() {
           <PageBreadcrumb items={[{ label: t("results.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="results-title">{t("results.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("results.sub")}</p>
+          <Link to="/calendrier" className="mt-4 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="results-subscribe-link">
+            <CalendarDays size={13} aria-hidden="true" /> {t("cal.subscribe.title")} →
+          </Link>
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
+        {/* Compte à rebours avant le prochain match + rappel */}
+        {nextMatch && (
+          <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-5 py-4 mb-8 flex items-center flex-wrap gap-4" data-testid="results-next-countdown">
+            <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82]">
+              {t("home.proof.nextMatch")} : {getElysiumTeamName(nextMatch.roster)} vs {nextMatch.opponentName}
+            </p>
+            <MatchCountdown match={nextMatch} testId="results-countdown" />
+          </div>
+        )}
+
+        {/* Matchs en direct */}
+        {liveMatches.length > 0 && (
+          <div className="border border-red-400/50 bg-red-500/10 px-6 py-5 mb-8" data-testid="results-live-section">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:animate-none" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-400" />
+              </span>
+              <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")}</p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="results-live-grid">
+              {liveMatches.map((m) => <MatchCard key={m.id} match={m} />)}
+            </div>
+          </div>
+        )}
+
+        {/* Face-à-face par adversaire */}
+        {matches && matches.length > 0 && (
+          <div className="mb-8" data-testid="results-h2h">
+            <HeadToHeadPanel matches={matches} testId="results-h2h-panel" />
+          </div>
+        )}
+
         <div
           className="flex gap-1 border-b border-white/10 mb-8"
           data-testid="results-tabs"
@@ -145,9 +197,25 @@ export default function Results() {
           <EmptyState icon={tab === "upcoming" ? CalendarClock : Trophy}
             text={tab === "upcoming" ? t("results.noUpcoming") : t("results.empty")} testId="results-empty" />
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
-            {filtered.map((m) => <MatchCard key={m.id} match={m} />)}
-          </div>
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
+              {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} />)}
+            </div>
+            {filtered.length > visibleCount && (
+              <div className="mt-10 flex flex-col items-center gap-3" data-testid="results-load-more">
+                <button
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  data-testid="results-load-more-btn"
+                  className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-[#D8CA82]/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+                >
+                  <ChevronDown size={14} aria-hidden="true" /> {t("results.loadMore")}
+                </button>
+                <p className="text-[11px] text-[#f7f7f7]/40">
+                  {Math.min(visibleCount, filtered.length)} {t("results.loaded")} {filtered.length}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>

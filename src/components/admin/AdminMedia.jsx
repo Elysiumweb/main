@@ -5,6 +5,7 @@ import { Trash2 } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { GAMES } from "../../lib/constants";
+import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { type: "photo", title: "", url: "", thumbnail: "", game: "EVA", playerTag: "", event: "" };
@@ -53,9 +54,15 @@ export const AdminMedia = () => {
           </select>
         </div>
         <input value={form.title} onChange={set("title")} placeholder="Titre" required className={inputCls} data-testid="admin-media-title" />
-        <input value={form.url} onChange={set("url")} placeholder={form.type === "photo" ? "URL de l'image" : "URL YouTube / Twitch (vidéo ou clip)"} required className={inputCls} data-testid="admin-media-url" />
-        {form.type === "photo" && form.url && isUrl(form.url) && (
-          <img src={form.url} alt="" className="h-24 object-cover border border-white/10" onError={(e) => { e.target.style.display = "none"; }} />
+        {form.type === "photo" ? (
+          <div>
+            <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Photo — upload direct</label>
+            <ImageUpload value={form.url} onChange={(url) => setForm((f) => ({ ...f, url }))} folder="media" maxWidth={2000} testId="admin-media-upload" />
+          </div>
+        ) : (
+          <>
+            <input value={form.url} onChange={set("url")} placeholder="URL YouTube / Twitch (vidéo ou clip)" required className={inputCls} data-testid="admin-media-url" />
+          </>
         )}
         {form.type === "video" && (
           <input value={form.thumbnail} onChange={set("thumbnail")} placeholder="Miniature (URL, optionnel)" className={inputCls} data-testid="admin-media-thumbnail" />

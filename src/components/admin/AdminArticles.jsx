@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Trash2, Pencil, Eye, RotateCcw, Send } from "lucide-react";
+import { Trash2, Pencil, Eye, RotateCcw, Send, Star } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { CATEGORIES } from "../../pages/News";
+import { Markdown } from "../../lib/markdown";
+import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", category: "announcement", coverUrl: "", content: "" };
+const EMPTY = { title: "", category: "announcement", coverUrl: "", content: "", featured: false };
 
 export const AdminArticles = () => {
   const { t } = useLang();
@@ -17,6 +19,7 @@ export const AdminArticles = () => {
   const [articles, setArticles] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
+  const [editorTab, setEditorTab] = useState("write"); // write | preview
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
@@ -45,12 +48,26 @@ export const AdminArticles = () => {
     } catch { toast.error(t("common.error")); }
   };
 
+  const toggleFeatured = async (a) => {
+    // Un seul article « à la une » : on retire le flag des autres, puis on l'active.
+    try {
+      const others = articles.filter((x) => x.featured && x.id !== a.id);
+      await Promise.all(others.map((x) => updateDoc(doc(db, "articles", x.id), { featured: false })));
+      await updateDoc(doc(db, "articles", a.id), { featured: !a.featured });
+      toast.success(t("common.saved"));
+    } catch { toast.error(t("common.error")); }
+  };
+
   const hardDelete = async (id) => {
     try { await deleteDoc(doc(db, "articles", id)); toast.success(t("common.saved")); }
     catch { toast.error(t("common.error")); }
   };
 
-  const edit = (a) => { setEditId(a.id); setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", content: a.content || "" }); };
+  const edit = (a) => {
+    setEditId(a.id);
+    setEditorTab("write");
+    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", content: a.content || "", featured: !!a.featured });
+  };
 
   const STATUS_BADGE = {
     draft: "text-orange-300 border-orange-300/40",
@@ -67,10 +84,38 @@ export const AdminArticles = () => {
           <select value={form.category} onChange={set("category")} className={inputCls} data-testid="admin-article-category">
             {CATEGORIES.map((c) => <option key={c} value={c}>{t(`news.cat.${c}`)}</option>)}
           </select>
-          <input value={form.coverUrl} onChange={set("coverUrl")} placeholder="Image de couverture (URL)" className={inputCls} data-testid="admin-article-cover" />
+          <label className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer border border-white/15 px-3 py-2.5 bg-[#111111]" title={t("admin.article.featuredHint")}>
+            <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
+              className="accent-[#D8CA82] h-4 w-4" data-testid="admin-article-featured" />
+            <Star size={12} className={form.featured ? "text-[#D8CA82] fill-[#D8CA82]" : "text-[#f7f7f7]/40"} aria-hidden="true" />
+            {t("admin.article.featured")}
+          </label>
         </div>
-        {form.coverUrl && <img src={form.coverUrl} alt="" className="h-24 object-cover border border-white/10" onError={(e) => { e.target.style.display = "none"; }} />}
-        <textarea value={form.content} onChange={set("content")} placeholder="Contenu de l'article..." rows={8} className={inputCls} data-testid="admin-article-content" />
+        <div>
+          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Image de couverture</label>
+          <ImageUpload value={form.coverUrl} onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))} folder="articles" maxWidth={1600} testId="admin-article-cover-upload" />
+        </div>
+
+        {/* Onglets éditeur / aperçu markdown */}
+        <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label="Éditeur d'article">
+          <button onClick={() => setEditorTab("write")} data-testid="admin-article-tab-write" role="tab" aria-selected={editorTab === "write"}
+            className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            {t("admin.article.write")}
+          </button>
+          <button onClick={() => setEditorTab("preview")} data-testid="admin-article-tab-preview" role="tab" aria-selected={editorTab === "preview"}
+            className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "preview" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            {t("admin.article.preview")}
+          </button>
+          <span className="ml-auto text-[10px] text-[#f7f7f7]/30">{t("admin.article.markdownHint")}</span>
+        </div>
+        {editorTab === "write" ? (
+          <textarea value={form.content} onChange={set("content")} placeholder="Contenu de l'article (Markdown)..." rows={12} className={inputCls} data-testid="admin-article-content" />
+        ) : (
+          <div className="border border-white/10 bg-[#141414] p-4 max-h-96 overflow-y-auto" data-testid="admin-article-preview">
+            <Markdown source={form.content || "*Aperçu vide*"} className="text-sm" />
+          </div>
+        )}
+
         <div className="flex gap-3 flex-wrap">
           <button onClick={() => save("draft")} data-testid="admin-article-draft-btn"
             className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-5 py-3 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
@@ -93,6 +138,16 @@ export const AdminArticles = () => {
             <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_BADGE[a.status] || ""}`}>
               {a.status === "published" ? "Publié" : a.status === "deleted" ? "Supprimé" : t("notes.draft")}
             </span>
+            <button
+              onClick={() => toggleFeatured(a)}
+              disabled={a.status !== "published"}
+              title={t("admin.article.featuredHint")}
+              aria-pressed={!!a.featured}
+              data-testid={`admin-article-featured-${a.id}`}
+              className={`shrink-0 transition-colors ${a.featured ? "text-[#D8CA82]" : "text-[#f7f7f7]/30 hover:text-[#f7f7f7]/60"} disabled:opacity-30 disabled:cursor-not-allowed`}
+            >
+              <Star size={15} className={a.featured ? "fill-[#D8CA82]" : ""} aria-hidden="true" />
+            </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{a.title}</p>
               <p className="text-xs text-[#f7f7f7]/40">{t(`news.cat.${a.category}`)}</p>

@@ -77,6 +77,16 @@ export const Footer = () => {
                 {t("nav.stats")}
               </Link>
             </li>
+            <li>
+              <Link to="/competitions" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-nav-competitions">
+                {t("nav.competitions")}
+              </Link>
+            </li>
+            <li>
+              <Link to="/a-propos" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-nav-about">
+                {t("nav.about")}
+              </Link>
+            </li>
           </ul>
         </nav>
 
@@ -104,6 +114,11 @@ export const Footer = () => {
             <li>
               <Link to="/soutenir" className="text-[#D8CA82] font-semibold hover:underline transition-colors motion-reduce:transition-none inline-flex items-center gap-1.5" data-testid="footer-nav-donate">
                 <Heart size={12} aria-hidden="true" /> {t("nav.donate")}
+              </Link>
+            </li>
+            <li>
+              <Link to="/presse" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-nav-press">
+                {t("nav.press")}
               </Link>
             </li>
           </ul>

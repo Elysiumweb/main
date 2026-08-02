@@ -35,6 +35,9 @@ import News from "@/pages/News";
 import ArticleDetail from "@/pages/ArticleDetail";
 import MediaGallery from "@/pages/MediaGallery";
 import CommunityCalendar from "@/pages/CommunityCalendar";
+import Competitions from "@/pages/Competitions";
+import About from "@/pages/About";
+import Press from "@/pages/Press";
 import NotFound from "@/pages/NotFound";
 
 // Register service worker on load
@@ -75,6 +78,9 @@ function App() {
               <Route path="/actus/:id" element={<ArticleDetail />} />
               <Route path="/medias" element={<MediaGallery />} />
               <Route path="/calendrier" element={<CommunityCalendar />} />
+              <Route path="/competitions" element={<Competitions />} />
+              <Route path="/a-propos" element={<About />} />
+              <Route path="/presse" element={<Press />} />
               <Route path="/support" element={<Support />} />
               <Route path="/recrutement" element={<Recruitment />} />
               <Route path="/statistiques" element={<Stats />} />

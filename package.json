@@ -67,7 +67,8 @@
     "build": "craco build",
     "test": "craco test",
     "test:e2e": "playwright test",
-    "test:lighthouse": "npx lighthouse http://127.0.0.1:3000 --preset=desktop --view"
+    "test:lighthouse": "npx lighthouse http://127.0.0.1:3000 --preset=desktop --view",
+    "ics": "node scripts/generate-ics.mjs"
   },
   "browserslist": {
     "production": [

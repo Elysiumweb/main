@@ -4,10 +4,12 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { ArrowLeft } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { useArticleSEO } from "../lib/useSEO";
+import { useArticleSEO, SITE_URL } from "../lib/useSEO";
 import { LoadingState } from "../components/States";
 import { ArticleCover } from "./News";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Markdown } from "../lib/markdown";
+import { ShareButtons } from "../components/ShareButtons";
 
 export default function ArticleDetail() {
   const { id } = useParams();
@@ -57,8 +59,19 @@ export default function ArticleDetail() {
         </div>
       </section>
       <section className="max-w-4xl mx-auto px-4 sm:px-8 py-12">
-        <div className="text-[#f7f7f7]/80 leading-relaxed whitespace-pre-wrap text-base sm:text-lg" data-testid="article-content">
-          {article.content}
+        <div className="text-[#f7f7f7]/85 leading-relaxed text-base sm:text-lg" data-testid="article-content">
+          <Markdown source={article.content} />
+        </div>
+        <div className="mt-12 pt-6 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap" data-testid="article-share">
+          <ShareButtons
+            url={`${SITE_URL}/actus/${article.id}`}
+            text={article.title}
+            title={`Partager : ${article.title}`}
+            testId="article-share-buttons"
+          />
+          <Link to="/actus" className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors">
+            ← {t("news.back")}
+          </Link>
         </div>
       </section>
     </div>

@@ -26,6 +26,9 @@ const PAGE_LINKS = [
   { path: "/recrutement", key: "nav.recruitment" },
   { path: "/statistiques", key: "nav.stats" },
   { path: "/partenaires", key: "nav.partners" },
+  { path: "/competitions", key: "nav.competitions" },
+  { path: "/a-propos", key: "nav.about" },
+  { path: "/presse", key: "nav.press" },
   { path: "/soutenir", key: "nav.donate" },
   { path: "/newsletter", key: "nav.newsletter" },
 ];
