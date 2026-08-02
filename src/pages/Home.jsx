@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES, getElysiumTeamName } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { DonateBlock } from "../components/DonateButton";
+import { CampaignProgress } from "../components/CampaignProgress";
+import { MatchCountdown } from "../components/MatchCountdown";
 import { OptimizedImage } from "../components/OptimizedImage";
+import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { videoEmbedUrl } from "./MediaGallery";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
@@ -66,6 +69,8 @@ export default function Home() {
     upcoming.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
     return upcoming[0] || null;
   }, [matches]);
+
+  const liveMatches = useMemo(() => matches.filter((m) => m.status === "live"), [matches]);
 
   const palmares = useMemo(() => {
     const finished = matches.filter((m) => m.status !== "upcoming");
@@ -127,6 +132,31 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* BANDEAU LIVE — match en direct */}
+      {liveMatches.length > 0 && (
+        <section className="border-b border-red-400/40 bg-red-500/10" data-testid="home-live-banner" aria-label={t("live.banner")}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center gap-4 flex-wrap">
+            <span className="relative flex h-3 w-3" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:animate-none" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400" />
+            </span>
+            <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")} :</p>
+            {liveMatches.map((m) => (
+              <span key={m.id} className="text-sm text-[#f7f7f7]">
+                {getElysiumTeamName(m.roster)} vs {m.opponentName || "?"}
+                {m.watchUrl && (
+                  <a href={m.watchUrl} target="_blank" rel="noopener noreferrer" data-testid={`home-live-banner-link-${m.id}`}
+                    onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_live_banner", matchId: m.id, platform: m.platform || "watchUrl" })}
+                    className="ml-3 inline-flex items-center gap-1.5 bg-red-500 text-white text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1.5 hover:bg-red-400 transition-colors">
+                    <Radio size={12} aria-hidden="true" /> {t("live.banner.watch")}
+                  </a>
+                )}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* MANIFESTO */}
       <section className="border-y border-white/10 bg-[#0c0c0c] relative overflow-hidden" data-testid="home-manifesto" aria-labelledby="home-manifesto-h2">
@@ -212,7 +242,7 @@ export default function Home() {
                 </p>
                 {nextMatch ? (
                   <div className="flex-1 flex flex-col justify-between gap-8">
-                    <div className="flex items-center justify-center gap-6 sm:gap-12">
+                    <div className="flex items-center justify-center gap-6 sm:gap-12" data-testid="home-proof-vs">
                       <div className="flex flex-col items-center gap-3">
                         <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${getElysiumTeamName(nextMatch.roster)}`} width="80" height="80" loading="lazy" className="h-16 sm:h-20 object-contain gold-glow" />
                         <span className="font-display uppercase tracking-[0.25em] text-sm text-[#f7f7f7] text-center leading-tight">{getElysiumTeamName(nextMatch.roster)}</span>
@@ -223,6 +253,7 @@ export default function Home() {
                         <span className="font-display uppercase tracking-[0.25em] text-sm text-[#f7f7f7] text-center max-w-[140px] truncate">{nextMatch.opponentName || "TBD"}</span>
                       </div>
                     </div>
+                    <MatchCountdown match={nextMatch} testId="home-next-match-countdown" />
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-6">
                       <span className="text-[10px] font-display uppercase tracking-[0.3em] text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{nextMatch.game || "EVA"}</span>
                       {nextMatch.roster && <span className="text-[10px] font-display uppercase tracking-[0.25em] text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5">{nextMatch.roster}</span>}
@@ -348,13 +379,39 @@ export default function Home() {
               {videos.length === 0 ? (
                 <p className="text-[#c8c8c8]" data-testid="home-replays-empty">{t("home.live.noReplays")}</p>
               ) : (
-                <div className="space-y-4" data-testid="home-replays">
+                <div className="grid sm:grid-cols-2 gap-4" data-testid="home-replays">
                   {videos.map((v) => {
                     const embed = videoEmbedUrl(v.url);
-                    return embed ? (
-                      <iframe key={v.id} title={v.title} src={embed} className="w-full aspect-video border border-white/10" allowFullScreen />
-                    ) : (
-                      <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="block text-[#D8CA82] underline text-sm focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">{v.title}</a>
+                    return (
+                      <Dialog key={v.id}>
+                        <DialogTrigger asChild>
+                          <button className="group relative border border-white/10 bg-[#0d0d0d] overflow-hidden text-left hover:border-[#D8CA82]/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+                            data-testid={`home-replay-${v.id}`}
+                            aria-label={`Regarder le replay : ${v.title}`}>
+                            {v.thumbnail ? (
+                              <img src={v.thumbnail} alt="" loading="lazy" decoding="async" className="w-full aspect-video object-cover opacity-70 group-hover:opacity-90 transition-opacity" />
+                            ) : (
+                              <div className="w-full aspect-video canvas-dots" />
+                            )}
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <PlayCircle size={40} className="text-[#D8CA82] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" aria-hidden="true" />
+                            </span>
+                            <span className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#0c0c0c] to-transparent px-3 pt-8 pb-2 text-xs font-semibold text-[#f7f7f7] truncate">
+                              {v.title}
+                            </span>
+                          </button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-[#111111] border border-[#D8CA82]/30 rounded-none max-w-3xl p-2" data-testid={`home-replay-lightbox-${v.id}`}>
+                          {embed ? (
+                            <iframe src={embed} title={v.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
+                          ) : (
+                            <a href={v.url} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] underline p-8 block text-center flex items-center justify-center gap-2">
+                              <ExternalLink size={15} aria-hidden="true" /> {v.title}
+                            </a>
+                          )}
+                          <p className="text-sm text-[#f7f7f7]/70 px-2 pb-2">{v.title}</p>
+                        </DialogContent>
+                      </Dialog>
                     );
                   })}
                 </div>
@@ -413,6 +470,7 @@ export default function Home() {
             <h2 id="donate-block-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
             <div className="flex-1 h-px bg-white/10" />
           </div>
+          <div className="mb-8"><CampaignProgress testId="home-campaign-progress" /></div>
           <DonateBlock testId="home-donate-block" />
         </div>
       </section>
@@ -420,7 +478,7 @@ export default function Home() {
       {/* SOCIALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-socials" aria-labelledby="home-socials-h2">
         <h2 id="home-socials-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7] mb-10">{t("home.socials.title")}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
           {SOCIALS.map((s) => (
             <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" data-testid={`home-social-${s.icon}`} aria-label={`${s.name} (ouvre dans un nouvel onglet)`}
               onClick={() => s.icon === "discord" && trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_socials" })}

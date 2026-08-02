@@ -5,9 +5,10 @@ import { Trash2, Pencil } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { GAMES, ROSTERS } from "../../lib/constants";
+import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", statsText: "", x: "", twitch: "", instagram: "", youtube: "" };
+const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", statsText: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "", threads: "" };
 
 export const AdminRoster = () => {
   const { t } = useLang();
@@ -22,8 +23,8 @@ export const AdminRoster = () => {
 
   const submit = async (e) => {
     e.preventDefault();
-    const { x, twitch, instagram, youtube, ...rest } = form;
-    const data = { ...rest, socials: { x, twitch, instagram, youtube } };
+    const { x, twitch, instagram, youtube, tiktok, threads, ...rest } = form;
+    const data = { ...rest, socials: { x, twitch, instagram, youtube, tiktok, threads } };
     try {
       if (editId) await updateDoc(doc(db, "roster", editId), data);
       else await addDoc(collection(db, "roster"), { ...data, createdAt: serverTimestamp() });
@@ -34,7 +35,7 @@ export const AdminRoster = () => {
 
   const edit = (m) => {
     setEditId(m.id);
-    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", statsText: m.statsText || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "" });
+    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", statsText: m.statsText || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "", tiktok: m.socials?.tiktok || "", threads: m.socials?.threads || "" });
   };
 
   const del = async (id) => {
@@ -64,7 +65,10 @@ export const AdminRoster = () => {
             <option value="staff">{t("team.status.staff")}</option>
           </select>
         </div>
-        <input value={form.photo} onChange={set("photo")} placeholder="Photo (URL)" className={inputCls} data-testid="admin-roster-photo" />
+        <div>
+          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Photo du joueur</label>
+          <ImageUpload value={form.photo} onChange={(url) => setForm((f) => ({ ...f, photo: url }))} folder="players" maxWidth={1200} testId="admin-roster-photo-upload" />
+        </div>
         <textarea value={form.bio} onChange={set("bio")} placeholder="Biographie" rows={3} className={inputCls} data-testid="admin-roster-bio" />
         <textarea value={form.statsText} onChange={set("statsText")} placeholder={"Statistiques (une par ligne : Ratio K/D | 1.35)"} rows={3} className={inputCls} data-testid="admin-roster-stats" />
         <div className="grid grid-cols-2 gap-4">
@@ -72,6 +76,8 @@ export const AdminRoster = () => {
           <input value={form.twitch} onChange={set("twitch")} placeholder="Twitch (URL)" className={inputCls} />
           <input value={form.instagram} onChange={set("instagram")} placeholder="Instagram (URL)" className={inputCls} />
           <input value={form.youtube} onChange={set("youtube")} placeholder="YouTube (URL)" className={inputCls} />
+          <input value={form.tiktok} onChange={set("tiktok")} placeholder="TikTok (URL)" className={inputCls} />
+          <input value={form.threads} onChange={set("threads")} placeholder="Threads (URL)" className={inputCls} />
         </div>
         <div className="flex gap-3">
           <button type="submit" data-testid="admin-roster-submit"

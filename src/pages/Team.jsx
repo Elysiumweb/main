@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { Users } from "lucide-react";
+import { Users, Search, ArrowUpDown } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
@@ -31,6 +31,8 @@ export default function Team() {
   const [searchParams, setSearchParams] = useSearchParams();
   const gameFilter = searchParams.get("game") || "all";
   const rosterFilter = searchParams.get("roster") || "all";
+  const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState("pseudo"); // pseudo | role | status
 
   useEffect(() => {
     setError(false); setMembers(null);
@@ -46,8 +48,15 @@ export default function Team() {
     let list = members;
     if(gameFilter!=="all") list = list.filter(m=> (m.game||"").toLowerCase() === gameFilter.toLowerCase() || m.game===gameFilter);
     if(rosterFilter!=="all") list = list.filter(m=> m.roster===rosterFilter);
+    if(query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(m => (m.pseudo||"").toLowerCase().includes(q) || (m.ingameRole||"").toLowerCase().includes(q) || (m.bio||"").toLowerCase().includes(q));
+    }
+    if (sortBy === "pseudo") list = [...list].sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
+    else if (sortBy === "role") list = [...list].sort((a, b) => (a.ingameRole || "").localeCompare(b.ingameRole || "") || (a.pseudo || "").localeCompare(b.pseudo || ""));
+    else list = [...list].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || (a.pseudo || "").localeCompare(b.pseudo || ""));
     return list;
-  }, [members, gameFilter, rosterFilter]);
+  }, [members, gameFilter, rosterFilter, query, sortBy]);
 
   const groups = ORDER.map((s) => ({ status: s, list: filtered.filter((m) => m.status === s) })).filter((g) => g.list.length);
 
@@ -96,6 +105,29 @@ export default function Team() {
                   })}
                 </div>
               )}
+              {/* Recherche par pseudo + tri */}
+              <div className="flex items-center gap-2 w-full sm:w-auto" data-testid="team-search-sort">
+                <div className="relative flex-1 sm:w-52">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" aria-hidden="true" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t("team.search")}
+                    aria-label={t("team.search")}
+                    data-testid="team-search-input"
+                    className="w-full bg-[#141414] border border-white/15 pl-8 pr-3 py-2 text-xs text-[#f7f7f7] placeholder:text-[#f7f7f7]/30 focus:outline-none focus:border-[#D8CA82]"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown size={12} className="text-[#f7f7f7]/30" aria-hidden="true" />
+                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label={t("team.sort")} data-testid="team-sort-select"
+                    className="bg-[#141414] border border-white/15 px-2 py-2 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                    <option value="pseudo">{t("team.sort.pseudo")}</option>
+                    <option value="role">{t("team.sort.role")}</option>
+                    <option value="status">{t("team.sort.status")}</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -147,7 +179,7 @@ export default function Team() {
                         {m.ingameRole && <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/60 mt-1">{m.ingameRole}</p>}
                         {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{m.bio}</p>}
                         <div className="flex items-center gap-3 mt-4">
-                          {["x", "twitch", "instagram", "youtube"].filter((k) => m.socials?.[k]).map((k) => (
+                          {["x", "twitch", "instagram", "youtube", "tiktok", "threads"].filter((k) => m.socials?.[k]).map((k) => (
                             <span key={k} className="text-[#f7f7f7]/40"><SocialIcon name={k} size={14} /></span>
                           ))}
                           <span className="ml-auto text-[10px] uppercase tracking-widest text-[#D8CA82]/60">{t("team.view")} →</span>

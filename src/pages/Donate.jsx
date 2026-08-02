@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { useSEO } from "../lib/useSEO";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
-import { DonateButton, DonateSecureNote } from "../components/DonateButton";
+import { DonateButton, DonateSecureNote, DonateSubscriptionCard } from "../components/DonateButton";
+import { CampaignProgress } from "../components/CampaignProgress";
 import { OptimizedImage } from "../components/OptimizedImage";
 import { CONTACT_EMAIL } from "../lib/notify";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
@@ -55,6 +56,11 @@ export default function Donate() {
             {t("donate.sub")}
           </p>
         </div>
+      </section>
+
+      {/* OBJECTIF DE CAMPAGNE */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16" data-testid="donate-campaign">
+        <CampaignProgress testId="donate-campaign-progress" />
       </section>
 
       {/* DON — BOUTONS PAYPAL */}
@@ -114,6 +120,9 @@ export default function Donate() {
 
               <DonateButton testId="donate-page-paypal" />
               <DonateSecureNote testId="donate-page-secure-note" />
+
+              {/* Don mensuel / adhésion */}
+              <DonateSubscriptionCard testId="donate-page-subscription" />
 
               <div className="mt-7 pt-6 border-t border-white/10">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-2">

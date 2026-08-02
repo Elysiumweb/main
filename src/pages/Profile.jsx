@@ -8,6 +8,7 @@ import { auth, db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { ImageUpload } from "../components/ImageUpload";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -102,7 +103,10 @@ export default function Profile() {
           </div>
           <div>
             <label htmlFor="profile-photo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("profile.photo")}</label>
-            <input id="profile-photo" type="url" value={photo} onChange={(e) => setPhoto(e.target.value)} placeholder="https://..." className={inputCls} data-testid="profile-photo-input" />
+            <ImageUpload value={photo} onChange={setPhoto} folder="avatars" maxWidth={800} testId="profile-photo-upload" />
+            {photo && (
+              <img src={photo} alt="" className="mt-3 h-20 w-20 object-cover border border-[#D8CA82]/40" data-testid="profile-photo-preview" />
+            )}
           </div>
           <button type="submit" disabled={busy} data-testid="profile-save-btn"
             className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">

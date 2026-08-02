@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ExternalLink, ShieldCheck } from "lucide-react";
+import { Heart, ExternalLink, ShieldCheck, Repeat } from "lucide-react";
 import { useLang } from "../lib/i18n";
 import { loadPayPalSdk } from "../lib/paypal";
-import { PAYPAL_HOSTED_BUTTON_ID, paypalCheckoutUrl } from "../lib/constants";
+import { PAYPAL_HOSTED_BUTTON_ID, PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID, paypalCheckoutUrl } from "../lib/constants";
+import { CONTACT_EMAIL } from "../lib/notify";
 
 let instanceCount = 0;
 
@@ -118,6 +119,45 @@ export const DonateButton = ({
           <p className="text-[11px] text-[#c8c8c8] mt-3 max-w-xs leading-relaxed">{t("donate.fallback")}</p>
         </div>
       )}
+    </div>
+  );
+};
+
+/**
+ * Don récurrent / adhésion : bouton hébergé PayPal « abonnement ».
+ * Si l'identifiant du bouton d'abonnement n'est pas configuré
+ * (REACT_APP_PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID), un message d'attente
+ * avec contact email est affiché à la place.
+ */
+export const DonateSubscriptionBlock = ({ testId = "donate-subscription" }) => {
+  const { t } = useLang();
+  if (!PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID) {
+    return (
+      <div className="border border-white/15 bg-[#141414] px-4 py-3 text-[11px] text-[#c8c8c8] leading-relaxed" data-testid={testId}>
+        {t("donate.monthly.notConfigured")}{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline">{CONTACT_EMAIL}</a>
+      </div>
+    );
+  }
+  return (
+    <div data-testid={testId}>
+      <DonateButton hostedButtonId={PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID} testId="donate-monthly-paypal" />
+    </div>
+  );
+};
+
+/** Icône + libellé pour la carte « don mensuel ». */
+export const DonateSubscriptionCard = ({ testId = "donate-subscription-card" }) => {
+  const { t } = useLang();
+  return (
+    <div className="mt-6 pt-6 border-t border-white/10" data-testid={testId}>
+      <div className="flex items-center gap-3 mb-3">
+        <Repeat size={17} className="text-[#D8CA82]" aria-hidden="true" />
+        <p className="font-display text-xs tracking-[0.3em] uppercase text-[#D8CA82]">{t("donate.monthly.title")}</p>
+      </div>
+      <p className="text-sm text-[#c8c8c8] leading-relaxed mb-4">{t("donate.monthly.text")}</p>
+      <DonateSubscriptionBlock />
+      <p className="text-[11px] text-[#f7f7f7]/40 mt-3">{t("donate.monthly.member.desc")}</p>
     </div>
   );
 };

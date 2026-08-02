@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useLang } from "../lib/i18n";
-import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull } from "lucide-react";
+import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull, Radio } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { ShareButtons } from "./ShareButtons";
+import { SITE_URL } from "../lib/useSEO";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
 import { getElysiumTeamName, getStatFieldsForGame } from "../lib/constants";
@@ -51,7 +53,21 @@ const OpponentLogo = ({ src, name, className = "" }) => {
  * ResultBadge
  * - Never rely on color alone: shows an icon + explicit text label
  * --------------------------------------------------------------------- */
-const ResultBadge = ({ result, t, upcoming = false }) => {
+const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
+  if (live) {
+    return (
+      <span
+        className="text-[10px] font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-400/60 bg-red-500/10 flex items-center gap-1.5"
+        data-testid="match-status-live"
+      >
+        <span className="relative flex h-2 w-2" aria-hidden="true">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:animate-none" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+        </span>
+        <span>{t("results.live")}</span>
+      </span>
+    );
+  }
   if (upcoming) {
     return (
       <span
@@ -99,6 +115,7 @@ const ResultBadge = ({ result, t, upcoming = false }) => {
 export const MatchCard = ({ match, onDelete, onEdit }) => {
   const { t } = useLang();
   const upcoming = match.status === "upcoming";
+  const live = match.status === "live";
   const us = Number(match.scoreUs);
   const them = Number(match.scoreThem);
   const result = us > them ? "win" : us < them ? "loss" : "draw";
@@ -107,9 +124,11 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
   const teamName = getElysiumTeamName(roster);
 
   // Accessible description for the card
-  const ariaDesc = upcoming
-    ? `Match à venir : ${teamName} contre ${match.opponentName || "adversaire"}`
-    : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || "adversaire"}`;
+  const ariaDesc = live
+    ? `Match en direct : ${teamName} contre ${match.opponentName || "adversaire"}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
+    : upcoming
+      ? `Match à venir : ${teamName} contre ${match.opponentName || "adversaire"}`
+      : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || "adversaire"}`;
 
   const card = (
     <div
@@ -138,7 +157,7 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
             </span>
           )}
         </div>
-        <ResultBadge result={result} t={t} upcoming={upcoming} />
+        <ResultBadge result={result} t={t} upcoming={upcoming} live={live} />
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
@@ -146,8 +165,8 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
           <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7] text-center leading-tight" data-testid={`match-team-name-${match.id}`}>{teamName}</span>
         </div>
         <div className="text-center">
-          {upcoming ? (
-            <p className="font-display font-black text-2xl text-[#c8c8c8]" aria-label="Match à venir">VS</p>
+          {upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? (
+            <p className="font-display font-black text-2xl text-[#c8c8c8]" aria-label={live ? "Score en cours de mise à jour" : "Match à venir"}>VS</p>
           ) : (
             <p className="font-display font-black text-3xl text-[#f7f7f7]" aria-label={`Score : ${us} à ${them}`}>
               <span className={result === "win" ? "text-[#D8CA82]" : "text-[#f7f7f7]"}>{match.scoreUs}</span>
@@ -167,13 +186,16 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
         </span>
         {match.competition && <span className="text-xs text-[#D8CA82]/80 uppercase tracking-wider">{match.competition}</span>}
       </div>
-      {upcoming && (match.platform || match.watchUrl) && (
+      {(upcoming || live) && (match.platform || match.watchUrl) && (
         <div className="mt-3 flex items-center justify-between gap-2">
           {match.platform && <span className="text-xs text-[#c8c8c8]">{t("results.platform")} : {match.platform}</span>}
           {match.watchUrl && (
-            <a href={match.watchUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_card", matchId: match.id, platform: match.platform || "watchUrl" }); }} data-testid={`match-watch-${match.id}`}
-              className="text-xs text-[#D8CA82] uppercase tracking-widest flex items-center gap-1.5 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-              <PlayCircle size={13} aria-hidden="true" /> {t("results.watch")}
+            <a href={match.watchUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_card", matchId: match.id, platform: match.platform || "watchUrl", status: match.status }); }} data-testid={`match-watch-${match.id}`}
+              className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${live
+                ? "bg-red-500/15 border border-red-400/60 text-red-300 font-bold px-3 py-1.5 hover:bg-red-500/25"
+                : "text-[#D8CA82] hover:underline"}`}>
+              {live ? <Radio size={13} aria-hidden="true" /> : <PlayCircle size={13} aria-hidden="true" />}
+              {live ? t("results.watchLive") : t("results.watch")}
             </a>
           )}
         </div>
@@ -221,7 +243,7 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
               <span className="text-xs font-display uppercase text-center leading-tight">{teamName}</span>
             </div>
             <p className="font-display font-black text-3xl" aria-label={upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
-              {upcoming ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
+              {upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
             </p>
             <div className="flex flex-col items-center gap-1 w-1/3">
               <OpponentLogo src={match.opponentLogo} name={match.opponentName} className="h-10 w-10" />
@@ -308,6 +330,15 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
               <Award size={15} className="text-[#D8CA82]" aria-hidden="true" /> {t("results.mvp")} : <span className="font-display font-bold text-[#D8CA82]">{match.mvp}</span>
             </p>
           )}
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
+            <ShareButtons
+              url={`${SITE_URL}/resultats?match=${match.id}`}
+              text={`${teamName} vs ${match.opponentName || "adversaire"}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
+              title={`Partager le match ${teamName} vs ${match.opponentName}`}
+              testId={`match-share-${match.id}`}
+              compact
+            />
+          </div>
           <div className="flex gap-4">
             {match.vodUrl && (
               <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" data-testid={`match-vod-${match.id}`}
@@ -315,11 +346,14 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
                 <PlayCircle size={13} aria-hidden="true" /> {t("results.vod")}
               </a>
             )}
-            {match.watchUrl && upcoming && (
+            {(upcoming || live) && match.watchUrl && (
               <a href={match.watchUrl} target="_blank" rel="noopener noreferrer"
-                onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_detail", matchId: match.id, platform: match.platform || "watchUrl" })}
-                className="text-xs text-[#D8CA82] uppercase tracking-widest flex items-center gap-1.5 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-                <ExternalLink size={13} aria-hidden="true" /> {t("results.watch")}
+                onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_detail", matchId: match.id, platform: match.platform || "watchUrl", status: match.status })}
+                className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${live
+                  ? "bg-red-500/15 border border-red-400/60 text-red-300 font-bold px-3 py-2"
+                  : "text-[#D8CA82] hover:underline"}`}>
+                {live ? <Radio size={13} aria-hidden="true" /> : <ExternalLink size={13} aria-hidden="true" />}
+                {live ? t("results.watchLive") : t("results.watch")}
               </a>
             )}
           </div>

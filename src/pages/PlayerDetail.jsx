@@ -102,7 +102,7 @@ export default function PlayerDetail() {
               <p className="text-[#D8CA82] uppercase tracking-[0.3em] text-sm mt-2">{player.game}{player.ingameRole ? ` — ${player.ingameRole}` : ""}</p>
               {player.bio && <p className="text-[#f7f7f7]/60 mt-5 max-w-2xl leading-relaxed" data-testid="player-bio">{player.bio}</p>}
               <div className="flex items-center gap-4 mt-6">
-                {["x", "twitch", "instagram", "youtube"].filter((k) => player.socials?.[k]).map((k) => (
+                {["x", "twitch", "instagram", "youtube", "tiktok", "threads"].filter((k) => player.socials?.[k]).map((k) => (
                   <a key={k} href={player.socials[k]} target="_blank" rel="noopener noreferrer" data-testid={`player-social-${k}`}
                     className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors"><SocialIcon name={k} size={20} /></a>
                 ))}

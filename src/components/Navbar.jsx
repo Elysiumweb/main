@@ -1,10 +1,13 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart } from "lucide-react";
+import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart, ChevronDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 const linkCls = ({ isActive }) =>
   `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
@@ -30,6 +33,13 @@ export const Navbar = () => {
     { to: "/support", label: t("nav.support") },
     { to: "/recrutement", label: t("nav.recruitment") },
     { to: "/partenaires", label: t("nav.partners") },
+  ];
+
+  // Liens secondaires regroupés dans un menu « Plus » pour ne pas saturer la barre.
+  const moreLinks = [
+    { to: "/competitions", label: t("nav.competitions") },
+    { to: "/a-propos", label: t("nav.about") },
+    { to: "/presse", label: t("nav.press") },
   ];
 
   const openSearch = (e) => {
@@ -77,6 +87,22 @@ export const Navbar = () => {
               {l.label}
             </NavLink>
           ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={`${linkCls({ isActive: false })} flex items-center gap-1 min-h-[44px]`} data-testid="nav-link-more">
+                {t("nav.more")} <ChevronDown size={12} aria-hidden="true" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-[#161616] border border-white/15 rounded-none p-1.5 text-[#f7f7f7]" data-testid="nav-more-menu">
+              {moreLinks.map((l) => (
+                <DropdownMenuItem key={l.to} asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
+                  <NavLink to={l.to} className="text-xs uppercase tracking-[0.18em] px-3 py-2.5" data-testid={`nav-more-link-${l.to.slice(1)}`}>
+                    {l.label}
+                  </NavLink>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {hasPlayerAccess && (
             <NavLink to="/espace-joueur" className={linkCls} data-testid="nav-link-player-space">
               <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
@@ -183,6 +209,13 @@ export const Navbar = () => {
               <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
             </NavLink>
           )}
+          <div className="border-t border-white/10 my-2 pt-2">
+            {moreLinks.map((l) => (
+              <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)} data-testid={`nav-mobile-link-${l.to.slice(1)}`}>
+                {l.label}
+              </NavLink>
+            ))}
+          </div>
         </nav>
       )}
     </header>

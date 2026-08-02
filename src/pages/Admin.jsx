@@ -13,6 +13,8 @@ import { AdminPositions } from "../components/admin/AdminPositions";
 import { AdminArticles } from "../components/admin/AdminArticles";
 import { AdminMedia } from "../components/admin/AdminMedia";
 import { AdminEvents } from "../components/admin/AdminEvents";
+import { AdminCompetitions } from "../components/admin/AdminCompetitions";
+import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
@@ -45,8 +47,9 @@ export default function Admin() {
   const allowed = {
     users: isOfficial, matches: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
+    competitions: isBureau, campaigns: isBureau,
   };
-  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events", "competitions", "campaigns"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -374,7 +377,9 @@ export default function Admin() {
                   <select value={form.status} onChange={set("status")} className={inputCls} data-testid="admin-match-status">
                     <option value="finished">{t("admin.match.finished")}</option>
                     <option value="upcoming">{t("admin.match.upcoming")}</option>
+                    <option value="live">{t("admin.match.live")}</option>
                   </select>
+                  {form.status === "live" && <p className="text-[11px] text-[#f7f7f7]/40 mt-1">{t("admin.match.scoreHint")}</p>}
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.time")}</label>
@@ -389,10 +394,15 @@ export default function Admin() {
                   <input value={form.platform} onChange={set("platform")} placeholder="PC / Salle EVA..." className={inputCls} data-testid="admin-match-platform" />
                 </div>
               </div>
-              {form.status === "upcoming" && (
+              {(form.status === "upcoming" || form.status === "live") && (
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.watch")}</label>
                   <input value={form.watchUrl} onChange={set("watchUrl")} placeholder="https://twitch.tv/..." className={inputCls} data-testid="admin-match-watch" />
+                  {form.status === "live" && form.watchUrl && (
+                    <p className="text-[11px] text-emerald-300/80 mt-1" data-testid="admin-match-live-hint">
+                      ✓ {t("results.watchLive")} — le lien sera mis en avant (badge rouge).
+                    </p>
+                  )}
                 </div>
               )}
               {form.status === "finished" && (
@@ -561,6 +571,8 @@ export default function Admin() {
         {tab === "articles" && <AdminArticles />}
         {tab === "media" && <AdminMedia />}
         {tab === "events" && <AdminEvents />}
+        {tab === "competitions" && <AdminCompetitions />}
+        {tab === "campaigns" && <AdminCampaigns />}
       </section>
     </div>
   );
