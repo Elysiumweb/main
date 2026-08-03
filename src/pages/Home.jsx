@@ -4,7 +4,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { SOCIALS, GAMES, getElysiumTeamName } from "../lib/constants";
+import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { DonateBlock } from "../components/DonateButton";
 import { CampaignProgress } from "../components/CampaignProgress";
@@ -180,7 +180,7 @@ export default function Home() {
           <h2 id="home-games-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.games.title")}</h2>
           <div className="flex-1 h-px bg-white/10" />
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="relative border border-[#D8CA82]/30 bg-[#1A1A1A] p-8 group overflow-hidden flex flex-col" data-testid="home-game-eva">
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-[#D8CA82]/10 to-transparent pointer-events-none" />
             <div className="flex items-start justify-between">
@@ -211,9 +211,24 @@ export default function Home() {
               </Link>
             </div>
           </div>
+          <div className="relative border border-[#FF4655]/20 bg-[#141414] p-8 group overflow-hidden flex flex-col hover:border-[#FF4655]/60 u-micro" data-testid="home-game-valo">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-[#FF4655]/[0.09] to-transparent pointer-events-none" />
+            <div className="flex items-start justify-between">
+              <p className="font-display font-black text-4xl text-[#f7f7f7] group-hover:text-[#FF4655] u-micro">VALO</p>
+              <span className="text-[10px] uppercase tracking-[0.3em] border border-white/15 text-[#c8c8c8] group-hover:text-[#FF4655] group-hover:border-[#FF4655]/40 px-2 py-1 u-micro">{t("home.games.valo.team")}</span>
+            </div>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.valo.short")}</p>
+            <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.valo")}</p>
+            <div className="mt-6 flex items-center gap-3 flex-wrap">
+              <span className="text-[10px] uppercase tracking-widest border border-[#FF4655]/30 text-[#FF4655]/90 px-2 py-1">Valeureux · Vaillant</span>
+              <Link to="/equipe?game=Valorant" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#c8c8c8] hover:text-[#FF4655] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF4655]">
+                {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
           <div className="border border-white/10 bg-[#0c0c0c] p-8 flex flex-col justify-center relative overflow-hidden">
             <p className="font-display text-[#c8c8c8] tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
-            <p className="text-[#c8c8c8] text-sm leading-relaxed">Deux pôles compétitifs, même ADN. EVA en arène, Rocket League en arène volante.</p>
+            <p className="text-[#c8c8c8] text-sm leading-relaxed">Trois pôles compétitifs, même ADN. EVA en arène VR, Rocket League en arène volante, Valorant en FPS tactique.</p>
             <div className="mt-6 h-px bg-white/10" />
             <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-[#D8CA82]/70">Not given. Earned.</p>
           </div>
@@ -327,7 +342,7 @@ export default function Home() {
               <div className="flex flex-wrap gap-2">
                 {rosterStats.byGame.map((g) => (
                   <span key={g.game} className="text-[10px] uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 px-2 py-1">
-                    {g.game === "Rocket League" ? "RL" : g.game} · {g.count}
+                    {getGameShortLabel(g.game)} · {g.count}
                   </span>
                 ))}
               </div>

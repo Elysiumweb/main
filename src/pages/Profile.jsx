@@ -7,6 +7,7 @@ import { BadgeCheck, MailWarning, KeyRound, Trash2 } from "lucide-react";
 import { auth, db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { gameHasRosters } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { ImageUpload } from "../components/ImageUpload";
 import {
@@ -75,7 +76,7 @@ export default function Profile() {
           <p className="text-[#D8CA82] text-sm uppercase tracking-[0.3em] mt-3" data-testid="profile-role">
             {isOfficial ? "Compte officiel" : t(`admin.role.${role}`)}{game ? ` · ${game}` : ""}{roster ? ` · ${roster}` : ""}
           </p>
-          {game === "Rocket League" && (
+          {gameHasRosters(game) && (
             <p className="text-[#f7f7f7]/40 text-xs uppercase tracking-[0.2em] mt-1" data-testid="profile-roster">
               {t("profile.roster")} : {roster || t("profile.roster.none")}
             </p>

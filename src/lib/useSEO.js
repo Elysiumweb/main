@@ -5,7 +5,7 @@ import { getElysiumTeamName } from "./constants";
 export const SITE_URL = (process.env.REACT_APP_SITE_URL || "https://elysium-esport.fr").replace(/\/$/, "");
 export const SITE_NAME = "ELYSIUM Esport";
 export const DEFAULT_TITLE = "ELYSIUM Esport — Not given. Earned.";
-export const DEFAULT_DESCRIPTION = "Équipe esport française sur EVA et Rocket League : résultats, actualités, effectif, recrutement et communauté.";
+export const DEFAULT_DESCRIPTION = "Équipe esport française sur EVA, Rocket League et Valorant : résultats, actualités, effectif, recrutement et communauté.";
 export const DEFAULT_IMAGE = `${SITE_URL}/brand/logo-icon-gold.png`;
 
 const defaultOrganizationJsonLd = () => ({
@@ -18,7 +18,7 @@ const defaultOrganizationJsonLd = () => ({
   logo: DEFAULT_IMAGE,
   foundingDate: "2026",
   slogan: "Not given. Earned.",
-  sport: ["Esport", "EVA", "Rocket League"],
+  sport: ["Esport", "EVA", "Rocket League", "Valorant"],
   sameAs: [
     "https://discord.gg/RH3ZZkMJsw",
     "https://www.twitch.tv/elysiumxeva",

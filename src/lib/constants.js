@@ -1,15 +1,36 @@
 export const OFFICIAL_UID = process.env.REACT_APP_OFFICIAL_UID;
-export const GAMES = ["EVA", "Rocket League"];
+export const GAMES = ["EVA", "Rocket League", "Valorant"];
 export const ROLES = ["visitor", "player", "manager", "bureau"];
 
-// Rosters per game — EVA has no rosters, RL has Junior / Espoir / Académique / Esport
+// Rosters per game — EVA has no rosters, RL has Junior / Espoir / Académique / Esport,
+// Valorant has Valeureux / Vaillant
 export const ROSTERS = {
   "Rocket League": ["Junior", "Espoir", "Académique", "Esport"],
+  "Valorant": ["Valeureux", "Vaillant"],
   "EVA": [],
 };
 
 // Flat list of all rosters (for selects / validation)
 export const ALL_ROSTERS = Object.values(ROSTERS).flat();
+
+/** Le jeu possède-t-il des rosters ? */
+export const gameHasRosters = (game) => (ROSTERS[game] || []).length > 0;
+
+/** Couleur d'accent par jeu (EVA = or, RL = orange, Valorant = rouge) */
+export const GAME_COLORS = {
+  "EVA": "#D8CA82",
+  "Rocket League": "#F4511E",
+  "Valorant": "#FF4655",
+};
+export const getGameColor = (game) => GAME_COLORS[game] || "#D8CA82";
+
+/** Abréviation d'affichage par jeu */
+export const GAME_SHORT_LABELS = {
+  "EVA": "EVA",
+  "Rocket League": "RL",
+  "Valorant": "Valo",
+};
+export const getGameShortLabel = (game) => GAME_SHORT_LABELS[game] || game;
 
 export const getElysiumTeamName = (roster) => {
   const label = typeof roster === "string" ? roster.trim() : "";
@@ -51,6 +72,15 @@ export const STAT_FIELDS = {
     { key: "arrets", label: "Arrêts" },
     { key: "tirs", label: "Tirs" },
   ],
+  "Valorant": [
+    { key: "kills", label: "Kill" },
+    { key: "deaths", label: "Mort" },
+    { key: "assists", label: "Assistance" },
+    { key: "eco", label: "Score d'éco" },
+    { key: "firstDeaths", label: "Première mort" },
+    { key: "plants", label: "Plants" },
+    { key: "defuses", label: "Diffuse" },
+  ],
   "EVA": [
     { key: "kills", label: "Kill" },
     { key: "deaths", label: "Mort" },
@@ -74,7 +104,7 @@ export const isPlayerInMatch = (match, player) => {
   return false;
 };
 
-/** Score principal par jeu pour un leaderboard : kills (EVA) ou buts (RL). */
+/** Score principal par jeu pour un leaderboard : kills (EVA / Valorant) ou buts (RL). */
 export const getPrimaryStatKey = (game) => (game === "Rocket League" ? "buts" : "kills");
 export const getSecondaryStatKey = (game) => (game === "Rocket League" ? "passes" : "deaths");
 

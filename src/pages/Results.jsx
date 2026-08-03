@@ -86,7 +86,7 @@ export default function Results() {
 
   useSEO({
     title: "Résultats & matchs — ELYSIUM Esport",
-    description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA et Rocket League.",
+    description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA, Rocket League et Valorant.",
     url: "/resultats",
     jsonLd: sportsEventsJsonLd,
   });
