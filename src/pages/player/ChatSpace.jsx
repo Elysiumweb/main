@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
-import { GAMES, ROSTERS } from "../../lib/constants";
+import { GAMES, ROSTERS, gameHasRosters } from "../../lib/constants";
 import { ChatMessages } from "../../components/ChatMessages";
 import { Globe, Gamepad2, Users } from "lucide-react";
 
@@ -15,14 +15,14 @@ export default function ChatSpace() {
   if (isOfficial) GAMES.forEach((g) => channels.push({ id: `game_${g}`, label: g, icon: Gamepad2 }));
   else if (game) channels.push({ id: `game_${game}`, label: game, icon: Gamepad2 });
 
-  // Roster channels — only for RL game
+  // Roster channels — for every game that has rosters (Rocket League, Valorant)
   if (isOfficial) {
     // Official sees all roster channels
-    (ROSTERS["Rocket League"] || []).forEach((r) =>
+    Object.values(ROSTERS).flat().forEach((r) =>
       channels.push({ id: `roster_${r}`, label: r, icon: Users })
     );
-  } else if (game === "Rocket League" && roster) {
-    // RL player only sees their own roster channel
+  } else if (gameHasRosters(game) && roster) {
+    // A rostered player only sees their own roster channel
     channels.push({ id: `roster_${roster}`, label: roster, icon: Users });
   }
 

@@ -4,7 +4,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { GAMES, computePlayerLeaderboard, getPlayerOfTheMonth, getPrimaryStatKey } from "../lib/constants";
+import { GAMES, computePlayerLeaderboard, getPlayerOfTheMonth, getPrimaryStatKey, getGameShortLabel } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
 import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull, Crown } from "lucide-react";
@@ -343,7 +343,7 @@ export default function Stats() {
                             <Link to={`/equipe/${p.id}`} className="flex items-center gap-3 group">
                               <PlayerPhoto src={p.photo} alt={p.pseudo} className="h-9 w-9" />
                               <span className="font-display font-bold text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{p.pseudo}</span>
-                              <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{p.game === "Rocket League" ? "RL" : p.game}</span>
+                              <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{getGameShortLabel(p.game)}</span>
                             </Link>
                           </td>
                           <td className="px-4 py-2.5 text-center text-[#f7f7f7]/60">{p.matchesPlayed}</td>

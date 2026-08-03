@@ -524,7 +524,7 @@ export default function Admin() {
                               </button>
                             )}
                           </div>
-                          <div className={`grid ${statFields.length === 4 ? "grid-cols-4" : "grid-cols-3"} gap-2`}>
+                          <div className={`grid ${statFields.length === 3 ? "grid-cols-3" : "grid-cols-4"} gap-2`}>
                             {statFields.map((f) => (
                               <div key={f.key}>
                                 <label className="text-[10px] uppercase tracking-wider text-[#f7f7f7]/40 block mb-1">

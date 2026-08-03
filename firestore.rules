@@ -55,7 +55,7 @@ service cloud.firestore {
       // ni changer leur pôle/roster : séparation stricte joueur/staff côté serveur.
       allow update: if (isOfficial()
           && isValidRole(request.resource.data.role)
-          && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League'])
+          && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League', 'Valorant'])
           && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null || request.resource.data.roster is string))
         || (request.auth.uid == uid
             && request.resource.data.role == resource.data.role
@@ -84,7 +84,8 @@ service cloud.firestore {
     }
 
     // ===== Chats (game + roster + global) =====
-    // Channels: game_EVA, game_Rocket League, roster_Espoir, roster_Académique, roster_Esport, global
+    // Channels: game_EVA, game_Rocket League, game_Valorant, roster_Espoir, roster_Académique,
+    // roster_Esport, roster_Junior, roster_Valeureux, roster_Vaillant, global
     match /chats/{channel}/messages/{id} {
       allow read: if hasPlayerAccess();
       allow create: if hasPlayerAccess()

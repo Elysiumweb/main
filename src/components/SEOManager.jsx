@@ -2,9 +2,9 @@ import { matchPath, useLocation } from "react-router-dom";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
 const routeSEO = [
-  { path: "/", title: "ELYSIUM Esport — Équipe EVA & Rocket League", description: "Découvrez ELYSIUM Esport : équipe française EVA et Rocket League, résultats, actualités, live, recrutement et communauté." },
-  { path: "/resultats", title: "Résultats & matchs — ELYSIUM Esport", description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA et Rocket League.", jsonLd: { "@type": "CollectionPage", name: "Résultats Elysium", url: `${SITE_URL}/resultats` } },
-  { path: "/equipe", title: "Équipe & roster — ELYSIUM Esport", description: "Effectif Elysium : joueurs EVA, Rocket League, rosters, rôles en jeu et staff." },
+  { path: "/", title: "ELYSIUM Esport — Équipe EVA, Rocket League & Valorant", description: "Découvrez ELYSIUM Esport : équipe française EVA, Rocket League et Valorant, résultats, actualités, live, recrutement et communauté." },
+  { path: "/resultats", title: "Résultats & matchs — ELYSIUM Esport", description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA, Rocket League et Valorant.", jsonLd: { "@type": "CollectionPage", name: "Résultats Elysium", url: `${SITE_URL}/resultats` } },
+  { path: "/equipe", title: "Équipe & roster — ELYSIUM Esport", description: "Effectif Elysium : joueurs EVA, Rocket League, Valorant, rosters, rôles en jeu et staff." },
   { path: "/equipe/:id", title: "Profil joueur — ELYSIUM Esport", description: "Profil d'un joueur Elysium : jeu, roster, rôle et informations publiques." },
   { path: "/actus", title: "Actualités — ELYSIUM Esport", description: "Actualités Elysium Esport : annonces, résultats, coulisses, médias et vie de l'équipe.", jsonLd: { "@type": "Blog", name: "Actualités Elysium", url: `${SITE_URL}/actus` } },
   { path: "/actus/:id", title: "Article — ELYSIUM Esport", description: "Article Elysium Esport : actualités, annonces et analyses de l'équipe." },

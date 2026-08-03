@@ -11,7 +11,7 @@ import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
-import { computePlayerStats, isPlayerInMatch } from "../lib/constants";
+import { computePlayerStats, isPlayerInMatch, gameHasRosters } from "../lib/constants";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -81,7 +81,7 @@ export default function PlayerDetail() {
     }
     return (
       m.game === player.game
-      && (player.game !== "Rocket League" || !player.roster || !m.roster || m.roster === player.roster)
+      && (!gameHasRosters(player.game) || !player.roster || !m.roster || m.roster === player.roster)
     );
   }).slice(0, 6);
 

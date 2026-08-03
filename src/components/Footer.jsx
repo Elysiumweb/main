@@ -20,7 +20,7 @@ export const Footer = () => {
             <img src="/brand/wordmark-gold.png" alt="" aria-hidden="true" className="h-7 mb-3" />
           </Link>
           <p className="text-xs text-[#c8c8c8] leading-relaxed max-w-sm">
-            Elysium Esport — Organisation e-sportive française compétitive sur EVA et Rocket League. Not given. Earned.
+            Elysium Esport — Organisation e-sportive française compétitive sur EVA, Rocket League et Valorant. Not given. Earned.
           </p>
 
           {/* Discord CTA */}

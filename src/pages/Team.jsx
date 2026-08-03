@@ -6,8 +6,21 @@ import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
-import { GAMES, ROSTERS } from "../lib/constants";
+import { GAMES, ROSTERS, gameHasRosters, getGameColor, getGameShortLabel } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+
+const GAME_FILTER_KEYS = {
+  "EVA": "team.filter.eva",
+  "Rocket League": "team.filter.rl",
+  "Valorant": "team.filter.valorant",
+};
+
+const gameBadgeCls = (game) =>
+  game === "Rocket League"
+    ? "border-[#F4511E]/50 text-[#F4511E] bg-[#F4511E]/10"
+    : game === "Valorant"
+      ? "border-[#FF4655]/50 text-[#FF4655] bg-[#FF4655]/10"
+      : "border-[#D8CA82]/30 text-[#D8CA82]/70";
 
 const ORDER = ["player", "sub", "staff"];
 
@@ -86,25 +99,29 @@ export default function Team() {
                 {GAMES.map(g=>(
                   <button key={g} onClick={()=> setSearchParams({game:g})} data-testid={`filter-${g}`}
                     className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors flex items-center gap-2 ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: g==="Rocket League"?"#F4511E":"#D8CA82"}} />
-                    {g==="Rocket League"? t("team.filter.rl") : t("team.filter.eva")} ({byGame[g]||0})
+                    <span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: getGameColor(g)}} />
+                    {GAME_FILTER_KEYS[g] ? t(GAME_FILTER_KEYS[g]) : g} ({byGame[g]||0})
                   </button>
                 ))}
               </div>
-              {/* Roster sub-filters for Rocket League */}
-              {(gameFilter==="all" || gameFilter==="Rocket League") && (
-                <div className="flex items-center gap-1.5">
-                  {(ROSTERS["Rocket League"]||[]).map(r=>{
+              {/* Roster sub-filters (jeux avec rosters : Rocket League, Valorant) */}
+              {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
+                <div key={g} className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#f7f7f7]/30 mr-1">{getGameShortLabel(g)}</span>
+                  {(ROSTERS[g]||[]).map(r=>{
                     const count = members?.filter(m=> m.roster===r).length||0;
+                    const active = rosterFilter===r;
+                    const color = getGameColor(g);
                     return (
-                      <button key={r} onClick={()=> setSearchParams(rosterFilter===r ? (gameFilter==="all"?{}:{game:"Rocket League"}) : {game:"Rocket League",roster:r})} data-testid={`filter-roster-${r}`}
-                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] border transition-colors ${rosterFilter===r ? "border-[#F4511E] text-[#F4511E] bg-[#F4511E]/10 font-bold" : "border-white/15 text-[#f7f7f7]/40 hover:text-[#f7f7f7]/70"}`}>
+                      <button key={r} onClick={()=> setSearchParams(active ? (gameFilter==="all"?{}:{game:g}) : {game:g,roster:r})} data-testid={`filter-roster-${r}`}
+                        style={active ? { borderColor: color, color, backgroundColor: `${color}1A` } : undefined}
+                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] border transition-colors ${active ? "font-bold" : "border-white/15 text-[#f7f7f7]/40 hover:text-[#f7f7f7]/70"}`}>
                         {r} ({count})
                       </button>
                     );
                   })}
                 </div>
-              )}
+              ))}
               {/* Recherche par pseudo + tri */}
               <div className="flex items-center gap-2 w-full sm:w-auto" data-testid="team-search-sort">
                 <div className="relative flex-1 sm:w-52">
@@ -131,8 +148,8 @@ export default function Team() {
             </div>
           </div>
 
-          {/* EVA & RL highlight */}
-          <div className="mt-10 grid sm:grid-cols-2 gap-4 max-w-2xl">
+          {/* EVA, RL & Valorant highlight */}
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
             <div className={`border p-4 flex items-center gap-4 ${gameFilter==="EVA"||gameFilter==="all" ? "border-[#D8CA82]/40 bg-[#D8CA82]/5" : "border-white/10 bg-[#141414]/50"}`}>
               <p className="font-display font-black text-2xl text-[#D8CA82]">EVA</p>
               <p className="text-xs text-[#f7f7f7]/60">Esports Virtual Arenas — arène VR compétitive</p>
@@ -142,6 +159,13 @@ export default function Team() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-[#F4511E]">Nouveau pôle</p>
                 <p className="text-xs text-[#f7f7f7]/60">Rocket League — car football</p>
+              </div>
+            </div>
+            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="Valorant"||gameFilter==="all" ? "border-[#FF4655]/40 bg-[#FF4655]/5" : "border-white/10 bg-[#141414]/50"}`}>
+              <p className="font-display font-black text-2xl text-[#f7f7f7]">VALO</p>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#FF4655]">Nouveau pôle</p>
+                <p className="text-xs text-[#f7f7f7]/60">Valorant — FPS tactique 5v5 · Valeureux & Vaillant</p>
               </div>
             </div>
           </div>
@@ -173,7 +197,7 @@ export default function Team() {
                           <p className="font-display font-bold text-lg text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{m.pseudo}</p>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {m.roster && <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 border border-white/15 text-[#f7f7f7]/50">{m.roster}</span>}
-                            <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${m.game==="Rocket League" ? "border-[#F4511E]/50 text-[#F4511E] bg-[#F4511E]/10" : "border-[#D8CA82]/30 text-[#D8CA82]/70"}`}>{m.game==="Rocket League" ? "RL" : m.game}</span>
+                            <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${gameBadgeCls(m.game)}`}>{getGameShortLabel(m.game)}</span>
                           </div>
                         </div>
                         {m.ingameRole && <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/60 mt-1">{m.ingameRole}</p>}
