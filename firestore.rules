@@ -15,6 +15,14 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
+    function userGame() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.game;
+    }
+
+    function userRoster() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roster;
+    }
+
     function hasPlayerAccess() {
       return isAuth() && (isOfficial() || userRole() in ['player', 'manager', 'bureau']);
     }
@@ -117,7 +125,11 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['image'])
             || request.resource.data.image is string);
       allow delete: if isOfficial()
-        || (hasPlayerAccess() && resource.data.uid == request.auth.uid);
+        || (hasPlayerAccess() && resource.data.uid == request.auth.uid)
+        || isBureau()
+        || (isAuth() && userRole() == 'manager'
+            && (channel == 'game_' + userGame()
+                || (userRoster() is string && channel == 'roster_' + userRoster())));
     }
 
     // ===== Planning =====
@@ -213,6 +225,14 @@ service cloud.firestore {
     // ===== Journal d'activité =====
     match /activity/{id} {
       allow read, create: if hasPlayerAccess();
+      allow delete: if isBureau();
+    }
+
+    // ===== Journal d'audit admin / modération =====
+    match /admin_audit/{id} {
+      allow read: if isBureau();
+      allow create: if isManagerPlus();
+      allow update: if false;
       allow delete: if isBureau();
     }
 

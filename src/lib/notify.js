@@ -18,3 +18,19 @@ export const logActivity = async ({ game, type, label, byUid, byName }) => {
     });
   } catch (e) { console.error("activity", e); }
 };
+
+export const logAdminAction = async ({ action, label = "", actor, target = {}, details = {} }) => {
+  try {
+    await addDoc(collection(db, "admin_audit"), {
+      action,
+      label,
+      actorUid: actor?.uid || null,
+      actorName: actor?.name || actor?.displayName || "",
+      actorEmail: actor?.email || "",
+      targetCollection: target?.collection || "",
+      targetId: target?.id || "",
+      details,
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) { console.error("admin_audit", e); }
+};

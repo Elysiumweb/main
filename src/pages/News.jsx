@@ -52,7 +52,7 @@ export default function News() {
       ? (a.publishedAt || a.createdAt).toDate().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
       : "";
 
-  const excerpt = (a) => markdownToText(a.content).slice(0, 140);
+  const excerpt = (a) => (a.excerpt?.trim() || markdownToText(a.content)).slice(0, 140);
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">

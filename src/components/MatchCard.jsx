@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLang } from "../lib/i18n";
-import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull, Radio } from "lucide-react";
+import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull, Radio, Copy, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ShareButtons } from "./ShareButtons";
 import { SITE_URL } from "../lib/useSEO";
@@ -112,7 +112,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   );
 };
 
-export const MatchCard = ({ match, onDelete, onEdit }) => {
+export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming }) => {
   const { t } = useLang();
   const upcoming = match.status === "upcoming";
   const live = match.status === "live";
@@ -200,25 +200,53 @@ export const MatchCard = ({ match, onDelete, onEdit }) => {
           )}
         </div>
       )}
-      {onEdit && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(match); }}
-          data-testid={`match-edit-${match.id}`}
-          aria-label={`Modifier le match contre ${match.opponentName}`}
-          className="absolute top-2 right-8 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-[#D8CA82]/80 hover:text-[#D8CA82] transition-opacity z-10 motion-reduce:transition-none"
-        >
-          <Pencil size={13} aria-hidden="true" />
-        </button>
-      )}
-      {onDelete && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(match.id); }}
-          data-testid={`match-delete-${match.id}`}
-          aria-label={`Supprimer le match contre ${match.opponentName}`}
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-red-400 text-xs uppercase tracking-wider transition-opacity z-10 motion-reduce:transition-none"
-        >
-          <span aria-hidden="true">✕</span>
-        </button>
+      {(onEdit || onDelete || onDuplicate || onMarkUpcoming) && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10 motion-reduce:transition-none flex items-center gap-1 bg-[#111111]/80 border border-white/10 px-1 py-0.5">
+          {onDuplicate && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDuplicate(match); }}
+              data-testid={`match-duplicate-${match.id}`}
+              aria-label={`Dupliquer le match contre ${match.opponentName}`}
+              className="text-[#f7f7f7]/50 hover:text-[#D8CA82] p-1"
+              title="Dupliquer"
+            >
+              <Copy size={13} aria-hidden="true" />
+            </button>
+          )}
+          {onMarkUpcoming && match.status !== "upcoming" && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onMarkUpcoming(match); }}
+              data-testid={`match-upcoming-${match.id}`}
+              aria-label={`Passer le match contre ${match.opponentName} à venir`}
+              className="text-sky-300/70 hover:text-sky-300 p-1"
+              title="Passer à venir"
+            >
+              <RotateCcw size={13} aria-hidden="true" />
+            </button>
+          )}
+          {onEdit && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(match); }}
+              data-testid={`match-edit-${match.id}`}
+              aria-label={`Modifier le match contre ${match.opponentName}`}
+              className="text-[#D8CA82]/80 hover:text-[#D8CA82] p-1"
+              title="Modifier"
+            >
+              <Pencil size={13} aria-hidden="true" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(match); }}
+              data-testid={`match-delete-${match.id}`}
+              aria-label={`Supprimer le match contre ${match.opponentName}`}
+              className="text-red-400 hover:text-red-300 p-1"
+              title="Supprimer"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

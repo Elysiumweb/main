@@ -5,6 +5,7 @@ import { Trash2, Pencil } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { GAMES } from "../../lib/constants";
+import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { title: "", game: "EVA", prerequisites: "", availability: "", processText: "", deadline: "", open: "true" };
@@ -85,7 +86,14 @@ export const AdminPositions = () => {
               <p className="text-xs text-[#f7f7f7]/40">{p.game}{p.deadline ? ` · ${t("recruit.deadline")}: ${p.deadline}` : ""}</p>
             </div>
             <button onClick={() => edit(p)} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-position-edit-${p.id}`}><Pencil size={15} /></button>
-            <button onClick={() => del(p.id)} className="text-red-400/70 hover:text-red-400" data-testid={`admin-position-delete-${p.id}`}><Trash2 size={15} /></button>
+            <ConfirmAction
+              title="Supprimer ce poste ?"
+              description="Le poste disparaîtra de la page recrutement."
+              confirmLabel="Supprimer"
+              onConfirm={() => del(p.id)}
+            >
+              <button className="text-red-400/70 hover:text-red-400" data-testid={`admin-position-delete-${p.id}`}><Trash2 size={15} /></button>
+            </ConfirmAction>
           </div>
         ))}
       </div>

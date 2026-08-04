@@ -42,7 +42,7 @@ export default function ChatSpace() {
         ))}
       </div>
       <div className="flex-1 min-h-0">
-        <ChatMessages key={channel} path={`chats/${channel}/messages`} testId="player-chat" />
+        <ChatMessages key={channel} path={`chats/${channel}/messages`} channelId={channel} testId="player-chat" />
       </div>
     </div>
   );
