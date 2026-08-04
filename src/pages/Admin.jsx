@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Shield, Users, Trophy } from "lucide-react";
+import { FileUp, Search, Shield, Trophy, Users } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
@@ -15,14 +15,93 @@ import { AdminMedia } from "../components/admin/AdminMedia";
 import { AdminEvents } from "../components/admin/AdminEvents";
 import { AdminCompetitions } from "../components/admin/AdminCompetitions";
 import { AdminCampaigns } from "../components/admin/AdminCampaigns";
+import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
+import { AdminNewsletter } from "../components/admin/AdminNewsletter";
+import { AdminAudit } from "../components/admin/AdminAudit";
+import { logAdminAction } from "../lib/notify";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", mapsText: "", mvp: "", vodUrl: "", players: [] };
+const PAGE_SIZE = 12;
+
+const stringifyMatchMaps = (maps = []) => (maps || []).map((x) => `${x.name} | ${x.us ?? ""}-${x.them ?? ""}`).join("\n");
+const sanitizeMatchForClone = (m) => {
+  const { id, createdAt, updatedAt, ...rest } = m || {};
+  return JSON.parse(JSON.stringify(rest));
+};
+const parseCsvLine = (line) => {
+  const out = [];
+  let cur = "";
+  let quote = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"' && line[i + 1] === '"') { cur += '"'; i += 1; }
+    else if (ch === '"') quote = !quote;
+    else if (ch === "," && !quote) { out.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map((v) => v.trim());
+};
+const parseMatchImport = (text, fileName = "") => {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (fileName.endsWith(".json") || trimmed.startsWith("[")) {
+    const parsed = JSON.parse(trimmed);
+    return Array.isArray(parsed) ? parsed : (Array.isArray(parsed.matches) ? parsed.matches : []);
+  }
+  const lines = trimmed.split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = parseCsvLine(lines[0]).map((h) => h.trim());
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    return headers.reduce((acc, h, i) => ({ ...acc, [h]: values[i] ?? "" }), {});
+  });
+};
+const normalizeImportedMatch = (raw) => {
+  const mapsSource = raw.maps || raw.mapsText || "";
+  const maps = Array.isArray(mapsSource)
+    ? mapsSource
+    : String(mapsSource).split(";").map((l) => l.trim()).filter(Boolean).map((l) => {
+      const [name, score = ""] = l.split("|").map((s) => s.trim());
+      const m = score.match(/(\d+)\s*-\s*(\d+)/);
+      return { name, us: m ? Number(m[1]) : null, them: m ? Number(m[2]) : null };
+    });
+  return {
+    opponentName: raw.opponentName || raw.opponent || raw.adversaire || "",
+    opponentLogo: raw.opponentLogo || raw.logo || "",
+    scoreUs: raw.scoreUs ?? raw.elysiumScore ?? "",
+    scoreThem: raw.scoreThem ?? raw.opponentScore ?? "",
+    date: raw.date || "",
+    competition: raw.competition || "",
+    game: raw.game || "EVA",
+    roster: raw.roster || null,
+    status: raw.status || "upcoming",
+    time: raw.time || "",
+    timezone: raw.timezone || "Europe/Paris",
+    platform: raw.platform || "",
+    watchUrl: raw.watchUrl || raw.stream || "",
+    maps,
+    mvp: raw.mvp || "",
+    vodUrl: raw.vodUrl || "",
+    players: Array.isArray(raw.players) ? raw.players : [],
+  };
+};
 
 export default function Admin() {
-  const { isOfficial, role, loading } = useAuth();
+  const { user, displayName, isOfficial, role, loading } = useAuth();
   const { t } = useLang();
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
@@ -31,6 +110,12 @@ export default function Admin() {
   const [editMatchId, setEditMatchId] = useState(null);
   const [rosterMembers, setRosterMembers] = useState([]);
   const [selectedRosterPlayer, setSelectedRosterPlayer] = useState("");
+  const [userQuery, setUserQuery] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [matchQuery, setMatchQuery] = useState("");
+  const [matchPage, setMatchPage] = useState(1);
+  const [confirmMatch, setConfirmMatch] = useState(null);
+  const importInputRef = useRef(null);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const matchRosters = ROSTERS[form.game] || [];
   const onMatchGameChange = (e) => {
@@ -47,9 +132,10 @@ export default function Admin() {
   const allowed = {
     users: isOfficial, matches: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
-    competitions: isBureau, campaigns: isBureau,
+    competitions: isBureau, campaigns: isBureau, partners: isBureau,
+    newsletter: isBureau, audit: isBureau,
   };
-  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events", "competitions", "campaigns"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events", "competitions", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -67,6 +153,29 @@ export default function Admin() {
     return () => { u1(); u2(); u3(); };
   }, [isOfficial]);
 
+  const filteredUsers = useMemo(() => {
+    const q = userQuery.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) => [u.displayName, u.email, u.role, u.game, u.roster]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q)));
+  }, [users, userQuery]);
+  const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const pagedUsers = filteredUsers.slice((Math.min(userPage, userTotalPages) - 1) * PAGE_SIZE, Math.min(userPage, userTotalPages) * PAGE_SIZE);
+
+  const filteredMatches = useMemo(() => {
+    const q = matchQuery.trim().toLowerCase();
+    if (!q) return matches;
+    return matches.filter((m) => [m.opponentName, m.competition, m.game, m.roster, m.status, m.date]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q)));
+  }, [matches, matchQuery]);
+  const matchTotalPages = Math.max(1, Math.ceil(filteredMatches.length / PAGE_SIZE));
+  const pagedMatches = filteredMatches.slice((Math.min(matchPage, matchTotalPages) - 1) * PAGE_SIZE, Math.min(matchPage, matchTotalPages) * PAGE_SIZE);
+
+  useEffect(() => { setUserPage(1); }, [userQuery]);
+  useEffect(() => { setMatchPage(1); }, [matchQuery]);
+
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
   if (!isStaff) return (
     <div className="min-h-[60vh] flex items-center justify-center">
@@ -74,16 +183,49 @@ export default function Admin() {
     </div>
   );
 
-  const setRole = async (uid, role) => {
-    try { await updateDoc(doc(db, "users", uid), { role }); toast.success(t("common.saved")); }
+  const auditActor = { uid: user?.uid, name: displayName, email: user?.email };
+
+  const setRole = async (uid, nextRole) => {
+    const target = users.find((u) => u.id === uid);
+    try {
+      await updateDoc(doc(db, "users", uid), { role: nextRole });
+      await logAdminAction({
+        action: "user_role_changed",
+        label: `${target?.displayName || target?.email || uid}: ${target?.role || "visitor"} → ${nextRole}`,
+        actor: auditActor,
+        target: { collection: "users", id: uid },
+        details: { previousRole: target?.role || "visitor", role: nextRole },
+      });
+      toast.success(t("common.saved"));
+    }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
-  const setGame = async (uid, game) => {
-    try { await updateDoc(doc(db, "users", uid), { game: game === "none" ? null : game, roster: null }); toast.success(t("common.saved")); }
+  const setGame = async (uid, nextGame) => {
+    const target = users.find((u) => u.id === uid);
+    try {
+      await updateDoc(doc(db, "users", uid), { game: nextGame === "none" ? null : nextGame, roster: null });
+      await logAdminAction({
+        action: "user_game_changed",
+        label: `${target?.displayName || target?.email || uid}: ${target?.game || "—"} → ${nextGame}`,
+        actor: auditActor,
+        target: { collection: "users", id: uid },
+      });
+      toast.success(t("common.saved"));
+    }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
-  const setRoster = async (uid, roster) => {
-    try { await updateDoc(doc(db, "users", uid), { roster: roster === "none" ? null : roster }); toast.success(t("common.saved")); }
+  const setRoster = async (uid, nextRoster) => {
+    const target = users.find((u) => u.id === uid);
+    try {
+      await updateDoc(doc(db, "users", uid), { roster: nextRoster === "none" ? null : nextRoster });
+      await logAdminAction({
+        action: "user_roster_changed",
+        label: `${target?.displayName || target?.email || uid}: ${target?.roster || "—"} → ${nextRoster}`,
+        actor: auditActor,
+        target: { collection: "users", id: uid },
+      });
+      toast.success(t("common.saved"));
+    }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
 
@@ -195,8 +337,23 @@ export default function Admin() {
           games,
         };
       });
-      if (editMatchId) await updateDoc(doc(db, "matches", editMatchId), { ...matchData, maps, players: sanitizedPlayers });
-      else await addDoc(collection(db, "matches"), { ...matchData, maps, players: sanitizedPlayers, createdAt: serverTimestamp() });
+      if (editMatchId) {
+        await updateDoc(doc(db, "matches", editMatchId), { ...matchData, maps, players: sanitizedPlayers, updatedAt: serverTimestamp() });
+        await logAdminAction({
+          action: "match_updated",
+          label: `${matchData.game} vs ${matchData.opponentName}`,
+          actor: auditActor,
+          target: { collection: "matches", id: editMatchId },
+        });
+      } else {
+        const ref = await addDoc(collection(db, "matches"), { ...matchData, maps, players: sanitizedPlayers, createdAt: serverTimestamp() });
+        await logAdminAction({
+          action: "match_created",
+          label: `${matchData.game} vs ${matchData.opponentName}`,
+          actor: auditActor,
+          target: { collection: "matches", id: ref.id },
+        });
+      }
       setForm(EMPTY_MATCH); setEditMatchId(null);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
@@ -208,7 +365,7 @@ export default function Admin() {
       opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
       date: m.date || "", competition: m.competition || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
       time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
-      mapsText: (m.maps || []).map((x) => `${x.name} | ${x.us ?? ""}-${x.them ?? ""}`).join("\n"), mvp: m.mvp || "", vodUrl: m.vodUrl || "",
+      mapsText: stringifyMatchMaps(m.maps || []), mvp: m.mvp || "", vodUrl: m.vodUrl || "",
       players: Array.isArray(m.players) ? JSON.parse(JSON.stringify(m.players)) : [],
     });
   };
@@ -223,9 +380,75 @@ export default function Admin() {
     });
   };
 
-  const delMatch = async (id) => {
-    try { await deleteDoc(doc(db, "matches", id)); toast.success(t("common.saved")); }
+  const delMatch = async (matchOrId) => {
+    const match = typeof matchOrId === "string" ? matches.find((m) => m.id === matchOrId) : matchOrId;
+    const id = typeof matchOrId === "string" ? matchOrId : matchOrId?.id;
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, "matches", id));
+      await logAdminAction({
+        action: "match_deleted",
+        label: `${match?.game || ""} vs ${match?.opponentName || id}`,
+        actor: auditActor,
+        target: { collection: "matches", id },
+      });
+      toast.success(t("common.saved"));
+    }
     catch (e) { console.error(e); toast.error(t("common.error")); }
+  };
+
+  const duplicateMatch = async (match) => {
+    try {
+      const clone = sanitizeMatchForClone(match);
+      const ref = await addDoc(collection(db, "matches"), {
+        ...clone,
+        status: clone.status || "upcoming",
+        createdAt: serverTimestamp(),
+      });
+      await logAdminAction({
+        action: "match_duplicated",
+        label: `${match.game || ""} vs ${match.opponentName}`,
+        actor: auditActor,
+        target: { collection: "matches", id: ref.id },
+        details: { sourceId: match.id },
+      });
+      toast.success("Match dupliqué");
+    } catch (e) { console.error(e); toast.error(t("common.error")); }
+  };
+
+  const markMatchUpcoming = async (match) => {
+    try {
+      await updateDoc(doc(db, "matches", match.id), { status: "upcoming", scoreUs: "", scoreThem: "", maps: [], mvp: "", vodUrl: "", updatedAt: serverTimestamp() });
+      await logAdminAction({
+        action: "match_marked_upcoming",
+        label: `${match.game || ""} vs ${match.opponentName}`,
+        actor: auditActor,
+        target: { collection: "matches", id: match.id },
+      });
+      toast.success("Match passé en “à venir”");
+    } catch (e) { console.error(e); toast.error(t("common.error")); }
+  };
+
+  const importMatches = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = parseMatchImport(text, file.name.toLowerCase()).map(normalizeImportedMatch).filter((m) => m.opponentName && m.date);
+      if (rows.length === 0) { toast.error("Aucun match valide trouvé (opponentName/opponent + date requis)."); return; }
+      const refs = await Promise.all(rows.map((m) => addDoc(collection(db, "matches"), { ...m, createdAt: serverTimestamp() })));
+      await logAdminAction({
+        action: "matches_imported",
+        label: `${rows.length} match(s) importé(s) depuis ${file.name}`,
+        actor: auditActor,
+        target: { collection: "matches", id: refs.map((r) => r.id).join(",") },
+      });
+      toast.success(`${rows.length} match(s) importé(s)`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Import impossible : vérifiez le format CSV/JSON.");
+    }
   };
 
   return (
@@ -257,6 +480,19 @@ export default function Admin() {
             <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.users")}</h2>
           </div>
           <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("admin.users.sub")}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <label className="relative w-full sm:max-w-md">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
+              <input
+                value={userQuery}
+                onChange={(e) => setUserQuery(e.target.value)}
+                placeholder="Rechercher un membre, email, rôle..."
+                className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                data-testid="admin-users-search"
+              />
+            </label>
+            <p className="text-xs text-[#f7f7f7]/40">{filteredUsers.length} résultat(s)</p>
+          </div>
           <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto" data-testid="admin-users-table">
             <table className="w-full text-sm">
               <thead>
@@ -269,7 +505,7 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {pagedUsers.map((u) => (
                   <tr key={u.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-user-row-${u.id}`}>
                     <td className="px-4 py-3 font-semibold text-[#f7f7f7]">
                       {u.displayName} {u.id === OFFICIAL_UID && <span className="text-[10px] text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
@@ -307,6 +543,15 @@ export default function Admin() {
               </tbody>
             </table>
           </div>
+          {filteredUsers.length > PAGE_SIZE && (
+            <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-users-pagination">
+              <button onClick={() => setUserPage((p) => Math.max(1, p - 1))} disabled={userPage <= 1}
+                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Précédent</button>
+              <span className="text-xs text-[#f7f7f7]/40">Page {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
+              <button onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))} disabled={userPage >= userTotalPages}
+                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Suivant</button>
+            </div>
+          )}
         </div>
         )}
 
@@ -317,6 +562,25 @@ export default function Admin() {
             <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.matches")}</h2>
           </div>
           <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("admin.matches.sub")}</p>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
+            <label className="relative w-full lg:max-w-md">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
+              <input
+                value={matchQuery}
+                onChange={(e) => setMatchQuery(e.target.value)}
+                placeholder="Rechercher adversaire, compétition, statut..."
+                className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                data-testid="admin-matches-search"
+              />
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              <input ref={importInputRef} type="file" accept=".csv,.json,application/json,text/csv" onChange={importMatches} className="sr-only" data-testid="admin-match-import-input" />
+              <button type="button" onClick={() => importInputRef.current?.click()}
+                className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10" data-testid="admin-match-import-btn">
+                <FileUp size={14} /> Import CSV/JSON
+              </button>
+            </div>
+          </div>
           <div className="grid lg:grid-cols-12 gap-10">
             <form onSubmit={addMatch} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-match-form">
               <div>
@@ -554,12 +818,32 @@ export default function Admin() {
               </button>
             </form>
             <div className="lg:col-span-7">
-              {matches.length === 0 ? (
+              {filteredMatches.length === 0 ? (
                 <p className="text-[#f7f7f7]/40" data-testid="admin-matches-empty">{t("results.empty")}</p>
               ) : (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {matches.map((m) => <MatchCard key={m.id} match={m} onDelete={delMatch} onEdit={editMatch} />)}
-                </div>
+                <>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {pagedMatches.map((m) => (
+                      <MatchCard
+                        key={m.id}
+                        match={m}
+                        onDelete={(match) => setConfirmMatch(match)}
+                        onEdit={editMatch}
+                        onDuplicate={duplicateMatch}
+                        onMarkUpcoming={markMatchUpcoming}
+                      />
+                    ))}
+                  </div>
+                  {filteredMatches.length > PAGE_SIZE && (
+                    <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-matches-pagination">
+                      <button onClick={() => setMatchPage((p) => Math.max(1, p - 1))} disabled={matchPage <= 1}
+                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Précédent</button>
+                      <span className="text-xs text-[#f7f7f7]/40">Page {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
+                      <button onClick={() => setMatchPage((p) => Math.min(matchTotalPages, p + 1))} disabled={matchPage >= matchTotalPages}
+                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Suivant</button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -573,7 +857,30 @@ export default function Admin() {
         {tab === "events" && <AdminEvents />}
         {tab === "competitions" && <AdminCompetitions />}
         {tab === "campaigns" && <AdminCampaigns />}
+        {tab === "partners" && <AdminPartnerRequests />}
+        {tab === "newsletter" && <AdminNewsletter />}
+        {tab === "audit" && <AdminAudit />}
       </section>
+
+      <AlertDialog open={!!confirmMatch} onOpenChange={(open) => !open && setConfirmMatch(null)}>
+        <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">Supprimer ce match ?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+              Le match contre {confirmMatch?.opponentName || "cet adversaire"} sera supprimé définitivement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:space-x-0">
+            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { const target = confirmMatch; setConfirmMatch(null); delMatch(target); }}
+              className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

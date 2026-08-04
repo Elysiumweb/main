@@ -6,7 +6,17 @@ import { toast } from "sonner";
 import { db, storage } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { createNotification } from "../lib/notify";
+import { createNotification, logAdminAction } from "../lib/notify";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 
 /* Petite compression d'image (JPEG) avant envoi — limite la taille du storage. */
 const compressImage = (file, maxWidth = 1280) =>
@@ -50,8 +60,8 @@ const renderText = (text, members) => {
   });
 };
 
-export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
-  const { user, displayName, role } = useAuth();
+export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = null }) => {
+  const { user, displayName, role, game, roster, isOfficial } = useAuth();
   const { t } = useLang();
   const [messages, setMessages] = useState([]);
   const [members, setMembers] = useState([]);
@@ -62,6 +72,7 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
   const [editText, setEditText] = useState("");
   const [mentionQuery, setMentionQuery] = useState(null); // {start, query} | null
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [messageToDelete, setMessageToDelete] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -84,6 +95,10 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const memberNames = useMemo(() => members.map((m) => m.displayName || "").filter(Boolean), [members]);
+  const effectiveChannel = channelId || path.split("/")[1] || "";
+  const canModerateChannel = isOfficial
+    || role === "bureau"
+    || (role === "manager" && ((game && effectiveChannel === `game_${game}`) || (roster && effectiveChannel === `roster_${roster}`)));
 
   const matchedMentions = useMemo(() => {
     if (!mentionQuery) return [];
@@ -200,8 +215,19 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
     } catch (err) { console.error(err); toast.error(t("common.error")); }
   };
   const remove = async (m) => {
-    if (!window.confirm(t("chat.deleteConfirm"))) return;
-    try { await deleteDoc(doc(db, ...path.split("/"), m.id)); }
+    try {
+      await deleteDoc(doc(db, ...path.split("/"), m.id));
+      if (m.uid !== user?.uid) {
+        await logAdminAction({
+          action: "chat_message_deleted",
+          label: `${effectiveChannel} · ${m.name || m.uid}: ${(m.text || "[image]").slice(0, 120)}`,
+          actor: { uid: user?.uid, name: displayName, email: user?.email },
+          target: { collection: `chats/${effectiveChannel}/messages`, id: m.id },
+          details: { messageUid: m.uid, messageAuthor: m.name || "", channel: effectiveChannel },
+        });
+      }
+      toast.success(t("common.saved"));
+    }
     catch (err) { console.error(err); toast.error(t("common.error")); }
   };
 
@@ -217,6 +243,7 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
         )}
         {messages.map((m) => {
           const mine = m.uid === user?.uid;
+          const canDeleteMessage = mine || canModerateChannel;
           const isEditing = editingId === m.id;
           return (
             <div key={m.id} className={`group flex ${mine ? "justify-end" : "justify-start"}`}>
@@ -225,11 +252,11 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
                   <span className="text-xs font-display font-bold text-[#D8CA82]">{m.name}</span>
                   {m.createdAt && <span className="text-[10px] text-[#f7f7f7]/30">{fmtDate(m.createdAt)}</span>}
                   {m.editedAt && <span className="text-[9px] italic text-[#f7f7f7]/30">({t("chat.edited")})</span>}
-                  {/* Actions sur son propre message */}
-                  {mine && !isEditing && (
+                  {/* Actions : édition personnelle + suppression personnelle/modération */}
+                  {canDeleteMessage && !isEditing && (
                     <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`msg-actions-${m.id}`}>
-                      <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-[#f7f7f7]/40 hover:text-[#D8CA82]"><Pencil size={11} /></button>
-                      <button onClick={() => remove(m)} title={t("chat.delete")} data-testid={`msg-delete-${m.id}`} className="text-[#f7f7f7]/40 hover:text-red-400"><Trash2 size={11} /></button>
+                      {mine && <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-[#f7f7f7]/40 hover:text-[#D8CA82]"><Pencil size={11} /></button>}
+                      <button onClick={() => setMessageToDelete(m)} title={mine ? t("chat.delete") : "Modérer"} data-testid={`msg-delete-${m.id}`} className="text-[#f7f7f7]/40 hover:text-red-400"><Trash2 size={11} /></button>
                     </span>
                   )}
                 </div>
@@ -294,6 +321,32 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
           <Send size={16} />
         </button>
       </form>
+
+      <AlertDialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
+        <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">
+              {messageToDelete?.uid === user?.uid ? t("chat.deleteConfirm") : "Modérer ce message ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+              {messageToDelete?.uid === user?.uid
+                ? "Ton message sera supprimé définitivement."
+                : `Le message de ${messageToDelete?.name || "ce membre"} sera supprimé et l'action sera inscrite au journal d'audit.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:space-x-0">
+            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { const target = messageToDelete; setMessageToDelete(null); remove(target); }}
+              className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

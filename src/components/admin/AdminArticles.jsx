@@ -8,14 +8,16 @@ import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { CATEGORIES } from "../../pages/News";
 import { Markdown } from "../../lib/markdown";
+import { logAdminAction } from "../../lib/notify";
 import { ImageUpload } from "../ImageUpload";
+import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", category: "announcement", coverUrl: "", content: "", featured: false };
+const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
 
 export const AdminArticles = () => {
   const { t } = useLang();
-  const { isOfficial } = useAuth();
+  const { user, displayName, isOfficial } = useAuth();
   const [articles, setArticles] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
@@ -33,7 +35,7 @@ export const AdminArticles = () => {
   const save = async (status) => {
     if (!form.title.trim()) { toast.error(t("common.error")); return; }
     try {
-      const data = { ...form, status, ...(status === "published" ? { publishedAt: serverTimestamp() } : {}) };
+      const data = { ...form, status, updatedAt: serverTimestamp(), ...(status === "published" ? { publishedAt: serverTimestamp() } : {}) };
       if (editId) await updateDoc(doc(db, "articles", editId), data);
       else await addDoc(collection(db, "articles"), { ...data, createdAt: serverTimestamp() });
       setForm(EMPTY); setEditId(null);
@@ -43,7 +45,16 @@ export const AdminArticles = () => {
 
   const setStatus = async (id, status) => {
     try {
-      await updateDoc(doc(db, "articles", id), { status, ...(status === "published" ? { publishedAt: serverTimestamp() } : {}) });
+      const article = articles.find((a) => a.id === id);
+      await updateDoc(doc(db, "articles", id), { status, updatedAt: serverTimestamp(), ...(status === "published" ? { publishedAt: serverTimestamp() } : {}) });
+      if (status === "deleted") {
+        await logAdminAction({
+          action: "article_deleted",
+          label: article?.title || id,
+          actor: { uid: user?.uid, name: displayName, email: user?.email },
+          target: { collection: "articles", id },
+        });
+      }
       toast.success(t("common.saved"));
     } catch { toast.error(t("common.error")); }
   };
@@ -58,15 +69,24 @@ export const AdminArticles = () => {
     } catch { toast.error(t("common.error")); }
   };
 
-  const hardDelete = async (id) => {
-    try { await deleteDoc(doc(db, "articles", id)); toast.success(t("common.saved")); }
+  const hardDelete = async (article) => {
+    try {
+      await deleteDoc(doc(db, "articles", article.id));
+      await logAdminAction({
+        action: "article_hard_deleted",
+        label: article?.title || article.id,
+        actor: { uid: user?.uid, name: displayName, email: user?.email },
+        target: { collection: "articles", id: article.id },
+      });
+      toast.success(t("common.saved"));
+    }
     catch { toast.error(t("common.error")); }
   };
 
   const edit = (a) => {
     setEditId(a.id);
     setEditorTab("write");
-    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", content: a.content || "", featured: !!a.featured });
+    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured });
   };
 
   const STATUS_BADGE = {
@@ -94,6 +114,19 @@ export const AdminArticles = () => {
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Image de couverture</label>
           <ImageUpload value={form.coverUrl} onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))} folder="articles" maxWidth={1600} testId="admin-article-cover-upload" />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Extrait (cartes & meta description)</label>
+          <textarea
+            value={form.excerpt}
+            onChange={set("excerpt")}
+            placeholder="Résumé court rédigé, affiché sur les cartes d'actus..."
+            rows={3}
+            maxLength={220}
+            className={inputCls}
+            data-testid="admin-article-excerpt"
+          />
+          <p className="text-[10px] text-[#f7f7f7]/35 mt-1">{form.excerpt.length}/220</p>
         </div>
 
         {/* Onglets éditeur / aperçu markdown */}
@@ -163,13 +196,27 @@ export const AdminArticles = () => {
                 ) : (
                   <button onClick={() => setStatus(a.id, "published")} title="Publier" className="text-emerald-300/70 hover:text-emerald-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-publish-inline-${a.id}`}>Publier</button>
                 )}
-                <button onClick={() => setStatus(a.id, "deleted")} className="text-red-400/70 hover:text-red-400" title="Supprimer (restaurable)" data-testid={`admin-article-delete-${a.id}`}><Trash2 size={15} /></button>
+                <ConfirmAction
+                  title="Supprimer cet article ?"
+                  description="L'article sera placé en corbeille et pourra être restauré."
+                  confirmLabel="Supprimer"
+                  onConfirm={() => setStatus(a.id, "deleted")}
+                >
+                  <button className="text-red-400/70 hover:text-red-400" title="Supprimer (restaurable)" data-testid={`admin-article-delete-${a.id}`}><Trash2 size={15} /></button>
+                </ConfirmAction>
               </>
             ) : (
               <>
                 <button onClick={() => setStatus(a.id, "draft")} className="text-emerald-300/70 hover:text-emerald-300" title="Restaurer" data-testid={`admin-article-restore-${a.id}`}><RotateCcw size={15} /></button>
                 {isOfficial && (
-                  <button onClick={() => hardDelete(a.id)} className="text-red-400 hover:text-red-300 text-[10px] uppercase tracking-wider" title="Suppression définitive" data-testid={`admin-article-harddelete-${a.id}`}>Définitif</button>
+                  <ConfirmAction
+                    title="Suppression définitive ?"
+                    description="Cette action supprime définitivement l'article et ne peut pas être annulée."
+                    confirmLabel="Supprimer définitivement"
+                    onConfirm={() => hardDelete(a)}
+                  >
+                    <button className="text-red-400 hover:text-red-300 text-[10px] uppercase tracking-wider" title="Suppression définitive" data-testid={`admin-article-harddelete-${a.id}`}>Définitif</button>
+                  </ConfirmAction>
                 )}
               </>
             )}

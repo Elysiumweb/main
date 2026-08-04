@@ -6,6 +6,7 @@ import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { GAMES } from "../../lib/constants";
 import { ImageUpload } from "../ImageUpload";
+import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { type: "photo", title: "", url: "", thumbnail: "", game: "EVA", playerTag: "", event: "" };
@@ -85,7 +86,14 @@ export const AdminMedia = () => {
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
               <p className="text-xs text-[#f7f7f7]/40 truncate">{m.game}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}</p>
             </div>
-            <button onClick={() => del(m.id)} className="text-red-400/70 hover:text-red-400" data-testid={`admin-media-delete-${m.id}`}><Trash2 size={15} /></button>
+            <ConfirmAction
+              title="Supprimer ce média ?"
+              description="Le média sera retiré de la médiathèque. Cette action ne supprime pas le fichier distant éventuel."
+              confirmLabel="Supprimer"
+              onConfirm={() => del(m.id)}
+            >
+              <button className="text-red-400/70 hover:text-red-400" data-testid={`admin-media-delete-${m.id}`}><Trash2 size={15} /></button>
+            </ConfirmAction>
           </div>
         ))}
       </div>

@@ -8,6 +8,16 @@ import { useLang } from "../../lib/i18n";
 import { GAMES, ROSTERS, gameHasRosters, getGameColor, getGameShortLabel } from "../../lib/constants";
 import { createNotification, logActivity } from "../../lib/notify";
 import { downloadICS, gcalUrl } from "../../lib/calendar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 
 // ----- helpers -----
 const pad = (n) => String(n).padStart(2, "0");
@@ -77,6 +87,7 @@ export default function Planning(){
   const [isDraggingAvail, setIsDraggingAvail] = useState(false);
   const [absenceModal, setAbsenceModal] = useState(null); // dateKey | null
   const [absenceReason, setAbsenceReason] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const dragValueRef = useRef(true);
 
   const events = useMemo(()=> eventsRaw.map(normalizeEvent), [eventsRaw]);
@@ -375,15 +386,25 @@ export default function Planning(){
     }catch(err){ console.error(err); toast.error(t("common.error")); }
   };
 
-  const deleteEvent = async ()=>{
-    if(!selectedEvent) return;
-    if(!window.confirm("Supprimer cet événement ?")) return;
+  const performDeleteEvent = async (eventToDelete)=>{
+    if(!eventToDelete) return;
     try{
-      await deleteDoc(doc(db,"events", selectedEvent.id));
-      logActivity({ game: selectedEvent.game, type:"event_deleted", label: selectedEvent.title, byUid: user.uid, byName: displayName });
+      await deleteDoc(doc(db,"events", eventToDelete.id));
+      logActivity({ game: eventToDelete.game, type:"event_deleted", label: eventToDelete.title, byUid: user.uid, byName: displayName });
       toast.success(t("planning.eventDeleted"));
       closeModal();
     }catch(e){ console.error(e); toast.error(t("common.error")); }
+  };
+
+  const deleteEvent = ()=>{
+    if(!selectedEvent) return;
+    const eventToDelete = selectedEvent;
+    setConfirmDialog({
+      title: "Supprimer cet événement ?",
+      description: `L'événement « ${eventToDelete.title || "sans titre"} » sera supprimé du planning.`,
+      confirmLabel: t("planning.delete"),
+      onConfirm: () => performDeleteEvent(eventToDelete),
+    });
   };
 
   // ---- attendance (présent / absent) ----
@@ -576,13 +597,22 @@ export default function Planning(){
     }catch(e){ console.error(e); toast.error(t("common.error")); }
   };
 
-  const clearRecurring = async ()=>{
+  const performClearRecurring = async ()=>{
     if(!user) return;
-    if(!window.confirm(t("planning.avail.recurring.clear") + " ?")) return;
     try{
       await deleteDoc(doc(db,"recurringAvailabilities", user.uid));
       toast.success(t("planning.avail.recurring.saved"));
     }catch(e){ console.error(e); toast.error(t("common.error")); }
+  };
+
+  const clearRecurring = ()=>{
+    if(!user) return;
+    setConfirmDialog({
+      title: `${t("planning.avail.recurring.clear")} ?`,
+      description: "Tous tes créneaux récurrents seront retirés. Les exceptions déjà posées cette semaine ne seront pas supprimées.",
+      confirmLabel: t("planning.avail.recurring.clear"),
+      onConfirm: performClearRecurring,
+    });
   };
 
   // ---- absences ----
@@ -1563,6 +1593,30 @@ export default function Planning(){
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
+        <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">
+              {confirmDialog?.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+              {confirmDialog?.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:space-x-0">
+            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { const action = confirmDialog?.onConfirm; setConfirmDialog(null); action?.(); }}
+              className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"
+            >
+              {confirmDialog?.confirmLabel || t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
