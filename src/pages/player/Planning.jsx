@@ -1,12 +1,13 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, deleteField } from "firebase/firestore";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX, UserCheck, UserX, Download, ExternalLink } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { GAMES, ROSTERS, gameHasRosters, getGameColor, getGameShortLabel } from "../../lib/constants";
 import { createNotification, logActivity } from "../../lib/notify";
+import { downloadICS, gcalUrl } from "../../lib/calendar";
 
 // ----- helpers -----
 const pad = (n) => String(n).padStart(2, "0");
@@ -153,6 +154,14 @@ export default function Planning(){
     return unsub;
   }, []);
 
+  const [profileDocs, setProfileDocs] = useState([]); // annuaire privé (noms pour attendance/absences)
+  useEffect(()=>{
+    const unsub = onSnapshot(collection(db,"profiles"), (snap)=>{
+      setProfileDocs(snap.docs.map(d=>({id:d.id, ...d.data()})));
+    }, console.error);
+    return unsub;
+  }, []);
+
   useEffect(()=>{
     // manager team view needs the roster/game of each player (users collection)
     if(!canManage || tab!=="availability") { setUsersList([]); return; }
@@ -166,8 +175,11 @@ export default function Planning(){
   const usersByUid = useMemo(()=>{
     const map = {};
     usersList.forEach(u=> { map[u.id] = u; });
+    // L'annuaire privé complète la résolution des noms (attendance, absences)
+    // pour tous les utilisateurs, pas seulement les managers.
+    profileDocs.forEach(p=> { if(!map[p.id]) map[p.id] = p; });
     return map;
-  }, [usersList]);
+  }, [usersList, profileDocs]);
 
   const availIndex = useMemo(()=>{
     const map = {};
@@ -374,6 +386,100 @@ export default function Planning(){
     }catch(e){ console.error(e); toast.error(t("common.error")); }
   };
 
+  // ---- attendance (présent / absent) ----
+  // Le joueur ne met à jour QUE la map `attendance` (autorisé par les règles
+  // Firestore). On reconstruit la map complète côté client puis on l'écrit.
+  const setAttendance = async (value) => {
+    if(!selectedEvent || !user) return;
+    try {
+      const current = selectedEvent.attendance || {};
+      const next = { ...current };
+      if (value === null) delete next[user.uid];
+      else next[user.uid] = value;
+      // La règle n'autorise le joueur à toucher qu'à la clé `attendance`.
+      await updateDoc(doc(db,"events", selectedEvent.id), { attendance: next });
+      // Notifier les managers en cas d'absence déclarée à une convocation.
+      if (value === "no") {
+        createNotification({
+          targetRoles: ["manager","bureau"],
+          targetGame: selectedEvent.game,
+          type: "attendance",
+          extra: `${displayName} — ${t("planning.attend.absent")} · ${selectedEvent.title}`,
+          link: "/espace-joueur/planning",
+        });
+      }
+      toast.success(t("planning.attend.responded"));
+    } catch(err){ console.error(err); toast.error(t("common.error")); }
+  };
+
+  const exportEventICS = () => {
+    if(!selectedEvent) return;
+    downloadICS([selectedEvent], "elysium-evenement.ics", { calendarName: selectedEvent.title || "Elysium" });
+  };
+
+  const downloadWeekICS = () => {
+    const list = filteredEvents.filter(ev => {
+      const s = new Date(ev.start);
+      return !isNaN(s.getTime()) && s >= new Date(weekStart.getTime()) && s <= new Date(weekEnd.getTime() + 86400000);
+    });
+    if(list.length === 0){ toast.error(t("planning.freePlaceholder")); return; }
+    downloadICS(list, "elysium-planning.ics", { calendarName: "Planning Elysium" });
+  };
+
+  // Bloc « présent / absent » affiché dans la modale d'événement.
+  const AttendanceBlock = () => {
+    if(!user || !selectedEvent) return null;
+    const att = selectedEvent.attendance || {};
+    const mine = att[user.uid] || null;
+    const entries = Object.entries(att);
+    const present = entries.filter(([,v]) => v === "yes").map(([uid]) => uid);
+    const absent = entries.filter(([,v]) => v === "no").map(([uid]) => uid);
+    return (
+      <div className="border border-white/10 bg-[#111111] p-4" data-testid="attendance-block">
+        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">{t("planning.attend.title")}</p>
+        <p className="text-[11px] text-[#f7f7f7]/50 mb-3">{t("planning.attend.subtitle")}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button type="button" onClick={() => setAttendance("yes")} data-testid="attend-yes"
+            className={`flex items-center gap-1.5 text-xs uppercase tracking-widest px-4 py-2.5 border u-micro ${mine==="yes" ? "border-emerald-400 bg-emerald-500/15 text-emerald-200" : "border-white/15 text-[#f7f7f7]/60 hover:border-emerald-400/60 hover:text-emerald-200"}`}>
+            <Check size={13} aria-hidden="true" /> {t("planning.attend.present")}
+          </button>
+          <button type="button" onClick={() => setAttendance("no")} data-testid="attend-no"
+            className={`flex items-center gap-1.5 text-xs uppercase tracking-widest px-4 py-2.5 border u-micro ${mine==="no" ? "border-red-400 bg-red-500/15 text-red-200" : "border-white/15 text-[#f7f7f7]/60 hover:border-red-400/60 hover:text-red-200"}`}>
+            <X size={13} aria-hidden="true" /> {t("planning.attend.absent")}
+          </button>
+          {mine && (
+            <button type="button" onClick={() => setAttendance(null)} data-testid="attend-clear"
+              className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 hover:text-[#f7f7f7] u-micro px-2">
+              {t("planning.attend.clear")}
+            </button>
+          )}
+        </div>
+        {/* Résumé compté (visible par tous) */}
+        <div className="flex items-center gap-4 mt-3 text-[11px]" data-testid="attendance-summary">
+          <span className="flex items-center gap-1 text-emerald-300"><UserCheck size={12} aria-hidden="true" /> {present.length} {t("planning.attend.presentCount")}</span>
+          <span className="flex items-center gap-1 text-red-300"><UserX size={12} aria-hidden="true" /> {absent.length} {t("planning.attend.absentCount")}</span>
+        </div>
+        {/* Détail nominatif (staff) */}
+        {canManage && (present.length>0 || absent.length>0) && (
+          <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+            {present.length>0 && (
+              <p className="text-[11px] text-emerald-200/80 flex items-start gap-1.5">
+                <UserCheck size={11} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <span className="flex flex-wrap gap-x-2">{present.map((uid) => <span key={uid} className="text-[#f7f7f7]/70">{uid===user.uid ? t("planning.attend.you") : (usersByUid[uid]?.displayName || "?")}</span>)}</span>
+              </p>
+            )}
+            {absent.length>0 && (
+              <p className="text-[11px] text-red-200/80 flex items-start gap-1.5">
+                <UserX size={11} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <span className="flex flex-wrap gap-x-2">{absent.map((uid) => <span key={uid} className="text-[#f7f7f7]/70">{uid===user.uid ? t("planning.attend.you") : (usersByUid[uid]?.displayName || "?")}</span>)}</span>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ---- weekly availability toggle (delta vs semaine type) ----
   const toggleAvailability = async (dateKey, hour, forceValue=null)=>{
     if(!user) return;
@@ -503,6 +609,14 @@ export default function Planning(){
     try{
       await setDoc(doc(db,"absences", `${user.uid}_${dateKey}`), payload, { merge: true });
       logActivity({ game: game||"EVA", type:"absence_declared", label: `${dateKey}${absenceReason.trim() ? ` — ${absenceReason.trim()}` : ""}`, byUid: user.uid, byName: displayName });
+      // Préviens les managers (notification in-app + relais email via Cloud Function).
+      createNotification({
+        targetRoles:["manager","bureau"],
+        targetGame: game||"EVA",
+        type:"absence_declared",
+        extra: `${displayName} — ${fromDateKey(dateKey).toLocaleDateString("fr-FR",{weekday:"short", day:"numeric", month:"short"})}${absenceReason.trim() ? ` — ${absenceReason.trim()}` : ""}`,
+        link:"/espace-joueur/planning",
+      });
       toast.success(t("planning.absence.declared"));
       setAbsenceModal(null);
       setAbsenceReason("");
@@ -571,6 +685,9 @@ export default function Planning(){
     const s = new Date(ev.start);
     const e = new Date(ev.end);
     const time = `${pad(s.getHours())}:${pad(s.getMinutes())}`;
+    const attVals = Object.values(ev.attendance || {}).filter(v=> v==="yes"||v==="no");
+    const present = attVals.filter(v=>v==="yes").length;
+    const absent = attVals.filter(v=>v==="no").length;
     return (
       <div onClick={(e)=>{ e.stopPropagation(); openEdit(ev); }}
         className={`flex items-center gap-1.5 px-2 py-1 text-[11px] leading-none cursor-pointer border-l-2 truncate ${compact?"":"mb-1"} hover:brightness-110 u-micro`}
@@ -579,6 +696,12 @@ export default function Planning(){
         <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: ev.color}} />
         {!compact && <span className="opacity-70 shrink-0">{time}</span>}
         <span className="truncate font-medium text-[#f7f7f7]">{ev.title}</span>
+        {(present>0 || absent>0) && (
+          <span className="flex items-center gap-0.5 shrink-0 text-[9px]" data-testid={`pill-attendance-${ev.id}`}>
+            {present>0 && <span className="text-emerald-300">✓{present}</span>}
+            {absent>0 && <span className="text-red-300">✗{absent}</span>}
+          </span>
+        )}
         {ev.roster && <span className="text-[8px] uppercase tracking-widest opacity-50 shrink-0 border border-white/15 px-1">{ev.roster}</span>}
         {ev.game && <span className="ml-auto text-[9px] uppercase tracking-widest opacity-50 shrink-0">{getGameShortLabel(ev.game)}</span>}
       </div>
@@ -995,6 +1118,10 @@ export default function Planning(){
             className="border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-[0.2em] px-4 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro">
             {t("planning.today")}
           </button>
+          <button onClick={downloadWeekICS} data-testid="planning-export-ics" title={t("planning.downloadWeek")}
+            className="border border-white/20 text-[#f7f7f7]/60 text-xs uppercase tracking-[0.2em] px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro flex items-center gap-1.5">
+            <Download size={13} aria-hidden="true" /> {t("planning.downloadWeek")}
+          </button>
           <div className="flex border border-white/10">
             <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:bg-white/10 u-micro"><ChevronLeft size={16}/></button>
             <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:bg-white/10 u-micro border-l border-white/10"><ChevronRight size={16}/></button>
@@ -1393,6 +1520,25 @@ export default function Planning(){
                   rows={3}
                   className="w-full bg-[#111111] border border-white/15 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#f7f7f7]/20 resize-none" />
               </div>
+
+              {selectedEvent && (
+                <>
+                  <AttendanceBlock />
+                  <div className="border border-white/10 bg-[#111111] p-4" data-testid="event-agenda">
+                    <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-3">{t("planning.addToCalendar")}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button type="button" onClick={exportEventICS} data-testid="event-ics"
+                        className="flex items-center gap-1.5 text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 hover:border-[#D8CA82] hover:text-[#D8CA82] px-3 py-2 u-micro">
+                        <Download size={13} aria-hidden="true" /> {t("planning.ics")}
+                      </button>
+                      <a href={gcalUrl(selectedEvent)} target="_blank" rel="noopener noreferrer" data-testid="event-gcal"
+                        className="flex items-center gap-1.5 text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 hover:border-[#D8CA82] hover:text-[#D8CA82] px-3 py-2 u-micro">
+                        <ExternalLink size={13} aria-hidden="true" /> {t("planning.gcal")}
+                      </a>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center justify-between pt-2">
                 {selectedEvent && canManage ? (
