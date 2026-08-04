@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { doc, onSnapshot, collection } from "firebase/firestore";
 import { toast } from "sonner";
-import { ArrowLeft, Share2, BarChart3, History } from "lucide-react";
+import { ArrowLeft, Share2, BarChart3, History, Trophy } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { usePlayerSEO } from "../lib/useSEO";
@@ -57,6 +57,15 @@ export default function PlayerDetail() {
 
   const computedStats = computePlayerStats(player, matches);
   const manualStats = parseStats(player.statsText);
+  const palmares = parseStats(player.palmares);
+  const equipment = parseStats(player.equipment);
+  const previousTeams = parseStats(player.previousTeams);
+  const hasRank = !!(player.rank || player.mmr);
+  const fmtArrival = (d) => {
+    if (!d) return "";
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  };
 
   let stats = [];
   if (computedStats && computedStats.length > 0) {
@@ -100,6 +109,25 @@ export default function PlayerDetail() {
               <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`team.status.${player.status || "player"}`)}</span>
               <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase mt-4" data-testid="player-pseudo">{player.pseudo}</h1>
               <p className="text-[#D8CA82] uppercase tracking-[0.3em] text-sm mt-2">{player.game}{player.ingameRole ? ` — ${player.ingameRole}` : ""}</p>
+              {hasRank && (
+                <div className="flex items-center gap-2 mt-3 flex-wrap" data-testid="player-rank">
+                  {player.rank && (
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/70 border border-[#D8CA82]/40 bg-[#D8CA82]/5 px-2.5 py-1">
+                      {t("playerpage.rank")}: <span className="text-[#D8CA82] font-bold">{player.rank}</span>
+                    </span>
+                  )}
+                  {player.mmr && (
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/70 border border-white/15 px-2.5 py-1">
+                      {t("playerpage.mmr")}: <span className="text-[#f7f7f7] font-bold">{player.mmr}</span>
+                    </span>
+                  )}
+                  {player.arrivalDate && (
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/50 px-2.5 py-1" data-testid="player-arrival">
+                      {t("playerpage.arrival")}: {fmtArrival(player.arrivalDate)}
+                    </span>
+                  )}
+                </div>
+              )}
               {player.bio && <p className="text-[#f7f7f7]/60 mt-5 max-w-2xl leading-relaxed" data-testid="player-bio">{player.bio}</p>}
               <div className="flex items-center gap-4 mt-6">
                 {["x", "twitch", "instagram", "youtube", "tiktok", "threads"].filter((k) => player.socials?.[k]).map((k) => (
@@ -148,6 +176,66 @@ export default function PlayerDetail() {
           )}
         </div>
       </section>
+
+      {/* Palmarès personnel / Équipement / Carrière */}
+      {(palmares.length > 0 || equipment.length > 0 || previousTeams.length > 0 || player.arrivalDate) && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-16 grid lg:grid-cols-12 gap-12">
+          {palmares.length > 0 && (
+            <div className="lg:col-span-4">
+              <div className="flex items-center gap-3 mb-6">
+                <Trophy size={16} className="text-[#D8CA82]" />
+                <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.palmares")}</h2>
+              </div>
+              <ul className="border border-white/10 bg-[#1A1A1A] divide-y divide-white/5" data-testid="player-palmares">
+                {palmares.map((p, i) => (
+                  <li key={i} className="flex justify-between px-5 py-3">
+                    <span className="text-sm text-[#f7f7f7]/80">{p.label}</span>
+                    {p.value && <span className="text-xs uppercase tracking-widest text-[#D8CA82]">{p.value}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {equipment.length > 0 && (
+            <div className="lg:col-span-4">
+              <div className="flex items-center gap-3 mb-6">
+                <BarChart3 size={16} className="text-[#D8CA82]" />
+                <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.equipment")}</h2>
+              </div>
+              <ul className="border border-white/10 bg-[#1A1A1A] divide-y divide-white/5" data-testid="player-equipment">
+                {equipment.map((p, i) => (
+                  <li key={i} className="flex justify-between px-5 py-3 gap-4">
+                    <span className="text-sm text-[#f7f7f7]/60 shrink-0">{p.label}</span>
+                    <span className="text-sm text-[#f7f7f7] text-right">{p.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {(previousTeams.length > 0 || player.arrivalDate) && (
+            <div className="lg:col-span-4">
+              <div className="flex items-center gap-3 mb-6">
+                <History size={16} className="text-[#D8CA82]" />
+                <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.career")}</h2>
+              </div>
+              <ul className="border border-white/10 bg-[#1A1A1A] divide-y divide-white/5" data-testid="player-career">
+                {player.arrivalDate && (
+                  <li className="flex justify-between px-5 py-3">
+                    <span className="text-sm text-[#D8CA82]">{t("playerpage.arrival")}</span>
+                    <span className="text-sm text-[#f7f7f7]">{fmtArrival(player.arrivalDate)}</span>
+                  </li>
+                )}
+                {previousTeams.map((p, i) => (
+                  <li key={i} className="flex justify-between px-5 py-3 gap-4">
+                    <span className="text-sm text-[#f7f7f7]/80">{p.label}</span>
+                    {p.value && <span className="text-xs uppercase tracking-widest text-[#f7f7f7]/50">{p.value}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

@@ -4,6 +4,25 @@ import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/fires
 import { auth, db } from "../lib/firebase";
 import { OFFICIAL_UID } from "../lib/constants";
 
+/**
+ * Publie une fiche minimale dans `profiles/{uid}` (annuaire privé entre joueurs).
+ * Utilisée par le chat (@mentions) et l'en-tête « absents aujourd'hui » du staff.
+ * On ne synchronise QUE les joueurs ayant accès à l'espace privé, et on évite
+ * toute écriture inutile si rien n'a changé.
+ */
+const publishProfileDirectory = ({ uid, displayName, game, roster, photoURL, hasPlayerAccess }) => {
+  if (!uid || !hasPlayerAccess) return;
+  const payload = {
+    uid,
+    displayName: displayName || "",
+    game: game || null,
+    roster: roster || null,
+    photoURL: photoURL || null,
+    updatedAt: serverTimestamp(),
+  };
+  setDoc(doc(db, "profiles", uid), payload, { merge: true }).catch((e) => console.error("profiles sync", e));
+};
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -34,7 +53,21 @@ export const AuthProvider = ({ children }) => {
           await setDoc(ref, { email: u.email || "", photoURL: u.photoURL || "" }, { merge: true });
         }
       } catch (e) { console.error("profile init", e); }
-      unsubProfile = onSnapshot(ref, (s) => { setProfile(s.data() || null); setLoading(false); },
+      unsubProfile = onSnapshot(ref, (s) => {
+          const data = s.data() || null;
+          setProfile(data);
+          setLoading(false);
+          const hasAccess = !!OFFICIAL_UID && u.uid === OFFICIAL_UID
+            || ["player", "manager", "bureau"].includes(data?.role);
+          publishProfileDirectory({
+            uid: u.uid,
+            displayName: data?.displayName || u.displayName || (u.email ? u.email.split("@")[0] : ""),
+            game: data?.game || null,
+            roster: data?.roster || null,
+            photoURL: u.photoURL || data?.photoURL || null,
+            hasPlayerAccess: hasAccess,
+          });
+        },
         () => setLoading(false));
     });
     return () => { unsub(); if (unsubProfile) unsubProfile(); };

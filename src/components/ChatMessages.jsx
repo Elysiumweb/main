@@ -1,16 +1,70 @@
-import { useEffect, useRef, useState } from "react";
-import { collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { Send } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, limit, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { Send, ImageIcon, Pencil, Trash2, X, Check, AtSign, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { db, storage } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { createNotification } from "../lib/notify";
+
+/* Petite compression d'image (JPEG) avant envoi — limite la taille du storage. */
+const compressImage = (file, maxWidth = 1280) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read-error"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("decode-error"));
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("canvas-error")); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("encode-error"))), "image/jpeg", 0.82);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+/* Rendu d'un texte avec mentions @pseudo surlignées. */
+const renderText = (text, members) => {
+  if (!text) return null;
+  const parts = text.split(/(@\S+)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("@") && part.length > 1) {
+      const pseudo = part.slice(1);
+      const found = members.find((m) => (m.displayName || "").toLowerCase() === pseudo.toLowerCase());
+      return (
+        <span key={i} className="text-[#D8CA82] font-medium bg-[#D8CA82]/10 px-0.5 rounded-sm" data-testid={`mention-${i}`}>
+          {part}{found ? "" : ""}
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+};
 
 export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
   const { user, displayName, role } = useAuth();
   const { t } = useLang();
   const [messages, setMessages] = useState([]);
+  const [members, setMembers] = useState([]);
   const [text, setText] = useState("");
+  const [pendingImage, setPendingImage] = useState(null); // data URL preview avant envoi
+  const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [mentionQuery, setMentionQuery] = useState(null); // {start, query} | null
+  const [mentionIndex, setMentionIndex] = useState(0);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+  const fileRef = useRef(null);
 
   useEffect(() => {
     const q = query(collection(db, ...path.split("/")), orderBy("createdAt", "asc"), limit(200));
@@ -19,18 +73,141 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
     return unsub;
   }, [path]);
 
+  // Annuaire privé des joueurs : alimente l'autocomplétion @ et la résolution des mentions.
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "profiles"), (snap) =>
+      setMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.id !== user?.uid)),
+    console.error);
+    return unsub;
+  }, [user?.uid]);
+
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  const memberNames = useMemo(() => members.map((m) => m.displayName || "").filter(Boolean), [members]);
+
+  const matchedMentions = useMemo(() => {
+    if (!mentionQuery) return [];
+    const q = mentionQuery.query.toLowerCase();
+    return members
+      .filter((m) => (m.displayName || "").toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [mentionQuery, members]);
+
+  // Détection d'une mention en cours de frappe (@pseudo)
+  const onTextChange = (e) => {
+    const val = e.target.value;
+    setText(val);
+    const caret = e.target.selectionStart;
+    const before = val.slice(0, caret);
+    const match = before.match(/@([^\s@]*)$/);
+    if (match) setMentionQuery({ start: caret - match[0].length, query: match[1] });
+    else setMentionQuery(null);
+    setMentionIndex(0);
+  };
+
+  const insertMention = (m) => {
+    const name = m.displayName || "";
+    const before = text.slice(0, mentionQuery.start);
+    const after = text.slice(mentionQuery.start + mentionQuery.query.length + 1);
+    const next = `${before}@${name} ${after}`;
+    setText(next);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      const pos = (before + `@${name} `).length;
+      inputRef.current?.setSelectionRange(pos, pos);
+    });
+  };
+
+  const onTextKeyDown = (e) => {
+    if (mentionQuery && matchedMentions.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setMentionIndex((i) => (i + 1) % matchedMentions.length); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setMentionIndex((i) => (i - 1 + matchedMentions.length) % matchedMentions.length); return; }
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); insertMention(matchedMentions[mentionIndex]); return; }
+      if (e.key === "Escape") { setMentionQuery(null); return; }
+    }
+  };
+
+  const onFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error(t("upload.invalidType")); return; }
+    try {
+      const blob = await compressImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setPendingImage(reader.result);
+      reader.readAsDataURL(blob);
+    } catch (err) { console.error(err); toast.error(t("upload.error")); }
+  };
+
+  const uploadImage = () =>
+    new Promise((resolve, reject) => {
+      if (!pendingImage) { resolve(null); return; }
+      setUploading(true);
+      fetch(pendingImage)
+        .then((r) => r.blob())
+        .then((blob) => {
+          const path = `chat/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+          const task = uploadBytesResumable(ref(storage, path), blob, { contentType: "image/jpeg" });
+          task.on("state_changed", null,
+            (err) => { setUploading(false); reject(err); },
+            async () => { const url = await getDownloadURL(task.snapshot.ref); setUploading(false); resolve(url); });
+        })
+        .catch((err) => { setUploading(false); reject(err); });
+    });
+
   const send = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed && !pendingImage) return;
+    let imageUrl = null;
+    try { imageUrl = await uploadImage(); }
+    catch (err) { console.error(err); toast.error(t("upload.error")); return; }
     setText("");
+    setPendingImage(null);
+    setMentionQuery(null);
+
+    // Résolution des mentions @pseudo -> uid (notification ciblée)
+    const tokens = trimmed.match(/@([^\s@]+)/g) || [];
+    const mentionedUids = [];
+    tokens.forEach((tok) => {
+      const pseudo = tok.slice(1).toLowerCase();
+      const m = members.find((mm) => (mm.displayName || "").toLowerCase() === pseudo);
+      if (m && !mentionedUids.includes(m.id)) mentionedUids.push(m.id);
+    });
+
     await addDoc(collection(db, ...path.split("/")), {
       uid: user.uid, name: displayName, role, text: trimmed, createdAt: serverTimestamp(),
+      ...(imageUrl ? { image: imageUrl } : {}),
+      ...(mentionedUids.length ? { mentions: mentionedUids } : {}),
     });
+
+    mentionedUids.forEach((targetUid) =>
+      createNotification({ targetUid, type: "chat_mention", extra: `${displayName}: ${trimmed.slice(0, 80)}`, link: "/espace-joueur/chat" }),
+    );
     if (onSent) onSent(trimmed);
   };
+
+  const startEdit = (m) => { setEditingId(m.id); setEditText(m.text || ""); };
+  const cancelEdit = () => { setEditingId(null); setEditText(""); };
+  const saveEdit = async (id) => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    try {
+      await updateDoc(doc(db, ...path.split("/"), id), { text: trimmed, editedAt: serverTimestamp() });
+      setEditingId(null); setEditText("");
+    } catch (err) { console.error(err); toast.error(t("common.error")); }
+  };
+  const remove = async (m) => {
+    if (!window.confirm(t("chat.deleteConfirm"))) return;
+    try { await deleteDoc(doc(db, ...path.split("/"), m.id)); }
+    catch (err) { console.error(err); toast.error(t("common.error")); }
+  };
+
+  const fmtDate = (ts) => ts?.toDate
+    ? ts.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    : "";
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -40,30 +217,80 @@ export const ChatMessages = ({ path, testId = "chat", onSent = null }) => {
         )}
         {messages.map((m) => {
           const mine = m.uid === user?.uid;
+          const isEditing = editingId === m.id;
           return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] px-3 py-2 border ${mine ? "bg-[#D8CA82]/10 border-[#D8CA82]/40" : "bg-[#1A1A1A] border-white/10"}`}>
+            <div key={m.id} className={`group flex ${mine ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[75%] px-3 py-2 border relative ${mine ? "bg-[#D8CA82]/10 border-[#D8CA82]/40" : "bg-[#1A1A1A] border-white/10"}`}>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-display font-bold text-[#D8CA82]">{m.name}</span>
-                  {m.createdAt?.toDate && (
-                    <span className="text-[10px] text-[#f7f7f7]/30">
-                      {m.createdAt.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  {m.createdAt && <span className="text-[10px] text-[#f7f7f7]/30">{fmtDate(m.createdAt)}</span>}
+                  {m.editedAt && <span className="text-[9px] italic text-[#f7f7f7]/30">({t("chat.edited")})</span>}
+                  {/* Actions sur son propre message */}
+                  {mine && !isEditing && (
+                    <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`msg-actions-${m.id}`}>
+                      <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-[#f7f7f7]/40 hover:text-[#D8CA82]"><Pencil size={11} /></button>
+                      <button onClick={() => remove(m)} title={t("chat.delete")} data-testid={`msg-delete-${m.id}`} className="text-[#f7f7f7]/40 hover:text-red-400"><Trash2 size={11} /></button>
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-[#f7f7f7]/90 whitespace-pre-wrap break-words">{m.text}</p>
+                {isEditing ? (
+                  <div className="mt-1" data-testid={`msg-edit-form-${m.id}`}>
+                    <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} autoFocus
+                      className="w-full bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] resize-none" />
+                    <div className="flex justify-end gap-2 mt-1.5">
+                      <button onClick={cancelEdit} className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#f7f7f7] px-2 py-1">{t("chat.cancel")}</button>
+                      <button onClick={() => saveEdit(m.id)} className="text-[10px] uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2 py-1 font-bold flex items-center gap-1"><Check size={11} /> {t("chat.save")}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {m.text && <p className="text-sm text-[#f7f7f7]/90 whitespace-pre-wrap break-words">{renderText(m.text, members)}</p>}
+                    {m.image && (
+                      <a href={m.image} target="_blank" rel="noopener noreferrer" className="block mt-1" data-testid={`msg-image-${m.id}`}>
+                        <img src={m.image} alt="" className="max-h-60 max-w-full border border-white/10" />
+                      </a>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           );
         })}
         <div ref={bottomRef} />
       </div>
-      <form onSubmit={send} className="border-t border-white/10 p-3 flex gap-2 shrink-0">
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder={t("chat.placeholder")}
+
+      {/* Aperçu image avant envoi */}
+      {pendingImage && (
+        <div className="px-3 py-2 border-t border-white/10 bg-[#141414] flex items-center gap-3" data-testid={`${testId}-image-preview`}>
+          <img src={pendingImage} alt="" className="h-16 border border-white/10" />
+          <button onClick={() => setPendingImage(null)} className="text-[#f7f7f7]/50 hover:text-red-400" aria-label={t("common.delete")}><X size={16} /></button>
+        </div>
+      )}
+
+      {/* Liste d'autocomplétion @mention */}
+      {mentionQuery && matchedMentions.length > 0 && (
+        <div className="mx-3 mb-1 border border-white/15 bg-[#161616] shadow-lg" data-testid={`${testId}-mention-list`}>
+          {matchedMentions.map((m, i) => (
+            <button key={m.id} type="button" onMouseDown={(e) => { e.preventDefault(); insertMention(m); }}
+              onMouseEnter={() => setMentionIndex(i)}
+              className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left ${i === mentionIndex ? "bg-[#D8CA82]/10 text-[#D8CA82]" : "text-[#f7f7f7]/80 hover:bg-white/5"}`}>
+              <AtSign size={12} className="opacity-50" /> {m.displayName}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <form onSubmit={send} className="border-t border-white/10 p-3 flex gap-2 shrink-0 items-center">
+        <input ref={fileRef} type="file" accept="image/*" onChange={onFileChange} className="sr-only" data-testid={`${testId}-file-input`} />
+        <button type="button" onClick={() => fileRef.current?.click()} title={t("chat.attach")} data-testid={`${testId}-attach-btn`}
+          className="p-2 text-[#f7f7f7]/50 hover:text-[#D8CA82] border border-white/15 hover:border-[#D8CA82]/50 transition-colors shrink-0">
+          {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+        </button>
+        <input ref={inputRef} value={text} onChange={onTextChange} onKeyDown={onTextKeyDown} placeholder={t("chat.placeholder")}
           data-testid={`${testId}-input`}
           className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] placeholder:text-[#f7f7f7]/30 focus:outline-none focus:border-[#D8CA82]" />
-        <button type="submit" data-testid={`${testId}-send-btn`}
-          className="bg-[#D8CA82] text-[#111111] px-4 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
+        <button type="submit" disabled={uploading} data-testid={`${testId}-send-btn`}
+          className="bg-[#D8CA82] text-[#111111] px-4 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50">
           <Send size={16} />
         </button>
       </form>

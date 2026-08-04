@@ -10,47 +10,11 @@ import { useLang } from "../lib/i18n";
 import { useAuth } from "../context/AuthContext";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SITE_URL } from "../lib/useSEO";
+import { downloadICS, gcalUrl } from "../lib/calendar";
 
 const TYPE_ICONS = { tournament: Trophy, training: Dumbbell, stream: Radio, community: PartyPopper };
 const TYPE_COLORS = { tournament: "#D8CA82", training: "#4FC3F7", stream: "#E53935", community: "#81C784" };
 const TYPES = ["tournament", "training", "stream", "community"];
-
-const toICSDate = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-
-const downloadICS = (events) => {
-  const rows = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Elysium//FR", "CALSCALE:GREGORIAN"];
-  (events || []).forEach((ev, i) => {
-    const start = new Date(ev.date);
-    if (isNaN(start.getTime())) return; // date invalide : on ignore l'événement
-    const end = new Date(start.getTime() + 2 * 3600 * 1000);
-    rows.push(
-      "BEGIN:VEVENT",
-      `UID:${ev.id || `ev${i}`}@elysium`,
-      `DTSTAMP:${toICSDate(new Date())}`,
-      `DTSTART:${toICSDate(start)}`,
-      `DTEND:${toICSDate(end)}`,
-      `SUMMARY:${String(ev.title || "").replace(/[\r\n;]/g, " ")}`,
-      `DESCRIPTION:${String(ev.description || ev.competition || "").replace(/[\r\n;]/g, " ")}`,
-      ev.link ? `URL:${ev.link}` : "",
-      "END:VEVENT"
-    );
-  });
-  rows.push("END:VCALENDAR");
-  const ics = rows.filter(Boolean).join("\r\n");
-  const blob = new Blob([ics], { type: "text/calendar" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "elysium-calendrier.ics";
-  a.click();
-  URL.revokeObjectURL(a.href);
-};
-
-const gcalUrl = (ev) => {
-  const start = new Date(ev.date);
-  if (isNaN(start.getTime())) return "#";
-  const end = new Date(start.getTime() + 2 * 3600 * 1000);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.title || "")}&dates=${toICSDate(start)}/${toICSDate(end)}&details=${encodeURIComponent(ev.description || "")}`;
-};
 
 const getAnonId = () => {
   try {
@@ -255,7 +219,7 @@ const EventRow = ({ ev, dim, user, displayName }) => {
         )}
         {!dim && (
           <>
-            <button onClick={() => downloadICS([ev])} title={t("cal.export")} data-testid={`cal-ics-${ev.id}`}
+            <button onClick={() => downloadICS([ev], "elysium-calendrier.ics")} title={t("cal.export")} data-testid={`cal-ics-${ev.id}`}
               className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors"><Download size={15} /></button>
             <a href={gcalUrl(ev)} target="_blank" rel="noopener noreferrer" title={t("cal.gcal")} data-testid={`cal-gcal-${ev.id}`}
               className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] border border-white/15 px-2 py-1 transition-colors">
@@ -338,7 +302,7 @@ export default function CommunityCalendar() {
     return roster ? `Elysium ${roster}` : "Elysium";
   }
 
-  const downloadAll = () => downloadICS([...officialMatchesICS, ...(events || [])]);
+  const downloadAll = () => downloadICS([...officialMatchesICS, ...(events || [])], "elysium-calendrier.ics", { calendarName: "Elysium" });
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">

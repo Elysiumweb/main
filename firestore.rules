@@ -65,6 +65,21 @@ service cloud.firestore {
       allow delete: if isOfficial() || request.auth.uid == uid;
     }
 
+    // ===== Annuaire joueurs (espace privé) =====
+    // Copie minimale et publique-entre-joueurs du profil : uid, displayName,
+    // game, roster, photoURL. Sert aux @mentions du chat et à l'indicateur
+    // « absent aujourd'hui » côté staff. Aucune donnée sensible (pas d'email).
+    match /profiles/{uid} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if isAuth() && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid
+        && (!request.resource.data.keys().hasAny(['displayName']) || isShortString(request.resource.data.displayName, 60))
+        && (!request.resource.data.keys().hasAny(['photoURL'])
+            || request.resource.data.photoURL is string
+            || request.resource.data.photoURL == null);
+      allow delete: if isAuth() && request.auth.uid == uid;
+    }
+
     // ===== Roster public =====
     match /roster/{id} {
       allow read: if true;
@@ -90,8 +105,19 @@ service cloud.firestore {
       allow read: if hasPlayerAccess();
       allow create: if hasPlayerAccess()
         && request.resource.data.uid == request.auth.uid
-        && isShortString(request.resource.data.text, 2000);
-      allow delete: if isOfficial();
+        && isShortString(request.resource.data.text, 2000)
+        && (!request.resource.data.keys().hasAny(['image'])
+            || isShortString(request.resource.data.image, 2000));
+      // Un joueur peut modifier/supprimer SON PROPRE message (édition, retrait
+      // d'une image, mention). Le bureau (officiel) reste modérateur global.
+      allow update: if hasPlayerAccess()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && isShortString(request.resource.data.text, 2000)
+        && (!request.resource.data.keys().hasAny(['image'])
+            || request.resource.data.image is string);
+      allow delete: if isOfficial()
+        || (hasPlayerAccess() && resource.data.uid == request.auth.uid);
     }
 
     // ===== Planning =====
@@ -191,12 +217,24 @@ service cloud.firestore {
     }
 
     // ===== Notes =====
+    // La suppression est douce : on pose `deletedAt` (corbeille 30 jours).
+    // La restauration efface ce champ. Les versions sont stockées dans une
+    // sous-collection `versions` (historique) avec le même contrôle d'accès.
     match /notes/{id} {
       allow read: if hasPlayerAccess()
         && (resource.data.type == 'collective' || resource.data.ownerUid == request.auth.uid);
       allow create: if hasPlayerAccess() && request.resource.data.ownerUid == request.auth.uid;
       allow update, delete: if hasPlayerAccess()
         && (resource.data.type == 'collective' || resource.data.ownerUid == request.auth.uid);
+
+      match /versions/{vid} {
+        allow read: if hasPlayerAccess()
+          && (get(/databases/$(database)/documents/notes/$(id)).data.type == 'collective'
+              || get(/databases/$(database)/documents/notes/$(id)).data.ownerUid == request.auth.uid);
+        allow create: if hasPlayerAccess()
+          && request.resource.data.uid == request.auth.uid;
+        allow delete: if hasPlayerAccess();
+      }
     }
 
     // ===== Canvas =====

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { MousePointer2, Type, Square, Pencil, Image as ImageIcon, Crosshair, Trash2, ArrowLeft } from "lucide-react";
+import { MousePointer2, Type, Square, Pencil, Image as ImageIcon, Crosshair, Trash2, ArrowLeft, Undo2, Redo2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "../lib/i18n";
 
@@ -18,6 +18,156 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
   const [color, setColor] = useState(COLORS[0]);
   const [tempStroke, setTempStroke] = useState(null);
   const dragRef = useRef(null);
+
+  // ---- Historique pour annuler / rétablir (undo / redo) ----
+  const [history, setHistory] = useState({ past: [], future: [] });
+  const itemsRef = useRef(items);
+  useEffect(() => { itemsRef.current = items; }, [items]);
+
+  // Snapshot de l'état courant AVANT une mutation utilisateur.
+  const pushHistory = useCallback(() => {
+    setHistory((h) => ({ past: [...h.past, itemsRef.current].slice(-50), future: [] }));
+  }, []);
+
+  const undo = useCallback(() => {
+    setHistory((h) => {
+      if (h.past.length === 0) return h;
+      const prev = h.past[h.past.length - 1];
+      const past = h.past.slice(0, -1);
+      setItems(prev);
+      setSelected(null);
+      return { past, future: [itemsRef.current, ...h.future].slice(0, 50) };
+    });
+  }, []);
+
+  const redo = useCallback(() => {
+    setHistory((h) => {
+      if (h.future.length === 0) return h;
+      const next = h.future[0];
+      const future = h.future.slice(1);
+      setItems(next);
+      setSelected(null);
+      return { past: [...h.past, itemsRef.current].slice(-50), future };
+    });
+  }, []);
+
+  // Raccourcis clavier Ctrl+Z / Ctrl+Maj+Z / Ctrl+Y
+  useEffect(() => {
+    const onKey = (e) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if ((key === "z" && e.shiftKey) || key === "y") { e.preventDefault(); redo(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
+
+  // ---- Export PNG (rendu du canvas hors écran) ----
+  const exportPNG = async () => {
+    const all = itemsRef.current;
+    if (all.length === 0) { toast.error(t("canvas.empty")); return; }
+    const ctx0 = document.createElement("canvas").getContext("2d");
+    ctx0.font = "14px sans-serif";
+    const lineH = 20;
+    const measureBox = (it) => {
+      const txt = it.text || "";
+      const maxW = it.w || 220;
+      const wrapped = [];
+      txt.split("\n").forEach((line) => {
+        if (!line) { wrapped.push(""); return; }
+        let cur = "";
+        for (const ch of line) {
+          if (ctx0.measureText(cur + ch).width > maxW - 16) { wrapped.push(cur); cur = ch; }
+          else cur += ch;
+        }
+        wrapped.push(cur);
+      });
+      const h = Math.max(36, wrapped.length * lineH + 16);
+      return { w: it.w || 220, h };
+    };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const expand = (x, y) => { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); };
+    const measured = all.map((it) => {
+      if (it.type === "draw") {
+        it.points.forEach((p) => expand(p.x, p.y));
+        return { ...it };
+      }
+      if (it.type === "image") {
+        const w = it.w || 280; const h = it._h || (w * 0.66);
+        expand(it.x, it.y); expand(it.x + w, it.y + h);
+        return { ...it, _w: w, _h: h };
+      }
+      const m = measureBox(it);
+      expand(it.x, it.y); expand(it.x + m.w, it.y + m.h);
+      return { ...it, _w: m.w, _h: m.h };
+    });
+    if (minX === Infinity) { toast.error(t("canvas.empty")); return; }
+    const pad = 48;
+    const scale = 2; // rendu haute résolution
+    const W = Math.max(1, (maxX - minX) + pad * 2);
+    const H = Math.max(1, (maxY - minY) + pad * 2);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(W * scale); canvas.height = Math.round(H * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+    // fond + grille de points
+    ctx.fillStyle = "#0d0d0d"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(255,255,255,0.05)";
+    for (let x = 0; x < W; x += 24) for (let y = 0; y < H; y += 24) ctx.fillRect(x, y, 1, 1);
+    const ox = pad - minX, oy = pad - minY; // décalage pour inclure tout
+    // préchargement des images
+    const imgs = await Promise.all(measured.filter((it) => it.type === "image").map((it) => new Promise((res) => {
+      const img = new Image(); img.crossOrigin = "anonymous";
+      img.onload = () => res({ id: it.id, img });
+      img.onerror = () => res({ id: it.id, img: null });
+      img.src = it.url;
+    })));
+    const imgMap = new Map(imgs.map((o) => [o.id, o.img]));
+    // tracés libres d'abord (arrière-plan)
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 3;
+    measured.filter((it) => it.type === "draw").forEach((it) => {
+      if (it.points.length < 2) return;
+      ctx.strokeStyle = it.color || "#D8CA82";
+      ctx.beginPath(); ctx.moveTo(it.points[0].x + ox, it.points[0].y + oy);
+      it.points.forEach((p) => ctx.lineTo(p.x + ox, p.y + oy));
+      ctx.stroke();
+    });
+    // puis boîtes / texte / images
+    measured.filter((it) => it.type !== "draw").forEach((it) => {
+      const x = it.x + ox, y = it.y + oy;
+      if (it.type === "image") {
+        const img = imgMap.get(it.id);
+        if (img) { const w = it._w; const h = img.height ? (w * img.height / img.width) : it._h; ctx.drawImage(img, x, y, w, h); }
+        else { ctx.strokeStyle = "#ffffff33"; ctx.strokeRect(x, y, it._w, it._h); }
+        return;
+      }
+      ctx.font = "14px sans-serif"; ctx.textBaseline = "top";
+      if (it.type === "box") {
+        ctx.fillStyle = "rgba(216,202,130,0.05)"; ctx.fillRect(x, y, it._w, it._h);
+        ctx.strokeStyle = "rgba(216,202,130,0.6)"; ctx.lineWidth = 1; ctx.strokeRect(x, y, it._w, it._h);
+      }
+      ctx.fillStyle = "#ededed";
+      const maxW = it._w - 16;
+      let cy = y + 8;
+      (it.text || "").split("\n").forEach((line) => {
+        let cur = "";
+        for (const ch of line) {
+          if (ctx.measureText(cur + ch).width > maxW) { ctx.fillText(cur, x + 8, cy); cy += lineH; cur = ch; }
+          else cur += ch;
+        }
+        ctx.fillText(cur, x + 8, cy); cy += lineH;
+      });
+    });
+    try {
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `${(title || "elysium-tableau").replace(/[^a-z0-9-]+/gi, "-").toLowerCase()}.png`;
+      a.click();
+      toast.success(t("canvas.exported"));
+    } catch (e) { console.error(e); toast.error(t("common.error")); }
+  };
 
   const center = useCallback(() => {
     const el = containerRef.current;
@@ -49,7 +199,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
     return { x: (e.clientX - rect.left - view.x) / view.scale, y: (e.clientY - rect.top - view.y) / view.scale };
   };
 
-  const addItem = (item) => { setItems((arr) => [...arr, item]); setSelected(item.id); };
+  const addItem = (item) => { pushHistory(); setItems((arr) => [...arr, item]); setSelected(item.id); };
 
   const onBgPointerDown = (e) => {
     if (e.target.closest('[data-canvas-item="1"]')) return;
@@ -103,13 +253,14 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
     if (tool !== "select" || editing === it.id) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture?.(e.pointerId);
+    pushHistory();
     setSelected(it.id);
     const w = toWorld(e);
     dragRef.current = { mode: "item", id: it.id, ix: it.x, iy: it.y, wx: w.x, wy: w.y };
   };
 
   const updateText = (id, text) => setItems((arr) => arr.map((it) => it.id === id ? { ...it, text } : it));
-  const deleteSelected = () => { if (selected) { setItems((arr) => arr.filter((it) => it.id !== selected)); setSelected(null); } };
+  const deleteSelected = () => { if (selected) { pushHistory(); setItems((arr) => arr.filter((it) => it.id !== selected)); setSelected(null); } };
 
   const tools = [
     ["select", MousePointer2, t("canvas.tool.select")],
@@ -149,6 +300,14 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
           <button onClick={deleteSelected} title={t("canvas.delete")} data-testid="canvas-delete-btn"
             className="p-2 border border-red-400/40 text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 size={15} /></button>
         )}
+        <button onClick={exportPNG} title={t("canvas.export")} data-testid="canvas-export-btn"
+          className="p-2 border border-white/15 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors"><Download size={15} /></button>
+        <div className="flex border border-white/15">
+          <button onClick={undo} disabled={history.past.length === 0} title={t("canvas.undo")} data-testid="canvas-undo-btn"
+            className="p-2 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors disabled:opacity-30 disabled:hover:text-[#f7f7f7]/60"><Undo2 size={15} /></button>
+          <button onClick={redo} disabled={history.future.length === 0} title={t("canvas.redo")} data-testid="canvas-redo-btn"
+            className="p-2 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors border-l border-white/10 disabled:opacity-30 disabled:hover:text-[#f7f7f7]/60"><Redo2 size={15} /></button>
+        </div>
         <div className="flex-1" />
         <button onClick={() => onSave(items, "draft")} disabled={saving} data-testid="canvas-save-draft-btn"
           className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors disabled:opacity-50">
@@ -181,7 +340,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
             )}
           </svg>
           {items.filter((i) => i.type !== "draw").map((it) => (
-            <div key={it.id} data-canvas-item="1" onPointerDown={(e) => onItemPointerDown(e, it)} onDoubleClick={() => it.type !== "image" && setEditing(it.id)}
+            <div key={it.id} data-canvas-item="1" onPointerDown={(e) => onItemPointerDown(e, it)} onDoubleClick={() => { if (it.type !== "image") { pushHistory(); setEditing(it.id); } }}
               data-testid={`canvas-item-${it.id}`}
               className={`absolute select-none ${selected === it.id ? "ring-1 ring-[#D8CA82]" : ""} ${tool === "select" ? "cursor-move" : ""}`}
               style={{ left: it.x, top: it.y, width: it.w }}>
