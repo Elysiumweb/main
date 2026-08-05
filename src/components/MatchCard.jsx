@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useLang } from "../lib/i18n";
-import { ShieldOff, CalendarClock, ExternalLink, PlayCircle, Award, Pencil, Trophy, Skull, Radio, Copy, RotateCcw } from "lucide-react";
+import { CalendarClock, ExternalLink, PlayCircle, Pencil, Trophy, Skull, Radio, Copy, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ShareButtons } from "./ShareButtons";
 import { SITE_URL } from "../lib/useSEO";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
-import { getElysiumTeamName, getStatFieldsForGame } from "../lib/constants";
+import { getElysiumTeamName } from "../lib/constants";
 
 /* -----------------------------------------------------------------------
  * OpponentLogo
@@ -119,7 +119,6 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   const us = Number(match.scoreUs);
   const them = Number(match.scoreThem);
   const result = us > them ? "win" : us < them ? "loss" : "draw";
-  const maps = (match.maps || []).filter((m) => m.name);
   const roster = typeof match.roster === "string" ? match.roster.trim() : "";
   const teamName = getElysiumTeamName(roster);
 
@@ -287,77 +286,6 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               {t("results.roster")} : <span className="text-[#D8CA82]">{roster}</span>
             </p>
           )}
-          {maps.length > 0 && (
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2">{t("results.maps")}</p>
-              <div className="border border-white/10 divide-y divide-white/5" data-testid={`match-maps-${match.id}`}>
-                {maps.map((m, i) => (
-                  <div key={i} className="flex justify-between px-4 py-2">
-                    <span className="text-[#c8c8c8]">{m.name}</span>
-                    <span
-                      className={`font-display font-bold ${m.us > m.them ? "text-emerald-300" : m.us < m.them ? "text-red-300" : "text-[#c8c8c8]"}`}
-                      aria-label={`${m.name} : ${m.us ?? "?"} contre ${m.them ?? "?"}`}
-                    >
-                      {m.us ?? "—"} - {m.them ?? "—"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {match.players && Array.isArray(match.players) && match.players.length > 0 && (
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2">
-                {t("results.playersStats")}
-              </p>
-              <div
-                className="border border-white/10 divide-y divide-white/5 bg-[#141414]"
-                data-testid={`match-players-stats-${match.id}`}
-              >
-                {match.players.map((p, idx) => {
-                  const games = Array.isArray(p.games) && p.games.length > 0 ? p.games : [p];
-                  const fields = getStatFieldsForGame(match.game || "EVA");
-                  const sums = {};
-                  fields.forEach((f) => {
-                    sums[f.key] = 0;
-                  });
-                  games.forEach((g) => {
-                    if (g && typeof g === "object") {
-                      fields.forEach((f) => {
-                        sums[f.key] += Number(g[f.key]) || 0;
-                      });
-                    }
-                  });
-
-                  return (
-                    <div key={idx} className="p-3 text-xs space-y-1">
-                      <div className="flex items-center justify-between font-display font-bold text-[#f7f7f7]">
-                        <span>{p.pseudo || "Joueur"}</span>
-                        {games.length > 1 && (
-                          <span className="text-[10px] text-[#D8CA82] font-normal uppercase tracking-wider">
-                            {games.length} parties
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[#c8c8c8]">
-                        {fields.map((f) => (
-                          <span key={f.key}>
-                            <span className="text-[#f7f7f7]/50">{f.label}:</span>{" "}
-                            <span className="font-semibold text-[#D8CA82]">{sums[f.key]}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {match.mvp && (
-            <p className="flex items-center gap-2 text-[#c8c8c8]" data-testid={`match-mvp-${match.id}`}>
-              <Award size={15} className="text-[#D8CA82]" aria-hidden="true" /> {t("results.mvp")} : <span className="font-display font-bold text-[#D8CA82]">{match.mvp}</span>
-            </p>
-          )}
           <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <ShareButtons
               url={`${SITE_URL}/resultats?match=${match.id}`}
@@ -368,12 +296,6 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             />
           </div>
           <div className="flex gap-4">
-            {match.vodUrl && (
-              <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" data-testid={`match-vod-${match.id}`}
-                className="text-xs text-[#D8CA82] uppercase tracking-widest flex items-center gap-1.5 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-                <PlayCircle size={13} aria-hidden="true" /> {t("results.vod")}
-              </a>
-            )}
             {(upcoming || live) && match.watchUrl && (
               <a href={match.watchUrl} target="_blank" rel="noopener noreferrer"
                 onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_detail", matchId: match.id, platform: match.platform || "watchUrl", status: match.status })}
