@@ -121,6 +121,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   const result = us > them ? "win" : us < them ? "loss" : "draw";
   const roster = typeof match.roster === "string" ? match.roster.trim() : "";
   const teamName = getElysiumTeamName(roster);
+  const participants = Array.isArray(match.players)
+    ? match.players.filter((p) => p && (p.pseudo || p.playerId))
+    : [];
 
   // Accessible description for the card
   const ariaDesc = live
@@ -285,6 +288,20 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50" data-testid={`match-detail-roster-${match.id}`}>
               {t("results.roster")} : <span className="text-[#D8CA82]">{roster}</span>
             </p>
+          )}
+          {participants.length > 0 && (
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2">
+                {t("results.players")}
+              </p>
+              <div className="flex flex-wrap gap-2" data-testid={`match-players-${match.id}`}>
+                {participants.map((p, idx) => (
+                  <span key={p.playerId || `${p.pseudo}-${idx}`} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80">
+                    {p.pseudo || "Joueur"}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
           <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <ShareButtons

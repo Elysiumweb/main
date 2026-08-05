@@ -33,7 +33,7 @@ import {
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "" };
+const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", players: [] };
 const PAGE_SIZE = 12;
 
 const sanitizeMatchForClone = (m) => {
@@ -70,6 +70,13 @@ const parseMatchImport = (text, fileName = "") => {
     return headers.reduce((acc, h, i) => ({ ...acc, [h]: values[i] ?? "" }), {});
   });
 };
+const sanitizeMatchPlayers = (players = []) => (Array.isArray(players) ? players : [])
+  .map((p) => ({
+    playerId: p.playerId || p.id || "",
+    pseudo: p.pseudo || p.name || "",
+  }))
+  .filter((p) => p.playerId || p.pseudo);
+
 const normalizeImportedMatch = (raw) => ({
   opponentName: raw.opponentName || raw.opponent || raw.adversaire || "",
   opponentLogo: raw.opponentLogo || raw.logo || "",
@@ -84,6 +91,7 @@ const normalizeImportedMatch = (raw) => ({
   timezone: raw.timezone || "Europe/Paris",
   platform: raw.platform || "",
   watchUrl: raw.watchUrl || raw.stream || "",
+  players: sanitizeMatchPlayers(raw.players),
 });
 
 export default function Admin() {
@@ -94,6 +102,8 @@ export default function Admin() {
   const [matches, setMatches] = useState([]);
   const [form, setForm] = useState(EMPTY_MATCH);
   const [editMatchId, setEditMatchId] = useState(null);
+  const [rosterMembers, setRosterMembers] = useState([]);
+  const [selectedRosterPlayer, setSelectedRosterPlayer] = useState("");
   const [userQuery, setUserQuery] = useState("");
   const [userPage, setUserPage] = useState(1);
   const [matchQuery, setMatchQuery] = useState("");
@@ -104,11 +114,17 @@ export default function Admin() {
   const matchRosters = ROSTERS[form.game] || [];
   const onMatchGameChange = (e) => {
     const game = e.target.value;
+    setSelectedRosterPlayer("");
     setForm((f) => ({
       ...f,
       game,
       roster: (ROSTERS[game] || []).includes(f.roster) ? f.roster : "",
+      players: [],
     }));
+  };
+  const onMatchRosterChange = (e) => {
+    setSelectedRosterPlayer("");
+    setForm((f) => ({ ...f, roster: e.target.value, players: [] }));
   };
 
   const isBureau = isOfficial || role === "bureau";
@@ -133,7 +149,8 @@ export default function Admin() {
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, console.error);
-    return () => { u1(); u2(); };
+    const u3 = onSnapshot(collection(db, "roster"), (s) => setRosterMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    return () => { u1(); u2(); u3(); };
   }, [isOfficial]);
 
   const filteredUsers = useMemo(() => {
@@ -155,6 +172,19 @@ export default function Admin() {
   }, [matches, matchQuery]);
   const matchTotalPages = Math.max(1, Math.ceil(filteredMatches.length / PAGE_SIZE));
   const pagedMatches = filteredMatches.slice((Math.min(matchPage, matchTotalPages) - 1) * PAGE_SIZE, Math.min(matchPage, matchTotalPages) * PAGE_SIZE);
+  const availableRosterPlayers = useMemo(() => {
+    const selectedIds = new Set((form.players || []).map((p) => p.playerId).filter(Boolean));
+    return rosterMembers
+      .filter((m) => m.status !== "staff")
+      .filter((m) => !selectedIds.has(m.id))
+      .filter((m) => !form.game || !m.game || m.game === form.game)
+      .filter((m) => {
+        const rosters = ROSTERS[form.game] || [];
+        if (!rosters.length || !form.roster) return true;
+        return (m.roster || "") === form.roster;
+      })
+      .sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
+  }, [rosterMembers, form.players, form.game, form.roster]);
 
   useEffect(() => { setUserPage(1); }, [userQuery]);
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
@@ -212,6 +242,28 @@ export default function Admin() {
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
 
+  const addPlayerToMatch = () => {
+    if (!selectedRosterPlayer) return;
+    const member = rosterMembers.find((m) => m.id === selectedRosterPlayer);
+    if (!member) return;
+    setForm((f) => ({
+      ...f,
+      players: [
+        ...(f.players || []),
+        { playerId: member.id, pseudo: member.pseudo || "Joueur" },
+      ],
+    }));
+    setSelectedRosterPlayer("");
+  };
+
+  const removePlayerFromMatch = (pIndex) => {
+    setForm((f) => {
+      const next = [...(f.players || [])];
+      next.splice(pIndex, 1);
+      return { ...f, players: next };
+    });
+  };
+
   const addMatch = async (e) => {
     e.preventDefault();
     const rosterOptions = ROSTERS[form.game] || [];
@@ -225,14 +277,17 @@ export default function Admin() {
       return;
     }
     try {
-      const matchData = { ...form, roster: rosterOptions.length > 0 ? roster : null };
+      const matchData = {
+        ...form,
+        roster: rosterOptions.length > 0 ? roster : null,
+        players: sanitizeMatchPlayers(form.players),
+      };
       if (editMatchId) {
         await updateDoc(doc(db, "matches", editMatchId), {
           ...matchData,
           maps: deleteField(),
           mvp: deleteField(),
           vodUrl: deleteField(),
-          players: deleteField(),
           updatedAt: serverTimestamp(),
         });
         await logAdminAction({
@@ -261,6 +316,7 @@ export default function Admin() {
       opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
       date: m.date || "", competition: m.competition || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
       time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
+      players: sanitizeMatchPlayers(m.players),
     });
   };
 
@@ -495,7 +551,7 @@ export default function Admin() {
               {matchRosters.length > 0 && (
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.roster")}</label>
-                  <select value={form.roster || ""} onChange={set("roster")} required className={inputCls} data-testid="admin-match-roster">
+                  <select value={form.roster || ""} onChange={onMatchRosterChange} required className={inputCls} data-testid="admin-match-roster">
                     <option value="">{t("admin.roster.none")}</option>
                     {matchRosters.map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
                   </select>
@@ -572,6 +628,62 @@ export default function Admin() {
                   )}
                 </div>
               )}
+              <div className="border-t border-white/10 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
+                <div>
+                  <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">
+                    {t("admin.match.players")}
+                  </label>
+                  <p className="text-[11px] text-[#f7f7f7]/40 mt-1">
+                    {t("admin.match.playersHint")}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedRosterPlayer}
+                    onChange={(e) => setSelectedRosterPlayer(e.target.value)}
+                    className={inputCls}
+                    data-testid="admin-match-player-select"
+                  >
+                    <option value="">{t("admin.match.selectPlayer")}</option>
+                    {availableRosterPlayers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.pseudo} ({m.game || "EVA"}{m.roster ? ` · ${m.roster}` : ""})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={addPlayerToMatch}
+                    disabled={!selectedRosterPlayer}
+                    data-testid="admin-match-add-player-btn"
+                    className="bg-[#D8CA82]/20 border border-[#D8CA82] text-[#D8CA82] px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50 hover:bg-[#D8CA82] hover:text-[#111111] transition-colors whitespace-nowrap"
+                  >
+                    +
+                  </button>
+                </div>
+                {(form.players || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2" data-testid="admin-match-players-list">
+                    {(form.players || []).map((p, pIndex) => (
+                      <span
+                        key={p.playerId || `${p.pseudo}-${pIndex}`}
+                        className="inline-flex items-center gap-2 border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]"
+                        data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}
+                      >
+                        {p.pseudo || "Joueur"}
+                        <button
+                          type="button"
+                          onClick={() => removePlayerFromMatch(pIndex)}
+                          className="text-red-300/80 hover:text-red-300"
+                          aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button type="submit" data-testid="admin-match-submit"
                 className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
                 {t("admin.match.add")}
