@@ -8,7 +8,7 @@ import { GAMES, ROSTERS } from "../../lib/constants";
 import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", statsText: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "", threads: "" };
+const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "", threads: "" };
 
 export const AdminRoster = () => {
   const { t } = useLang();
@@ -35,7 +35,7 @@ export const AdminRoster = () => {
 
   const edit = (m) => {
     setEditId(m.id);
-    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", statsText: m.statsText || "", rank: m.rank || "", mmr: m.mmr || "", palmares: m.palmares || "", equipment: m.equipment || "", arrivalDate: m.arrivalDate || "", previousTeams: m.previousTeams || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "", tiktok: m.socials?.tiktok || "", threads: m.socials?.threads || "" });
+    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", rank: m.rank || "", mmr: m.mmr || "", palmares: m.palmares || "", equipment: m.equipment || "", arrivalDate: m.arrivalDate || "", previousTeams: m.previousTeams || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "", tiktok: m.socials?.tiktok || "", threads: m.socials?.threads || "" });
   };
 
   const del = async (id) => {
@@ -70,7 +70,6 @@ export const AdminRoster = () => {
           <ImageUpload value={form.photo} onChange={(url) => setForm((f) => ({ ...f, photo: url }))} folder="players" maxWidth={1200} testId="admin-roster-photo-upload" />
         </div>
         <textarea value={form.bio} onChange={set("bio")} placeholder="Biographie" rows={3} className={inputCls} data-testid="admin-roster-bio" />
-        <textarea value={form.statsText} onChange={set("statsText")} placeholder={"Statistiques (une par ligne : Ratio K/D | 1.35)"} rows={3} className={inputCls} data-testid="admin-roster-stats" />
         <div className="grid grid-cols-3 gap-4">
           <input value={form.rank} onChange={set("rank")} placeholder="Rang (ex: Champion III)" className={inputCls} data-testid="admin-roster-rank" />
           <input value={form.mmr} onChange={set("mmr")} placeholder="MMR (ex: 1820)" className={inputCls} data-testid="admin-roster-mmr" />

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, deleteField, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { FileUp, Search, Shield, Trophy, Users } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName, getStatFieldsForGame } from "../lib/constants";
+import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRoster } from "../components/admin/AdminRoster";
@@ -33,12 +33,12 @@ import {
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", mapsText: "", mvp: "", vodUrl: "", players: [] };
+const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", players: [] };
 const PAGE_SIZE = 12;
 
-const stringifyMatchMaps = (maps = []) => (maps || []).map((x) => `${x.name} | ${x.us ?? ""}-${x.them ?? ""}`).join("\n");
 const sanitizeMatchForClone = (m) => {
   const { id, createdAt, updatedAt, ...rest } = m || {};
+  ["maps", "mvp", "vodUrl", "players"].forEach((key) => { delete rest[key]; });
   return JSON.parse(JSON.stringify(rest));
 };
 const parseCsvLine = (line) => {
@@ -70,35 +70,29 @@ const parseMatchImport = (text, fileName = "") => {
     return headers.reduce((acc, h, i) => ({ ...acc, [h]: values[i] ?? "" }), {});
   });
 };
-const normalizeImportedMatch = (raw) => {
-  const mapsSource = raw.maps || raw.mapsText || "";
-  const maps = Array.isArray(mapsSource)
-    ? mapsSource
-    : String(mapsSource).split(";").map((l) => l.trim()).filter(Boolean).map((l) => {
-      const [name, score = ""] = l.split("|").map((s) => s.trim());
-      const m = score.match(/(\d+)\s*-\s*(\d+)/);
-      return { name, us: m ? Number(m[1]) : null, them: m ? Number(m[2]) : null };
-    });
-  return {
-    opponentName: raw.opponentName || raw.opponent || raw.adversaire || "",
-    opponentLogo: raw.opponentLogo || raw.logo || "",
-    scoreUs: raw.scoreUs ?? raw.elysiumScore ?? "",
-    scoreThem: raw.scoreThem ?? raw.opponentScore ?? "",
-    date: raw.date || "",
-    competition: raw.competition || "",
-    game: raw.game || "EVA",
-    roster: raw.roster || null,
-    status: raw.status || "upcoming",
-    time: raw.time || "",
-    timezone: raw.timezone || "Europe/Paris",
-    platform: raw.platform || "",
-    watchUrl: raw.watchUrl || raw.stream || "",
-    maps,
-    mvp: raw.mvp || "",
-    vodUrl: raw.vodUrl || "",
-    players: Array.isArray(raw.players) ? raw.players : [],
-  };
-};
+const sanitizeMatchPlayers = (players = []) => (Array.isArray(players) ? players : [])
+  .map((p) => ({
+    playerId: p.playerId || p.id || "",
+    pseudo: p.pseudo || p.name || "",
+  }))
+  .filter((p) => p.playerId || p.pseudo);
+
+const normalizeImportedMatch = (raw) => ({
+  opponentName: raw.opponentName || raw.opponent || raw.adversaire || "",
+  opponentLogo: raw.opponentLogo || raw.logo || "",
+  scoreUs: raw.scoreUs ?? raw.elysiumScore ?? "",
+  scoreThem: raw.scoreThem ?? raw.opponentScore ?? "",
+  date: raw.date || "",
+  competition: raw.competition || "",
+  game: raw.game || "EVA",
+  roster: raw.roster || null,
+  status: raw.status || "upcoming",
+  time: raw.time || "",
+  timezone: raw.timezone || "Europe/Paris",
+  platform: raw.platform || "",
+  watchUrl: raw.watchUrl || raw.stream || "",
+  players: sanitizeMatchPlayers(raw.players),
+});
 
 export default function Admin() {
   const { user, displayName, isOfficial, role, loading } = useAuth();
@@ -120,11 +114,17 @@ export default function Admin() {
   const matchRosters = ROSTERS[form.game] || [];
   const onMatchGameChange = (e) => {
     const game = e.target.value;
+    setSelectedRosterPlayer("");
     setForm((f) => ({
       ...f,
       game,
       roster: (ROSTERS[game] || []).includes(f.roster) ? f.roster : "",
+      players: [],
     }));
+  };
+  const onMatchRosterChange = (e) => {
+    setSelectedRosterPlayer("");
+    setForm((f) => ({ ...f, roster: e.target.value, players: [] }));
   };
 
   const isBureau = isOfficial || role === "bureau";
@@ -172,6 +172,19 @@ export default function Admin() {
   }, [matches, matchQuery]);
   const matchTotalPages = Math.max(1, Math.ceil(filteredMatches.length / PAGE_SIZE));
   const pagedMatches = filteredMatches.slice((Math.min(matchPage, matchTotalPages) - 1) * PAGE_SIZE, Math.min(matchPage, matchTotalPages) * PAGE_SIZE);
+  const availableRosterPlayers = useMemo(() => {
+    const selectedIds = new Set((form.players || []).map((p) => p.playerId).filter(Boolean));
+    return rosterMembers
+      .filter((m) => m.status !== "staff")
+      .filter((m) => !selectedIds.has(m.id))
+      .filter((m) => !form.game || !m.game || m.game === form.game)
+      .filter((m) => {
+        const rosters = ROSTERS[form.game] || [];
+        if (!rosters.length || !form.roster) return true;
+        return (m.roster || "") === form.roster;
+      })
+      .sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
+  }, [rosterMembers, form.players, form.game, form.roster]);
 
   useEffect(() => { setUserPage(1); }, [userQuery]);
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
@@ -237,11 +250,7 @@ export default function Admin() {
       ...f,
       players: [
         ...(f.players || []),
-        {
-          playerId: member.id,
-          pseudo: member.pseudo || "Joueur",
-          games: [{}],
-        },
+        { playerId: member.id, pseudo: member.pseudo || "Joueur" },
       ],
     }));
     setSelectedRosterPlayer("");
@@ -255,53 +264,6 @@ export default function Admin() {
     });
   };
 
-  const addGameToPlayer = (pIndex) => {
-    setForm((f) => {
-      const next = [...(f.players || [])];
-      const target = { ...next[pIndex] };
-      target.games = [...(Array.isArray(target.games) ? target.games : [{}]), {}];
-      next[pIndex] = target;
-      return { ...f, players: next };
-    });
-  };
-
-  const addGameToAllPlayers = () => {
-    setForm((f) => {
-      const next = (f.players || []).map((p) => ({
-        ...p,
-        games: [...(Array.isArray(p.games) ? p.games : [{}]), {}],
-      }));
-      return { ...f, players: next };
-    });
-  };
-
-  const removeGameFromPlayer = (pIndex, gIndex) => {
-    setForm((f) => {
-      const next = [...(f.players || [])];
-      const target = { ...next[pIndex] };
-      const games = [...(Array.isArray(target.games) ? target.games : [{}])];
-      if (games.length > 1) {
-        games.splice(gIndex, 1);
-        target.games = games;
-        next[pIndex] = target;
-      }
-      return { ...f, players: next };
-    });
-  };
-
-  const updatePlayerStat = (pIndex, gIndex, key, val) => {
-    setForm((f) => {
-      const next = [...(f.players || [])];
-      const target = { ...next[pIndex] };
-      const games = [...(Array.isArray(target.games) ? target.games : [{}])];
-      const targetGame = { ...games[gIndex], [key]: val };
-      games[gIndex] = targetGame;
-      target.games = games;
-      next[pIndex] = target;
-      return { ...f, players: next };
-    });
-  };
-
   const addMatch = async (e) => {
     e.preventDefault();
     const rosterOptions = ROSTERS[form.game] || [];
@@ -310,35 +272,24 @@ export default function Admin() {
       toast.error(t("admin.match.rosterRequired"));
       return;
     }
-    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl) || !isUrl(form.vodUrl)) {
+    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl)) {
       toast.error("URL invalide (doit commencer par http:// ou https://)");
       return;
     }
     try {
-      const { mapsText, players, ...rest } = form;
-      const matchData = { ...rest, roster: rosterOptions.length > 0 ? roster : null };
-      const maps = mapsText.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
-        const [name, score = ""] = l.split("|").map((s) => s.trim());
-        const m = score.match(/(\d+)\s*-\s*(\d+)/);
-        return { name, us: m ? Number(m[1]) : null, them: m ? Number(m[2]) : null };
-      });
-      const sanitizedPlayers = (form.players || []).map((p) => {
-        const games = (Array.isArray(p.games) && p.games.length > 0 ? p.games : [{}]).map((g) => {
-          const cleanGame = {};
-          const fields = getStatFieldsForGame(form.game);
-          fields.forEach((f) => {
-            cleanGame[f.key] = Number(g[f.key]) || 0;
-          });
-          return cleanGame;
-        });
-        return {
-          playerId: p.playerId || "",
-          pseudo: p.pseudo || "",
-          games,
-        };
-      });
+      const matchData = {
+        ...form,
+        roster: rosterOptions.length > 0 ? roster : null,
+        players: sanitizeMatchPlayers(form.players),
+      };
       if (editMatchId) {
-        await updateDoc(doc(db, "matches", editMatchId), { ...matchData, maps, players: sanitizedPlayers, updatedAt: serverTimestamp() });
+        await updateDoc(doc(db, "matches", editMatchId), {
+          ...matchData,
+          maps: deleteField(),
+          mvp: deleteField(),
+          vodUrl: deleteField(),
+          updatedAt: serverTimestamp(),
+        });
         await logAdminAction({
           action: "match_updated",
           label: `${matchData.game} vs ${matchData.opponentName}`,
@@ -346,7 +297,7 @@ export default function Admin() {
           target: { collection: "matches", id: editMatchId },
         });
       } else {
-        const ref = await addDoc(collection(db, "matches"), { ...matchData, maps, players: sanitizedPlayers, createdAt: serverTimestamp() });
+        const ref = await addDoc(collection(db, "matches"), { ...matchData, createdAt: serverTimestamp() });
         await logAdminAction({
           action: "match_created",
           label: `${matchData.game} vs ${matchData.opponentName}`,
@@ -365,8 +316,7 @@ export default function Admin() {
       opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
       date: m.date || "", competition: m.competition || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
       time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
-      mapsText: stringifyMatchMaps(m.maps || []), mvp: m.mvp || "", vodUrl: m.vodUrl || "",
-      players: Array.isArray(m.players) ? JSON.parse(JSON.stringify(m.players)) : [],
+      players: sanitizeMatchPlayers(m.players),
     });
   };
 
@@ -418,7 +368,16 @@ export default function Admin() {
 
   const markMatchUpcoming = async (match) => {
     try {
-      await updateDoc(doc(db, "matches", match.id), { status: "upcoming", scoreUs: "", scoreThem: "", maps: [], mvp: "", vodUrl: "", updatedAt: serverTimestamp() });
+      await updateDoc(doc(db, "matches", match.id), {
+        status: "upcoming",
+        scoreUs: "",
+        scoreThem: "",
+        maps: deleteField(),
+        mvp: deleteField(),
+        vodUrl: deleteField(),
+        players: deleteField(),
+        updatedAt: serverTimestamp(),
+      });
       await logAdminAction({
         action: "match_marked_upcoming",
         label: `${match.game || ""} vs ${match.opponentName}`,
@@ -592,7 +551,7 @@ export default function Admin() {
               {matchRosters.length > 0 && (
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.roster")}</label>
-                  <select value={form.roster || ""} onChange={set("roster")} required className={inputCls} data-testid="admin-match-roster">
+                  <select value={form.roster || ""} onChange={onMatchRosterChange} required className={inputCls} data-testid="admin-match-roster">
                     <option value="">{t("admin.roster.none")}</option>
                     {matchRosters.map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
                   </select>
@@ -669,43 +628,15 @@ export default function Admin() {
                   )}
                 </div>
               )}
-              {form.status === "finished" && (
-                <>
-                  <div>
-                    <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.maps")}</label>
-                    <textarea value={form.mapsText} onChange={set("mapsText")} rows={3} placeholder={"Artefact | 13-7\nPolaris | 10-13"} className={inputCls} data-testid="admin-match-maps" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.mvp")}</label>
-                      <input value={form.mvp} onChange={set("mvp")} className={inputCls} data-testid="admin-match-mvp" />
-                    </div>
-                    <div>
-                      <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.vod")}</label>
-                      <input value={form.vodUrl} onChange={set("vodUrl")} placeholder="https://..." className={inputCls} data-testid="admin-match-vod" />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Joueurs & Statistiques section */}
-              <div className="border-t border-white/10 pt-4 mt-4 space-y-4" data-testid="admin-match-players-section">
-                <div className="flex items-center justify-between">
+              <div className="border-t border-white/10 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
+                <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">
                     {t("admin.match.players")}
                   </label>
-                  {(form.players || []).length > 0 && (
-                    <button
-                      type="button"
-                      onClick={addGameToAllPlayers}
-                      className="text-[11px] text-[#D8CA82] uppercase tracking-wider hover:underline"
-                      data-testid="admin-match-add-game-all"
-                    >
-                      {t("admin.match.addGameAll")}
-                    </button>
-                  )}
+                  <p className="text-[11px] text-[#f7f7f7]/40 mt-1">
+                    {t("admin.match.playersHint")}
+                  </p>
                 </div>
-
                 <div className="flex gap-2">
                   <select
                     value={selectedRosterPlayer}
@@ -714,14 +645,11 @@ export default function Admin() {
                     data-testid="admin-match-player-select"
                   >
                     <option value="">{t("admin.match.selectPlayer")}</option>
-                    {rosterMembers
-                      .filter((m) => !(form.players || []).some((p) => p.playerId === m.id))
-                      .sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""))
-                      .map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.pseudo} ({m.game || "EVA"}{m.roster ? ` · ${m.roster}` : ""})
-                        </option>
-                      ))}
+                    {availableRosterPlayers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.pseudo} ({m.game || "EVA"}{m.roster ? ` · ${m.roster}` : ""})
+                      </option>
+                    ))}
                   </select>
                   <button
                     type="button"
@@ -733,83 +661,27 @@ export default function Admin() {
                     +
                   </button>
                 </div>
-
-                {(form.players || []).map((p, pIndex) => {
-                  const statFields = getStatFieldsForGame(form.game);
-                  const games = Array.isArray(p.games) && p.games.length > 0 ? p.games : [{}];
-
-                  return (
-                    <div
-                      key={p.playerId || pIndex}
-                      className="border border-white/10 bg-[#141414] p-4 space-y-3"
-                      data-testid={`admin-match-player-card-${p.playerId}`}
-                    >
-                      <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                        <span className="font-display font-bold text-sm text-[#f7f7f7]">
-                          {p.pseudo}
-                        </span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => addGameToPlayer(pIndex)}
-                            className="text-xs text-[#D8CA82] hover:underline"
-                            data-testid={`admin-match-add-game-${p.playerId}`}
-                          >
-                            {t("admin.match.addGame")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removePlayerFromMatch(pIndex)}
-                            className="text-xs text-red-400 hover:underline"
-                            data-testid={`admin-match-remove-player-${p.playerId}`}
-                          >
-                            {t("admin.match.removePlayer")}
-                          </button>
-                        </div>
-                      </div>
-
-                      {games.map((g, gIndex) => (
-                        <div
-                          key={gIndex}
-                          className="bg-[#111111] border border-white/5 p-2 space-y-2"
-                          data-testid={`admin-match-player-${p.playerId}-game-${gIndex}`}
+                {(form.players || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2" data-testid="admin-match-players-list">
+                    {(form.players || []).map((p, pIndex) => (
+                      <span
+                        key={p.playerId || `${p.pseudo}-${pIndex}`}
+                        className="inline-flex items-center gap-2 border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]"
+                        data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}
+                      >
+                        {p.pseudo || "Joueur"}
+                        <button
+                          type="button"
+                          onClick={() => removePlayerFromMatch(pIndex)}
+                          className="text-red-300/80 hover:text-red-300"
+                          aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] uppercase tracking-wider text-[#f7f7f7]/60">
-                              {t("admin.match.gameIndex")} {gIndex + 1}
-                            </span>
-                            {games.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeGameFromPlayer(pIndex, gIndex)}
-                                className="text-[11px] text-red-400/80 hover:text-red-400"
-                              >
-                                {t("admin.match.removeGame")}
-                              </button>
-                            )}
-                          </div>
-                          <div className={`grid ${statFields.length === 3 ? "grid-cols-3" : "grid-cols-4"} gap-2`}>
-                            {statFields.map((f) => (
-                              <div key={f.key}>
-                                <label className="text-[10px] uppercase tracking-wider text-[#f7f7f7]/40 block mb-1">
-                                  {f.label}
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={g[f.key] ?? ""}
-                                  onChange={(e) => updatePlayerStat(pIndex, gIndex, f.key, e.target.value)}
-                                  className="w-full bg-[#1A1A1A] border border-white/10 px-2 py-1 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
-                                  data-testid={`stat-input-${p.playerId}-${gIndex}-${f.key}`}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button type="submit" data-testid="admin-match-submit"

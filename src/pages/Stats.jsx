@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { GAMES, computePlayerLeaderboard, getPlayerOfTheMonth, getPrimaryStatKey, getGameShortLabel } from "../lib/constants";
+import { GAMES } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
-import { PlayerPhoto } from "./Team";
-import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull, Crown } from "lucide-react";
+import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -32,7 +30,6 @@ const getPeriodStart = (period) => {
 export default function Stats() {
   const { t } = useLang();
   const [matches, setMatches] = useState(null);
-  const [roster, setRoster] = useState([]);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [game, setGame] = useState("all");
@@ -40,24 +37,12 @@ export default function Stats() {
 
   useEffect(() => {
     setError(false); setMatches(null);
-    const u1 = onSnapshot(collection(db, "matches"), (snap) => {
+    return onSnapshot(collection(db, "matches"), (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && m.status !== "live");
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, (e) => { console.error(e); setError(true); });
-    const u2 = onSnapshot(collection(db, "roster"), (snap) => setRoster(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
-    return () => { u1(); u2(); };
   }, [retryKey]);
-
-  // Leaderboard par joueur (alimenté par les stats des matchs)
-  const leaderboard = useMemo(() => {
-    if (!matches || !roster) return [];
-    let list = computePlayerLeaderboard(roster, matches);
-    if (game !== "all") list = list.filter((p) => p.game === game);
-    return list;
-  }, [matches, roster, game]);
-
-  const playerOfMonth = useMemo(() => getPlayerOfTheMonth(roster || [], matches || []), [roster, matches]);
 
   const filtered = useMemo(() => {
     if (!matches) return [];
@@ -71,56 +56,57 @@ export default function Stats() {
   const stats = useMemo(() => {
     const total = filtered.length;
     if (total === 0) return null;
-    const wins = filtered.filter((m) => Number(m.scoreUs) > Number(m.scoreThem)).length;
-    const losses = filtered.filter((m) => Number(m.scoreUs) < Number(m.scoreThem)).length;
+
+    const getResultCode = (m) => {
+      const us = Number(m.scoreUs);
+      const them = Number(m.scoreThem);
+      if (us > them) return "W";
+      if (us < them) return "L";
+      return "D";
+    };
+
+    const wins = filtered.filter((m) => getResultCode(m) === "W").length;
+    const losses = filtered.filter((m) => getResultCode(m) === "L").length;
     const draws = total - wins - losses;
     const winRate = ((wins / total) * 100).toFixed(1);
 
-    // Maps
-    let mapsWon = 0, mapsLost = 0;
-    filtered.forEach((m) => {
-      (m.maps || []).forEach((map) => {
-        if (map.name) {
-          mapsWon += Number(map.us) || 0;
-          mapsLost += Number(map.them) || 0;
-        }
-      });
-    });
-
     // Avg score
-    const avgUs = (filtered.reduce((s, m) => s + (Number(m.scoreUs) || 0), 0) / total).toFixed(1);
-    const avgThem = (filtered.reduce((s, m) => s + (Number(m.scoreThem) || 0), 0) / total).toFixed(1);
+    const avgUs = (filtered.reduce((sum, m) => sum + (Number(m.scoreUs) || 0), 0) / total).toFixed(1);
+    const avgThem = (filtered.reduce((sum, m) => sum + (Number(m.scoreThem) || 0), 0) / total).toFixed(1);
 
     // Current streak (from most recent)
     let currentStreak = 0;
     let currentType = "";
     for (const m of filtered) {
-      const r = Number(m.scoreUs) > Number(m.scoreThem) ? "W" : "L";
-      if (currentType === "") currentType = r;
-      if (r === currentType) currentStreak++;
+      const resultType = getResultCode(m);
+      if (currentType === "") currentType = resultType;
+      if (resultType === currentType) currentStreak++;
       else break;
     }
 
-    // Best streak
+    // Best winning streak
     let bestStreak = 0;
     let streak = 0;
-    let streakType = "";
     for (let i = filtered.length - 1; i >= 0; i--) {
-      const m = filtered[i];
-      const r = Number(m.scoreUs) > Number(m.scoreThem) ? "W" : "L";
-      if (r === streakType) { streak++; }
-      else { streakType = r; streak = 1; }
-      if (streakType === "W" && streak > bestStreak) bestStreak = streak;
+      const resultType = getResultCode(filtered[i]);
+      if (resultType === "W") {
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+      } else {
+        streak = 0;
+      }
     }
 
     // Per game breakdown
     const perGame = GAMES.map((g) => {
       const gm = filtered.filter((m) => m.game === g);
-      const gw = gm.filter((m) => Number(m.scoreUs) > Number(m.scoreThem)).length;
-      return { game: g, total: gm.length, wins: gw, winRate: gm.length ? ((gw / gm.length) * 100).toFixed(1) : "0.0" };
+      const gw = gm.filter((m) => getResultCode(m) === "W").length;
+      const gl = gm.filter((m) => getResultCode(m) === "L").length;
+      const gd = gm.length - gw - gl;
+      return { game: g, total: gm.length, wins: gw, losses: gl, draws: gd, winRate: gm.length ? ((gw / gm.length) * 100).toFixed(1) : "0.0" };
     });
 
-    return { total, wins, losses, draws, winRate, mapsWon, mapsLost, avgUs, avgThem, currentStreak, currentType, bestStreak, perGame };
+    return { total, wins, losses, draws, winRate, avgUs, avgThem, currentStreak, currentType, bestStreak, perGame };
   }, [filtered]);
 
   return (
@@ -166,7 +152,7 @@ export default function Stats() {
         ) : (
           <>
             {/* KPI Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-12" data-testid="stats-kpis">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12" data-testid="stats-kpis">
               <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 p-5 text-center">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-[#D8CA82]/80 mb-1">{t("stats.winRate")}</p>
                 <p className="font-display font-black text-3xl text-[#D8CA82]">{stats.winRate}%</p>
@@ -188,12 +174,8 @@ export default function Stats() {
                 <p className="font-display font-black text-3xl text-red-300">{stats.losses}</p>
               </div>
               <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.mapsWon")}</p>
-                <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.mapsWon}</p>
-              </div>
-              <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.mapsLost")}</p>
-                <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.mapsLost}</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.draws")}</p>
+                <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.draws}</p>
               </div>
             </div>
 
@@ -207,11 +189,13 @@ export default function Stats() {
                 <p className="font-display font-black text-2xl flex items-center gap-2">
                   {stats.currentType === "W" ? (
                     <Trophy size={20} className="text-emerald-300" aria-hidden="true" />
-                  ) : (
+                  ) : stats.currentType === "L" ? (
                     <Skull size={20} className="text-red-300" aria-hidden="true" />
+                  ) : (
+                    <span className="text-[#c8c8c8]" aria-hidden="true">=</span>
                   )}
-                  <span className={stats.currentType === "W" ? "text-emerald-300" : "text-red-300"}>
-                    {stats.currentStreak} {stats.currentType === "W" ? t("stats.series.wins") : t("stats.series.losses")}
+                  <span className={stats.currentType === "W" ? "text-emerald-300" : stats.currentType === "L" ? "text-red-300" : "text-[#c8c8c8]"}>
+                    {stats.currentStreak} {stats.currentType === "W" ? t("stats.series.wins") : stats.currentType === "L" ? t("stats.series.losses") : t("stats.draws").toLowerCase()}
                   </span>
                 </p>
                 <div className="mt-4 pt-4 border-t border-white/10">
@@ -259,109 +243,10 @@ export default function Stats() {
                       </div>
                       <span className="font-display font-bold text-[#D8CA82]">{pg.winRate}%</span>
                     </div>
-                    <p className="text-xs text-[#f7f7f7]/40 mt-2">{pg.wins}W – {pg.total - pg.wins}L</p>
+                    <p className="text-xs text-[#f7f7f7]/40 mt-2">{pg.wins}W – {pg.losses}L{pg.draws ? ` – ${pg.draws}D` : ""}</p>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Joueur du mois */}
-            {playerOfMonth && (
-              <div className="mb-12 border border-[#D8CA82]/40 bg-gradient-to-br from-[#D8CA82]/10 to-transparent p-6" data-testid="stats-player-of-month">
-                <div className="flex items-center gap-3 mb-6">
-                  <Crown size={18} className="text-[#D8CA82]" aria-hidden="true" />
-                  <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.playerOfMonth")}</h3>
-                </div>
-                <div className="flex items-center gap-6 flex-wrap">
-                  <PlayerPhoto src={playerOfMonth.photo} alt={playerOfMonth.pseudo} className="h-24 w-24 border border-[#D8CA82]/40" />
-                  <div className="flex-1 min-w-[200px]">
-                    <p className="font-display font-black text-2xl text-[#D8CA82] uppercase">{playerOfMonth.pseudo}</p>
-                    <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50 mt-1">
-                      {playerOfMonth.game}{playerOfMonth.roster ? ` · ${playerOfMonth.roster}` : ""}{playerOfMonth.ingameRole ? ` — ${playerOfMonth.ingameRole}` : ""}
-                    </p>
-                    <div className="flex flex-wrap gap-x-8 gap-y-2 mt-4">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">{t("stats.playerWinRate")}</p>
-                        <p className="font-display font-bold text-xl text-emerald-300">{playerOfMonth.winRate}%</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">{getPrimaryStatKey(playerOfMonth.game) === "kills" ? t("stats.kd") : t("stats.goalsPerGame")}</p>
-                        <p className="font-display font-bold text-xl text-[#D8CA82]">{playerOfMonth.ratio}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">{t("stats.playerGames")}</p>
-                        <p className="font-display font-bold text-xl text-[#f7f7f7]">{playerOfMonth.matchesPlayed}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40">W/L</p>
-                        <p className="font-display font-bold text-xl text-[#f7f7f7]">
-                          <span className="text-emerald-300">{playerOfMonth.wins}</span> / <span className="text-red-300">{playerOfMonth.losses}</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <Link to={`/equipe/${playerOfMonth.id}`} className="text-xs font-display uppercase tracking-widest text-[#D8CA82] hover:underline border border-[#D8CA82]/40 px-4 py-2 hover:bg-[#D8CA82]/10 transition-colors">
-                    {t("team.view")} →
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {/* Leaderboard joueurs */}
-            <div className="mb-12" data-testid="stats-leaderboard">
-              <div className="flex items-center gap-3 mb-2">
-                <Trophy className="text-[#D8CA82]" size={16} />
-                <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.leaderboard")}</h3>
-              </div>
-              <p className="text-xs text-[#f7f7f7]/40 mb-6">{t("stats.leaderboard.sub")}</p>
-              {leaderboard.length === 0 ? (
-                <p className="text-[#f7f7f7]/40 text-sm" data-testid="stats-leaderboard-empty">{t("stats.empty")}</p>
-              ) : (
-                <div className="border border-white/10 bg-[#141414] overflow-x-auto" data-testid="stats-leaderboard-table">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-widest text-[#f7f7f7]/40">
-                        <th className="px-4 py-3">{t("stats.rank")}</th>
-                        <th className="px-4 py-3">Joueur</th>
-                        <th className="px-4 py-3 text-center">{t("stats.playerGames")}</th>
-                        <th className="px-4 py-3 text-center">W</th>
-                        <th className="px-4 py-3 text-center">L</th>
-                        <th className="px-4 py-3 text-center">{t("stats.playerWinRate")}</th>
-                        <th className="px-4 py-3 text-center">{getPrimaryStatKey(game !== "all" ? game : "EVA") === "kills" ? t("stats.kd") : t("stats.goalsPerGame")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {leaderboard.slice(0, 15).map((p, i) => (
-                        <tr key={p.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`stats-leaderboard-row-${p.id}`}>
-                          <td className="px-4 py-2.5">
-                            <span className={`font-display font-black ${i === 0 ? "text-[#D8CA82] text-lg" : i < 3 ? "text-[#f7f7f7] font-bold" : "text-[#f7f7f7]/40"}`}>
-                              {i === 0 ? <Crown size={14} className="inline -mt-0.5 mr-1 text-[#D8CA82]" aria-hidden="true" /> : null}
-                              {i + 1}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <Link to={`/equipe/${p.id}`} className="flex items-center gap-3 group">
-                              <PlayerPhoto src={p.photo} alt={p.pseudo} className="h-9 w-9" />
-                              <span className="font-display font-bold text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{p.pseudo}</span>
-                              <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{getGameShortLabel(p.game)}</span>
-                            </Link>
-                          </td>
-                          <td className="px-4 py-2.5 text-center text-[#f7f7f7]/60">{p.matchesPlayed}</td>
-                          <td className="px-4 py-2.5 text-center text-emerald-300 font-bold">{p.wins}</td>
-                          <td className="px-4 py-2.5 text-center text-red-300 font-bold">{p.losses}</td>
-                          <td className="px-4 py-2.5 text-center">
-                            <span className="font-display font-bold text-[#D8CA82]">{p.winRate}%</span>
-                            <div className="w-16 mx-auto mt-1 h-1 bg-white/10 overflow-hidden">
-                              <div className="h-full bg-[#D8CA82]" style={{ width: `${p.winRate}%` }} />
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-display font-bold text-[#f7f7f7]">{p.ratio}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
 
             {/* Match History */}

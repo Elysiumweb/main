@@ -6,12 +6,12 @@ import { ArrowLeft, Share2, BarChart3, History, Trophy } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { usePlayerSEO } from "../lib/useSEO";
-import { LoadingState, ErrorState, EmptyState } from "../components/States";
+import { LoadingState, ErrorState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
-import { computePlayerStats, isPlayerInMatch, gameHasRosters } from "../lib/constants";
+import { isPlayerInMatch, gameHasRosters } from "../lib/constants";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -55,8 +55,6 @@ export default function PlayerDetail() {
     </div>
   );
 
-  const computedStats = computePlayerStats(player, matches);
-  const manualStats = parseStats(player.statsText);
   const palmares = parseStats(player.palmares);
   const equipment = parseStats(player.equipment);
   const previousTeams = parseStats(player.previousTeams);
@@ -66,23 +64,6 @@ export default function PlayerDetail() {
     const dt = new Date(d);
     return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   };
-
-  let stats = [];
-  if (computedStats && computedStats.length > 0) {
-    stats = [...computedStats];
-    const computedLabels = new Set(computedStats.map((s) => (s.label || "").toLowerCase()));
-    manualStats.forEach((s) => {
-      if (!computedLabels.has((s.label || "").toLowerCase())) {
-        stats.push(s);
-      }
-    });
-    const gamesPlayedLabel = t("playerpage.gamesPlayed");
-    if (computedStats[0]?.games && !computedLabels.has(gamesPlayedLabel.toLowerCase())) {
-      stats.push({ label: gamesPlayedLabel, value: computedStats[0].games.toString() });
-    }
-  } else {
-    stats = manualStats;
-  }
 
   const history = matches.filter((m) => {
     if (m.players && Array.isArray(m.players) && m.players.length > 0) {
@@ -143,38 +124,18 @@ export default function PlayerDetail() {
           </div>
         </div>
       </section>
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-5">
-          <div className="flex items-center gap-3 mb-6">
-            <BarChart3 size={16} className="text-[#D8CA82]" />
-            <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.stats")}</h2>
-          </div>
-          {stats.length === 0 ? (
-            <p className="text-[#f7f7f7]/40" data-testid="player-no-stats">{t("playerpage.noStats")}</p>
-          ) : (
-            <div className="border border-white/10 bg-[#1A1A1A] divide-y divide-white/5" data-testid="player-stats">
-              {stats.map((s, i) => (
-                <div key={i} className="flex justify-between px-5 py-3">
-                  <span className="text-sm text-[#f7f7f7]/60">{s.label}</span>
-                  <span className="text-sm font-display font-bold text-[#D8CA82]">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
+        <div className="flex items-center gap-3 mb-6">
+          <History size={16} className="text-[#D8CA82]" />
+          <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.history")}</h2>
         </div>
-        <div className="lg:col-span-7">
-          <div className="flex items-center gap-3 mb-6">
-            <History size={16} className="text-[#D8CA82]" />
-            <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.history")}</h2>
+        {history.length === 0 ? (
+          <p className="text-[#f7f7f7]/40" data-testid="player-no-history">{t("playerpage.noHistory")}</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="player-history">
+            {history.map((m) => <MatchCard key={m.id} match={m} />)}
           </div>
-          {history.length === 0 ? (
-            <p className="text-[#f7f7f7]/40" data-testid="player-no-history">{t("playerpage.noHistory")}</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-4" data-testid="player-history">
-              {history.map((m) => <MatchCard key={m.id} match={m} />)}
-            </div>
-          )}
-        </div>
+        )}
       </section>
 
       {/* Palmarès personnel / Équipement / Carrière */}
