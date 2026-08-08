@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
-import { updateProfile, sendEmailVerification, sendPasswordResetEmail, deleteUser } from "firebase/auth";
-import { doc, setDoc, deleteDoc } from "firebase/firestore";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
+import { updateProfile, sendEmailVerification, sendPasswordResetEmail, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { collection, doc, getDocs, query, setDoc, where, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { BadgeCheck, MailWarning, KeyRound, Trash2 } from "lucide-react";
+import { BadgeCheck, MailWarning, KeyRound, Trash2, Download } from "lucide-react";
 import { auth, db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { gameHasRosters } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { ImageUpload } from "../components/ImageUpload";
+import { MfaTotpPanel } from "../components/MfaTotpPanel";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -21,14 +22,18 @@ export default function Profile() {
   const { user, profile, loading, role, game, roster, isOfficial } = useAuth();
   const { t } = useLang();
   const navigate = useNavigate();
+  const location = useLocation();
   const [pseudo, setPseudo] = useState(profile?.displayName || user?.displayName || "");
   const [photo, setPhoto] = useState(profile?.photoURL || "");
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: "", next: "", confirm: "" });
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
   if (!user && deleting) return <Navigate to="/" replace />;
-  if (!user) return <Navigate to="/connexion" replace />;
+  if (!user) return <Navigate to="/connexion" replace state={{ from: location }} />;
 
   const isPassword = user.providerData?.some((p) => p.providerId === "password");
 
@@ -53,12 +58,76 @@ export default function Profile() {
     catch { toast.error(t("common.error")); }
   };
 
+  const changePassword = async (e) => {
+    e.preventDefault();
+    if (passwordForm.next.length < 8) { toast.error("Le nouveau mot de passe doit contenir au moins 8 caractères."); return; }
+    if (passwordForm.next !== passwordForm.confirm) { toast.error("Les mots de passe ne correspondent pas."); return; }
+    setPasswordBusy(true);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, passwordForm.current);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, passwordForm.next);
+      setPasswordForm({ current: "", next: "", confirm: "" });
+      toast.success("Mot de passe mis à jour.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.code === "auth/wrong-password" || err.code === "auth/invalid-credential" ? "Ancien mot de passe incorrect." : t("common.error"));
+    }
+    setPasswordBusy(false);
+  };
+
+  const toJson = (value) => {
+    if (!value) return value;
+    if (value.toDate) return value.toDate().toISOString();
+    if (Array.isArray(value)) return value.map(toJson);
+    if (typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, toJson(v)]));
+    return value;
+  };
+
+  const exportAccountData = async () => {
+    setExporting(true);
+    try {
+      const supportSnap = await getDocs(query(collection(db, "supportThreads"), where("uid", "==", user.uid)));
+      const recruitSnap = await getDocs(query(collection(db, "recruitThreads"), where("uid", "==", user.uid)));
+      const collectThreads = async (snap, collectionName) => Promise.all(snap.docs.map(async (d) => {
+        const messages = await getDocs(collection(db, collectionName, d.id, "messages"));
+        return { id: d.id, ...toJson(d.data()), messages: messages.docs.map((m) => ({ id: m.id, ...toJson(m.data()) })) };
+      }));
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        account: { uid: user.uid, email: user.email, displayName: user.displayName, emailVerified: user.emailVerified, providers: user.providerData.map((p) => p.providerId) },
+        profile: toJson(profile || {}),
+        supportTickets: await collectThreads(supportSnap, "supportThreads"),
+        applications: await collectThreads(recruitSnap, "recruitThreads"),
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `elysium-donnees-${user.uid}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Export JSON généré.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Export impossible pour le moment.");
+    }
+    setExporting(false);
+  };
+
   const deleteAccount = async () => {
     setDeleting(true);
     try {
-      try { await deleteDoc(doc(db, "users", user.uid)); } catch (e) { console.error("users doc delete", e); }
+      await setDoc(doc(db, "accountDeletionRequests", user.uid), {
+        uid: user.uid,
+        email: user.email || "",
+        status: "requested",
+        requestedAt: serverTimestamp(),
+      }, { merge: true });
       await deleteUser(auth.currentUser);
-      toast.success(t("common.saved"));
+      toast.success("Suppression du compte lancée. Les données associées vont être purgées.");
       navigate("/", { replace: true });
     } catch (err) {
       console.error(err);
@@ -115,11 +184,53 @@ export default function Profile() {
           </button>
         </form>
 
-        {isPassword && (
-          <button onClick={resetPassword} data-testid="profile-reset-password-btn"
-            className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-            <KeyRound size={14} aria-hidden="true" /> {t("profile.resetPassword")}
+        <MfaTotpPanel />
+
+        <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-4" data-testid="profile-export-panel">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Exporter mes données</p>
+          <p className="text-xs text-[#c8c8c8] leading-relaxed">Téléchargez un fichier JSON contenant votre profil, vos tickets support et vos candidatures.</p>
+          <button type="button" onClick={exportAccountData} disabled={exporting} data-testid="profile-export-data-btn"
+            className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 inline-flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors disabled:opacity-50">
+            <Download size={14} aria-hidden="true" /> Exporter en JSON
           </button>
+        </div>
+
+        {isPassword && (
+          <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-5" data-testid="profile-password-panel">
+            <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Changer mon mot de passe</p>
+            <form onSubmit={changePassword} className="space-y-4" data-testid="profile-password-form">
+              <div>
+                <label htmlFor="profile-current-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Ancien mot de passe</label>
+                <input id="profile-current-password" type="password" value={passwordForm.current} onChange={(e) => setPasswordForm((f) => ({ ...f, current: e.target.value }))} required autoComplete="current-password" className={inputCls} data-testid="profile-current-password" />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="profile-new-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Nouveau mot de passe</label>
+                  <input id="profile-new-password" type="password" value={passwordForm.next} onChange={(e) => setPasswordForm((f) => ({ ...f, next: e.target.value }))} required minLength={8} autoComplete="new-password" className={inputCls} data-testid="profile-new-password" />
+                </div>
+                <div>
+                  <label htmlFor="profile-confirm-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Confirmer</label>
+                  <input id="profile-confirm-password" type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))} required minLength={8} autoComplete="new-password" className={inputCls} data-testid="profile-confirm-password" />
+                </div>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <button type="submit" disabled={passwordBusy} data-testid="profile-change-password-btn" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50 inline-flex items-center gap-2">
+                  <KeyRound size={14} aria-hidden="true" /> Mettre à jour
+                </button>
+                <button type="button" onClick={resetPassword} data-testid="profile-reset-password-btn"
+                  className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                  Envoyer un lien de réinitialisation
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {deleting && (
+          <div className="border border-orange-300/40 bg-orange-300/5 p-6" data-testid="profile-deletion-pending">
+            <p className="font-display text-sm uppercase tracking-[0.3em] text-orange-200 mb-2">Suppression en cours</p>
+            <p className="text-xs text-[#c8c8c8]">Votre compte Auth est en cours de suppression. Une Cloud Function purge ensuite les tickets, candidatures, notes, notifications et messages associés.</p>
+          </div>
         )}
 
         <div className="border border-red-300/40 bg-[#1A1A1A] p-6">

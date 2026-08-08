@@ -1,0 +1,129 @@
+import { useState } from "react";
+import { multiFactor, TotpMultiFactorGenerator } from "firebase/auth";
+import { toast } from "sonner";
+import { ShieldCheck } from "lucide-react";
+import { auth } from "../lib/firebase";
+import { useAuth } from "../context/AuthContext";
+
+const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+
+export const MfaTotpPanel = () => {
+  const { user, mfaEnrolled, requiresMfa } = useAuth();
+  const [secret, setSecret] = useState(null);
+  const [qrUrl, setQrUrl] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const enrolledFactors = user ? (multiFactor(user).enrolledFactors || []) : [];
+
+  if (!user) return null;
+
+  const startEnrollment = async () => {
+    setBusy(true);
+    try {
+      const session = await multiFactor(user).getSession();
+      const nextSecret = await TotpMultiFactorGenerator.generateSecret(session);
+      setSecret(nextSecret);
+      setQrUrl(nextSecret.generateQrCodeUrl(user.email || user.uid, "Elysium Esport"));
+    } catch (err) {
+      console.error(err);
+      toast.error(err.code === "auth/requires-recent-login" ? "Reconnectez-vous puis réessayez." : "Impossible de préparer la double authentification.");
+    }
+    setBusy(false);
+  };
+
+  const confirmEnrollment = async (e) => {
+    e.preventDefault();
+    if (!secret) return;
+    setBusy(true);
+    try {
+      const assertion = TotpMultiFactorGenerator.assertionForEnrollment(secret, code.trim());
+      await multiFactor(user).enroll(assertion, "Application d'authentification");
+      await auth.currentUser.reload();
+      window.dispatchEvent(new Event("elysium:mfa-changed"));
+      setSecret(null);
+      setQrUrl("");
+      setCode("");
+      toast.success("Double authentification activée.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.code === "auth/requires-recent-login" ? "Reconnectez-vous puis réessayez." : "Code invalide ou expiré.");
+    }
+    setBusy(false);
+  };
+
+  const removeFactor = async (factor) => {
+    setBusy(true);
+    try {
+      await multiFactor(user).unenroll(factor);
+      await auth.currentUser.reload();
+      window.dispatchEvent(new Event("elysium:mfa-changed"));
+      toast.success("Second facteur retiré.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.code === "auth/requires-recent-login" ? "Reconnectez-vous puis réessayez." : "Impossible de retirer ce second facteur.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className={`border ${requiresMfa && !mfaEnrolled ? "border-orange-300/50 bg-orange-300/5" : "border-white/10 bg-[#1A1A1A]"} p-6 space-y-4`} data-testid="profile-mfa-panel">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="text-[#D8CA82] shrink-0" size={20} aria-hidden="true" />
+        <div>
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Double authentification (TOTP)</p>
+          <p className="text-xs text-[#c8c8c8] mt-2 leading-relaxed">
+            {requiresMfa
+              ? "Obligatoire pour les comptes officiels et bureau. Utilisez Google Authenticator, 1Password, Bitwarden ou une application TOTP compatible."
+              : "Ajoutez un code temporaire depuis une application d'authentification pour renforcer votre compte."}
+          </p>
+        </div>
+      </div>
+
+      {mfaEnrolled && (
+        <div className="space-y-2" data-testid="profile-mfa-enabled">
+          {enrolledFactors.map((factor) => (
+            <div key={factor.uid} className="flex items-center justify-between gap-3 border border-white/10 bg-[#111111] px-3 py-2">
+              <span className="text-sm text-emerald-300">Activée · {factor.displayName || "TOTP"}</span>
+              <button type="button" disabled={busy} onClick={() => removeFactor(factor)} className="text-xs uppercase tracking-widest text-red-300 hover:text-red-200 disabled:opacity-50">
+                Retirer
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!secret && !mfaEnrolled && (
+        <button type="button" onClick={startEnrollment} disabled={busy} data-testid="profile-mfa-start"
+          className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-3 hover:bg-[#D8CA82]/10 disabled:opacity-50">
+          Activer la 2FA
+        </button>
+      )}
+
+      {secret && (
+        <form onSubmit={confirmEnrollment} className="space-y-4" data-testid="profile-mfa-enroll-form">
+          <div className="grid sm:grid-cols-[160px,1fr] gap-4 items-start">
+            <img src={`https://quickchart.io/qr?size=160&text=${encodeURIComponent(qrUrl)}`} alt="QR code TOTP" className="border border-white/10 bg-white p-2" />
+            <div className="space-y-3">
+              <p className="text-xs text-[#c8c8c8] leading-relaxed">Scannez le QR code ou copiez cette clé secrète :</p>
+              <code className="block border border-white/10 bg-[#111111] p-3 text-xs text-[#f7f7f7] break-all">{secret.secretKey}</code>
+              <a href={qrUrl} className="text-xs text-[#D8CA82] hover:underline">Ouvrir dans une application compatible</a>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="profile-mfa-code" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Code à 6 chiffres</label>
+            <input id="profile-mfa-code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" required minLength={6} maxLength={6} className={inputCls} data-testid="profile-mfa-code" />
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <button type="submit" disabled={busy || code.length < 6} data-testid="profile-mfa-confirm" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
+              Confirmer
+            </button>
+            <button type="button" onClick={() => { setSecret(null); setQrUrl(""); setCode(""); }} className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3">
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+};

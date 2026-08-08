@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { collection, onSnapshot, query, where, doc, updateDoc } from "firebase/firestore";
 import { MessageSquare } from "lucide-react";
 import { db } from "../lib/firebase";
@@ -92,10 +92,11 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
 
 export const LoginPrompt = ({ messageKey, prefix }) => {
   const { t } = useLang();
+  const location = useLocation();
   return (
     <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-10 text-center" data-testid={`${prefix}-login-prompt`}>
       <p className="text-[#f7f7f7]/70 mb-6">{t(messageKey)}</p>
-      <Link to="/connexion" data-testid={`${prefix}-login-link`}
+      <Link to="/connexion" state={{ from: location }} data-testid={`${prefix}-login-link`}
         className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 inline-block hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
         {t("nav.login")}
       </Link>

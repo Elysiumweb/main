@@ -44,15 +44,21 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Push notification handler
+// Push notification handler (Firebase Cloud Messaging / Web Push).
 self.addEventListener("push", (event) => {
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || "Elysium";
+  let raw = {};
+  try { raw = event.data ? event.data.json() : {}; }
+  catch { raw = { data: { body: event.data?.text?.() || "" } }; }
+
+  const payload = raw.notification || raw.data || raw;
+  const data = raw.data || payload || {};
+  const title = payload.title || data.title || "Elysium";
+  const url = data.url || raw.fcmOptions?.link || raw.webpush?.fcmOptions?.link || "/";
   const options = {
-    body: data.body || "",
-    icon: "/brand/logo-icon-gold.png",
+    body: payload.body || data.body || "",
+    icon: payload.icon || "/brand/logo-icon-gold.png",
     badge: "/brand/logo-icon-gold.png",
-    data: { url: data.url || "/" },
+    data: { url },
     vibrate: [200, 100, 200],
   };
   event.waitUntil(self.registration.showNotification(title, options));
@@ -60,11 +66,12 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  const rawUrl = event.notification.data?.url || "/";
+  const url = new URL(rawUrl, self.location.origin).href;
   event.waitUntil(
-    clients.matchAll({ type: "window" }).then((list) => {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
       for (const client of list) {
-        if (client.url.includes(url) && "focus" in client) return client.focus();
+        if (client.url === url && "focus" in client) return client.focus();
       }
       return clients.openWindow(url);
     })

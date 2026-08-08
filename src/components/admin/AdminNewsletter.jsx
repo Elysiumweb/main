@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import { Download, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { db } from "../../lib/firebase";
+import { db, functions } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { logAdminAction } from "../../lib/notify";
 import { ConfirmAction } from "../ConfirmAction";
@@ -15,6 +16,8 @@ export const AdminNewsletter = () => {
   const { user, displayName } = useAuth();
   const [subs, setSubs] = useState([]);
   const [query, setQuery] = useState("");
+  const [digest, setDigest] = useState({ subject: "", body: "" });
+  const [sendingDigest, setSendingDigest] = useState(false);
 
   useEffect(() => {
     return onSnapshot(collection(db, "newsletter"), (snap) => {
@@ -63,6 +66,28 @@ export const AdminNewsletter = () => {
     }
   };
 
+  const sendDigest = async (e) => {
+    e.preventDefault();
+    if (!digest.subject.trim() || !digest.body.trim()) { toast.error("Sujet et contenu requis."); return; }
+    setSendingDigest(true);
+    try {
+      const call = httpsCallable(functions, "sendNewsletterDigest");
+      const result = await call({ subject: digest.subject.trim(), body: digest.body.trim() });
+      await logAdminAction({
+        action: "newsletter_digest_sent",
+        label: `${digest.subject.trim()} (${result.data?.sent || 0}/${result.data?.total || 0})`,
+        actor: { uid: user?.uid, name: displayName, email: user?.email },
+        target: { collection: "newsletter", id: "digest" },
+      });
+      toast.success(`Digest envoyé : ${result.data?.sent || 0}/${result.data?.total || 0}`);
+      setDigest({ subject: "", body: "" });
+    } catch (e) {
+      console.error(e);
+      toast.error("Envoi du digest impossible. Vérifiez la configuration email des Cloud Functions.");
+    }
+    setSendingDigest(false);
+  };
+
   return (
     <div className="space-y-6" data-testid="admin-newsletter">
       <div className="flex flex-col lg:flex-row lg:items-end gap-4 justify-between">
@@ -91,6 +116,34 @@ export const AdminNewsletter = () => {
           </button>
         </div>
       </div>
+
+      <form onSubmit={sendDigest} className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 space-y-4" data-testid="admin-newsletter-digest-form">
+        <div>
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Envoyer un digest</p>
+          <p className="text-xs text-[#c8c8c8] mt-2">Envoi réel via Cloud Functions + Resend/Brevo aux abonnés confirmés uniquement.</p>
+        </div>
+        <input
+          value={digest.subject}
+          onChange={(e) => setDigest((d) => ({ ...d, subject: e.target.value }))}
+          placeholder="Sujet du digest"
+          maxLength={140}
+          className={`${inputCls} w-full`}
+          data-testid="admin-newsletter-digest-subject"
+        />
+        <textarea
+          value={digest.body}
+          onChange={(e) => setDigest((d) => ({ ...d, body: e.target.value }))}
+          placeholder="Contenu du digest (texte brut, liens acceptés)…"
+          rows={6}
+          maxLength={6000}
+          className={`${inputCls} w-full resize-none`}
+          data-testid="admin-newsletter-digest-body"
+        />
+        <button type="submit" disabled={sendingDigest} data-testid="admin-newsletter-digest-send"
+          className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
+          Envoyer aux confirmés
+        </button>
+      </form>
 
       <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
         <table className="w-full text-sm" data-testid="admin-newsletter-table">

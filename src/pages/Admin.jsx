@@ -95,7 +95,7 @@ const normalizeImportedMatch = (raw) => ({
 });
 
 export default function Admin() {
-  const { user, displayName, isOfficial, role, loading } = useAuth();
+  const { user, displayName, isOfficial, role, loading, requiresMfa, mfaEnrolled } = useAuth();
   const { t } = useLang();
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
@@ -193,6 +193,16 @@ export default function Admin() {
   if (!isStaff) return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <p className="text-[#f7f7f7]/50" data-testid="admin-denied">{t("player.noAccess")}</p>
+    </div>
+  );
+  if (requiresMfa && !mfaEnrolled) return (
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="max-w-lg border border-orange-300/40 bg-orange-300/5 p-8 text-center" data-testid="admin-mfa-required">
+        <Shield className="text-orange-200 mx-auto mb-4" size={32} aria-hidden="true" />
+        <h1 className="font-display text-xl uppercase tracking-[0.25em] text-orange-100 mb-3">Double authentification requise</h1>
+        <p className="text-sm text-[#c8c8c8] mb-6">Les rôles sensibles (officiel/bureau) doivent activer un second facteur TOTP avant d'accéder à l'administration.</p>
+        <a href="/profil" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 inline-block">Configurer dans mon profil</a>
+      </div>
     </div>
   );
 

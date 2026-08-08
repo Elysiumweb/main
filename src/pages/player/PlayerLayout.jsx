@@ -1,4 +1,4 @@
-import { NavLink, Outlet, Navigate } from "react-router-dom";
+import { NavLink, Outlet, Navigate, useLocation } from "react-router-dom";
 import { MessageSquare, CalendarDays, StickyNote, LayoutDashboard, Activity } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
@@ -7,9 +7,10 @@ import { AbsentTodayBar } from "../../components/AbsentTodayBar";
 export default function PlayerLayout() {
   const { user, loading, hasPlayerAccess, game, roster, role, isOfficial } = useAuth();
   const { t } = useLang();
+  const location = useLocation();
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
-  if (!user) return <Navigate to="/connexion" replace />;
+  if (!user) return <Navigate to="/connexion" replace state={{ from: location }} />;
   if (!hasPlayerAccess) return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
       <p className="text-[#f7f7f7]/50 text-center" data-testid="player-no-access">{t("player.noAccess")}</p>

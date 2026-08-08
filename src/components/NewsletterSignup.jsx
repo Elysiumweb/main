@@ -2,6 +2,7 @@ import { useState, useId } from "react";
 import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -19,6 +20,14 @@ export const NewsletterSignup = ({ compact = false }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    if (isHoneypotFilled(fd.get("website"))) return;
+    const limit = checkSessionRateLimit("newsletter_signup", { max: 3, windowMs: 10 * 60 * 1000 });
+    if (!limit.allowed) {
+      setMessage(rateLimitMessage(limit.retryAt));
+      setStatus("error");
+      return;
+    }
     if (!consent) {
       setMessage(t("newsletter.consentRequired"));
       setStatus("error");
@@ -32,16 +41,9 @@ export const NewsletterSignup = ({ compact = false }) => {
 
     setStatus("loading");
     try {
-      // Check if already subscribed
-      const q = query(collection(db, "newsletter"), where("email", "==", email.toLowerCase()));
-      const existing = await getDocs(q);
-      if (!existing.empty) {
-        setMessage(t("newsletter.alreadySubscribed"));
-        setStatus("error");
-        return;
-      }
-
-      // Create subscription with pending confirmation (double opt-in)
+      // Create subscription with pending confirmation (double opt-in).
+      // Les doublons sont filtrés côté Cloud Function afin de ne pas exposer
+      // publiquement la collection newsletter en lecture.
       const confirmToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
       await addDoc(collection(db, "newsletter"), {
         email: email.toLowerCase(),
@@ -82,6 +84,8 @@ export const NewsletterSignup = ({ compact = false }) => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3" noValidate>
+            <label htmlFor={`${emailId}-website`} className="sr-only">Site web</label>
+            <input id={`${emailId}-website`} type="text" {...getHoneypotProps("website")} data-testid="newsletter-honeypot" />
             <label htmlFor={emailId} className="sr-only">{t("newsletter.email")}</label>
             <input
               id={emailId}
@@ -158,6 +162,8 @@ export const NewsletterSignup = ({ compact = false }) => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6" data-testid="newsletter-form" noValidate>
+            <label htmlFor={`${emailId}-website`} className="sr-only">Site web</label>
+            <input id={`${emailId}-website`} type="text" {...getHoneypotProps("website")} data-testid="newsletter-page-honeypot" />
             <div>
               <label htmlFor={emailId} className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">
                 {t("newsletter.email")}

@@ -22,6 +22,7 @@ import Stats from "@/pages/Stats";
 import Partners from "@/pages/Partners";
 import Donate from "@/pages/Donate";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { NewsletterConfirm } from "@/components/NewsletterConfirm";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SEOManager } from "@/components/SEOManager";
@@ -88,6 +89,7 @@ function App() {
               <Route path="/soutenir" element={<Donate />} />
               <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />
+              <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
               <Route path="/connexion" element={<Login />} />
               <Route path="/profil" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />

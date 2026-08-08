@@ -222,6 +222,28 @@ service cloud.firestore {
       allow delete: if isBureau();
     }
 
+    // ===== Jetons push FCM Web =====
+    match /pushTokens/{id} {
+      allow read: if isAuth() && resource.data.uid == request.auth.uid;
+      allow create, update: if isAuth()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.enabled is bool
+        && isShortString(request.resource.data.token, 500);
+      allow delete: if isAuth() && resource.data.uid == request.auth.uid;
+    }
+
+    // ===== Demandes de suppression RGPD =====
+    match /accountDeletionRequests/{uid} {
+      allow create, update, read: if isAuth() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // ===== Logs d'envoi newsletter =====
+    match /newsletterDigestLogs/{id} {
+      allow read: if isBureau();
+      allow create, update, delete: if false;
+    }
+
     // ===== Journal d'activité =====
     match /activity/{id} {
       allow read, create: if hasPlayerAccess();

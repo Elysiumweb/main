@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { createNotification, CONTACT_EMAIL } from "../lib/notify";
+import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 
 const CATS = ["account", "technical", "team", "other"];
@@ -33,6 +34,10 @@ export default function Support() {
 
   const submit = async (e) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    if (isHoneypotFilled(fd.get("website"))) return;
+    const limit = checkSessionRateLimit("support_ticket", { max: 3, windowMs: 10 * 60 * 1000 });
+    if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     if (!subject.trim() || !description.trim()) return;
     if (attachment && !/^https?:\/\/.+/.test(attachment)) { toast.error("URL de pièce jointe invalide"); return; }
     setSending(true);
@@ -108,6 +113,8 @@ export default function Support() {
             <LoginPrompt messageKey="support.loginRequired" prefix="support" />
           ) : (
             <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="support-form" noValidate>
+              <label htmlFor="support-website" className="sr-only">Site web</label>
+              <input id="support-website" type="text" {...getHoneypotProps("website")} data-testid="support-honeypot" />
               <p id="support-form-error" role="alert" aria-live="polite" className="sr-only" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
