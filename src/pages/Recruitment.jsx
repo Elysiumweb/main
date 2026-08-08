@@ -9,6 +9,7 @@ import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { EmptyState } from "../components/States";
 import { createNotification } from "../lib/notify";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const AGE_RANGES = ["-16", "16-17", "18-24", "25+"];
@@ -50,6 +51,10 @@ export default function Recruitment() {
 
   const submit = async (e) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    if (isHoneypotFilled(fd.get("website"))) return;
+    const limit = checkSessionRateLimit("recruit_application", { max: 2, windowMs: 10 * 60 * 1000 });
+    if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     if (!consent) { toast.error(t("recruit.consentRequired")); return; }
     setSending(true);
     try {
@@ -145,6 +150,8 @@ export default function Recruitment() {
             <LoginPrompt messageKey="recruit.loginRequired" prefix="recruit" />
           ) : (
             <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="recruit-form" noValidate>
+              <label htmlFor="recruit-website" className="sr-only">Site web</label>
+              <input id="recruit-website" type="text" {...getHoneypotProps("website")} data-testid="recruit-honeypot" />
               {fields.slice(0, 2).map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>

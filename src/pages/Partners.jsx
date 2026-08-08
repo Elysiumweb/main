@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { collection, addDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart } from "lucide-react";
@@ -64,6 +65,9 @@ export default function Partners() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
+    if (isHoneypotFilled(fd.get("website"))) return;
+    const limit = checkSessionRateLimit("partner_request", { max: 2, windowMs: 10 * 60 * 1000 });
+    if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     const data = {
       name: fd.get("name"),
       company: fd.get("company"),
@@ -177,6 +181,8 @@ export default function Partners() {
         <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-3">{t("partners.contact.title")}</h2>
         <p className="text-[#f7f7f7]/50 mb-10">{t("partners.contact.sub")}</p>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" data-testid="partners-contact-form">
+          <label htmlFor="partner-website" className="sr-only">Site web</label>
+          <input id="partner-website" type="text" {...getHoneypotProps("website")} data-testid="partner-form-honeypot" />
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
               <label htmlFor="partner-name" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.name")}</label>

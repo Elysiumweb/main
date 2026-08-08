@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { multiFactor, onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { OFFICIAL_UID } from "../lib/constants";
@@ -29,6 +29,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mfaVersion, setMfaVersion] = useState(0);
+
+  useEffect(() => {
+    const onMfaChanged = () => setMfaVersion((v) => v + 1);
+    window.addEventListener("elysium:mfa-changed", onMfaChanged);
+    return () => window.removeEventListener("elysium:mfa-changed", onMfaChanged);
+  }, []);
 
   useEffect(() => {
     let unsubProfile = null;
@@ -78,6 +85,9 @@ export const AuthProvider = ({ children }) => {
   const game = profile?.game || null;
   const roster = profile?.roster || null;
   const hasPlayerAccess = isOfficial || ["player", "manager", "bureau"].includes(profile?.role);
+  // mfaVersion force un recalcul après enrôlement/retrait TOTP sans attendre une reconnexion.
+  const mfaEnrolled = !!user && mfaVersion >= 0 && (multiFactor(user).enrolledFactors || []).some((factor) => factor.factorId === "totp");
+  const requiresMfa = !!user && (isOfficial || profile?.role === "bureau");
   const canSeeSupport = isOfficial || profile?.role === "bureau";
   const canSeeRecruit = isOfficial || ["manager", "bureau"].includes(profile?.role);
   const canManage = isOfficial || ["manager", "bureau"].includes(profile?.role);
@@ -86,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, mfaEnrolled, requiresMfa, logout }}>
       {children}
     </AuthContext.Provider>
   );
