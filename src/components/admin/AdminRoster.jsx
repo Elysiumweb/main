@@ -8,7 +8,7 @@ import { GAMES, ROSTERS } from "../../lib/constants";
 import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "", threads: "" };
+const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "" };
 
 export const AdminRoster = () => {
   const { t } = useLang();
@@ -23,8 +23,8 @@ export const AdminRoster = () => {
 
   const submit = async (e) => {
     e.preventDefault();
-    const { x, twitch, instagram, youtube, tiktok, threads, ...rest } = form;
-    const data = { ...rest, socials: { x, twitch, instagram, youtube, tiktok, threads } };
+    const { x, twitch, instagram, youtube, tiktok, ...rest } = form;
+    const data = { ...rest, socials: { x, twitch, instagram, youtube, tiktok } };
     try {
       if (editId) await updateDoc(doc(db, "roster", editId), data);
       else await addDoc(collection(db, "roster"), { ...data, createdAt: serverTimestamp() });
@@ -35,7 +35,12 @@ export const AdminRoster = () => {
 
   const edit = (m) => {
     setEditId(m.id);
-    setForm({ pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player", photo: m.photo || "", bio: m.bio || "", rank: m.rank || "", mmr: m.mmr || "", palmares: m.palmares || "", equipment: m.equipment || "", arrivalDate: m.arrivalDate || "", previousTeams: m.previousTeams || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "", instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "", tiktok: m.socials?.tiktok || "", threads: m.socials?.threads || "" });
+    setForm({
+      pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player",
+      photo: m.photo || "", bio: m.bio || "", rank: m.rank || "", mmr: m.mmr || "", palmares: m.palmares || "", equipment: m.equipment || "",
+      arrivalDate: m.arrivalDate || "", previousTeams: m.previousTeams || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "",
+      instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "", tiktok: m.socials?.tiktok || "",
+    });
   };
 
   const del = async (id) => {
@@ -46,16 +51,18 @@ export const AdminRoster = () => {
   return (
     <div className="grid lg:grid-cols-12 gap-10">
       <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-roster-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{editId ? "Modifier" : "Ajouter"} un membre</p>
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+          {editId ? t("admin.roster.editMember") : t("admin.roster.addMember")}
+        </p>
         <div className="grid grid-cols-2 gap-4">
-          <input value={form.pseudo} onChange={set("pseudo")} placeholder="Pseudo" required className={inputCls} data-testid="admin-roster-pseudo" />
-          <input value={form.ingameRole} onChange={set("ingameRole")} placeholder="Rôle in-game" className={inputCls} data-testid="admin-roster-role" />
+          <input value={form.pseudo} onChange={set("pseudo")} placeholder={t("login.pseudo")} required className={inputCls} data-testid="admin-roster-pseudo" />
+          <input value={form.ingameRole} onChange={set("ingameRole")} placeholder={t("team.sort.role")} className={inputCls} data-testid="admin-roster-role" />
           <select value={form.game} onChange={(e) => setForm((f) => ({ ...f, game: e.target.value, roster: "" }))} className={inputCls} data-testid="admin-roster-game">
             {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
           {(ROSTERS[form.game] || []).length > 0 && (
             <select value={form.roster} onChange={set("roster")} className={inputCls} data-testid="admin-roster-roster">
-              <option value="">— Roster —</option>
+              <option value="">— {t("admin.roster")} —</option>
               {(ROSTERS[form.game] || []).map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           )}
@@ -66,25 +73,24 @@ export const AdminRoster = () => {
           </select>
         </div>
         <div>
-          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Photo du joueur</label>
+          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.roster.photoLabel")}</label>
           <ImageUpload value={form.photo} onChange={(url) => setForm((f) => ({ ...f, photo: url }))} folder="players" maxWidth={1200} testId="admin-roster-photo-upload" />
         </div>
-        <textarea value={form.bio} onChange={set("bio")} placeholder="Biographie" rows={3} className={inputCls} data-testid="admin-roster-bio" />
+        <textarea value={form.bio} onChange={set("bio")} placeholder={t("admin.roster.bioPlaceholder")} rows={3} className={inputCls} data-testid="admin-roster-bio" />
         <div className="grid grid-cols-3 gap-4">
-          <input value={form.rank} onChange={set("rank")} placeholder="Rang (ex: Champion III)" className={inputCls} data-testid="admin-roster-rank" />
-          <input value={form.mmr} onChange={set("mmr")} placeholder="MMR (ex: 1820)" className={inputCls} data-testid="admin-roster-mmr" />
+          <input value={form.rank} onChange={set("rank")} placeholder={t("admin.roster.rankPlaceholder")} className={inputCls} data-testid="admin-roster-rank" />
+          <input value={form.mmr} onChange={set("mmr")} placeholder={t("admin.roster.mmrPlaceholder")} className={inputCls} data-testid="admin-roster-mmr" />
           <input type="date" value={form.arrivalDate} onChange={set("arrivalDate")} className={inputCls} data-testid="admin-roster-arrival" />
         </div>
-        <textarea value={form.palmares} onChange={set("palmares")} placeholder={"Palmarès personnel (un par ligne : Titre | 2025)"} rows={3} className={inputCls} data-testid="admin-roster-palmares" />
-        <textarea value={form.equipment} onChange={set("equipment")} placeholder={"Équipement (un par ligne : Souris | Logitech G Pro X)"} rows={3} className={inputCls} data-testid="admin-roster-equipment" />
-        <textarea value={form.previousTeams} onChange={set("previousTeams")} placeholder={"Équipes précédentes (un par ligne : Team | 2023-2024)"} rows={3} className={inputCls} data-testid="admin-roster-previous-teams" />
+        <textarea value={form.palmares} onChange={set("palmares")} placeholder={t("admin.roster.palmaresPlaceholder")} rows={3} className={inputCls} data-testid="admin-roster-palmares" />
+        <textarea value={form.equipment} onChange={set("equipment")} placeholder={t("admin.roster.equipmentPlaceholder")} rows={3} className={inputCls} data-testid="admin-roster-equipment" />
+        <textarea value={form.previousTeams} onChange={set("previousTeams")} placeholder={t("admin.roster.previousTeamsPlaceholder")} rows={3} className={inputCls} data-testid="admin-roster-previous-teams" />
         <div className="grid grid-cols-2 gap-4">
           <input value={form.x} onChange={set("x")} placeholder="X (URL)" className={inputCls} />
           <input value={form.twitch} onChange={set("twitch")} placeholder="Twitch (URL)" className={inputCls} />
           <input value={form.instagram} onChange={set("instagram")} placeholder="Instagram (URL)" className={inputCls} />
           <input value={form.youtube} onChange={set("youtube")} placeholder="YouTube (URL)" className={inputCls} />
           <input value={form.tiktok} onChange={set("tiktok")} placeholder="TikTok (URL)" className={inputCls} />
-          <input value={form.threads} onChange={set("threads")} placeholder="Threads (URL)" className={inputCls} />
         </div>
         <div className="flex gap-3">
           <button type="submit" data-testid="admin-roster-submit"
@@ -105,8 +111,8 @@ export const AdminRoster = () => {
               <p className="text-sm font-semibold text-[#f7f7f7]">{m.pseudo}</p>
               <p className="text-xs text-[#f7f7f7]/40">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
             </div>
-            <button onClick={() => edit(m)} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-roster-edit-${m.id}`}><Pencil size={15} /></button>
-            <button onClick={() => del(m.id)} className="text-red-400/70 hover:text-red-400" data-testid={`admin-roster-delete-${m.id}`}><Trash2 size={15} /></button>
+            <button onClick={() => edit(m)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${m.pseudo}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-roster-edit-${m.id}`}><Pencil size={15} /></button>
+            <button onClick={() => del(m.id)} title={t("common.delete")} aria-label={`${t("common.delete")} ${m.pseudo}`} className="text-red-400/70 hover:text-red-400" data-testid={`admin-roster-delete-${m.id}`}><Trash2 size={15} /></button>
           </div>
         ))}
       </div>

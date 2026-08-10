@@ -79,7 +79,7 @@ export default function PlayerDetail() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("team.title"), to: "/equipe" }, { label: player.pseudo }]} />
           <Link to="/equipe" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors mb-6" data-testid="player-back-link">
             <ArrowLeft size={14} /> {t("team.title")}
@@ -111,7 +111,7 @@ export default function PlayerDetail() {
               )}
               {player.bio && <p className="text-[#f7f7f7]/60 mt-5 max-w-2xl leading-relaxed" data-testid="player-bio">{player.bio}</p>}
               <div className="flex items-center gap-4 mt-6">
-                {["x", "twitch", "instagram", "youtube", "tiktok", "threads"].filter((k) => player.socials?.[k]).map((k) => (
+                {["x", "twitch", "instagram", "youtube", "tiktok"].filter((k) => player.socials?.[k]).map((k) => (
                   <a key={k} href={player.socials[k]} target="_blank" rel="noopener noreferrer" data-testid={`player-social-${k}`}
                     className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors"><SocialIcon name={k} size={20} /></a>
                 ))}

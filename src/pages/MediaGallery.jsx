@@ -6,6 +6,8 @@ import { useLang } from "../lib/i18n";
 import { GAMES } from "../lib/constants";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { ImageWithFallback } from "../components/ImageWithFallback";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -54,7 +56,8 @@ export default function MediaGallery() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <PageBreadcrumb items={[{ label: t("media.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="media-title">{t("media.title")}</h1>
           <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("media.sub")}</p>
         </div>
@@ -92,14 +95,22 @@ export default function MediaGallery() {
               return (
                 <Dialog key={m.id}>
                   <DialogTrigger asChild>
-                    <button className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/60 transition-colors text-left overflow-hidden" data-testid={`media-item-${m.id}`}>
+                    <button className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/50 transition-colors text-left overflow-hidden" data-testid={`media-item-${m.id}`}>
                       <div className="relative h-48 bg-[#0d0d0d] flex items-center justify-center overflow-hidden">
                         {m.type === "photo" ? (
-                          <img src={m.url} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => { e.target.style.display = "none"; }} />
+                          <ImageWithFallback
+                            src={m.url}
+                            alt={m.title}
+                            fallbackType="brand"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
                         ) : (
                           <>
-                            {m.thumbnail ? <img src={m.thumbnail} alt="" className="w-full h-full object-cover opacity-60" /> : <div className="absolute inset-0 canvas-dots" />}
+                            {m.thumbnail ? (
+                              <ImageWithFallback src={m.thumbnail} alt="" fallbackType="video" className="w-full h-full object-cover opacity-60" />
+                            ) : (
+                              <div className="absolute inset-0 canvas-dots" />
+                            )}
                             <PlayCircle size={44} className="absolute text-[#D8CA82] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" />
                           </>
                         )}
@@ -114,7 +125,7 @@ export default function MediaGallery() {
                   </DialogTrigger>
                   <DialogContent className="bg-[#111111] border border-[#D8CA82]/30 rounded-none max-w-3xl p-2" data-testid={`media-lightbox-${m.id}`}>
                     {m.type === "photo" ? (
-                      <img src={m.url} alt={m.title} className="w-full max-h-[75vh] object-contain" />
+                      <ImageWithFallback src={m.url} alt={m.title} fallbackType="brand" className="w-full max-h-[75vh] object-contain" />
                     ) : embed ? (
                       <iframe src={embed} title={m.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
                     ) : (

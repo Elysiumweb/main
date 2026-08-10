@@ -60,7 +60,6 @@ export const AdminArticles = () => {
   };
 
   const toggleFeatured = async (a) => {
-    // Un seul article « à la une » : on retire le flag des autres, puis on l'active.
     try {
       const others = articles.filter((x) => x.featured && x.id !== a.id);
       await Promise.all(others.map((x) => updateDoc(doc(db, "articles", x.id), { featured: false })));
@@ -98,8 +97,10 @@ export const AdminArticles = () => {
   return (
     <div className="grid lg:grid-cols-12 gap-10">
       <div className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-articles-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{editId ? "Modifier" : "Nouvel"} article</p>
-        <input value={form.title} onChange={set("title")} placeholder="Titre" className={inputCls} data-testid="admin-article-title" />
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+          {editId ? t("admin.article.edit") : t("admin.article.new")}
+        </p>
+        <input value={form.title} onChange={set("title")} placeholder={t("admin.article.title")} className={inputCls} data-testid="admin-article-title" />
         <div className="grid grid-cols-2 gap-4">
           <select value={form.category} onChange={set("category")} className={inputCls} data-testid="admin-article-category">
             {CATEGORIES.map((c) => <option key={c} value={c}>{t(`news.cat.${c}`)}</option>)}
@@ -112,15 +113,15 @@ export const AdminArticles = () => {
           </label>
         </div>
         <div>
-          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Image de couverture</label>
+          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.cover")}</label>
           <ImageUpload value={form.coverUrl} onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))} folder="articles" maxWidth={1600} testId="admin-article-cover-upload" />
         </div>
         <div>
-          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Extrait (cartes & meta description)</label>
+          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.excerpt")}</label>
           <textarea
             value={form.excerpt}
             onChange={set("excerpt")}
-            placeholder="Résumé court rédigé, affiché sur les cartes d'actus..."
+            placeholder={t("admin.article.excerptPlaceholder")}
             rows={3}
             maxLength={220}
             className={inputCls}
@@ -130,7 +131,7 @@ export const AdminArticles = () => {
         </div>
 
         {/* Onglets éditeur / aperçu markdown */}
-        <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label="Éditeur d'article">
+        <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label={t("admin.article.title")}>
           <button onClick={() => setEditorTab("write")} data-testid="admin-article-tab-write" role="tab" aria-selected={editorTab === "write"}
             className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
             {t("admin.article.write")}
@@ -142,10 +143,10 @@ export const AdminArticles = () => {
           <span className="ml-auto text-[10px] text-[#f7f7f7]/30">{t("admin.article.markdownHint")}</span>
         </div>
         {editorTab === "write" ? (
-          <textarea value={form.content} onChange={set("content")} placeholder="Contenu de l'article (Markdown)..." rows={12} className={inputCls} data-testid="admin-article-content" />
+          <textarea value={form.content} onChange={set("content")} placeholder={t("admin.article.contentPlaceholder")} rows={12} className={inputCls} data-testid="admin-article-content" />
         ) : (
           <div className="border border-white/10 bg-[#141414] p-4 max-h-96 overflow-y-auto" data-testid="admin-article-preview">
-            <Markdown source={form.content || "*Aperçu vide*"} className="text-sm" />
+            <Markdown source={form.content || `*${t("admin.article.previewEmpty")}*`} className="text-sm" />
           </div>
         )}
 
@@ -156,7 +157,7 @@ export const AdminArticles = () => {
           </button>
           <button onClick={() => save("published")} data-testid="admin-article-publish-btn"
             className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-3 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
-            <Send size={13} /> Publier
+            <Send size={13} /> {t("admin.publish")}
           </button>
           {editId && (
             <button onClick={() => { setEditId(null); setForm(EMPTY); }} data-testid="admin-article-cancel"
@@ -169,12 +170,13 @@ export const AdminArticles = () => {
         {articles.map((a) => (
           <div key={a.id} className="flex items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3">
             <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_BADGE[a.status] || ""}`}>
-              {a.status === "published" ? "Publié" : a.status === "deleted" ? "Supprimé" : t("notes.draft")}
+              {a.status === "published" ? t("admin.published") : a.status === "deleted" ? t("admin.deleted") : t("notes.draft")}
             </span>
             <button
               onClick={() => toggleFeatured(a)}
               disabled={a.status !== "published"}
               title={t("admin.article.featuredHint")}
+              aria-label={t("admin.article.featured")}
               aria-pressed={!!a.featured}
               data-testid={`admin-article-featured-${a.id}`}
               className={`shrink-0 transition-colors ${a.featured ? "text-[#D8CA82]" : "text-[#f7f7f7]/30 hover:text-[#f7f7f7]/60"} disabled:opacity-30 disabled:cursor-not-allowed`}
@@ -185,37 +187,37 @@ export const AdminArticles = () => {
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{a.title}</p>
               <p className="text-xs text-[#f7f7f7]/40">{t(`news.cat.${a.category}`)}</p>
             </div>
-            <Link to={`/actus/${a.id}`} target="_blank" title="Prévisualiser" className="text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid={`admin-article-preview-${a.id}`}>
+            <Link to={`/actus/${a.id}`} target="_blank" title={t("admin.article.previewLink")} aria-label={t("admin.article.previewLink")} className="text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid={`admin-article-preview-${a.id}`}>
               <Eye size={15} />
             </Link>
             {a.status !== "deleted" ? (
               <>
-                <button onClick={() => edit(a)} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-article-edit-${a.id}`}><Pencil size={15} /></button>
+                <button onClick={() => edit(a)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${a.title}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-article-edit-${a.id}`}><Pencil size={15} /></button>
                 {a.status === "published" ? (
-                  <button onClick={() => setStatus(a.id, "draft")} title="Dépublier" className="text-orange-300/70 hover:text-orange-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-unpublish-${a.id}`}>Dépublier</button>
+                  <button onClick={() => setStatus(a.id, "draft")} title={t("admin.unpublish")} aria-label={`${t("admin.unpublish")} ${a.title}`} className="text-orange-300/70 hover:text-orange-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-unpublish-${a.id}`}>{t("admin.unpublish")}</button>
                 ) : (
-                  <button onClick={() => setStatus(a.id, "published")} title="Publier" className="text-emerald-300/70 hover:text-emerald-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-publish-inline-${a.id}`}>Publier</button>
+                  <button onClick={() => setStatus(a.id, "published")} title={t("admin.publish")} aria-label={`${t("admin.publish")} ${a.title}`} className="text-emerald-300/70 hover:text-emerald-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-publish-inline-${a.id}`}>{t("admin.publish")}</button>
                 )}
                 <ConfirmAction
-                  title="Supprimer cet article ?"
-                  description="L'article sera placé en corbeille et pourra être restauré."
-                  confirmLabel="Supprimer"
+                  title={t("admin.article.deleteConfirm")}
+                  description={t("admin.article.deleteDesc")}
+                  confirmLabel={t("common.delete")}
                   onConfirm={() => setStatus(a.id, "deleted")}
                 >
-                  <button className="text-red-400/70 hover:text-red-400" title="Supprimer (restaurable)" data-testid={`admin-article-delete-${a.id}`}><Trash2 size={15} /></button>
+                  <button className="text-red-400/70 hover:text-red-400" title={t("common.delete")} aria-label={`${t("common.delete")} ${a.title}`} data-testid={`admin-article-delete-${a.id}`}><Trash2 size={15} /></button>
                 </ConfirmAction>
               </>
             ) : (
               <>
-                <button onClick={() => setStatus(a.id, "draft")} className="text-emerald-300/70 hover:text-emerald-300" title="Restaurer" data-testid={`admin-article-restore-${a.id}`}><RotateCcw size={15} /></button>
+                <button onClick={() => setStatus(a.id, "draft")} className="text-emerald-300/70 hover:text-emerald-300" title={t("admin.restore")} aria-label={`${t("admin.restore")} ${a.title}`} data-testid={`admin-article-restore-${a.id}`}><RotateCcw size={15} /></button>
                 {isOfficial && (
                   <ConfirmAction
-                    title="Suppression définitive ?"
-                    description="Cette action supprime définitivement l'article et ne peut pas être annulée."
-                    confirmLabel="Supprimer définitivement"
+                    title={t("admin.article.hardDeleteTitle")}
+                    description={t("admin.article.hardDeleteDesc")}
+                    confirmLabel={t("admin.hardDeleteConfirm")}
                     onConfirm={() => hardDelete(a)}
                   >
-                    <button className="text-red-400 hover:text-red-300 text-[10px] uppercase tracking-wider" title="Suppression définitive" data-testid={`admin-article-harddelete-${a.id}`}>Définitif</button>
+                    <button className="text-red-400 hover:text-red-300 text-[10px] uppercase tracking-wider" title={t("admin.hardDelete")} aria-label={`${t("admin.hardDelete")} ${a.title}`} data-testid={`admin-article-harddelete-${a.id}`}>{t("admin.hardDelete")}</button>
                   </ConfirmAction>
                 )}
               </>

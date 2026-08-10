@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart, ChevronDown } from "lucide-react";
+import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart, ChevronDown, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
@@ -15,12 +15,41 @@ const linkCls = ({ isActive }) =>
 const mobileLinkCls = ({ isActive }) =>
   `text-xs uppercase tracking-[0.18em] transition-colors min-h-[44px] flex items-center ${isActive ? "text-[#D8CA82] font-semibold" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
 
+export const UserAvatar = ({ src, name, className = "h-8 w-8" }) => {
+  const [err, setErr] = useState(false);
+  const initials = (name || "U")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || "")
+    .join("") || "E";
+
+  if (!src || err) {
+    return (
+      <div className={`${className} rounded-full bg-[#1A1A1A] border border-[#D8CA82]/50 flex items-center justify-center text-[11px] font-display font-bold text-[#D8CA82] select-none shrink-0`} aria-hidden="true">
+        {initials}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name || "Avatar"}
+      onError={() => setErr(true)}
+      className={`${className} rounded-full object-cover border border-[#D8CA82]/50 shrink-0`}
+    />
+  );
+};
+
 export const Navbar = () => {
-  const { user, hasPlayerAccess, isOfficial, displayName, logout } = useAuth();
+  const { user, profile, hasPlayerAccess, isOfficial, role, displayName, logout } = useAuth();
   const { t, lang, toggle } = useLang();
   const [open, setOpen] = useState(false);
   const headerRef = useRef(null);
   const navigate = useNavigate();
+
+  const photoUrl = profile?.photoURL || user?.photoURL || "";
 
   const links = [
     { to: "/", label: t("nav.home") },
@@ -145,26 +174,69 @@ export const Navbar = () => {
           >
             <span aria-hidden="true">{lang === "fr" ? "EN" : "FR"}</span>
           </button>
+
+          {/* User Avatar + Dropdown Menu */}
           {user ? (
-            <div className="flex items-center gap-3">
-              <Link to="/profil" data-testid="nav-username" title={t("nav.profile")}
-                className="hidden sm:block text-sm text-[#D8CA82] font-semibold max-w-[120px] truncate hover:underline">{displayName}</Link>
-              <button
-                onClick={() => { logout(); navigate("/"); }}
-                data-testid="nav-logout-btn"
-                aria-label={t("nav.logout")}
-                className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center motion-reduce:transition-none"
-                title={t("nav.logout")}
-              >
-                <LogOut size={18} aria-hidden="true" />
-              </button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  data-testid="nav-username"
+                  className="flex items-center gap-2 border border-white/15 bg-[#161616] hover:border-[#D8CA82]/50 px-2 py-1.5 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] min-h-[44px]"
+                  aria-label={`${displayName} — ${t("nav.profile")}`}
+                >
+                  <UserAvatar src={photoUrl} name={displayName} className="h-7 w-7" />
+                  <span className="hidden sm:inline text-xs font-semibold text-[#f7f7f7] max-w-[110px] truncate">
+                    {displayName}
+                  </span>
+                  <ChevronDown size={12} className="text-[#f7f7f7]/50" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#161616] border border-white/15 rounded-none p-2 text-[#f7f7f7] min-w-[220px]" data-testid="nav-user-dropdown">
+                <div className="px-3 py-2 border-b border-white/10 mb-1">
+                  <p className="text-xs font-display font-bold text-[#D8CA82] truncate">{displayName}</p>
+                  {user.email && <p className="text-[11px] text-[#f7f7f7]/50 truncate">{user.email}</p>}
+                  <span className="mt-1 inline-block text-[9px] uppercase tracking-widest px-1.5 py-0.5 border border-[#D8CA82]/30 text-[#D8CA82]/80">
+                    {isOfficial ? "Officiel" : t(`admin.role.${role}`)}
+                  </span>
+                </div>
+                <DropdownMenuItem asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
+                  <Link to="/profil" className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] px-3 py-2" data-testid="nav-menu-profile">
+                    <User size={13} aria-hidden="true" /> {t("nav.profile")}
+                  </Link>
+                </DropdownMenuItem>
+                {hasPlayerAccess && (
+                  <DropdownMenuItem asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
+                    <Link to="/espace-joueur" className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] px-3 py-2" data-testid="nav-menu-player-space">
+                      <Gamepad2 size={13} aria-hidden="true" /> {t("nav.playerSpace")}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {isOfficial && (
+                  <DropdownMenuItem asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
+                    <Link to="/admin" className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] px-3 py-2" data-testid="nav-menu-admin">
+                      <Shield size={13} aria-hidden="true" /> {t("nav.admin")}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <div className="border-t border-white/10 my-1" />
+                <DropdownMenuItem asChild className="rounded-none focus:bg-red-500/10 focus:text-red-300 text-red-300/80 cursor-pointer">
+                  <button
+                    onClick={() => { logout(); navigate("/"); }}
+                    data-testid="nav-logout-btn"
+                    className="w-full flex items-center gap-2 text-xs uppercase tracking-[0.15em] px-3 py-2 text-left text-red-300/80 hover:text-red-300"
+                  >
+                    <LogOut size={13} aria-hidden="true" /> {t("nav.logout")}
+                  </button>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link to="/connexion" data-testid="nav-login-btn"
               className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow min-h-[44px] flex items-center justify-center motion-reduce:transition-none">
               {t("nav.login")}
             </Link>
           )}
+
           <button
             id="nav-mobile-toggle-btn"
             aria-expanded={open}
@@ -185,6 +257,15 @@ export const Navbar = () => {
           className="xl:hidden border-t border-white/10 px-6 py-4 flex flex-col bg-[#111111]"
           data-testid="nav-mobile-menu"
         >
+          {user && (
+            <div className="flex items-center gap-3 pb-4 mb-3 border-b border-white/10">
+              <UserAvatar src={photoUrl} name={displayName} className="h-10 w-10" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#f7f7f7] truncate">{displayName}</p>
+                <p className="text-xs text-[#D8CA82] uppercase tracking-wider">{isOfficial ? "Officiel" : t(`admin.role.${role}`)}</p>
+              </div>
+            </div>
+          )}
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => { setOpen(false); if (l.to === "/recrutement") trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "mobile_navbar" }); }}>
               {l.label}
@@ -199,6 +280,11 @@ export const Navbar = () => {
           >
             <Search size={14} aria-hidden="true" /> {t("search.title")}
           </button>
+          {user && (
+            <NavLink to="/profil" className={mobileLinkCls} onClick={() => setOpen(false)} data-testid="nav-mobile-profile">
+              <span className="inline-flex items-center gap-1.5"><User size={14} aria-hidden="true" />{t("nav.profile")}</span>
+            </NavLink>
+          )}
           {hasPlayerAccess && (
             <NavLink to="/espace-joueur" className={mobileLinkCls} onClick={() => setOpen(false)}>
               <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
@@ -208,6 +294,14 @@ export const Navbar = () => {
             <NavLink to="/admin" className={mobileLinkCls} onClick={() => setOpen(false)}>
               <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
             </NavLink>
+          )}
+          {user && (
+            <button
+              onClick={() => { setOpen(false); logout(); navigate("/"); }}
+              className="text-xs uppercase tracking-[0.18em] text-red-300/80 hover:text-red-300 flex items-center gap-2 min-h-[44px]"
+            >
+              <LogOut size={14} aria-hidden="true" /> {t("nav.logout")}
+            </button>
           )}
           <div className="border-t border-white/10 my-2 pt-2">
             {moreLinks.map((l) => (

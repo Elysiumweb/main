@@ -32,7 +32,7 @@ export default function Donate() {
         <div className="absolute -right-20 top-1/2 -translate-y-1/2 opacity-[0.06] pointer-events-none">
           <OptimizedImage src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" width="520" height="520" loading="lazy" className="w-[520px] max-w-none" />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("donate.title") }]} />
           <p className="text-[10px] font-display uppercase tracking-[0.45em] text-[#D8CA82] mb-5">
             {t("donate.badge")}

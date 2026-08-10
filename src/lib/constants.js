@@ -59,7 +59,6 @@ export const SOCIALS = [
   { name: "X", url: "https://x.com/ElysiumxEVA", icon: "x" },
   { name: "Instagram", url: "https://www.instagram.com/elysiumxeva/", icon: "instagram" },
   { name: "TikTok", url: "https://www.tiktok.com/@elysiumxeva", icon: "tiktok" },
-  { name: "Threads", url: "https://www.threads.net/@elysiumxeva", icon: "threads" },
   { name: "Twitch", url: "https://www.twitch.tv/elysiumxeva", icon: "twitch" },
   { name: "YouTube", url: "https://www.youtube.com/@elysiumfr", icon: "youtube" },
   { name: "Discord", url: "https://discord.gg/RH3ZZkMJsw", icon: "discord" },

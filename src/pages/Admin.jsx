@@ -424,7 +424,7 @@ export default function Admin() {
     <div className="min-h-[80vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("nav.admin") }]} />
           <div className="flex items-center gap-4">
             <Shield className="text-[#D8CA82]" size={32} />
@@ -455,7 +455,7 @@ export default function Admin() {
               <input
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
-                placeholder="Rechercher un membre, email, rôle..."
+                placeholder={t("admin.search.users")}
                 className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
                 data-testid="admin-users-search"
               />
@@ -466,8 +466,8 @@ export default function Admin() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#f7f7f7]/40">
-                  <th className="px-4 py-3">Membre</th>
-                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">{t("admin.table.member")}</th>
+                  <th className="px-4 py-3">{t("admin.table.email")}</th>
                   <th className="px-4 py-3">{t("admin.role")}</th>
                   <th className="px-4 py-3">{t("admin.game")}</th>
                   <th className="px-4 py-3">{t("admin.roster")}</th>
@@ -515,10 +515,10 @@ export default function Admin() {
           {filteredUsers.length > PAGE_SIZE && (
             <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-users-pagination">
               <button onClick={() => setUserPage((p) => Math.max(1, p - 1))} disabled={userPage <= 1}
-                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Précédent</button>
-              <span className="text-xs text-[#f7f7f7]/40">Page {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
+                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
+              <span className="text-xs text-[#f7f7f7]/40">{t("admin.pagination.page")} {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
               <button onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))} disabled={userPage >= userTotalPages}
-                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Suivant</button>
+                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
             </div>
           )}
         </div>
@@ -537,7 +537,7 @@ export default function Admin() {
               <input
                 value={matchQuery}
                 onChange={(e) => setMatchQuery(e.target.value)}
-                placeholder="Rechercher adversaire, compétition, statut..."
+                placeholder={t("admin.search.matches")}
                 className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
                 data-testid="admin-matches-search"
               />
@@ -546,7 +546,7 @@ export default function Admin() {
               <input ref={importInputRef} type="file" accept=".csv,.json,application/json,text/csv" onChange={importMatches} className="sr-only" data-testid="admin-match-import-input" />
               <button type="button" onClick={() => importInputRef.current?.click()}
                 className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10" data-testid="admin-match-import-btn">
-                <FileUp size={14} /> Import CSV/JSON
+                <FileUp size={14} /> {t("admin.import.button")}
               </button>
             </div>
           </div>
@@ -719,10 +719,10 @@ export default function Admin() {
                   {filteredMatches.length > PAGE_SIZE && (
                     <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-matches-pagination">
                       <button onClick={() => setMatchPage((p) => Math.max(1, p - 1))} disabled={matchPage <= 1}
-                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Précédent</button>
-                      <span className="text-xs text-[#f7f7f7]/40">Page {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
+                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
+                      <span className="text-xs text-[#f7f7f7]/40">{t("admin.pagination.page")} {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
                       <button onClick={() => setMatchPage((p) => Math.min(matchTotalPages, p + 1))} disabled={matchPage >= matchTotalPages}
-                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">Suivant</button>
+                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
                     </div>
                   )}
                 </>
@@ -747,18 +747,18 @@ export default function Admin() {
       <AlertDialog open={!!confirmMatch} onOpenChange={(open) => !open && setConfirmMatch(null)}>
         <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">Supprimer ce match ?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">{t("admin.match.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
-              Le match contre {confirmMatch?.opponentName || "cet adversaire"} sera supprimé définitivement.
+              {t("admin.match.deleteDesc")} ({confirmMatch?.opponentName || "Adversaire"})
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:space-x-0">
-            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => { const target = confirmMatch; setConfirmMatch(null); delMatch(target); }}
               className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"
             >
-              Supprimer
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
