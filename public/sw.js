@@ -1,5 +1,6 @@
 // Service Worker for Elysium PWA
-const CACHE_NAME = "elysium-v1";
+// version: 2 — incrémenté pour forcer le re-download du cache after UX fixes
+const CACHE_NAME = "elysium-v2";
 const STATIC_ASSETS = [
   "/brand/logo-icon-gold.png",
   "/brand/logo-horizontal-white.png",
@@ -23,12 +24,28 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   // Network-first for API/Firebase calls, cache-first for static assets
-  if (event.request.url.includes("firestore") || event.request.url.includes("identitytoolkit") || event.request.url.includes("securetoken")) {
+  if (
+    event.request.url.includes("firestore") ||
+    event.request.url.includes("identitytoolkit") ||
+    event.request.url.includes("securetoken")
+  ) {
     return; // Let network requests pass through for Firebase
   }
   // Never cache PayPal: the SDK and checkout flows must always hit the network
-  if (event.request.url.includes("paypal.com") || event.request.url.includes("paypalobjects.com")) {
+  if (
+    event.request.url.includes("paypal.com") ||
+    event.request.url.includes("paypalobjects.com")
+  ) {
     return;
+  }
+  // Ne pas cacher les bundles JS/CSS (noms avec hash CRA) — le navigateur
+  // les gère déjà via leur URL. Évite les problèmes de stale cache après
+  // un déploiement qui corrige un bug dans le code.
+  if (
+    event.request.url.match(/\.(js|css)(\?|$)/) &&
+    event.request.url.includes("/static/")
+  ) {
+    return fetch(event.request);
   }
   event.respondWith(
     caches.match(event.request).then((cached) => {
