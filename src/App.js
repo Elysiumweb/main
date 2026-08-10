@@ -1,4 +1,5 @@
 import "@/App.css";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/lib/i18n";
@@ -65,6 +66,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <SEOManager />
+          <ScrollToTop />
           <SkipLink />
           <Navbar />
           <VerifyEmailBanner />

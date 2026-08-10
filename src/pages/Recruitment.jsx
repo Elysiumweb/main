@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { collection, addDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { Briefcase, CalendarX } from "lucide-react";
+import { Briefcase, CalendarX, ChevronDown } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
@@ -12,6 +12,13 @@ import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const AGE_RANGES = ["-16", "16-17", "18-24", "25+"];
@@ -87,13 +94,78 @@ export default function Recruitment() {
 
   const fields = [
     { key: "pseudo", label: t("recruit.form.pseudo"), type: "text", required: true },
-    { key: "position", label: t("recruit.form.position"), type: "text", required: true },
     { key: "country", label: t("recruit.form.country"), type: "text", required: true, placeholder: "France / UTC+1" },
     { key: "experience", label: t("recruit.form.experience"), type: "textarea", required: true },
     { key: "videos", label: t("recruit.form.videos"), type: "textarea", required: false, placeholder: "https://..." },
     { key: "availability", label: t("recruit.form.availability"), type: "textarea", required: true },
     { key: "discord", label: t("recruit.form.discord"), type: "text", required: true, placeholder: "pseudo#0000" },
   ];
+
+  // Rendu du champ « poste » : select alimenté par les postes ouverts,
+  // avec option « candidature spontanée » en dernier choix.
+  const PositionField = () => (
+    <div>
+      <label htmlFor="recruit-position" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">
+        {t("recruit.form.position")}
+      </label>
+      {positions.length > 0 ? (
+        <Select
+          value={form.position || "__spontanee__"}
+          onValueChange={(v) => setForm((f) => ({ ...f, position: v === "__spontanee__" ? "" : v }))}
+          required
+        >
+          <SelectTrigger
+            id="recruit-position"
+            className={inputCls + " appearance-none cursor-pointer"}
+            data-testid="recruit-position-select"
+            aria-label={t("recruit.form.position")}
+          >
+            <SelectValue
+              placeholder={t("recruit.form.position")}
+              className="text-[#f7f7f7] placeholder:text-[#a0a0a0]"
+            />
+            <ChevronDown size={15} className="text-[#a0a0a0] ml-2 shrink-0" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#1A1A1A] border border-white/15 text-[#f7f7f7] z-50">
+            {positions.map((p) => (
+              <SelectItem key={p.id} value={p.title} className="text-[#f7f7f7]">
+                <div className="flex flex-col gap-0.5">
+                  <span>{p.title}</span>
+                  {p.game && (
+                    <span className="text-[11px] text-[#a0a0a0] uppercase tracking-wider">{p.game}</span>
+                  )}
+                  {p.deadline && (
+                    <span className="text-[10px] text-[#D8CA82]/70">{t("recruit.deadline")} : {p.deadline}</span>
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+            <SelectSeparator className="bg-white/10" />
+            <SelectItem value="__spontanee__" className="text-[#f7f7f7]">
+              <div className="flex flex-col gap-0.5">
+                <span className="italic">{t("recruit.positions.empty")}</span>
+                <span className="text-[11px] text-[#a0a0a0]">Candidature spontanée</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      ) : (
+        <input
+          id="recruit-position"
+          type="text"
+          value={form.position}
+          onChange={set("position")}
+          required
+          placeholder={t("recruit.form.position")}
+          className={inputCls}
+          data-testid="recruit-position-input"
+        />
+      )}
+      <p className="text-[10px] text-[#a0a0a0] mt-1.5">
+        {t("recruit.positions.empty")}
+      </p>
+    </div>
+  );
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
@@ -155,12 +227,19 @@ export default function Recruitment() {
             <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="recruit-form" noValidate>
               <label htmlFor="recruit-website" className="sr-only">Site web</label>
               <input id="recruit-website" type="text" {...getHoneypotProps("website")} data-testid="recruit-honeypot" />
-              {fields.slice(0, 2).map((f) => (
+              {fields.slice(0, 1).map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
                   <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                 </div>
               ))}
+              {/* Pays / fuseau — 2e champ */}
+              <div>
+                <label htmlFor="recruit-country" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.country")}</label>
+                <input id="recruit-country" type="text" value={form.country} onChange={set("country")} required placeholder="France / UTC+1" className={inputCls} data-testid="recruit-country-input" />
+              </div>
+              {/* Poste — select alimenté par les postes ouverts */}
+              <PositionField />
               <div>
                 <label htmlFor="recruit-ageRange" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.age")}</label>
                 <select id="recruit-ageRange" value={form.ageRange} onChange={set("ageRange")} required className={inputCls} data-testid="recruit-ageRange-input">
@@ -168,7 +247,7 @@ export default function Recruitment() {
                   {AGE_RANGES.map((a) => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
-              {fields.slice(2).map((f) => (
+              {fields.slice(1).map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
                   {f.type === "textarea" ? (

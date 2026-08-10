@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, deleteField } from "firebase/firestore";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX, UserCheck, UserX, Download, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX, UserCheck, UserX, Download, ExternalLink, MoreHorizontal } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
@@ -88,6 +88,9 @@ export default function Planning(){
   const [absenceModal, setAbsenceModal] = useState(null); // dateKey | null
   const [absenceReason, setAbsenceReason] = useState("");
   const [confirmDialog, setConfirmDialog] = useState(null);
+  // Barre d'outils mobile : les filtres et raccourcis sont masqués sous
+  // 768 px et accessibles via un bouton accordéon pour alléger l'en-tête.
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dragValueRef = useRef(true);
 
   const events = useMemo(()=> eventsRaw.map(normalizeEvent), [eventsRaw]);
@@ -1161,7 +1164,25 @@ export default function Planning(){
           </h2>
         </div>
 
-        <div className="ml-auto flex items-center gap-3 flex-wrap">
+        {/* Bouton d'ouverture du menu secondaire (mobile uniquement) */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((o) => !o)}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="planning-toolbar-secondary"
+          className="lg:hidden w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#D8CA82] hover:bg-white/10 border border-white/10 rounded u-micro shrink-0"
+          title="Plus d'options"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        {/* Contrôles secondaires — toujours visibles ≥ lg, repliables < lg */}
+        <div
+          id="planning-toolbar-secondary"
+          className={`ml-auto flex items-center gap-3 flex-wrap transition-all duration-200 lg:flex ${
+            mobileMenuOpen ? "flex" : "hidden lg:flex"
+          }`}
+        >
           <button
             type="button"
             onClick={() => { setTab("availability"); setAvailMode("week"); openAbsenceModal(toDateKey(currentDate)); }}

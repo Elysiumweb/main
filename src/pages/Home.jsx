@@ -34,6 +34,82 @@ const OpponentMark = ({ src, name }) => {
   return <img src={src} alt={`Logo de l'équipe adverse : ${safeName}`} onError={() => setErr(true)} loading="lazy" className="h-16 w-16 sm:h-20 sm:w-20 object-contain" />;
 };
 
+/**
+ * TwitchEmbed — affiche le lecteur Twitch en lazy-loading (IntersectionObserver)
+ * et sans son au montage (muted=true). Le son est activé (muted=false) après
+ * la première interaction globale de l'utilisateur (click / keydown), ce qui
+ * satisfait la politique de autoplay des navigateurs sans bloquer le contenu.
+ *
+ * Le chargement de l'iframe est retardé via IntersectionObserver : le nœud
+ * n'est injecté dans le DOM qu'une fois la section visible à l'écran, ce qui
+ * évite le chargement automatique au montage de la page d'accueil.
+ */
+const TwitchEmbed = () => {
+  const containerRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [unmuted, setUnmuted] = useState(false);
+  const unmutedRef = useRef(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const onInteract = () => {
+      if (!unmutedRef.current) {
+        unmutedRef.current = true;
+        setUnmuted(true);
+      }
+    };
+    window.addEventListener("click", onInteract, { once: false });
+    window.addEventListener("keydown", onInteract, { once: false });
+    return () => {
+      window.removeEventListener("click", onInteract);
+      window.removeEventListener("keydown", onInteract);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="border border-white/10 bg-[#0d0d0d] relative aspect-video overflow-hidden"
+      aria-label="Stream Twitch Elysium"
+    >
+      {!visible && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0d0d0d]" aria-hidden="true">
+          <div className="flex flex-col items-center gap-2 text-[#c8c8c8] text-xs animate-pulse">
+            <Radio size={20} className="text-[#D8CA82]" />
+            <span>Chargement du stream…</span>
+          </div>
+        </div>
+      )}
+      {visible && (
+        <iframe
+          title="Twitch Elysium"
+          data-testid="home-twitch-embed"
+          src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=${unmuted ? "false" : "true"}`}
+          className="absolute inset-0 w-full h-full"
+          allowFullScreen
+          allow="autoplay; fullscreen; sound"
+          loading="lazy"
+        />
+      )}
+    </div>
+  );
+};
+
 export default function Home() {
   const { t, lang } = useLang();
   const [matches, setMatches] = useState([]);
@@ -382,11 +458,7 @@ export default function Home() {
             </a>
           </div>
           <div className="grid lg:grid-cols-2 gap-8">
-            <div className="border border-white/10 bg-[#0d0d0d]">
-              <iframe title="Twitch Elysium" data-testid="home-twitch-embed"
-                src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=true`}
-                className="w-full aspect-video" allowFullScreen />
-            </div>
+            <TwitchEmbed />
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">{t("home.live.replays")}</p>
               {videos.length === 0 ? (

@@ -294,6 +294,7 @@ export default function CommunityCalendar() {
       id: `match-${m.id}`,
       title: `${getTeamName(m)} vs ${m.opponentName || "Adversaire"}${m.status === "finished" ? ` (${m.scoreUs}-${m.scoreThem})` : ""}`,
       date: m.date ? `${m.date}T${m.time || "20:00"}` : "",
+      timezone: m.timezone || undefined,
       description: m.competition ? `Compétition : ${m.competition}` : "",
       link: m.watchUrl || m.vodUrl || "",
     })), [matches]);

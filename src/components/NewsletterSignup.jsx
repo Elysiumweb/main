@@ -97,7 +97,7 @@ export const NewsletterSignup = ({ compact = false }) => {
               aria-invalid={status === "error"}
               aria-describedby={status === "error" ? errorId : undefined}
               data-testid="newsletter-email-input"
-              className={inputCls + " placeholder:text-[#a0a0a0]"}
+              className={inputCls + " flex-1 placeholder:text-[#a0a0a0]"}
             />
             <button
               type="submit"

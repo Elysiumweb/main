@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -17,6 +18,8 @@ const PAGE_SIZE = 9;
 
 export default function Results() {
   const { t } = useLang();
+  const [searchParams] = useSearchParams();
+  const matchIdFromUrl = searchParams.get("match") || null;
   const [matches, setMatches] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -33,6 +36,19 @@ export default function Results() {
       setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     }, (e) => { console.error(e); setError(true); });
   }, [retryKey]);
+
+  // Quand l'URL contient ?match=id, scrolle vers la carte correspondante
+  // après que les données ont été chargées (permet d'ouvrir directement
+  // le détail d'un match depuis la recherche globale ou un lien partagé).
+  useEffect(() => {
+    if (!matchIdFromUrl || !matches) return;
+    const card = document.querySelector(`[data-testid="match-card-${matchIdFromUrl}"]`);
+    if (card) {
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Focus accessible sur la carte (elle a role="button")
+      card.focus({ preventScroll: true });
+    }
+  }, [matchIdFromUrl, matches]);
 
   const competitions = useMemo(() => [...new Set((matches || []).map((m) => m.competition).filter(Boolean))], [matches]);
 
