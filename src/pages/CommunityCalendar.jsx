@@ -11,6 +11,7 @@ import { useAuth } from "../context/AuthContext";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SITE_URL } from "../lib/useSEO";
 import { downloadICS, gcalUrl } from "../lib/calendar";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 const TYPE_ICONS = { tournament: Trophy, training: Dumbbell, stream: Radio, community: PartyPopper };
 const TYPE_COLORS = { tournament: "#D8CA82", training: "#4FC3F7", stream: "#E53935", community: "#81C784" };
@@ -24,7 +25,7 @@ const getAnonId = () => {
       localStorage.setItem("elysium_anon_id", id);
     }
     return id;
-  } catch { return `anon_${Math.random().toString(36).slice(2, 10)}`; }
+  } catch { return `anon_${Math.random().toString(36).slice(2, 8)}`; }
 };
 
 /* ---------- Vue mois ---------- */
@@ -308,7 +309,8 @@ export default function CommunityCalendar() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <PageBreadcrumb items={[{ label: t("cal.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="cal-title">{t("cal.title")}</h1>
           <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("cal.sub")}</p>
         </div>

@@ -13,6 +13,9 @@ import { OptimizedImage } from "../components/OptimizedImage";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { videoEmbedUrl } from "./MediaGallery";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import { fmtMatchDate } from "../lib/formatters";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 
 /* Neutral initials plate when the opponent logo is missing/broken
    (mirrors MatchCard behavior, without implying any partnership). */
@@ -88,13 +91,6 @@ export default function Home() {
     return { total: players.length, byGame, sample: players.slice(0, 5) };
   }, [members]);
 
-  const fmtMatchDate = (m) => {
-    if (!m?.date) return "";
-    const d = new Date(`${m.date}T${m.time ? m.time.slice(0, 5) : "12:00"}:00`);
-    if (isNaN(d.getTime())) return `${m.date}${m.time ? ` · ${m.time}` : ""}`;
-    return d.toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { weekday: "long", day: "numeric", month: "long" }) + (m.time ? ` · ${m.time}` : "");
-  };
-
   return (
     <div className="bg-[#111111]">
       {/* HERO */}
@@ -119,15 +115,17 @@ export default function Home() {
               {t("home.heroSub")}
             </p>
             <div className="anim-fade-up motion-reduce:animate-none flex flex-wrap gap-4 mt-10" style={{ animationDelay: "0.4s" }}>
-              <Link to="/recrutement" data-testid="home-cta-join"
-                onClick={() => trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "home_hero" })}
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-                {t("home.cta.join")} <ArrowRight size={16} aria-hidden="true" />
-              </Link>
-              <Link to="/resultats" data-testid="home-cta-results"
-                className="border border-white/25 text-[#f7f7f7] font-display uppercase tracking-widest text-sm px-8 py-4 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-                {t("home.cta.results")}
-              </Link>
+              <Button variant="gold" size="lg" asChild>
+                <Link to="/recrutement" data-testid="home-cta-join"
+                  onClick={() => trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "home_hero" })}>
+                  {t("home.cta.join")} <ArrowRight size={16} aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/resultats" data-testid="home-cta-results">
+                  {t("home.cta.results")}
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
@@ -185,7 +183,7 @@ export default function Home() {
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-[#D8CA82]/10 to-transparent pointer-events-none" />
             <div className="flex items-start justify-between">
               <p className="font-display font-black text-4xl text-[#D8CA82]">EVA</p>
-              <span className="text-[10px] uppercase tracking-[0.3em] border border-[#D8CA82]/30 text-[#D8CA82]/80 px-2 py-1">{t("home.games.eva.team")}</span>
+              <Badge variant="eva" size="md">{t("home.games.eva.team")}</Badge>
             </div>
             <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.eva.short")}</p>
             <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.eva")}</p>
@@ -193,19 +191,19 @@ export default function Home() {
               {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
             </Link>
           </div>
-          <div className="relative border border-white/10 bg-[#141414] p-8 group overflow-hidden flex flex-col hover:border-[#D8CA82]/40 u-micro" data-testid="home-game-rl">
+          <div className="relative border border-white/10 bg-[#141414] p-8 group overflow-hidden flex flex-col hover:border-[#D8CA82]/50 u-micro" data-testid="home-game-rl">
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-[#D8CA82]/[0.07] to-transparent pointer-events-none" />
             <div className="absolute -right-6 -top-6 w-24 h-24 opacity-10 pointer-events-none" aria-hidden="true">
               <div className="w-full h-full border-2 border-[#D8CA82] rotate-12" />
             </div>
             <div className="flex items-start justify-between">
               <p className="font-display font-black text-4xl text-[#f7f7f7] group-hover:text-[#D8CA82] u-micro">RL</p>
-              <span className="text-[10px] uppercase tracking-[0.3em] border border-white/15 text-[#c8c8c8] group-hover:text-[#D8CA82] group-hover:border-[#D8CA82]/40 px-2 py-1 u-micro">{t("home.games.rl.team")}</span>
+              <Badge variant="outline" size="md" className="group-hover:text-[#D8CA82] group-hover:border-[#D8CA82]/50 u-micro">{t("home.games.rl.team")}</Badge>
             </div>
             <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.rl.short")}</p>
             <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.rl")}</p>
             <div className="mt-6 flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2.5 py-1 font-bold">Nouveau</span>
+              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2.5 py-1 font-bold">{t("home.badge.new")}</span>
               <Link to="/equipe?game=Rocket%20League" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#c8c8c8] hover:text-[#D8CA82] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                 {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
               </Link>
@@ -215,7 +213,7 @@ export default function Home() {
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-[#FF4655]/[0.09] to-transparent pointer-events-none" />
             <div className="flex items-start justify-between">
               <p className="font-display font-black text-4xl text-[#f7f7f7] group-hover:text-[#FF4655] u-micro">VALO</p>
-              <span className="text-[10px] uppercase tracking-[0.3em] border border-white/15 text-[#c8c8c8] group-hover:text-[#FF4655] group-hover:border-[#FF4655]/40 px-2 py-1 u-micro">{t("home.games.valo.team")}</span>
+              <Badge variant="outline" size="md" className="group-hover:text-[#FF4655] group-hover:border-[#FF4655]/50 u-micro">{t("home.games.valo.team")}</Badge>
             </div>
             <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.valo.short")}</p>
             <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.valo")}</p>
@@ -228,7 +226,7 @@ export default function Home() {
           </div>
           <div className="border border-white/10 bg-[#0c0c0c] p-8 flex flex-col justify-center relative overflow-hidden">
             <p className="font-display text-[#c8c8c8] tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
-            <p className="text-[#c8c8c8] text-sm leading-relaxed">Trois pôles compétitifs, même ADN. EVA en arène VR, Rocket League en arène volante, Valorant en FPS tactique.</p>
+            <p className="text-[#c8c8c8] text-sm leading-relaxed">{t("home.games.pillars")}</p>
             <div className="mt-6 h-px bg-white/10" />
             <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-[#D8CA82]/70">Not given. Earned.</p>
           </div>
@@ -246,7 +244,7 @@ export default function Home() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-8">
             {/* PROCHAIN MATCH — grande tuile */}
-            <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative border border-white/10 bg-[#111111] overflow-hidden flex flex-col group hover:border-[#D8CA82]/40 u-micro" data-testid="home-proof-next-match">
+            <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative border border-white/10 bg-[#111111] overflow-hidden flex flex-col group hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-next-match">
               <img src="https://images.pexels.com/photos/9072212/pexels-photo-9072212.jpeg?auto=compress&cs=tinysrgb&w=1200"
                 alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800"
                 className="absolute inset-0 w-full h-full object-cover opacity-25 saturate-[0.4] contrast-125" />
@@ -273,7 +271,7 @@ export default function Home() {
                       <span className="text-[10px] font-display uppercase tracking-[0.3em] text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{nextMatch.game || "EVA"}</span>
                       {nextMatch.roster && <span className="text-[10px] font-display uppercase tracking-[0.25em] text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5">{nextMatch.roster}</span>}
                       {nextMatch.competition && <span className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/70">{nextMatch.competition}</span>}
-                      <span className="text-xs text-[#f7f7f7]/60">{fmtMatchDate(nextMatch)}{nextMatch.timezone ? ` (${nextMatch.timezone})` : ""}</span>
+                      <span className="text-xs text-[#f7f7f7]/60">{fmtMatchDate(nextMatch, lang)}{nextMatch.timezone ? ` (${nextMatch.timezone})` : ""}</span>
                       {nextMatch.watchUrl && (
                         <a href={nextMatch.watchUrl} target="_blank" rel="noopener noreferrer" data-testid="home-proof-watch-link"
                           onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_next_match", matchId: nextMatch.id, platform: nextMatch.platform || "watchUrl" })}
@@ -295,7 +293,7 @@ export default function Home() {
             </article>
 
             {/* PALMARÈS */}
-            <article className="lg:col-span-2 border border-white/10 bg-[#1A1A1A] p-8 flex flex-col hover:border-[#D8CA82]/40 u-micro" data-testid="home-proof-palmares">
+            <article className="lg:col-span-2 border border-white/10 bg-[#1A1A1A] p-8 flex flex-col hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-palmares">
               <p className="text-[10px] font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-6 flex items-center gap-2">
                 <Trophy size={13} aria-hidden="true" /> {t("home.proof.palmares")}
               </p>
@@ -333,7 +331,7 @@ export default function Home() {
             </article>
 
             {/* EFFECTIF */}
-            <article className="lg:col-span-2 border border-white/10 bg-[#141414] p-8 flex flex-col hover:border-[#D8CA82]/40 u-micro" data-testid="home-proof-roster">
+            <article className="lg:col-span-2 border border-white/10 bg-[#141414] p-8 flex flex-col hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-roster">
               <p className="text-[10px] font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-6 flex items-center gap-2">
                 <Users size={13} aria-hidden="true" /> {t("home.proof.roster")}
               </p>
@@ -402,7 +400,7 @@ export default function Home() {
                         <DialogTrigger asChild>
                           <button className="group relative border border-white/10 bg-[#0d0d0d] overflow-hidden text-left hover:border-[#D8CA82]/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
                             data-testid={`home-replay-${v.id}`}
-                            aria-label={`Regarder le replay : ${v.title}`}>
+                            aria-label={`${t("home.live.watchReplay")} : ${v.title}`}>
                             {v.thumbnail ? (
                               <img src={v.thumbnail} alt="" loading="lazy" decoding="async" className="w-full aspect-video object-cover opacity-70 group-hover:opacity-90 transition-opacity" />
                             ) : (
@@ -457,11 +455,12 @@ export default function Home() {
                 </div>
               </div>
             )}
-            <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta"
-              onClick={() => trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_discord" })}
-              className="inline-flex items-center gap-3 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-              <SocialIcon name="discord" size={18} aria-hidden="true" /> {t("home.discord.cta")}
-            </a>
+            <Button variant="gold" size="lg" asChild>
+              <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta"
+                onClick={() => trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_discord" })}>
+                <SocialIcon name="discord" size={18} aria-hidden="true" /> {t("home.discord.cta")}
+              </a>
+            </Button>
           </div>
           <div className="border border-white/10 bg-[#141414] p-8" data-testid="home-discord-rules">
             <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-5">{t("home.discord.faq")}</p>
@@ -493,11 +492,11 @@ export default function Home() {
       {/* SOCIALS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-socials" aria-labelledby="home-socials-h2">
         <h2 id="home-socials-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7] mb-10">{t("home.socials.title")}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {SOCIALS.map((s) => (
-            <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" data-testid={`home-social-${s.icon}`} aria-label={`${s.name} (ouvre dans un nouvel onglet)`}
+            <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" data-testid={`home-social-${s.icon}`} aria-label={`${s.name} (${t("footer.opensNewTab")})`}
               onClick={() => s.icon === "discord" && trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_socials" })}
-              className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/60 hover:-translate-y-1 motion-reduce:hover:translate-y-0 u-micro group focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+              className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 hover:-translate-y-1 motion-reduce:hover:translate-y-0 u-micro group focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               <span className="text-[#c8c8c8] group-hover:text-[#D8CA82] u-micro" aria-hidden="true"><SocialIcon name={s.icon} size={28} /></span>
               <span className="text-xs font-display uppercase tracking-widest text-[#c8c8c8]">{s.name}</span>
             </a>

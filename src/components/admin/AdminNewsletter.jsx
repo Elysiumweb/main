@@ -5,19 +5,22 @@ import { Download, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { db, functions } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
+import { useLang } from "../../lib/i18n";
 import { logAdminAction } from "../../lib/notify";
 import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const fmtDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
 const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
 export const AdminNewsletter = () => {
   const { user, displayName } = useAuth();
+  const { t, lang } = useLang();
   const [subs, setSubs] = useState([]);
   const [query, setQuery] = useState("");
   const [digest, setDigest] = useState({ subject: "", body: "" });
   const [sendingDigest, setSendingDigest] = useState(false);
+
+  const fmtDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
   useEffect(() => {
     return onSnapshot(collection(db, "newsletter"), (snap) => {
@@ -59,16 +62,16 @@ export const AdminNewsletter = () => {
         actor: { uid: user?.uid, name: displayName, email: user?.email },
         target: { collection: "newsletter", id: sub.id },
       });
-      toast.success("Abonné désinscrit");
+      toast.success(t("common.saved"));
     } catch (e) {
       console.error(e);
-      toast.error("Impossible de désinscrire cet email");
+      toast.error(t("common.error"));
     }
   };
 
   const sendDigest = async (e) => {
     e.preventDefault();
-    if (!digest.subject.trim() || !digest.body.trim()) { toast.error("Sujet et contenu requis."); return; }
+    if (!digest.subject.trim() || !digest.body.trim()) { toast.error(t("common.error")); return; }
     setSendingDigest(true);
     try {
       const call = httpsCallable(functions, "sendNewsletterDigest");
@@ -79,11 +82,11 @@ export const AdminNewsletter = () => {
         actor: { uid: user?.uid, name: displayName, email: user?.email },
         target: { collection: "newsletter", id: "digest" },
       });
-      toast.success(`Digest envoyé : ${result.data?.sent || 0}/${result.data?.total || 0}`);
+      toast.success(`Digest: ${result.data?.sent || 0}/${result.data?.total || 0}`);
       setDigest({ subject: "", body: "" });
     } catch (e) {
       console.error(e);
-      toast.error("Envoi du digest impossible. Vérifiez la configuration email des Cloud Functions.");
+      toast.error(t("common.error"));
     }
     setSendingDigest(false);
   };
@@ -94,15 +97,17 @@ export const AdminNewsletter = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Mail className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">Newsletter / abonnés</h2>
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.newsletter.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50">{subs.length} inscrit(s), dont {subs.filter((s) => s.confirmed).length} confirmé(s).</p>
+          <p className="text-sm text-[#f7f7f7]/50">
+            {subs.length} {t("admin.newsletter.subCount")} {subs.filter((s) => s.confirmed).length} {t("admin.newsletter.confirmedCount")}
+          </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un email..."
+            placeholder={t("admin.search.newsletter")}
             className={`${inputCls} w-full sm:w-72`}
             data-testid="admin-newsletter-search"
           />
@@ -112,20 +117,20 @@ export const AdminNewsletter = () => {
             className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-[#D8CA82]/10"
             data-testid="admin-newsletter-export"
           >
-            <Download size={14} /> Export CSV
+            <Download size={14} /> {t("admin.newsletter.exportCsv")}
           </button>
         </div>
       </div>
 
       <form onSubmit={sendDigest} className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 space-y-4" data-testid="admin-newsletter-digest-form">
         <div>
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Envoyer un digest</p>
-          <p className="text-xs text-[#c8c8c8] mt-2">Envoi réel via Cloud Functions + Resend/Brevo aux abonnés confirmés uniquement.</p>
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.newsletter.sendDigest")}</p>
+          <p className="text-xs text-[#c8c8c8] mt-2">{t("admin.newsletter.sendDigestSub")}</p>
         </div>
         <input
           value={digest.subject}
           onChange={(e) => setDigest((d) => ({ ...d, subject: e.target.value }))}
-          placeholder="Sujet du digest"
+          placeholder={t("admin.newsletter.subjectPlaceholder")}
           maxLength={140}
           className={`${inputCls} w-full`}
           data-testid="admin-newsletter-digest-subject"
@@ -133,7 +138,7 @@ export const AdminNewsletter = () => {
         <textarea
           value={digest.body}
           onChange={(e) => setDigest((d) => ({ ...d, body: e.target.value }))}
-          placeholder="Contenu du digest (texte brut, liens acceptés)…"
+          placeholder={t("admin.newsletter.bodyPlaceholder")}
           rows={6}
           maxLength={6000}
           className={`${inputCls} w-full resize-none`}
@@ -141,7 +146,7 @@ export const AdminNewsletter = () => {
         />
         <button type="submit" disabled={sendingDigest} data-testid="admin-newsletter-digest-send"
           className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
-          Envoyer aux confirmés
+          {t("admin.newsletter.sendBtn")}
         </button>
       </form>
 
@@ -149,35 +154,35 @@ export const AdminNewsletter = () => {
         <table className="w-full text-sm" data-testid="admin-newsletter-table">
           <thead>
             <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#f7f7f7]/40">
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Langue</th>
-              <th className="px-4 py-3">Confirmé</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3 text-right">Action</th>
+              <th className="px-4 py-3">{t("admin.table.email")}</th>
+              <th className="px-4 py-3">{t("admin.table.language")}</th>
+              <th className="px-4 py-3">{t("admin.table.confirmed")}</th>
+              <th className="px-4 py-3">{t("admin.table.date")}</th>
+              <th className="px-4 py-3 text-right">{t("admin.table.action")}</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-[#f7f7f7]/40 text-center">Aucun abonné.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-[#f7f7f7]/40 text-center">{t("admin.newsletter.empty")}</td></tr>
             ) : filtered.map((s) => (
               <tr key={s.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-newsletter-row-${s.id}`}>
                 <td className="px-4 py-3 text-[#f7f7f7] font-medium">{s.email}</td>
                 <td className="px-4 py-3 text-[#f7f7f7]/60 uppercase">{s.lang || "fr"}</td>
                 <td className="px-4 py-3">
                   <span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${s.confirmed ? "text-emerald-300 border-emerald-300/40" : "text-orange-300 border-orange-300/40"}`}>
-                    {s.confirmed ? "Oui" : "Non"}
+                    {s.confirmed ? t("common.yes") : t("common.no")}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-[#f7f7f7]/50">{fmtDate(s.subscribedAt)}</td>
                 <td className="px-4 py-3 text-right">
                   <ConfirmAction
-                    title="Désinscrire cet email ?"
-                    description={`${s.email} sera retiré de la newsletter.`}
-                    confirmLabel="Désinscrire"
+                    title={t("admin.newsletter.unsubscribeTitle")}
+                    description={`${s.email} ${t("admin.newsletter.unsubscribeDesc")}`}
+                    confirmLabel={t("admin.newsletter.unsubscribe")}
                     onConfirm={() => unsubscribe(s)}
                   >
                     <button className="inline-flex items-center gap-1.5 text-red-300/80 hover:text-red-300 text-xs uppercase tracking-widest" data-testid={`admin-newsletter-unsubscribe-${s.id}`}>
-                      <Trash2 size={13} /> Désinscrire
+                      <Trash2 size={13} /> {t("admin.newsletter.unsubscribe")}
                     </button>
                   </ConfirmAction>
                 </td>

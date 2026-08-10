@@ -4,24 +4,27 @@ import { Mail, Handshake } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
+import { useLang } from "../../lib/i18n";
 import { logAdminAction } from "../../lib/notify";
 
 const inputCls = "bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const STATUSES = [
-  { id: "new", label: "Nouveau", cls: "text-sky-300 border-sky-300/40" },
-  { id: "contacted", label: "Contacté", cls: "text-[#D8CA82] border-[#D8CA82]/40" },
-  { id: "won", label: "Conclu", cls: "text-emerald-300 border-emerald-300/40" },
-];
-
-const statusLabel = (status) => STATUSES.find((s) => s.id === (status || "new"))?.label || "Nouveau";
-const statusCls = (status) => STATUSES.find((s) => s.id === (status || "new"))?.cls || STATUSES[0].cls;
-
-const fmtDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
 export const AdminPartnerRequests = () => {
   const { user, displayName } = useAuth();
+  const { t, lang } = useLang();
   const [requests, setRequests] = useState([]);
   const [query, setQuery] = useState("");
+
+  const STATUSES = [
+    { id: "new", label: t("admin.partnerRequests.statusNew"), cls: "text-sky-300 border-sky-300/40" },
+    { id: "contacted", label: t("admin.partnerRequests.statusContacted"), cls: "text-[#D8CA82] border-[#D8CA82]/40" },
+    { id: "won", label: t("admin.partnerRequests.statusWon"), cls: "text-emerald-300 border-emerald-300/40" },
+  ];
+
+  const statusLabel = (status) => STATUSES.find((s) => s.id === (status || "new"))?.label || t("admin.partnerRequests.statusNew");
+  const statusCls = (status) => STATUSES.find((s) => s.id === (status || "new"))?.cls || STATUSES[0].cls;
+
+  const fmtReqDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
   useEffect(() => {
     return onSnapshot(collection(db, "partner_requests"), (snap) => {
@@ -49,10 +52,10 @@ export const AdminPartnerRequests = () => {
         target: { collection: "partner_requests", id: req.id },
         details: { previousStatus: req.status || "new", status },
       });
-      toast.success("Statut mis à jour");
+      toast.success(t("common.saved"));
     } catch (e) {
       console.error(e);
-      toast.error("Impossible de mettre à jour la demande");
+      toast.error(t("common.error"));
     }
   };
 
@@ -62,21 +65,21 @@ export const AdminPartnerRequests = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Handshake className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">Demandes partenaires</h2>
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.partnerRequests.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50">Suivi des formulaires “Devenir partenaire”.</p>
+          <p className="text-sm text-[#f7f7f7]/50">{t("admin.partnerRequests.sub")}</p>
         </div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher une entreprise, un email..."
+          placeholder={t("admin.search.partners")}
           className={`${inputCls} w-full sm:w-80`}
           data-testid="admin-partners-search"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-[#f7f7f7]/40 border border-white/10 bg-[#1A1A1A] p-6">Aucune demande partenaire.</p>
+        <p className="text-[#f7f7f7]/40 border border-white/10 bg-[#1A1A1A] p-6">{t("admin.partnerRequests.empty")}</p>
       ) : (
         <div className="grid gap-4">
           {filtered.map((r) => {
@@ -88,9 +91,9 @@ export const AdminPartnerRequests = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${statusCls(r.status)}`}>{statusLabel(r.status)}</span>
-                      <span className="text-xs text-[#f7f7f7]/35">{fmtDate(r.createdAt)}</span>
+                      <span className="text-xs text-[#f7f7f7]/35">{fmtReqDate(r.createdAt)}</span>
                     </div>
-                    <h3 className="font-display font-bold text-[#f7f7f7] mt-3 text-lg truncate">{r.company || "Entreprise non renseignée"}</h3>
+                    <h3 className="font-display font-bold text-[#f7f7f7] mt-3 text-lg truncate">{r.company || "Entreprise"}</h3>
                     <p className="text-sm text-[#f7f7f7]/55 mt-1">
                       {r.name || "Contact"} · <a className="text-[#D8CA82] hover:underline" href={`mailto:${r.email}`}>{r.email}</a>
                       {r.budget ? ` · Budget : ${r.budget}` : ""}
@@ -111,7 +114,7 @@ export const AdminPartnerRequests = () => {
                       className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.35)]"
                       data-testid={`admin-partner-reply-${r.id}`}
                     >
-                      <Mail size={14} /> Répondre par email
+                      <Mail size={14} /> {t("admin.partnerRequests.replyEmail")}
                     </a>
                   </div>
                 </div>

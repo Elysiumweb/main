@@ -6,6 +6,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { GAMES } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -113,7 +114,8 @@ export default function Stats() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <PageBreadcrumb items={[{ label: t("stats.title") }]} />
           <div className="flex items-center gap-3 mb-2">
             <BarChart3 className="text-[#D8CA82]" size={20} />
             <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="stats-title">{t("stats.title")}</h1>

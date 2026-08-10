@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { SocialIcon } from "./SocialIcon";
 import { NewsletterSignup } from "./NewsletterSignup";
-import { MessageSquare, Mail, Heart } from "lucide-react";
+import { Mail, Heart } from "lucide-react";
 
 export const Footer = () => {
   const { t } = useLang();
   return (
-    <footer className="border-t border-white/10 bg-[#0c0c0c] relative overflow-hidden" data-testid="footer" aria-label="Pied de page">
+    <footer className="border-t border-white/10 bg-[#0c0c0c] relative overflow-hidden" data-testid="footer" aria-label={t("footer.ariaLabel")}>
       <div className="pattern-overlay" />
 
       {/* Top Main Grid */}
@@ -20,7 +20,7 @@ export const Footer = () => {
             <img src="/brand/wordmark-gold.png" alt="" aria-hidden="true" className="h-7 mb-3" />
           </Link>
           <p className="text-xs text-[#c8c8c8] leading-relaxed max-w-sm">
-            Elysium Esport — Organisation e-sportive française compétitive sur EVA, Rocket League et Valorant. Not given. Earned.
+            {t("footer.brandBio")}
           </p>
 
           {/* Discord CTA */}
@@ -34,17 +34,17 @@ export const Footer = () => {
             >
               <SocialIcon name="discord" size={18} className="text-[#5865F2]" aria-hidden="true" />
               <div className="text-left">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#f7f7f7]">Discord Elysium</p>
-                <p className="text-[9px] text-[#c8c8c8] uppercase tracking-widest">Rejoindre la communauté</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#f7f7f7]">{t("footer.discordTitle")}</p>
+                <p className="text-[9px] text-[#c8c8c8] uppercase tracking-widest">{t("footer.discordSub")}</p>
               </div>
             </a>
           </div>
         </div>
 
         {/* Col 2: Navigation secondaire */}
-        <nav className="lg:col-span-3 space-y-3" aria-label="Navigation du site">
+        <nav className="lg:col-span-3 space-y-3" aria-label={t("footer.ariaNav")}>
           <p className="text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] font-semibold mb-4">
-            Navigation
+            {t("footer.navigation")}
           </p>
           <ul className="space-y-2 text-xs uppercase tracking-wider text-[#c8c8c8]">
             <li>
@@ -91,9 +91,9 @@ export const Footer = () => {
         </nav>
 
         {/* Col 3: Support, Contact & Legal */}
-        <nav className="lg:col-span-2 space-y-3" aria-label="Contact et aide">
+        <nav className="lg:col-span-2 space-y-3" aria-label={t("footer.ariaHelp")}>
           <p className="text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] font-semibold mb-4">
-            Contact &amp; Aide
+            {t("footer.contactHelp")}
           </p>
           <ul className="space-y-2 text-xs uppercase tracking-wider text-[#c8c8c8]">
             <li>
@@ -144,7 +144,7 @@ export const Footer = () => {
           <NewsletterSignup compact />
 
           <div className="pt-2">
-            <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mb-2" id="footer-socials-label">Suivez-nous</p>
+            <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mb-2" id="footer-socials-label">{t("footer.followUs")}</p>
             <div className="flex items-center gap-4" data-testid="footer-socials" role="list" aria-labelledby="footer-socials-label">
               {SOCIALS.map((s) => (
                 <a
@@ -153,7 +153,7 @@ export const Footer = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid={`footer-social-${s.icon}`}
-                  aria-label={`${s.name} (ouvre dans un nouvel onglet)`}
+                  aria-label={`${s.name} (${t("footer.opensNewTab")})`}
                   className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
                   title={s.name}
                 >
@@ -173,7 +173,7 @@ export const Footer = () => {
             © 2026 Elysium — {t("footer.rights")}
           </p>
 
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-widest text-[#c8c8c8]" data-testid="footer-legal-links" aria-label="Liens légaux">
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-widest text-[#c8c8c8]" data-testid="footer-legal-links" aria-label={t("footer.ariaLegal")}>
             <Link to="/mentions-legales" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-link-mentions">
               {t("legal.mentions")}
             </Link>

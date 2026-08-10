@@ -7,6 +7,7 @@ import { SITE_URL } from "../lib/useSEO";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
 import { getElysiumTeamName } from "../lib/constants";
+import { fmtMatchDate } from "../lib/formatters";
 
 /* -----------------------------------------------------------------------
  * OpponentLogo
@@ -113,7 +114,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
 };
 
 export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming }) => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const upcoming = match.status === "upcoming";
   const live = match.status === "live";
   const us = Number(match.scoreUs);
@@ -132,9 +133,11 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       ? `Match à venir : ${teamName} contre ${match.opponentName || "adversaire"}`
       : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || "adversaire"}`;
 
+  const formattedDate = fmtMatchDate(match, lang);
+
   const card = (
     <div
-      className="border border-white/10 bg-[#1A1A1A] p-6 relative group hover:border-[#D8CA82]/40 transition-colors cursor-pointer motion-reduce:transition-none"
+      className="border border-white/10 bg-[#1A1A1A] p-6 relative group hover:border-[#D8CA82]/50 transition-colors cursor-pointer motion-reduce:transition-none"
       data-testid={`match-card-${match.id}`}
       role="button"
       tabIndex={0}
@@ -184,7 +187,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       </div>
       <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs text-[#c8c8c8]">
-          {match.date}{match.time ? ` · ${match.time}` : ""}{match.time && match.timezone ? ` (${match.timezone})` : ""}
+          {formattedDate}{match.time && match.timezone ? ` (${match.timezone})` : ""}
         </span>
         {match.competition && <span className="text-xs text-[#D8CA82]/80 uppercase tracking-wider">{match.competition}</span>}
       </div>
@@ -208,9 +211,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(match); }}
               data-testid={`match-duplicate-${match.id}`}
-              aria-label={`Dupliquer le match contre ${match.opponentName}`}
+              aria-label={`${t("admin.match.duplicate")} — ${match.opponentName}`}
               className="text-[#f7f7f7]/50 hover:text-[#D8CA82] p-1"
-              title="Dupliquer"
+              title={t("admin.match.duplicate")}
             >
               <Copy size={13} aria-hidden="true" />
             </button>
@@ -219,9 +222,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             <button
               onClick={(e) => { e.stopPropagation(); onMarkUpcoming(match); }}
               data-testid={`match-upcoming-${match.id}`}
-              aria-label={`Passer le match contre ${match.opponentName} à venir`}
+              aria-label={`${t("admin.match.makeUpcoming")} — ${match.opponentName}`}
               className="text-sky-300/70 hover:text-sky-300 p-1"
-              title="Passer à venir"
+              title={t("admin.match.makeUpcoming")}
             >
               <RotateCcw size={13} aria-hidden="true" />
             </button>
@@ -230,9 +233,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(match); }}
               data-testid={`match-edit-${match.id}`}
-              aria-label={`Modifier le match contre ${match.opponentName}`}
+              aria-label={`${t("admin.edit")} — ${match.opponentName}`}
               className="text-[#D8CA82]/80 hover:text-[#D8CA82] p-1"
-              title="Modifier"
+              title={t("admin.edit")}
             >
               <Pencil size={13} aria-hidden="true" />
             </button>
@@ -241,9 +244,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(match); }}
               data-testid={`match-delete-${match.id}`}
-              aria-label={`Supprimer le match contre ${match.opponentName}`}
+              aria-label={`${t("common.delete")} — ${match.opponentName}`}
               className="text-red-400 hover:text-red-300 p-1"
-              title="Supprimer"
+              title={t("common.delete")}
             >
               <span aria-hidden="true">✕</span>
             </button>
@@ -281,7 +284,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             </div>
           </div>
           <p className="text-[#c8c8c8]">
-            {match.date}{match.time ? ` · ${match.time}` : ""}{match.timezone ? ` (${match.timezone})` : ""}
+            {formattedDate}{match.timezone ? ` (${match.timezone})` : ""}
             {match.competition ? ` — ${match.competition}` : ""}{match.platform ? ` — ${match.platform}` : ""}
           </p>
           {roster && (

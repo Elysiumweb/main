@@ -10,6 +10,8 @@ import { EmptyState } from "../components/States";
 import { createNotification } from "../lib/notify";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Button } from "../components/ui/button";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const AGE_RANGES = ["-16", "16-17", "18-24", "25+"];
@@ -97,7 +99,8 @@ export default function Recruitment() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <PageBreadcrumb items={[{ label: t("recruit.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="recruit-title">{t("recruit.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("recruit.sub")}</p>
         </div>
@@ -115,7 +118,7 @@ export default function Recruitment() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="recruit-positions-grid">
             {positions.map((p) => (
-              <div key={p.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col gap-4 hover:border-[#D8CA82]/40 transition-colors" data-testid={`recruit-position-${p.id}`}>
+              <div key={p.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col gap-4 hover:border-[#D8CA82]/50 transition-colors" data-testid={`recruit-position-${p.id}`}>
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-display font-bold text-[#f7f7f7]">{p.title}</p>
                   <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5 shrink-0">{p.game}</span>
@@ -180,10 +183,9 @@ export default function Recruitment() {
                   className="mt-1 accent-[#D8CA82]" />
                 <span className="text-xs text-[#c8c8c8] leading-relaxed">{t("recruit.form.consent")}</span>
               </label>
-              <button type="submit" disabled={sending} data-testid="recruit-submit-btn"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
+              <Button type="submit" disabled={sending} data-testid="recruit-submit-btn" variant="gold" size="md">
                 {t("recruit.form.submit")}
-              </button>
+              </Button>
             </form>
           )}
         </div>

@@ -8,6 +8,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
 import { GAMES, ROSTERS, gameHasRosters, getGameColor, getGameShortLabel } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Badge } from "../components/ui/badge";
 
 const GAME_FILTER_KEYS = {
   "EVA": "team.filter.eva",
@@ -15,12 +16,8 @@ const GAME_FILTER_KEYS = {
   "Valorant": "team.filter.valorant",
 };
 
-const gameBadgeCls = (game) =>
-  game === "Rocket League"
-    ? "border-[#F4511E]/50 text-[#F4511E] bg-[#F4511E]/10"
-    : game === "Valorant"
-      ? "border-[#FF4655]/50 text-[#FF4655] bg-[#FF4655]/10"
-      : "border-[#D8CA82]/30 text-[#D8CA82]/70";
+const gameBadgeVariant = (game) =>
+  game === "Rocket League" ? "rl" : game === "Valorant" ? "valo" : "eva";
 
 const ORDER = ["player", "sub", "staff"];
 
@@ -150,22 +147,22 @@ export default function Team() {
 
           {/* EVA, RL & Valorant highlight */}
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
-            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="EVA"||gameFilter==="all" ? "border-[#D8CA82]/40 bg-[#D8CA82]/5" : "border-white/10 bg-[#141414]/50"}`}>
+            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="EVA"||gameFilter==="all" ? "border-[#D8CA82]/50 bg-[#D8CA82]/5" : "border-white/10 bg-[#141414]/50"}`}>
               <p className="font-display font-black text-2xl text-[#D8CA82]">EVA</p>
-              <p className="text-xs text-[#f7f7f7]/60">Esports Virtual Arenas — arène VR compétitive</p>
+              <p className="text-xs text-[#f7f7f7]/60">{t("team.evaSub")}</p>
             </div>
-            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="Rocket League"||gameFilter==="all" ? "border-[#F4511E]/40 bg-[#F4511E]/5" : "border-white/10 bg-[#141414]/50"}`}>
+            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="Rocket League"||gameFilter==="all" ? "border-[#F4511E]/50 bg-[#F4511E]/5" : "border-white/10 bg-[#141414]/50"}`}>
               <p className="font-display font-black text-2xl text-[#f7f7f7]">RL</p>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#F4511E]">Nouveau pôle</p>
-                <p className="text-xs text-[#f7f7f7]/60">Rocket League — car football</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#F4511E]">{t("team.newPole")}</p>
+                <p className="text-xs text-[#f7f7f7]/60">{t("team.rlSub")}</p>
               </div>
             </div>
-            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="Valorant"||gameFilter==="all" ? "border-[#FF4655]/40 bg-[#FF4655]/5" : "border-white/10 bg-[#141414]/50"}`}>
+            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="Valorant"||gameFilter==="all" ? "border-[#FF4655]/50 bg-[#FF4655]/5" : "border-white/10 bg-[#141414]/50"}`}>
               <p className="font-display font-black text-2xl text-[#f7f7f7]">VALO</p>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#FF4655]">Nouveau pôle</p>
-                <p className="text-xs text-[#f7f7f7]/60">Valorant — FPS tactique 5v5 · Valeureux & Vaillant</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#FF4655]">{t("team.newPole")}</p>
+                <p className="text-xs text-[#f7f7f7]/60">{t("team.valoSub")}</p>
               </div>
             </div>
           </div>
@@ -185,25 +182,25 @@ export default function Team() {
                 <div className="flex items-center gap-4 mb-8">
                   <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t(`team.status.${g.status}`)}</h2>
                   <div className="flex-1 h-px bg-white/10" />
-                  <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{g.list.length} joueurs</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{g.list.length} {t("team.players")}</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {g.list.map((m) => (
                     <Link key={m.id} to={`/equipe/${m.id}`} data-testid={`team-card-${m.id}`}
-                      className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/60 transition-colors overflow-hidden">
+                      className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/50 transition-colors overflow-hidden">
                       <PlayerPhoto src={m.photo} alt={m.pseudo} className="w-full h-52" />
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-display font-bold text-lg text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{m.pseudo}</p>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            {m.roster && <span className="text-[8px] uppercase tracking-widest px-1.5 py-0.5 border border-white/15 text-[#f7f7f7]/50">{m.roster}</span>}
-                            <span className={`text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${gameBadgeCls(m.game)}`}>{getGameShortLabel(m.game)}</span>
+                            {m.roster && <Badge variant="outline" size="sm">{m.roster}</Badge>}
+                            <Badge variant={gameBadgeVariant(m.game)} size="sm">{getGameShortLabel(m.game)}</Badge>
                           </div>
                         </div>
                         {m.ingameRole && <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/60 mt-1">{m.ingameRole}</p>}
                         {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{m.bio}</p>}
                         <div className="flex items-center gap-3 mt-4">
-                          {["x", "twitch", "instagram", "youtube", "tiktok", "threads"].filter((k) => m.socials?.[k]).map((k) => (
+                          {["x", "twitch", "instagram", "youtube", "tiktok"].filter((k) => m.socials?.[k]).map((k) => (
                             <span key={k} className="text-[#f7f7f7]/40"><SocialIcon name={k} size={14} /></span>
                           ))}
                           <span className="ml-auto text-[10px] uppercase tracking-widest text-[#D8CA82]/60">{t("team.view")} →</span>

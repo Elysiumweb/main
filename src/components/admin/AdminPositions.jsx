@@ -45,8 +45,10 @@ export const AdminPositions = () => {
   return (
     <div className="grid lg:grid-cols-12 gap-10">
       <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-positions-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{editId ? "Modifier" : "Ajouter"} un poste</p>
-        <input value={form.title} onChange={set("title")} placeholder="Intitulé du poste (ex: Joueur EVA — Support)" required className={inputCls} data-testid="admin-position-title" />
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+          {editId ? t("admin.positions.edit") : t("admin.positions.add")}
+        </p>
+        <input value={form.title} onChange={set("title")} placeholder={t("admin.positions.titlePlaceholder")} required className={inputCls} data-testid="admin-position-title" />
         <div className="grid grid-cols-2 gap-4">
           <select value={form.game} onChange={set("game")} className={inputCls} data-testid="admin-position-game">
             {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
@@ -58,7 +60,7 @@ export const AdminPositions = () => {
         </div>
         <textarea value={form.prerequisites} onChange={set("prerequisites")} placeholder={t("recruit.prereq")} rows={2} className={inputCls} data-testid="admin-position-prereq" />
         <input value={form.availability} onChange={set("availability")} placeholder={t("recruit.avail")} className={inputCls} data-testid="admin-position-avail" />
-        <textarea value={form.processText} onChange={set("processText")} placeholder={"Processus (une étape par ligne)"} rows={3} className={inputCls} data-testid="admin-position-process" />
+        <textarea value={form.processText} onChange={set("processText")} placeholder={t("admin.positions.processPlaceholder")} rows={3} className={inputCls} data-testid="admin-position-process" />
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("recruit.deadline")}</label>
           <input type="date" value={form.deadline} onChange={set("deadline")} className={inputCls} data-testid="admin-position-deadline" />
@@ -85,14 +87,14 @@ export const AdminPositions = () => {
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{p.title}</p>
               <p className="text-xs text-[#f7f7f7]/40">{p.game}{p.deadline ? ` · ${t("recruit.deadline")}: ${p.deadline}` : ""}</p>
             </div>
-            <button onClick={() => edit(p)} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-position-edit-${p.id}`}><Pencil size={15} /></button>
+            <button onClick={() => edit(p)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${p.title}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-position-edit-${p.id}`}><Pencil size={15} /></button>
             <ConfirmAction
-              title="Supprimer ce poste ?"
-              description="Le poste disparaîtra de la page recrutement."
-              confirmLabel="Supprimer"
+              title={t("admin.positions.deleteTitle")}
+              description={t("admin.positions.deleteDesc")}
+              confirmLabel={t("common.delete")}
               onConfirm={() => del(p.id)}
             >
-              <button className="text-red-400/70 hover:text-red-400" data-testid={`admin-position-delete-${p.id}`}><Trash2 size={15} /></button>
+              <button className="text-red-400/70 hover:text-red-400" title={t("common.delete")} aria-label={`${t("common.delete")} ${p.title}`} data-testid={`admin-position-delete-${p.id}`}><Trash2 size={15} /></button>
             </ConfirmAction>
           </div>
         ))}

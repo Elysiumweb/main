@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart } from "lucide-react";
 import { DonateBlock } from "../components/DonateButton";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Button } from "../components/ui/button";
 
 const values = [
   { key: "compete", icon: Trophy },
@@ -91,7 +93,8 @@ export default function Partners() {
       {/* HERO */}
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <PageBreadcrumb items={[{ label: t("partners.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
         </div>
@@ -99,11 +102,11 @@ export default function Partners() {
 
       {/* VALUES */}
       <section className="border-b border-white/10 bg-[#0c0c0c]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-values">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-values">
           <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-10">{t("partners.values.title")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {values.map(({ key, icon: Icon }) => (
-              <div key={key} className="border border-white/10 bg-[#1A1A1A] p-6 hover:border-[#D8CA82]/40 transition-colors">
+              <div key={key} className="border border-white/10 bg-[#1A1A1A] p-6 hover:border-[#D8CA82]/50 transition-colors">
                 <Icon className="text-[#D8CA82] mb-4" size={24} />
                 <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t(`partners.values.${key}`)}</h3>
                 <p className="text-sm text-[#f7f7f7]/50 leading-relaxed">{t(`partners.values.${key}.desc`)}</p>
@@ -114,7 +117,7 @@ export default function Partners() {
       </section>
 
       {/* OFFERS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-offers">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-offers">
         <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-10">{t("partners.offers.title")}</h2>
         <div className="grid sm:grid-cols-3 gap-6">
           {tiers.map((tier) => (
@@ -130,7 +133,7 @@ export default function Partners() {
 
       {/* PARTNER LOGOS */}
       <section className="border-t border-white/10 bg-[#0c0c0c]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-logos">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-logos">
           {error ? (
             <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="partners-error" />
           ) : partners === null ? (
@@ -150,7 +153,7 @@ export default function Partners() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {list.map((p) => (
                       <a key={p.id} href={p.website || "#"} target="_blank" rel="noopener noreferrer"
-                        className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/40 transition-colors">
+                        className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors">
                         <PartnerLogo src={p.logoUrl} name={p.name} className="w-full h-20" />
                         <p className="font-display font-bold text-sm text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors text-center">{p.name}</p>
                         {p.website && <ExternalLink size={12} className="text-[#f7f7f7]/30" />}
@@ -166,7 +169,7 @@ export default function Partners() {
 
       {/* DON — PARTICULIERS */}
       <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="partners-donate-h2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-donate">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-donate">
           <div className="flex items-center gap-4 mb-10">
             <Heart className="text-[#D8CA82]" size={20} aria-hidden="true" />
             <h2 id="partners-donate-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
@@ -177,7 +180,7 @@ export default function Partners() {
       </section>
 
       {/* CONTACT FORM */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-8 py-20" data-testid="partners-contact">
+      <section className="max-w-3xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-contact">
         <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-3">{t("partners.contact.title")}</h2>
         <p className="text-[#f7f7f7]/50 mb-10">{t("partners.contact.sub")}</p>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" data-testid="partners-contact-form">
@@ -212,10 +215,9 @@ export default function Partners() {
             <textarea id="partner-message" name="message" rows={5} required placeholder={t("partners.contact.message.placeholder")} data-testid="partner-form-message"
               className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0] resize-none" />
           </div>
-          <button type="submit" data-testid="partner-form-submit"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none">
+          <Button type="submit" data-testid="partner-form-submit" variant="gold" size="lg" className="flex items-center gap-2">
             <Mail size={16} aria-hidden="true" /> {t("partners.contact.submit")}
-          </button>
+          </Button>
         </form>
       </section>
     </div>

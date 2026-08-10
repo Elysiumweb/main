@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { ScrollText } from "lucide-react";
 import { db } from "../../lib/firebase";
+import { useLang } from "../../lib/i18n";
 
 const inputCls = "bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const fmtDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
 const ACTION_LABELS = {
   user_role_changed: "Changement de rôle",
@@ -24,8 +24,11 @@ const ACTION_LABELS = {
 };
 
 export const AdminAudit = () => {
+  const { t, lang } = useLang();
   const [logs, setLogs] = useState([]);
   const [query, setQuery] = useState("");
+
+  const fmtDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
   useEffect(() => {
     return onSnapshot(collection(db, "admin_audit"), (snap) => {
@@ -49,14 +52,14 @@ export const AdminAudit = () => {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <ScrollText className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">Journal d'audit admin</h2>
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.audit.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50">Actions sensibles avec acteur et horodatage.</p>
+          <p className="text-sm text-[#f7f7f7]/50">{t("admin.audit.sub")}</p>
         </div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher une action, un acteur..."
+          placeholder={t("admin.search.audit")}
           className={`${inputCls} w-full sm:w-80`}
           data-testid="admin-audit-search"
         />
@@ -66,15 +69,15 @@ export const AdminAudit = () => {
         <table className="w-full text-sm" data-testid="admin-audit-table">
           <thead>
             <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#f7f7f7]/40">
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Action</th>
-              <th className="px-4 py-3">Cible</th>
-              <th className="px-4 py-3">Acteur</th>
+              <th className="px-4 py-3">{t("admin.table.date")}</th>
+              <th className="px-4 py-3">{t("admin.table.action")}</th>
+              <th className="px-4 py-3">{t("admin.table.target")}</th>
+              <th className="px-4 py-3">{t("admin.table.actor")}</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-[#f7f7f7]/40 text-center">Aucune action journalisée.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-8 text-[#f7f7f7]/40 text-center">{t("admin.audit.empty")}</td></tr>
             ) : filtered.slice(0, 250).map((l) => (
               <tr key={l.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-audit-row-${l.id}`}>
                 <td className="px-4 py-3 text-[#f7f7f7]/50 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
@@ -95,7 +98,7 @@ export const AdminAudit = () => {
           </tbody>
         </table>
       </div>
-      {filtered.length > 250 && <p className="text-xs text-[#f7f7f7]/40">250 dernières lignes affichées sur {filtered.length} résultat(s).</p>}
+      {filtered.length > 250 && <p className="text-xs text-[#f7f7f7]/40">250 {t("admin.audit.lastLines")} {filtered.length} {t("admin.audit.results")}</p>}
     </div>
   );
 };

@@ -9,6 +9,8 @@ import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { createNotification, CONTACT_EMAIL } from "../lib/notify";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
+import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Button } from "../components/ui/button";
 
 const CATS = ["account", "technical", "team", "other"];
 const PRIOS = ["low", "normal", "high"];
@@ -39,7 +41,7 @@ export default function Support() {
     const limit = checkSessionRateLimit("support_ticket", { max: 3, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     if (!subject.trim() || !description.trim()) return;
-    if (attachment && !/^https?:\/\/.+/.test(attachment)) { toast.error("URL de pièce jointe invalide"); return; }
+    if (attachment && !/^https?:\/\/.+/.test(attachment)) { toast.error(t("support.invalidAttachment")); return; }
     setSending(true);
     try {
       const meta = `[${t(`support.cat.${category}`)} · ${t(`support.prio.${priority}`)}]\n${description.trim()}${attachment ? `\n📎 ${attachment}` : ""}`;
@@ -62,7 +64,8 @@ export default function Support() {
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <PageBreadcrumb items={[{ label: t("support.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="support-title">{t("support.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("support.sub")}</p>
         </div>
@@ -147,10 +150,9 @@ export default function Support() {
                 <input id="support-attachment" type="url" value={attachment} onChange={(e) => setAttachment(e.target.value)} placeholder="https://..." data-testid="support-attachment-input"
                   className="w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
               </div>
-              <button type="submit" disabled={sending} data-testid="support-submit-btn"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
+              <Button type="submit" disabled={sending} data-testid="support-submit-btn" variant="gold" size="md">
                 {t("support.form.submit")}
-              </button>
+              </Button>
               <p className="text-xs text-[#c8c8c8]">
                 {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="support-contact-email">{CONTACT_EMAIL}</a>
               </p>
