@@ -112,7 +112,7 @@ export const GlobalSearch = () => {
         // simplement les pages sans résultats players/matches/articles.
       })
       .finally(() => setLoadingData(false));
-  }, [open]);
+  }, [open, initialOpen]);
 
   const runCommand = useCallback((action) => {
     setOpen(false);
