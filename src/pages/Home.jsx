@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink } from "lucide-react";
