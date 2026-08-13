@@ -1,11 +1,10 @@
 import { useMemo, useState } from "react";
-import { doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { sendEmailVerification } from "firebase/auth";
+import { deleteField, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { Check, Copy, ShieldCheck } from "lucide-react";
-import { auth, db } from "../lib/firebase";
+import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
-import { mfaErrorMessage, userHasGoogle } from "../lib/mfa";
+import { mfaErrorMessage } from "../lib/mfa";
 import { toQrDataUrl } from "../lib/qrDataUrl";
 import { generateTotpSecret, markMfaSessionOk, totpOtpauthUrl, verifyTotp } from "../lib/totp";
 
@@ -19,25 +18,20 @@ export const MfaTotpPanel = () => {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [panelError, setPanelError] = useState("");
 
-  const hasGoogle = userHasGoogle(user);
-  const emailVerified = !!user?.emailVerified || hasGoogle;
   const enrolling = !!secret;
 
   const accountLabel = useMemo(() => user?.email || user?.uid || "elysium", [user]);
 
   if (!user) return null;
 
-  const currentUser = () => auth.currentUser || user;
-
   const startEnrollment = async () => {
-    if (!emailVerified) {
-      toast.error(mfaErrorMessage({ code: "auth/unverified-email" }));
-      return;
-    }
+    setPanelError("");
     setBusy(true);
     try {
       const nextSecret = generateTotpSecret();
+      if (!nextSecret) throw new Error("Impossible de générer une clé TOTP.");
       const otpauth = totpOtpauthUrl(nextSecret, accountLabel);
       setSecret(nextSecret);
       setQrUrl(otpauth);
@@ -49,7 +43,9 @@ export const MfaTotpPanel = () => {
       }
     } catch (err) {
       console.error(err);
-      toast.error(mfaErrorMessage(err));
+      const msg = mfaErrorMessage(err);
+      setPanelError(msg);
+      toast.error(msg);
     }
     setBusy(false);
   };
@@ -59,18 +55,24 @@ export const MfaTotpPanel = () => {
     if (!secret) return;
     setBusy(true);
     try {
+      setPanelError("");
       const ok = await verifyTotp(secret, code);
       if (!ok) {
-        toast.error("Code invalide ou expiré. Réessayez avec un nouveau code.");
+        const msg = "Code invalide ou expiré. Réessayez avec un nouveau code.";
+        setPanelError(msg);
+        toast.error(msg);
         setBusy(false);
         return;
       }
-      await setDoc(doc(db, "mfaSecrets", user.uid), {
-        secret,
-        displayName: "Application d'authentification",
-        updatedAt: serverTimestamp(),
+      // Stocké sur users/{uid} : déjà autorisé par les règles Spark existantes.
+      await setDoc(doc(db, "users", user.uid), {
+        totpEnabled: true,
+        totp: {
+          secret,
+          displayName: "Application d'authentification",
+          enrolledAt: serverTimestamp(),
+        },
       }, { merge: true });
-      await setDoc(doc(db, "users", user.uid), { totpEnabled: true }, { merge: true });
       markMfaSessionOk(user.uid);
       await refreshMfa?.();
       setSecret("");
@@ -80,7 +82,9 @@ export const MfaTotpPanel = () => {
       toast.success("Double authentification activée.");
     } catch (err) {
       console.error(err);
-      toast.error(mfaErrorMessage(err));
+      const msg = mfaErrorMessage(err);
+      setPanelError(msg);
+      toast.error(msg);
     }
     setBusy(false);
   };
@@ -88,8 +92,7 @@ export const MfaTotpPanel = () => {
   const removeFactor = async () => {
     setBusy(true);
     try {
-      await deleteDoc(doc(db, "mfaSecrets", user.uid)).catch(() => null);
-      await setDoc(doc(db, "users", user.uid), { totpEnabled: false }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), { totpEnabled: false, totp: deleteField() }, { merge: true });
       await refreshMfa?.();
       toast.success("Second facteur retiré.");
     } catch (err) {
@@ -116,15 +119,6 @@ export const MfaTotpPanel = () => {
     window.setTimeout(() => setCopied(false), 2000);
   };
 
-  const resendVerify = async () => {
-    try {
-      await sendEmailVerification(currentUser());
-      toast.success("Email de vérification envoyé.");
-    } catch (err) {
-      toast.error(err.code === "auth/too-many-requests" ? "Un email vient d'être envoyé. Patientez un peu." : mfaErrorMessage(err));
-    }
-  };
-
   const resetEnroll = () => {
     setSecret("");
     setQrUrl("");
@@ -146,13 +140,8 @@ export const MfaTotpPanel = () => {
         </div>
       </div>
 
-      {!emailVerified && (
-        <div className="border border-orange-300/40 bg-orange-300/5 px-3 py-3 space-y-2" data-testid="profile-mfa-verify-email">
-          <p className="text-xs text-orange-200 leading-relaxed">Vérifiez votre email avant d'activer la 2FA.</p>
-          <button type="button" onClick={resendVerify} className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">
-            Renvoyer l'email de vérification
-          </button>
-        </div>
+      {panelError && (
+        <p className="text-xs text-red-300 leading-relaxed" role="alert" data-testid="profile-mfa-error">{panelError}</p>
       )}
 
       {mfaEnrolled && !enrolling && (
@@ -167,7 +156,7 @@ export const MfaTotpPanel = () => {
       )}
 
       {!enrolling && !mfaEnrolled && (
-        <button type="button" onClick={startEnrollment} disabled={busy || !emailVerified} data-testid="profile-mfa-start"
+        <button type="button" onClick={startEnrollment} disabled={busy} data-testid="profile-mfa-start"
           className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-3 hover:bg-[#D8CA82]/10 disabled:opacity-50">
           Activer la 2FA
         </button>

@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { ShieldCheck } from "lucide-react";
-import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
-import { verifyTotp } from "../lib/totp";
+import { readStoredTotpSecret, verifyTotp } from "../lib/totp";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -21,8 +19,7 @@ export const MfaChallenge = () => {
     setBusy(true);
     setError("");
     try {
-      const snap = await getDoc(doc(db, "mfaSecrets", user.uid));
-      const secret = snap.data()?.secret;
+      const secret = readStoredTotpSecret(profile);
       if (!secret) {
         setError("Aucun secret 2FA trouvé. Réactivez-la depuis votre profil.");
         setBusy(false);

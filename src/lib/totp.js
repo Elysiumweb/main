@@ -36,9 +36,16 @@ export const base32Decode = (input) => {
 
 export const generateTotpSecret = (byteLength = 20) => {
   const bytes = new Uint8Array(byteLength);
-  crypto.getRandomValues(bytes);
+  const rng = globalThis.crypto?.getRandomValues?.bind(globalThis.crypto);
+  if (rng) rng(bytes);
+  else {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
   return base32Encode(bytes);
 };
+
+export const readStoredTotpSecret = (profile) =>
+  profile?.totp?.secret || profile?.totpSecret || "";
 
 const hmacSha1 = async (keyBytes, counter) => {
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);

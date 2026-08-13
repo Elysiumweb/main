@@ -106,8 +106,11 @@ export const mfaErrorMessage = (err) => {
       return "Fenêtre de confirmation fermée.";
     case "auth/multi-factor-auth-required":
       return "Code de double authentification requis.";
+    case "permission-denied":
+    case "firestore/permission-denied":
+      return "Écriture refusée par Firestore. La 2FA est maintenant enregistrée sur votre profil (pas besoin de nouvelle collection). Rechargez et réessayez.";
     default:
-      return details && details.length < 180 ? details : "Impossible de configurer la double authentification.";
+      return details && details.length < 220 ? details : "Impossible de configurer la double authentification.";
   }
 };
 
