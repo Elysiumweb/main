@@ -1,8 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { multiFactor, onAuthStateChanged, signOut } from "firebase/auth";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 import { OFFICIAL_UID } from "../lib/constants";
+import { syncEnrolledFactors } from "../lib/mfa";
+import { clearMfaSession, isMfaSessionOk, markMfaSessionOk } from "../lib/totp";
 
 /**
  * Publie une fiche minimale dans `profiles/{uid}` (annuaire privé entre joueurs).
@@ -29,12 +31,20 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mfaVersion, setMfaVersion] = useState(0);
+  const [enrolledFactors, setEnrolledFactors] = useState([]);
+  const [mfaVerified, setMfaVerified] = useState(false);
 
-  useEffect(() => {
-    const onMfaChanged = () => setMfaVersion((v) => v + 1);
-    window.addEventListener("elysium:mfa-changed", onMfaChanged);
-    return () => window.removeEventListener("elysium:mfa-changed", onMfaChanged);
+  const refreshMfa = useCallback(async () => {
+    const factors = await syncEnrolledFactors(auth.currentUser);
+    setEnrolledFactors(factors);
+    if (auth.currentUser) setUser(auth.currentUser);
+    return factors;
+  }, []);
+
+  const confirmMfaSession = useCallback(() => {
+    if (!auth.currentUser) return;
+    markMfaSessionOk(auth.currentUser.uid);
+    setMfaVerified(true);
   }, []);
 
   useEffect(() => {
@@ -42,7 +52,15 @@ export const AuthProvider = ({ children }) => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (unsubProfile) { unsubProfile(); unsubProfile = null; }
       setUser(u);
-      if (!u) { setProfile(null); setLoading(false); return; }
+      if (!u) {
+        setProfile(null);
+        setEnrolledFactors([]);
+        setMfaVerified(false);
+        setLoading(false);
+        return;
+      }
+      setMfaVerified(isMfaSessionOk(u.uid));
+      setEnrolledFactors(await syncEnrolledFactors(u).catch(() => []));
       const ref = doc(db, "users", u.uid);
       try {
         const snap = await getDoc(ref);
@@ -85,18 +103,22 @@ export const AuthProvider = ({ children }) => {
   const game = profile?.game || null;
   const roster = profile?.roster || null;
   const hasPlayerAccess = isOfficial || ["player", "manager", "bureau"].includes(profile?.role);
-  // mfaVersion force un recalcul après enrôlement/retrait TOTP sans attendre une reconnexion.
-  const mfaEnrolled = !!user && mfaVersion >= 0 && (multiFactor(user).enrolledFactors || []).some((factor) => factor.factorId === "totp");
+  const mfaEnrolled = !!profile?.totpEnabled || enrolledFactors.length > 0;
+  const mfaPending = !!user && !!profile?.totpEnabled && !mfaVerified;
   const requiresMfa = !!user && (isOfficial || profile?.role === "bureau");
   const canSeeSupport = isOfficial || profile?.role === "bureau";
   const canSeeRecruit = isOfficial || ["manager", "bureau"].includes(profile?.role);
   const canManage = isOfficial || ["manager", "bureau"].includes(profile?.role);
   const displayName = profile?.displayName || user?.displayName || user?.email?.split("@")[0] || "";
 
-  const logout = () => signOut(auth);
+  const logout = async () => {
+    clearMfaSession(user?.uid);
+    setMfaVerified(false);
+    await signOut(auth);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, mfaEnrolled, requiresMfa, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, mfaEnrolled, mfaPending, mfaVerified, requiresMfa, enrolledFactors, refreshMfa, confirmMfaSession, logout }}>
       {children}
     </AuthContext.Provider>
   );

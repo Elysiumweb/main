@@ -4,6 +4,23 @@ Cette fonction transforme les **notifications in-app** (collection Firestore
 `notifications`) en **emails** envoyés aux joueurs/staff concernés, via
 **Resend** (par défaut) ou **Brevo** (si la clé Brevo est fournie).
 
+## 2FA / TOTP
+
+Sur le plan **Spark**, Firebase Identity Platform (TOTP natif) n'est pas
+disponible. L'app utilise alors une 2FA applicative (secret TOTP dans
+`mfaSecrets/{uid}`, vérification dans le navigateur).
+
+`ensureTotpMfa` reste utile uniquement si le projet passe en **Blaze** +
+Identity Platform.
+
+```bash
+firebase deploy --only functions:ensureTotpMfa
+```
+
+Prérequis : le projet doit être passé en **Firebase Authentication with
+Identity Platform** (console → Authentication → Mettre à niveau). Sans ça,
+l'API refuse d'activer le TOTP.
+
 ## Cas couverts
 
 | Événement métier              | Type de notification | Qui est notifié            |

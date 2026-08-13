@@ -5,6 +5,7 @@
  * - newsletter/{id}: envoi du double opt-in par email.
  * - confirmNewsletter / unsubscribeNewsletter: endpoints publics à jeton.
  * - sendNewsletterDigest: callable bureau pour envoyer un digest réel.
+ * - ensureTotpMfa: active le second facteur TOTP sur le projet Auth.
  * - auth.user().onDelete: purge RGPD des données liées au compte supprimé.
  *
  * Variables d'environnement / secrets (Firebase CLI):
@@ -22,6 +23,105 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 const db = admin.firestore();
+
+const TOTP_PROVIDER = {
+  state: "ENABLED",
+  totpProviderConfig: { adjacentIntervals: 5 },
+};
+
+const enableTotpMfaOnProject = async () => {
+  const mgr = admin.auth().projectConfigManager();
+  let existingProviders = [];
+  try {
+    const current = await mgr.getProjectConfig();
+    existingProviders = (current.multiFactorConfig?.providerConfigs || [])
+      .filter((p) => !p.totpProviderConfig);
+  } catch (err) {
+    logger.warn("ensureTotpMfa: lecture config", err);
+  }
+  const updated = await mgr.updateProjectConfig({
+    multiFactorConfig: {
+      state: "ENABLED",
+      providerConfigs: [...existingProviders, TOTP_PROVIDER],
+    },
+  });
+  logger.info("ensureTotpMfa: TOTP activé sur le projet");
+  return { state: updated.multiFactorConfig?.state || "ENABLED" };
+};
+
+const enableTotpMfaViaRest = async () => {
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || process.env.GCLOUD_PROJECT_ID;
+  if (!projectId) throw new Error("project-id-missing");
+  let accessToken = "";
+  try {
+    const cred = admin.app().options.credential;
+    if (cred && typeof cred.getAccessToken === "function") {
+      const tok = await cred.getAccessToken();
+      accessToken = tok.access_token || tok.accessToken || "";
+    }
+  } catch (err) {
+    logger.warn("ensureTotpMfa: credential token", err);
+  }
+  if (!accessToken) {
+    const meta = await fetch("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token", {
+      headers: { "Metadata-Flavor": "Google" },
+    });
+    if (!meta.ok) throw new Error(`metadata token ${meta.status}`);
+    accessToken = (await meta.json()).access_token;
+  }
+  const res = await fetch(`https://identitytoolkit.googleapis.com/admin/v2/projects/${projectId}/config?updateMask=mfa`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "X-Goog-User-Project": projectId,
+    },
+    body: JSON.stringify({ mfa: { providerConfigs: [TOTP_PROVIDER] } }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text.slice(0, 500));
+  logger.info("ensureTotpMfa: TOTP activé via REST");
+  return { state: "ENABLED" };
+};
+
+const ensureTotpMfaEnabled = async () => {
+  try {
+    return await enableTotpMfaOnProject();
+  } catch (err) {
+    logger.warn("ensureTotpMfa: Admin SDK, fallback REST", err);
+    return enableTotpMfaViaRest();
+  }
+};
+
+try {
+  const { onInit } = require("firebase-functions/v2/core");
+  onInit(() => {
+    ensureTotpMfaEnabled().catch((err) => logger.warn("ensureTotpMfa init", err));
+  });
+} catch (err) {
+  logger.warn("ensureTotpMfa: onInit indisponible", err);
+}
+
+exports.ensureTotpMfa = onCall(
+  { memory: "256MiB", timeoutSeconds: 30 },
+  async (request) => {
+    if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Connexion requise.");
+    try {
+      const result = await ensureTotpMfaEnabled();
+      return { enabled: true, ...result };
+    } catch (err) {
+      logger.error("ensureTotpMfa", err);
+      const msg = String(err.message || err);
+      if (/identity platform|IDENTITY_PLATFORM|billing|blaze|CONFIGURATION_NOT_FOUND/i.test(msg)) {
+        throw new HttpsError(
+          "failed-precondition",
+          "Passez Firebase Authentication en Identity Platform (console Firebase → Authentication → Mettre à niveau), puis réessayez.",
+        );
+      }
+      throw new HttpsError("internal", msg.slice(0, 400));
+    }
+  },
+);
 
 const OFFICIAL_UID = "9IzGlpp6DHhrN9GW72haeb869Om1";
 const REGION_SECRETS = ["RESEND_API_KEY", "BREVO_API_KEY"];

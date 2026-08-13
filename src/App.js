@@ -25,6 +25,7 @@ import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { NewsletterConfirm } from "@/components/NewsletterConfirm";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
+import { MfaChallenge } from "@/components/MfaChallenge";
 import { SEOManager } from "@/components/SEOManager";
 import PlayerLayout from "@/pages/player/PlayerLayout";
 import ChatSpace from "@/pages/player/ChatSpace";
@@ -109,6 +110,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          <MfaChallenge />
           <PushConsent />
           <CookieConsent />
           <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", color: "#f7f7f7", borderRadius: 0 } }} />

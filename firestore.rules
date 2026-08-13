@@ -49,6 +49,12 @@ service cloud.firestore {
     }
 
     // ===== Utilisateurs =====
+    // Secrets TOTP applicatifs (plan Spark : pas d'Identity Platform).
+    // Lecture/écriture uniquement par le propriétaire — jamais par le staff.
+    match /mfaSecrets/{uid} {
+      allow read, write: if isAuth() && request.auth.uid == uid;
+    }
+
     match /users/{uid} {
       // Un joueur lit uniquement son propre profil privé. Managers/bureau lisent
       // la collection pour le planning d'équipe et l'administration des rôles.

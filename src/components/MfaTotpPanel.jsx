@@ -1,33 +1,51 @@
-import { useState } from "react";
-import { multiFactor, TotpMultiFactorGenerator } from "firebase/auth";
+import { useMemo, useState } from "react";
+import { deleteField, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
-import { auth } from "../lib/firebase";
+import { Check, Copy, ShieldCheck } from "lucide-react";
+import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
+import { mfaErrorMessage } from "../lib/mfa";
+import { toQrDataUrl } from "../lib/qrDataUrl";
+import { generateTotpSecret, markMfaSessionOk, totpOtpauthUrl, verifyTotp } from "../lib/totp";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
 export const MfaTotpPanel = () => {
-  const { user, mfaEnrolled, requiresMfa } = useAuth();
-  const [secret, setSecret] = useState(null);
+  const { user, mfaEnrolled, requiresMfa, refreshMfa, confirmMfaSession } = useAuth() || {};
+  const [secret, setSecret] = useState("");
   const [qrUrl, setQrUrl] = useState("");
+  const [qrImage, setQrImage] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [panelError, setPanelError] = useState("");
 
-  const enrolledFactors = user ? (multiFactor(user).enrolledFactors || []) : [];
+  const enrolling = !!secret;
+
+  const accountLabel = useMemo(() => user?.email || user?.uid || "elysium", [user]);
 
   if (!user) return null;
 
   const startEnrollment = async () => {
+    setPanelError("");
     setBusy(true);
     try {
-      const session = await multiFactor(user).getSession();
-      const nextSecret = await TotpMultiFactorGenerator.generateSecret(session);
+      const nextSecret = generateTotpSecret();
+      if (!nextSecret) throw new Error("Impossible de générer une clé TOTP.");
+      const otpauth = totpOtpauthUrl(nextSecret, accountLabel);
       setSecret(nextSecret);
-      setQrUrl(nextSecret.generateQrCodeUrl(user.email || user.uid, "Elysium Esport"));
+      setQrUrl(otpauth);
+      try {
+        setQrImage(await toQrDataUrl(otpauth));
+      } catch (err) {
+        console.warn("qr local", err);
+        setQrImage("");
+      }
     } catch (err) {
       console.error(err);
-      toast.error(err.code === "auth/requires-recent-login" ? "Reconnectez-vous puis réessayez." : "Impossible de préparer la double authentification.");
+      const msg = mfaErrorMessage(err);
+      setPanelError(msg);
+      toast.error(msg);
     }
     setBusy(false);
   };
@@ -37,33 +55,76 @@ export const MfaTotpPanel = () => {
     if (!secret) return;
     setBusy(true);
     try {
-      const assertion = TotpMultiFactorGenerator.assertionForEnrollment(secret, code.trim());
-      await multiFactor(user).enroll(assertion, "Application d'authentification");
-      await auth.currentUser.reload();
-      window.dispatchEvent(new Event("elysium:mfa-changed"));
-      setSecret(null);
+      setPanelError("");
+      const ok = await verifyTotp(secret, code);
+      if (!ok) {
+        const msg = "Code invalide ou expiré. Réessayez avec un nouveau code.";
+        setPanelError(msg);
+        toast.error(msg);
+        setBusy(false);
+        return;
+      }
+      // Stocké sur users/{uid} : déjà autorisé par les règles Spark existantes.
+      await setDoc(doc(db, "users", user.uid), {
+        totpEnabled: true,
+        totp: {
+          secret,
+          displayName: "Application d'authentification",
+          enrolledAt: serverTimestamp(),
+        },
+      }, { merge: true });
+      markMfaSessionOk(user.uid);
+      confirmMfaSession?.();
+      await refreshMfa?.();
+      setSecret("");
       setQrUrl("");
+      setQrImage("");
       setCode("");
       toast.success("Double authentification activée.");
     } catch (err) {
       console.error(err);
-      toast.error(err.code === "auth/requires-recent-login" ? "Reconnectez-vous puis réessayez." : "Code invalide ou expiré.");
+      const msg = mfaErrorMessage(err);
+      setPanelError(msg);
+      toast.error(msg);
     }
     setBusy(false);
   };
 
-  const removeFactor = async (factor) => {
+  const removeFactor = async () => {
     setBusy(true);
     try {
-      await multiFactor(user).unenroll(factor);
-      await auth.currentUser.reload();
-      window.dispatchEvent(new Event("elysium:mfa-changed"));
+      await setDoc(doc(db, "users", user.uid), { totpEnabled: false, totp: deleteField() }, { merge: true });
+      await refreshMfa?.();
       toast.success("Second facteur retiré.");
     } catch (err) {
       console.error(err);
-      toast.error(err.code === "auth/requires-recent-login" ? "Reconnectez-vous puis réessayez." : "Impossible de retirer ce second facteur.");
+      toast.error(mfaErrorMessage(err));
     }
     setBusy(false);
+  };
+
+  const copySecret = async () => {
+    if (!secret) return;
+    try {
+      await navigator.clipboard.writeText(secret);
+    } catch {
+      const helper = document.createElement("textarea");
+      helper.value = secret;
+      document.body.appendChild(helper);
+      helper.select();
+      document.execCommand("copy");
+      helper.remove();
+    }
+    setCopied(true);
+    toast.success("Clé secrète copiée.");
+    window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  const resetEnroll = () => {
+    setSecret("");
+    setQrUrl("");
+    setQrImage("");
+    setCode("");
   };
 
   return (
@@ -80,34 +141,49 @@ export const MfaTotpPanel = () => {
         </div>
       </div>
 
-      {mfaEnrolled && (
+      {panelError && (
+        <p className="text-xs text-red-300 leading-relaxed" role="alert" data-testid="profile-mfa-error">{panelError}</p>
+      )}
+
+      {mfaEnrolled && !enrolling && (
         <div className="space-y-2" data-testid="profile-mfa-enabled">
-          {enrolledFactors.map((factor) => (
-            <div key={factor.uid} className="flex items-center justify-between gap-3 border border-white/10 bg-[#111111] px-3 py-2">
-              <span className="text-sm text-emerald-300">Activée · {factor.displayName || "TOTP"}</span>
-              <button type="button" disabled={busy} onClick={() => removeFactor(factor)} className="text-xs uppercase tracking-widest text-red-300 hover:text-red-200 disabled:opacity-50">
-                Retirer
-              </button>
-            </div>
-          ))}
+          <div className="flex items-center justify-between gap-3 border border-white/10 bg-[#111111] px-3 py-2">
+            <span className="text-sm text-emerald-300">Activée · Application d'authentification</span>
+            <button type="button" disabled={busy} onClick={removeFactor} className="text-xs uppercase tracking-widest text-red-300 hover:text-red-200 disabled:opacity-50">
+              Retirer
+            </button>
+          </div>
         </div>
       )}
 
-      {!secret && !mfaEnrolled && (
+      {!enrolling && !mfaEnrolled && (
         <button type="button" onClick={startEnrollment} disabled={busy} data-testid="profile-mfa-start"
           className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-3 hover:bg-[#D8CA82]/10 disabled:opacity-50">
           Activer la 2FA
         </button>
       )}
 
-      {secret && (
+      {enrolling && (
         <form onSubmit={confirmEnrollment} className="space-y-4" data-testid="profile-mfa-enroll-form">
-          <div className="grid sm:grid-cols-[160px,1fr] gap-4 items-start">
-            <img src={`https://quickchart.io/qr?size=160&text=${encodeURIComponent(qrUrl)}`} alt="QR code TOTP" className="border border-white/10 bg-white p-2" />
+          <div className="grid sm:grid-cols-[176px,1fr] gap-4 items-start">
+            {qrImage ? (
+              <img src={qrImage} alt="QR code TOTP" className="border border-white/10 bg-white p-2 w-44 h-44" data-testid="profile-mfa-qr" />
+            ) : (
+              <div className="border border-white/10 bg-[#111111] w-44 h-44 flex items-center justify-center p-3 text-center text-[11px] text-[#c8c8c8]">
+                QR indisponible — copiez la clé ci-contre.
+              </div>
+            )}
             <div className="space-y-3">
-              <p className="text-xs text-[#c8c8c8] leading-relaxed">Scannez le QR code ou copiez cette clé secrète :</p>
-              <code className="block border border-white/10 bg-[#111111] p-3 text-xs text-[#f7f7f7] break-all">{secret.secretKey}</code>
-              <a href={qrUrl} className="text-xs text-[#D8CA82] hover:underline">Ouvrir dans une application compatible</a>
+              <p className="text-xs text-[#c8c8c8] leading-relaxed">Scannez le QR code ou copiez cette clé secrète dans votre application :</p>
+              <div className="flex gap-2 items-start">
+                <code className="block flex-1 border border-white/10 bg-[#111111] p-3 text-xs text-[#f7f7f7] break-all" data-testid="profile-mfa-secret">{secret}</code>
+                <button type="button" onClick={copySecret} data-testid="profile-mfa-copy-secret" className="border border-white/20 text-[#c8c8c8] p-3 hover:text-[#D8CA82]" aria-label="Copier la clé secrète">
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+              </div>
+              {qrUrl && (
+                <a href={qrUrl} className="text-xs text-[#D8CA82] hover:underline">Ouvrir dans une application compatible</a>
+              )}
             </div>
           </div>
           <div>
@@ -118,7 +194,7 @@ export const MfaTotpPanel = () => {
             <button type="submit" disabled={busy || code.length < 6} data-testid="profile-mfa-confirm" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
               Confirmer
             </button>
-            <button type="button" onClick={() => { setSecret(null); setQrUrl(""); setCode(""); }} className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3">
+            <button type="button" onClick={resetEnroll} className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3">
               Annuler
             </button>
           </div>
