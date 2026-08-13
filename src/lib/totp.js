@@ -47,13 +47,97 @@ export const generateTotpSecret = (byteLength = 20) => {
 export const readStoredTotpSecret = (profile) =>
   profile?.totp?.secret || profile?.totpSecret || "";
 
+const rotl = (n, s) => (n << s) | (n >>> (32 - s));
+
+const sha1Bytes = (bytes) => {
+  const extra = bytes.length % 64;
+  const padLen = extra < 56 ? 56 - extra : 120 - extra;
+  const total = bytes.length + padLen + 8;
+  const buf = new Uint8Array(total);
+  buf.set(bytes);
+  buf[bytes.length] = 0x80;
+  const bitLen = bytes.length * 8;
+  const view = new DataView(buf.buffer);
+  view.setUint32(total - 4, bitLen >>> 0);
+  let h0 = 0x67452301;
+  let h1 = 0xefcdab89;
+  let h2 = 0x98badcfe;
+  let h3 = 0x10325476;
+  let h4 = 0xc3d2e1f0;
+  const w = new Uint32Array(80);
+  for (let off = 0; off < total; off += 64) {
+    for (let i = 0; i < 16; i += 1) w[i] = view.getUint32(off + i * 4);
+    for (let i = 16; i < 80; i += 1) w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+    for (let i = 0; i < 80; i += 1) {
+      const f = i < 20 ? (b & c) | (~b & d)
+        : i < 40 ? b ^ c ^ d
+          : i < 60 ? (b & c) | (b & d) | (c & d)
+            : b ^ c ^ d;
+      const k = i < 20 ? 0x5a827999 : i < 40 ? 0x6ed9eba1 : i < 60 ? 0x8f1bbcdc : 0xca62c1d6;
+      const temp = (rotl(a, 5) + f + e + k + w[i]) >>> 0;
+      e = d;
+      d = c;
+      c = rotl(b, 30);
+      b = a;
+      a = temp;
+    }
+    h0 = (h0 + a) >>> 0;
+    h1 = (h1 + b) >>> 0;
+    h2 = (h2 + c) >>> 0;
+    h3 = (h3 + d) >>> 0;
+    h4 = (h4 + e) >>> 0;
+  }
+  const out = new Uint8Array(20);
+  const outView = new DataView(out.buffer);
+  outView.setUint32(0, h0);
+  outView.setUint32(4, h1);
+  outView.setUint32(8, h2);
+  outView.setUint32(12, h3);
+  outView.setUint32(16, h4);
+  return out;
+};
+
+const hmacSha1Sync = (keyBytes, messageBytes) => {
+  const block = 64;
+  let key = keyBytes.length > block ? sha1Bytes(keyBytes) : keyBytes;
+  const oKey = new Uint8Array(block);
+  const iKey = new Uint8Array(block);
+  oKey.set(key);
+  iKey.set(key);
+  for (let i = 0; i < block; i += 1) {
+    oKey[i] ^= 0x5c;
+    iKey[i] ^= 0x36;
+  }
+  const inner = new Uint8Array(block + messageBytes.length);
+  inner.set(iKey);
+  inner.set(messageBytes, block);
+  const innerHash = sha1Bytes(inner);
+  const outer = new Uint8Array(block + innerHash.length);
+  outer.set(oKey);
+  outer.set(innerHash, block);
+  return sha1Bytes(outer);
+};
+
 const hmacSha1 = async (keyBytes, counter) => {
-  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
-  const buf = new ArrayBuffer(8);
-  const view = new DataView(buf);
+  const msg = new Uint8Array(8);
+  const view = new DataView(msg.buffer);
   view.setUint32(0, 0);
   view.setUint32(4, counter >>> 0);
-  return new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const subtle = globalThis.crypto?.subtle;
+  if (subtle) {
+    try {
+      const key = await subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+      return new Uint8Array(await subtle.sign("HMAC", key, msg));
+    } catch (err) {
+      console.warn("totp subtle", err);
+    }
+  }
+  return hmacSha1Sync(keyBytes, msg);
 };
 
 export const totpAt = async (secret, timestamp = Date.now(), step = 30, digits = 6) => {

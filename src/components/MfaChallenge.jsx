@@ -7,7 +7,7 @@ import { readStoredTotpSecret, verifyTotp } from "../lib/totp";
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
 export const MfaChallenge = () => {
-  const { user, mfaPending, confirmMfaSession, logout } = useAuth() || {};
+  const { user, profile, mfaPending, confirmMfaSession, logout } = useAuth() || {};
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -35,7 +35,7 @@ export const MfaChallenge = () => {
       toast.success("Double authentification validée.");
     } catch (err) {
       console.error(err);
-      setError("Impossible de vérifier le code pour le moment.");
+      setError(err?.message || "Impossible de vérifier le code pour le moment.");
     }
     setBusy(false);
   };

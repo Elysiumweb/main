@@ -11,7 +11,7 @@ import { generateTotpSecret, markMfaSessionOk, totpOtpauthUrl, verifyTotp } from
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
 export const MfaTotpPanel = () => {
-  const { user, mfaEnrolled, requiresMfa, refreshMfa } = useAuth() || {};
+  const { user, mfaEnrolled, requiresMfa, refreshMfa, confirmMfaSession } = useAuth() || {};
   const [secret, setSecret] = useState("");
   const [qrUrl, setQrUrl] = useState("");
   const [qrImage, setQrImage] = useState("");
@@ -74,6 +74,7 @@ export const MfaTotpPanel = () => {
         },
       }, { merge: true });
       markMfaSessionOk(user.uid);
+      confirmMfaSession?.();
       await refreshMfa?.();
       setSecret("");
       setQrUrl("");
