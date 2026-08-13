@@ -104,7 +104,7 @@ export default function Team() {
               {/* Roster sub-filters (jeux avec rosters : Rocket League, Valorant) */}
               {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
                 <div key={g} className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#f7f7f7]/30 mr-1">{getGameShortLabel(g)}</span>
+                  <span className="text-[9px] uppercase tracking-[0.2em] text-tertiary-token mr-1">{getGameShortLabel(g)}</span>
                   {(ROSTERS[g]||[]).map(r=>{
                     const count = members?.filter(m=> m.roster===r).length||0;
                     const active = rosterFilter===r;
@@ -122,7 +122,7 @@ export default function Team() {
               {/* Recherche par pseudo + tri */}
               <div className="flex items-center gap-2 w-full sm:w-auto" data-testid="team-search-sort">
                 <div className="relative flex-1 sm:w-52">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" aria-hidden="true" />
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiary-token" aria-hidden="true" />
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -133,7 +133,7 @@ export default function Team() {
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <ArrowUpDown size={12} className="text-[#f7f7f7]/30" aria-hidden="true" />
+                  <ArrowUpDown size={12} className="text-tertiary-token" aria-hidden="true" />
                   <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label={t("team.sort")} data-testid="team-sort-select"
                     className="bg-[#141414] border border-white/15 px-2 py-2 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                     <option value="pseudo">{t("team.sort.pseudo")}</option>
@@ -182,7 +182,7 @@ export default function Team() {
                 <div className="flex items-center gap-4 mb-8">
                   <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t(`team.status.${g.status}`)}</h2>
                   <div className="flex-1 h-px bg-white/10" />
-                  <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{g.list.length} {t("team.players")}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-tertiary-token">{g.list.length} {t("team.players")}</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {g.list.map((m) => (

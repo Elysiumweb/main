@@ -11,6 +11,7 @@ import { Markdown } from "../../lib/markdown";
 import { logAdminAction } from "../../lib/notify";
 import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
@@ -131,24 +132,27 @@ export const AdminArticles = () => {
         </div>
 
         {/* Onglets éditeur / aperçu markdown */}
-        <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label={t("admin.article.title")}>
-          <button onClick={() => setEditorTab("write")} data-testid="admin-article-tab-write" role="tab" aria-selected={editorTab === "write"}
-            className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
-            {t("admin.article.write")}
-          </button>
-          <button onClick={() => setEditorTab("preview")} data-testid="admin-article-tab-preview" role="tab" aria-selected={editorTab === "preview"}
-            className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "preview" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
-            {t("admin.article.preview")}
-          </button>
-          <span className="ml-auto text-[10px] text-[#f7f7f7]/30">{t("admin.article.markdownHint")}</span>
-        </div>
-        {editorTab === "write" ? (
-          <textarea value={form.content} onChange={set("content")} placeholder={t("admin.article.contentPlaceholder")} rows={12} className={inputCls} data-testid="admin-article-content" />
-        ) : (
-          <div className="border border-white/10 bg-[#141414] p-4 max-h-96 overflow-y-auto" data-testid="admin-article-preview">
-            <Markdown source={form.content || `*${t("admin.article.previewEmpty")}*`} className="text-sm" />
-          </div>
-        )}
+        <Tabs value={editorTab} onValueChange={setEditorTab}>
+          <TabsList className="flex items-center gap-1 border-b border-white/10 pb-2 w-full h-auto justify-start bg-transparent p-0 rounded-none" aria-label={t("admin.article.title")}>
+            <TabsTrigger value="write" data-testid="admin-article-tab-write"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-[#D8CA82] data-[state=active]:border-b-2 data-[state=active]:border-[#D8CA82] text-[#f7f7f7]/50 hover:text-[#f7f7f7] border-b-2 border-transparent">
+              {t("admin.article.write")}
+            </TabsTrigger>
+            <TabsTrigger value="preview" data-testid="admin-article-tab-preview"
+              className="text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-[#D8CA82] data-[state=active]:border-b-2 data-[state=active]:border-[#D8CA82] text-[#f7f7f7]/50 hover:text-[#f7f7f7] border-b-2 border-transparent">
+              {t("admin.article.preview")}
+            </TabsTrigger>
+            <span className="ml-auto text-[10px] text-tertiary-token">{t("admin.article.markdownHint")}</span>
+          </TabsList>
+          <TabsContent value="write" className="mt-0">
+            <textarea value={form.content} onChange={set("content")} placeholder={t("admin.article.contentPlaceholder")} rows={12} className={inputCls} data-testid="admin-article-content" />
+          </TabsContent>
+          <TabsContent value="preview" className="mt-0">
+            <div className="border border-white/10 bg-[#141414] p-4 max-h-96 overflow-y-auto" data-testid="admin-article-preview">
+              <Markdown source={form.content || `*${t("admin.article.previewEmpty")}*`} className="text-sm" />
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <div className="flex gap-3 flex-wrap">
           <button onClick={() => save("draft")} data-testid="admin-article-draft-btn"

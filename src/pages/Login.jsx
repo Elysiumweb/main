@@ -11,15 +11,15 @@ import { auth, db, googleProvider } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { mfaErrorMessage, resolverFromMfaError } from "../lib/mfa";
 
-const errMsg = (code) => {
+const errMsg = (t, code) => {
   const map = {
-    "auth/invalid-credential": "Identifiants invalides.",
-    "auth/email-already-in-use": "Cet email est déjà utilisé.",
-    "auth/weak-password": "Mot de passe trop faible (6 caractères min).",
-    "auth/invalid-email": "Email invalide.",
-    "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
+    "auth/invalid-credential": t("login.error.invalidCredential"),
+    "auth/email-already-in-use": t("login.error.emailInUse"),
+    "auth/weak-password": t("login.error.weakPassword"),
+    "auth/invalid-email": t("login.error.invalidEmail"),
+    "auth/too-many-requests": t("login.error.tooManyRequests"),
   };
-  return map[code] || "Erreur d'authentification.";
+  return map[code] || t("login.error.default");
 };
 
 const inputCls =
@@ -70,11 +70,11 @@ export default function Login() {
       const resolver = resolverFromMfaError(err);
       if (resolver) {
         setMfaResolver(resolver);
-        setFormError(mfaErrorMessage(err));
+        setFormError(mfaErrorMessage(err, t));
         setBusy(false);
         return;
       }
-      const msg = errMsg(err.code);
+      const msg = errMsg(t, err.code);
       setFormError(msg);
       toast.error(msg);
     }
@@ -91,12 +91,12 @@ export default function Login() {
       const resolver = resolverFromMfaError(err);
       if (resolver) {
         setMfaResolver(resolver);
-        setFormError(mfaErrorMessage(err));
+        setFormError(mfaErrorMessage(err, t));
         setBusy(false);
         return;
       }
       if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-        const msg = errMsg(err.code);
+        const msg = errMsg(t, err.code);
         setFormError(msg);
         toast.error(msg);
       }
@@ -109,7 +109,7 @@ export default function Login() {
     if (!mfaResolver) return;
     const hint = mfaResolver.hints.find((h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID) || mfaResolver.hints[0];
     if (!hint || hint.factorId !== TotpMultiFactorGenerator.FACTOR_ID) {
-      toast.error("Second facteur non supporté.");
+      toast.error(t("login.error.unsupportedFactor"));
       return;
     }
     setBusy(true);
@@ -121,7 +121,7 @@ export default function Login() {
       completeLogin();
     } catch (err) {
       console.error(err);
-      const msg = mfaErrorMessage(err.code ? err : { code: "auth/invalid-verification-code" });
+      const msg = mfaErrorMessage(err.code ? err : { code: "auth/invalid-verification-code" }, t);
       setFormError(msg);
       toast.error(msg);
     }
@@ -139,7 +139,7 @@ export default function Login() {
       await sendPasswordResetEmail(auth, email);
       toast.success(t("login.resetSent"));
     } catch (err) {
-      const msg = errMsg(err.code);
+      const msg = errMsg(t, err.code);
       setFormError(msg);
       toast.error(msg);
     }

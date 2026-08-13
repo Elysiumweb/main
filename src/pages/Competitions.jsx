@@ -91,7 +91,7 @@ export default function Competitions() {
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-4 text-xs text-[#f7f7f7]/30">{t("competitions.position.na")}</p>
+                  <p className="mt-4 text-xs text-tertiary-token">{t("competitions.position.na")}</p>
                 )}
                 {c.notes && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{c.notes}</p>}
                 <div className="mt-auto pt-5">

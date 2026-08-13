@@ -81,7 +81,7 @@ export const NotificationsBell = () => {
                   {isUnread && <span className="inline-block w-1.5 h-1.5 bg-[#D8CA82] mr-2 align-middle" />}
                   {t(`notif.${n.type}`)}{n.extra ? ` — ${n.extra}` : ""}
                 </p>
-                <p className="text-[10px] text-[#f7f7f7]/30 mt-0.5">
+                <p className="text-[10px] text-tertiary-token mt-0.5">
                   {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
                 </p>
               </button>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLang } from "../lib/i18n";
 import { CalendarClock, ExternalLink, PlayCircle, Pencil, Trophy, Skull, Radio, Copy, RotateCcw } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { ShareButtons } from "./ShareButtons";
 import { SITE_URL } from "../lib/useSEO";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
@@ -16,8 +16,9 @@ import { fmtMatchDate } from "../lib/formatters";
  *   (neutral, NOT Elysium branding, to avoid implying a partnership)
  * --------------------------------------------------------------------- */
 const OpponentLogo = ({ src, name, className = "" }) => {
+  const { t } = useLang();
   const [err, setErr] = useState(false);
-  const safeName = (name || "Adversaire").trim();
+  const safeName = (name || "?").trim();
 
   if (!src || err) {
     const initials = safeName
@@ -29,7 +30,7 @@ const OpponentLogo = ({ src, name, className = "" }) => {
     return (
       <div
         role="img"
-        aria-label={`Logo de l'équipe adverse indisponible : ${safeName}`}
+        aria-label={`${t("a11y.opponentLogoFallback")} : ${safeName}`}
         className={`${className} flex items-center justify-center border border-white/15 bg-[#0c0c0c] text-[#a0a0a0] font-display tracking-widest text-xs uppercase select-none`}
         data-testid="opponent-logo-fallback"
       >
@@ -41,7 +42,7 @@ const OpponentLogo = ({ src, name, className = "" }) => {
   return (
     <img
       src={src}
-      alt={`Logo de l'équipe adverse : ${safeName}`}
+      alt={`${t("a11y.opponentLogo")} : ${safeName}`}
       onError={() => setErr(true)}
       loading="lazy"
       decoding="async"
@@ -115,6 +116,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
 
 export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming }) => {
   const { t, lang } = useLang();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const upcoming = match.status === "upcoming";
   const live = match.status === "live";
   const us = Number(match.scoreUs);
@@ -126,12 +128,21 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
     ? match.players.filter((p) => p && (p.pseudo || p.playerId))
     : [];
 
-  // Accessible description for the card
-  const ariaDesc = live
-    ? `Match en direct : ${teamName} contre ${match.opponentName || "adversaire"}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
+  // Accessible description for the card (annoncée par le bouton d'ouverture sr-only)
+  const statusLabel = live
+    ? t("results.live")
     : upcoming
-      ? `Match à venir : ${teamName} contre ${match.opponentName || "adversaire"}`
-      : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || "adversaire"}`;
+      ? t("results.upcoming")
+      : result === "win" ? t("results.win") : result === "loss" ? t("results.loss") : t("results.draw");
+  const hasScore = match.scoreUs !== undefined && match.scoreUs !== "" && !upcoming && !live;
+  const ariaDesc = `${teamName} vs ${match.opponentName || "?"} — ${statusLabel}${hasScore ? ` ${us}-${them}` : ""}`;
+
+  const handleDialogChange = (open) => {
+    if (open) {
+      trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
+    }
+    setDialogOpen(open);
+  };
 
   const formattedDate = fmtMatchDate(match, lang);
 
@@ -139,20 +150,19 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
     <div
       className="border border-white/10 bg-[#1A1A1A] p-6 relative group hover:border-[#D8CA82]/50 transition-colors cursor-pointer motion-reduce:transition-none"
       data-testid={`match-card-${match.id}`}
-      role="button"
-      tabIndex={0}
-      aria-label={ariaDesc}
-      aria-describedby={`match-desc-${match.id}`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          e.currentTarget.click();
-        }
-      }}
+      onClick={() => handleDialogChange(true)}
     >
-      <span id={`match-desc-${match.id}`} className="sr-only">
-        {ariaDesc}
-      </span>
+      {/* Trigger accessible (clavier + lecteurs d'écran) : le contenu visuel ci-dessous
+          est aria-hidden pour éviter d'exposer un "bouton" contenant un lien. */}
+      <button
+        type="button"
+        data-testid={`match-card-open-${match.id}`}
+        className="sr-only"
+        aria-label={`${t("results.viewDetails")} — ${ariaDesc}`}
+      >
+        {t("results.viewDetails")}
+      </button>
+      <div aria-hidden="true">
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game || "EVA"}</span>
@@ -186,14 +196,15 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
         </div>
       </div>
       <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between flex-wrap gap-2">
-        <span className="text-xs text-[#c8c8c8]">
+        <span className="text-xs text-tertiary-token">
           {formattedDate}{match.time && match.timezone ? ` (${match.timezone})` : ""}
         </span>
         {match.competition && <span className="text-xs text-[#D8CA82]/80 uppercase tracking-wider">{match.competition}</span>}
       </div>
+      </div>
       {(upcoming || live) && (match.platform || match.watchUrl) && (
         <div className="mt-3 flex items-center justify-between gap-2">
-          {match.platform && <span className="text-xs text-[#c8c8c8]">{t("results.platform")} : {match.platform}</span>}
+          {match.platform && <span className="text-xs text-tertiary-token">{t("results.platform")} : {match.platform}</span>}
           {match.watchUrl && (
             <a href={match.watchUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_card", matchId: match.id, platform: match.platform || "watchUrl", status: match.status }); }} data-testid={`match-watch-${match.id}`}
               className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${live
@@ -257,12 +268,8 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   );
 
   return (
-    <Dialog onOpenChange={(open) => {
-      if (open) {
-        trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
-      }
-    }}>
-      <DialogTrigger asChild>{card}</DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+      {card}
       <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg" data-testid={`match-detail-${match.id}`}>
         <DialogHeader>
           <DialogTitle className="font-display uppercase tracking-widest text-[#D8CA82]">
@@ -275,7 +282,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="40" height="40" loading="lazy" className="h-10 object-contain" />
               <span className="text-xs font-display uppercase text-center leading-tight">{teamName}</span>
             </div>
-            <p className="font-display font-black text-3xl" aria-label={upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
+            <p className="font-display font-black text-3xl" aria-label={upcoming ? t("results.upcoming") : undefined}>
               {upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
             </p>
             <div className="flex flex-col items-center gap-1 w-1/3">
@@ -309,8 +316,8 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <ShareButtons
               url={`${SITE_URL}/resultats?match=${match.id}`}
-              text={`${teamName} vs ${match.opponentName || "adversaire"}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
-              title={`Partager le match ${teamName} vs ${match.opponentName}`}
+              text={`${teamName} vs ${match.opponentName || "?"}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
+              title={`${teamName} vs ${match.opponentName || "?"}`}
               testId={`match-share-${match.id}`}
               compact
             />

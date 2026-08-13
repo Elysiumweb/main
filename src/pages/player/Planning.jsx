@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
 
 // ----- helpers -----
 const pad = (n) => String(n).padStart(2, "0");
@@ -692,7 +693,7 @@ export default function Planning(){
           </div>
         </div>
         <div className="grid grid-cols-7 gap-px">
-          {["L","M","M","J","V","S","D"].map((l,i)=><div key={i} className="text-[10px] text-[#f7f7f7]/30 text-center py-1">{l}</div>)}
+          {["L","M","M","J","V","S","D"].map((l,i)=><div key={i} className="text-[10px] text-tertiary-token text-center py-1">{l}</div>)}
           {grid.slice(0,35).map((d,i)=>{
             const key = toDateKey(d);
             const isCurMonth = d.getMonth()===currentDate.getMonth();
@@ -757,7 +758,7 @@ export default function Planning(){
                 className={`relative border-r border-b border-white/[0.07] p-1.5 flex flex-col min-h-[110px] cursor-pointer hover:bg-white/[0.02] u-micro ${!isCurMonth?"bg-[#0c0c0c]/60":"bg-[#111111]"} ${today?"ring-1 ring-inset ring-[#D8CA82]/40":""}`}>
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111] font-bold": isCurMonth?"text-[#f7f7f7]/80":"text-[#f7f7f7]/25"}`}>{d.getDate()}</span>
-                  {dayEvents.length>3 && <span className="text-[9px] text-[#f7f7f7]/30">+{dayEvents.length-3}</span>}
+                  {dayEvents.length>3 && <span className="text-[9px] text-tertiary-token">+{dayEvents.length-3}</span>}
                 </div>
                 <div className="mt-1.5 space-y-1 overflow-hidden">
                   {dayEvents.slice(0,3).map(ev=> <EventPill key={ev.id} ev={ev} compact />)}
@@ -791,7 +792,7 @@ export default function Planning(){
           <div className="flex">
             <div className="w-14 shrink-0">
               {HOURS.map(h=>(
-                <div key={h} className="h-[60px] border-b border-white/[0.06] text-[10px] text-[#f7f7f7]/30 pr-2 text-right pt-1">{pad(h)}:00</div>
+                <div key={h} className="h-[60px] border-b border-white/[0.06] text-[10px] text-tertiary-token pr-2 text-right pt-1">{pad(h)}:00</div>
               ))}
             </div>
             <div className="flex-1 grid grid-cols-7">
@@ -845,7 +846,7 @@ export default function Planning(){
       <div className="flex-1 flex bg-[#0e0e0e] border border-white/10 overflow-hidden">
         <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
           {HOURS.map(h=>(
-            <div key={h} className="h-[60px] border-b border-white/[0.06] text-[10px] text-[#f7f7f7]/30 pr-2 text-right pt-1">{pad(h)}:00</div>
+            <div key={h} className="h-[60px] border-b border-white/[0.06] text-[10px] text-tertiary-token pr-2 text-right pt-1">{pad(h)}:00</div>
           ))}
         </div>
         <div className="flex-1 relative overflow-y-auto">
@@ -879,19 +880,19 @@ export default function Planning(){
   const AvailabilityView = ()=>{
     const days = weekDays(weekStart);
     return (
-      <div className="flex-1 flex flex-col border border-white/10 bg-[#0e0e0e] overflow-hidden">
+      <Tabs value={availMode} onValueChange={setAvailMode} className="flex-1 flex flex-col border border-white/10 bg-[#0e0e0e] overflow-hidden" aria-label={t("planning.availabilityTab")}>
         <div className="p-4 border-b border-white/10 bg-[#141414] flex flex-wrap items-center gap-x-4 gap-y-3">
           {/* mode switcher: this week vs recurring template */}
-          <div className="flex border border-white/10 bg-[#111111] p-1" role="tablist" aria-label={t("planning.availabilityTab")}>
-            <button onClick={()=> setAvailMode("week")} data-testid="avail-mode-week" role="tab" aria-selected={availMode==="week"}
-              className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.25em] u-micro ${availMode==="week" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+          <TabsList className="flex border border-white/10 bg-[#111111] p-1 h-auto justify-start rounded-none">
+            <TabsTrigger value="week" data-testid="avail-mode-week"
+              className="px-3.5 py-1.5 text-[10px] uppercase tracking-[0.25em] u-micro rounded-none data-[state=active]:bg-[#D8CA82] data-[state=active]:text-[#111111] data-[state=active]:font-bold data-[state=active]:shadow-none text-[#f7f7f7]/50 hover:text-[#f7f7f7]">
               {t("planning.avail.mode.week")}
-            </button>
-            <button onClick={()=> setAvailMode("recurring")} data-testid="avail-mode-recurring" role="tab" aria-selected={availMode==="recurring"}
-              className={`px-3.5 py-1.5 text-[10px] uppercase tracking-[0.25em] u-micro flex items-center gap-1.5 ${availMode==="recurring" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            </TabsTrigger>
+            <TabsTrigger value="recurring" data-testid="avail-mode-recurring"
+              className="px-3.5 py-1.5 text-[10px] uppercase tracking-[0.25em] u-micro flex items-center gap-1.5 rounded-none data-[state=active]:bg-[#D8CA82] data-[state=active]:text-[#111111] data-[state=active]:font-bold data-[state=active]:shadow-none text-[#f7f7f7]/50 hover:text-[#f7f7f7]">
               <Repeat size={11} aria-hidden="true" /> {t("planning.avail.mode.recurring")}
-            </button>
-          </div>
+            </TabsTrigger>
+          </TabsList>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#f7f7f7]/60">
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-emerald-500/25 border border-emerald-400/50 inline-block" aria-hidden="true" /> {t("planning.avail.exception.legend")}</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-transparent border border-dashed border-emerald-400/70 inline-block" aria-hidden="true" /> {t("planning.avail.recurring.legend")}</span>
@@ -923,7 +924,7 @@ export default function Planning(){
           {availMode==="week" ? t("planning.avail.recurring.applied") : t("planning.avail.recurring.subtitle")} {t("planning.absence.hint")}
         </p>
 
-        {availMode==="week" && (
+        <TabsContent value="week" className="mt-0 flex-1 flex flex-col min-h-0">
           <div className="mx-4 my-3 border border-red-400/30 bg-[#8c1d18]/10 p-3" data-testid="absence-quick-panel">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-start gap-3 lg:w-[300px]">
@@ -956,11 +957,6 @@ export default function Planning(){
               </div>
             </div>
           </div>
-        )}
-
-        {availMode==="recurring" ? (
-          <RecurringGrid />
-        ) : (
           <div className="flex flex-col overflow-hidden flex-1">
             <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
               <div className="w-14 shrink-0 border-r border-white/10" />
@@ -1003,7 +999,7 @@ export default function Planning(){
               <div className="flex">
                 <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
                   {HOURS.map(h=>(
-                    <div key={h} className="h-[42px] border-b border-white/[0.06] text-[10px] text-[#f7f7f7]/30 pr-2 text-right pt-1">{pad(h)}:00</div>
+                    <div key={h} className="h-[42px] border-b border-white/[0.06] text-[10px] text-tertiary-token pr-2 text-right pt-1">{pad(h)}:00</div>
                   ))}
                 </div>
                 <div className="flex-1 grid grid-cols-7">
@@ -1079,8 +1075,12 @@ export default function Planning(){
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="recurring" className="mt-0 flex-1 flex flex-col min-h-0">
+          <RecurringGrid />
+        </TabsContent>
+      </Tabs>
     );
   };
 
@@ -1106,7 +1106,7 @@ export default function Planning(){
           <div className="flex">
             <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
               {HOURS.map(h=>(
-                <div key={h} className="h-[42px] border-b border-white/[0.06] text-[10px] text-[#f7f7f7]/30 pr-2 text-right pt-1">{pad(h)}:00</div>
+                <div key={h} className="h-[42px] border-b border-white/[0.06] text-[10px] text-tertiary-token pr-2 text-right pt-1">{pad(h)}:00</div>
               ))}
             </div>
             <div className="flex-1 grid grid-cols-7">
@@ -1140,7 +1140,7 @@ export default function Planning(){
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#111111] overflow-hidden" data-testid="planning-page">
+    <Tabs value={tab} onValueChange={setTab} className="h-full flex flex-col bg-[#111111] overflow-hidden" data-testid="planning-page">
       {/* top toolbar - google calendar style */}
       <div className="min-h-[64px] border-b border-white/10 bg-[#0c0c0c] flex items-center px-4 gap-4 shrink-0 flex-wrap py-2">
         <div className="flex items-center gap-2">
@@ -1173,16 +1173,16 @@ export default function Planning(){
           </button>
 
           {/* tab switcher */}
-          <div className="flex border border-white/10 bg-[#141414] p-1">
-            <button onClick={()=> setTab("calendar")} data-testid="tab-calendar"
-              className={`px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] u-micro ${tab==="calendar" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+          <TabsList className="flex border border-white/10 bg-[#141414] p-1 h-auto justify-start rounded-none" aria-label={t("planning.availabilityTab")}>
+            <TabsTrigger value="calendar" data-testid="tab-calendar"
+              className="px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] u-micro rounded-none data-[state=active]:bg-[#D8CA82] data-[state=active]:text-[#111111] data-[state=active]:font-bold data-[state=active]:shadow-none text-[#f7f7f7]/50 hover:text-[#f7f7f7]">
               {t("planning.calendarTab")}
-            </button>
-            <button onClick={()=> setTab("availability")} data-testid="tab-availability"
-              className={`px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] u-micro ${tab==="availability" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            </TabsTrigger>
+            <TabsTrigger value="availability" data-testid="tab-availability"
+              className="px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] u-micro rounded-none data-[state=active]:bg-[#D8CA82] data-[state=active]:text-[#111111] data-[state=active]:font-bold data-[state=active]:shadow-none text-[#f7f7f7]/50 hover:text-[#f7f7f7]">
               {t("planning.availabilityTab")}
-            </button>
-          </div>
+            </TabsTrigger>
+          </TabsList>
 
           {/* game filter — also applies to the availability team view (manager) */}
           <select value={gameFilter} onChange={(e)=> { setGameFilter(e.target.value); setRosterFilter("all"); }} data-testid="planning-game-filter"
@@ -1229,13 +1229,11 @@ export default function Planning(){
       </div>
 
       {/* main area */}
-      <div className="flex-1 flex overflow-hidden">
+      <TabsContent value="calendar" className="flex-1 flex overflow-hidden mt-0 min-h-0">
         {/* left sidebar - mini calendar + legend */}
         <aside className="w-[260px] shrink-0 border-r border-white/10 bg-[#0c0c0c] p-4 space-y-4 overflow-y-auto hidden lg:block">
           <MiniMonth />
 
-          {tab==="calendar" ? (
-            <>
               <div className="border border-white/10 bg-[#141414] p-4">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-[#f7f7f7]/40 mb-3 flex items-center gap-2">
                   <CalendarDays size={12} className="text-[#D8CA82]" /> Mes calendriers
@@ -1255,7 +1253,7 @@ export default function Planning(){
                   {/* roster sub-filters (games with rosters : RL, Valorant) */}
                   {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
                     <div key={g} className="ml-4 mt-2 space-y-1.5 border-l border-white/10 pl-3">
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-[#f7f7f7]/30 mb-1">Rosters {getGameShortLabel(g)}</p>
+                      <p className="text-[9px] uppercase tracking-[0.2em] text-tertiary-token mb-1">Rosters {getGameShortLabel(g)}</p>
                       {(ROSTERS[g]||[]).map(r=>(
                         <label key={r} className="flex items-center gap-2 text-[11px] text-[#f7f7f7]/60 cursor-pointer">
                           <input type="checkbox" checked={rosterFilter===r} onChange={()=> setRosterFilter(rosterFilter===r?"all":r)} style={{ accentColor: getGameColor(g) }} />
@@ -1277,7 +1275,7 @@ export default function Planning(){
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-[#f7f7f7]/30 mt-4 leading-relaxed">
+                <p className="text-[10px] text-tertiary-token mt-4 leading-relaxed">
                   {t("planning.clickToAdd")}. {t("planning.freePlaceholder")}
                 </p>
               </div>
@@ -1288,9 +1286,21 @@ export default function Planning(){
                   Pas de type prédéfini. Écris librement ton titre. Ex: <em className="text-[#D8CA82]">“Scrim RL vs VIT – 21h / Review EVA bind”</em> C’est toi qui décides.
                 </p>
               </div>
-            </>
-          ) : (
-            <>
+        </aside>
+
+        {/* center calendar */}
+        <main className="flex-1 flex flex-col overflow-hidden p-2 lg:p-3 bg-[#111111]">
+          {view==="month" && <MonthView />}
+          {view==="week" && <WeekView />}
+          {view==="day" && <DayView />}
+        </main>
+      </TabsContent>
+
+      <TabsContent value="availability" className="flex-1 flex overflow-hidden mt-0 min-h-0">
+        {/* left sidebar - mini calendar + legend */}
+        <aside className="w-[260px] shrink-0 border-r border-white/10 bg-[#0c0c0c] p-4 space-y-4 overflow-y-auto hidden lg:block">
+          <MiniMonth />
+
               <div className="border border-white/10 bg-[#141414] p-4">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-[#D8CA82] mb-2">{t("planning.avail.title")}</p>
                 <p className="text-xs text-[#f7f7f7]/60 leading-relaxed">{t("planning.avail.subtitle")}</p>
@@ -1314,7 +1324,7 @@ export default function Planning(){
                     );
                   })}
                   {!myRecurring && (
-                    <p className="text-[#f7f7f7]/30 italic">{t("planning.avail.recurring.subtitle")}</p>
+                    <p className="text-tertiary-token italic">{t("planning.avail.recurring.subtitle")}</p>
                   )}
                 </div>
                 <button onClick={()=> setAvailMode("recurring")} data-testid="recurring-edit-link"
@@ -1336,7 +1346,7 @@ export default function Planning(){
                       </div>
                     );
                   })}
-                  {Object.values(myAvailForWeek).every(s=> s.size===0) && <p className="text-[#f7f7f7]/30 italic">Aucun créneau cette semaine</p>}
+                  {Object.values(myAvailForWeek).every(s=> s.size===0) && <p className="text-tertiary-token italic">Aucun créneau cette semaine</p>}
                 </div>
               </div>
 
@@ -1346,7 +1356,7 @@ export default function Planning(){
                   <CalendarOff size={12} aria-hidden="true" /> {t("planning.absence.myAbsences")}
                 </p>
                 {myAbsences.length===0 ? (
-                  <p className="text-xs text-[#f7f7f7]/30 italic">{t("planning.absence.empty")}</p>
+                  <p className="text-xs text-tertiary-token italic">{t("planning.absence.empty")}</p>
                 ) : (
                   <div className="space-y-2">
                     {myAbsences.slice(0,8).map(a=>(
@@ -1355,7 +1365,7 @@ export default function Planning(){
                         {a.reason && <span className="text-[#f7f7f7]/40 truncate">{a.reason}</span>}
                         <button onClick={()=> removeAbsence(a.date)} data-testid={`absence-delete-${a.date}`}
                           aria-label={`${t("planning.absence.remove")} — ${a.date}`}
-                          className="ml-auto w-5 h-5 flex items-center justify-center text-[#f7f7f7]/30 hover:text-red-300 u-micro shrink-0">
+                          className="ml-auto w-5 h-5 flex items-center justify-center text-tertiary-token hover:text-red-300 u-micro shrink-0">
                           <X size={12} aria-hidden="true" />
                         </button>
                       </div>
@@ -1388,7 +1398,7 @@ export default function Planning(){
                       );
                     })}
                     {weekKeys.every(k=> Object.values(teamAvailForWeek[k]).flat().length===0) && (
-                      <p className="text-xs text-[#f7f7f7]/30 italic">Aucune disponibilité {teamFilterActive ? "(filtre actif)" : "cette semaine"}.</p>
+                      <p className="text-xs text-tertiary-token italic">Aucune disponibilité {teamFilterActive ? "(filtre actif)" : "cette semaine"}.</p>
                     )}
                   </div>
                   {/* Absences de la semaine (filtrées) */}
@@ -1397,7 +1407,7 @@ export default function Planning(){
                       <CalendarX size={11} aria-hidden="true" /> {t("planning.absence.teamTitle")}
                     </p>
                     {weekKeys.every(k=> (teamAbsencesForWeek[k]||[]).length===0) ? (
-                      <p className="text-xs text-[#f7f7f7]/30 italic">{t("planning.absence.teamEmpty")}</p>
+                      <p className="text-xs text-tertiary-token italic">{t("planning.absence.teamEmpty")}</p>
                     ) : (
                       <div className="space-y-1.5" data-testid="team-absence-list">
                         {weekKeys.map(k=> (teamAbsencesForWeek[k]||[]).map(a=>(
@@ -1405,7 +1415,7 @@ export default function Planning(){
                             <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1 shrink-0" aria-hidden="true" />
                             <span className="text-[#f7f7f7]/70">{a.name}</span>
                             <span className="text-[#f7f7f7]/40">{fromDateKey(k).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short", day:"numeric"})}</span>
-                            {a.reason && <span className="text-[#f7f7f7]/30 truncate">— {a.reason}</span>}
+                            {a.reason && <span className="text-tertiary-token truncate">— {a.reason}</span>}
                           </div>
                         )))}
                       </div>
@@ -1413,23 +1423,13 @@ export default function Planning(){
                   </div>
                 </div>
               )}
-            </>
-          )}
         </aside>
 
         {/* center calendar */}
         <main className="flex-1 flex flex-col overflow-hidden p-2 lg:p-3 bg-[#111111]">
-          {tab==="calendar" ? (
-            <>
-              {view==="month" && <MonthView />}
-              {view==="week" && <WeekView />}
-              {view==="day" && <DayView />}
-            </>
-          ) : (
-            <AvailabilityView />
-          )}
+          <AvailabilityView />
         </main>
-      </div>
+      </TabsContent>
 
       {/* absence modal */}
       {absenceModal && (
@@ -1496,7 +1496,7 @@ export default function Planning(){
                   placeholder={t("planning.freePlaceholder")}
                   required
                   className="w-full bg-[#111111] border border-white/15 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#f7f7f7]/20" />
-                <p className="text-[10px] text-[#f7f7f7]/30 mt-1.5">Écris ce que tu veux — pas de liste prédéfinie.</p>
+                <p className="text-[10px] text-tertiary-token mt-1.5">Écris ce que tu veux — pas de liste prédéfinie.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -1617,6 +1617,6 @@ export default function Planning(){
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Tabs>
   );
 }

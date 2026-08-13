@@ -175,12 +175,12 @@ export default function Notes() {
           <p className="mx-3 my-3 text-[10px] text-[#f7f7f7]/40 leading-relaxed shrink-0">{t("notes.trashHint")}</p>
         )}
         <div className="mx-3 mb-2 relative shrink-0">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-tertiary-token" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("notes.search")} data-testid="notes-search-input"
             className="w-full bg-[#111111] border border-white/15 pl-8 pr-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
         </div>
         <div className="flex-1 overflow-y-auto" data-testid="notes-list">
-          {visible.length === 0 && <p className="text-xs text-[#f7f7f7]/30 px-4 py-2" data-testid="notes-empty">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>}
+          {visible.length === 0 && <p className="text-xs text-tertiary-token px-4 py-2" data-testid="notes-empty">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>}
           {visible.map((n) => (
             <div key={n.id} className={`group flex items-center border-b border-white/5 ${selected === n.id ? "bg-[#D8CA82]/10" : "hover:bg-white/5"}`}>
               <button onClick={() => { setSelected(n.id); setShowHistory(false); }} data-testid={`notes-item-${n.id}`} className="flex-1 text-left px-4 py-3 min-w-0">
@@ -233,7 +233,7 @@ export default function Notes() {
                     <button onClick={() => setShowHistory(false)} className="text-[#f7f7f7]/40 hover:text-[#f7f7f7]"><X size={14} /></button>
                   </div>
                   {versions.length === 0 ? (
-                    <p className="text-xs text-[#f7f7f7]/30 px-4 py-3" data-testid="notes-history-empty">{t("notes.history.empty")}</p>
+                    <p className="text-xs text-tertiary-token px-4 py-3" data-testid="notes-history-empty">{t("notes.history.empty")}</p>
                   ) : (
                     <div className="divide-y divide-white/5">
                       {versions.map((v) => (
@@ -262,7 +262,7 @@ export default function Notes() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-[#f7f7f7]/30 text-sm" data-testid="notes-no-selection">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>
+            <p className="text-tertiary-token text-sm" data-testid="notes-no-selection">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>
           </div>
         )}
       </div>

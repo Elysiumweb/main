@@ -8,6 +8,7 @@ import { useLang } from "../lib/i18n";
 import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
 import { AdminArticles } from "../components/admin/AdminArticles";
@@ -437,15 +438,16 @@ export default function Admin() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-        <div className="flex gap-1 border-b border-white/10 mb-10 flex-wrap" data-testid="admin-tabs">
+        <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="flex gap-1 border-b border-white/10 mb-10 flex-wrap w-full h-auto justify-start bg-transparent p-0 rounded-none" data-testid="admin-tabs">
           {tabs.map((k) => (
-            <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
-              className={`px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            <TabsTrigger key={k} value={k} data-testid={`admin-tab-${k}`}
+              className="px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors rounded-none bg-transparent shadow-none border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7] data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-[#D8CA82] data-[state=active]:text-[#D8CA82]">
               {t(`admin.tab.${k}`)}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
-        {tab === "users" && (
+        </TabsList>
+        <TabsContent value="users" className="mt-0">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Users className="text-[#D8CA82]" size={18} />
@@ -525,9 +527,9 @@ export default function Admin() {
             </div>
           )}
         </div>
-        )}
+        </TabsContent>
 
-        {tab === "matches" && (
+        <TabsContent value="matches" className="mt-0">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Trophy className="text-[#D8CA82]" size={18} />
@@ -733,18 +735,19 @@ export default function Admin() {
             </div>
           </div>
         </div>
-        )}
+        </TabsContent>
 
-        {tab === "roster" && <AdminRoster />}
-        {tab === "positions" && <AdminPositions />}
-        {tab === "articles" && <AdminArticles />}
-        {tab === "media" && <AdminMedia />}
-        {tab === "events" && <AdminEvents />}
-        {tab === "competitions" && <AdminCompetitions />}
-        {tab === "campaigns" && <AdminCampaigns />}
-        {tab === "partners" && <AdminPartnerRequests />}
-        {tab === "newsletter" && <AdminNewsletter />}
-        {tab === "audit" && <AdminAudit />}
+        <TabsContent value="roster" className="mt-0"><AdminRoster /></TabsContent>
+        <TabsContent value="positions" className="mt-0"><AdminPositions /></TabsContent>
+        <TabsContent value="articles" className="mt-0"><AdminArticles /></TabsContent>
+        <TabsContent value="media" className="mt-0"><AdminMedia /></TabsContent>
+        <TabsContent value="events" className="mt-0"><AdminEvents /></TabsContent>
+        <TabsContent value="competitions" className="mt-0"><AdminCompetitions /></TabsContent>
+        <TabsContent value="campaigns" className="mt-0"><AdminCampaigns /></TabsContent>
+        <TabsContent value="partners" className="mt-0"><AdminPartnerRequests /></TabsContent>
+        <TabsContent value="newsletter" className="mt-0"><AdminNewsletter /></TabsContent>
+        <TabsContent value="audit" className="mt-0"><AdminAudit /></TabsContent>
+        </Tabs>
       </section>
 
       <AlertDialog open={!!confirmMatch} onOpenChange={(open) => !open && setConfirmMatch(null)}>

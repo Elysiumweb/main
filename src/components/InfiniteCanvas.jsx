@@ -321,7 +321,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
       <div ref={containerRef} data-canvasbg="1" data-testid="canvas-area"
         className={`flex-1 relative overflow-hidden canvas-dots bg-[#0d0d0d] touch-none ${tool === "draw" ? "cursor-crosshair" : tool === "select" ? "cursor-grab" : "cursor-copy"}`}
         onPointerDown={onBgPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
-        <p className="absolute bottom-2 left-3 text-[10px] text-[#f7f7f7]/25 pointer-events-none z-10">{t("canvas.hint")}</p>
+        <p className="absolute bottom-2 left-3 text-[10px] text-tertiary-token pointer-events-none z-10">{t("canvas.hint")}</p>
         <div className="absolute" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`, transformOrigin: "0 0" }}>
           <div className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: 0, top: 0 }}>
             <img src="/brand/logo-icon-gold.png" alt="" className="w-10 opacity-20" />
@@ -352,7 +352,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
                   className={`w-full min-h-[60px] bg-[#161616] text-sm text-[#f7f7f7] p-2 resize focus:outline-none border ${it.type === "box" ? "border-[#D8CA82]/60" : "border-white/20"}`} />
               ) : (
                 <div className={`min-h-[36px] p-2 text-sm text-[#f7f7f7]/90 whitespace-pre-wrap break-words ${it.type === "box" ? "border border-[#D8CA82]/60 bg-[#D8CA82]/5" : ""}`}>
-                  {it.text || <span className="text-[#f7f7f7]/30 italic">Double-clic...</span>}
+                  {it.text || <span className="text-tertiary-token italic">Double-clic...</span>}
                 </div>
               )}
             </div>

@@ -96,7 +96,7 @@ export default function News() {
                   <p className="font-display font-black text-2xl sm:text-3xl text-[#f7f7f7] mt-3 group-hover:text-[#D8CA82] transition-colors leading-tight">{featured.title}</p>
                   <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-3">{excerpt(featured)}{excerpt(featured).length >= 140 ? "…" : ""}</p>
                   <div className="mt-5 flex items-center justify-between">
-                    <span className="text-xs text-[#f7f7f7]/30">{dateLabel(featured)}</span>
+                    <span className="text-xs text-tertiary-token">{dateLabel(featured)}</span>
                     <span className="text-[10px] uppercase tracking-widest text-[#D8CA82]">{t("news.readMore")} →</span>
                   </div>
                 </div>
@@ -113,7 +113,7 @@ export default function News() {
                     <p className="font-display font-bold text-[#f7f7f7] mt-2 group-hover:text-[#D8CA82] transition-colors">{a.title}</p>
                     <p className="text-sm text-[#f7f7f7]/50 mt-2 line-clamp-3">{excerpt(a)}{excerpt(a).length >= 140 ? "…" : ""}</p>
                     <div className="mt-auto pt-4 flex items-center justify-between">
-                      <span className="text-xs text-[#f7f7f7]/30">{dateLabel(a)}</span>
+                      <span className="text-xs text-tertiary-token">{dateLabel(a)}</span>
                       <span className="text-[10px] uppercase tracking-widest text-[#D8CA82]/70">{t("news.readMore")} →</span>
                     </div>
                   </div>

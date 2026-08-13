@@ -12,6 +12,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SITE_URL } from "../lib/useSEO";
 import { downloadICS, gcalUrl } from "../lib/calendar";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 
 const TYPE_ICONS = { tournament: Trophy, training: Dumbbell, stream: Radio, community: PartyPopper };
 const TYPE_COLORS = { tournament: "#D8CA82", training: "#4FC3F7", stream: "#E53935", community: "#81C784" };
@@ -354,6 +355,7 @@ export default function CommunityCalendar() {
 
       <section className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
         {/* Filtres type + vue */}
+        <Tabs value={view} onValueChange={setView}>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="flex flex-wrap gap-2" data-testid="cal-filters">
             {["all", ...TYPES].map((ty) => (
@@ -363,23 +365,25 @@ export default function CommunityCalendar() {
               </button>
             ))}
           </div>
-          <div className="flex gap-1 border border-white/15 p-1" role="tablist" aria-label={t("cal.title")}>
-            <button onClick={() => setView("list")} data-testid="cal-view-list" role="tab" aria-selected={view === "list"}
-              className={`px-3 py-1.5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "list" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+          <TabsList className="flex gap-1 border border-white/15 p-1 h-auto rounded-none bg-transparent" aria-label={t("cal.title")}>
+            <TabsTrigger value="list" data-testid="cal-view-list"
+              className="px-3 py-1.5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-colors rounded-none data-[state=active]:bg-[#D8CA82] data-[state=active]:text-[#111111] data-[state=active]:font-bold data-[state=active]:shadow-none text-[#f7f7f7]/50 hover:text-[#f7f7f7]">
               <List size={12} aria-hidden="true" /> {t("cal.view.list")}
-            </button>
-            <button onClick={() => setView("month")} data-testid="cal-view-month" role="tab" aria-selected={view === "month"}
-              className={`px-3 py-1.5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "month" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            </TabsTrigger>
+            <TabsTrigger value="month" data-testid="cal-view-month"
+              className="px-3 py-1.5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-colors rounded-none data-[state=active]:bg-[#D8CA82] data-[state=active]:text-[#111111] data-[state=active]:font-bold data-[state=active]:shadow-none text-[#f7f7f7]/50 hover:text-[#f7f7f7]">
               <Grid3X3 size={12} aria-hidden="true" /> {t("cal.view.month")}
-            </button>
-          </div>
+            </TabsTrigger>
+          </TabsList>
         </div>
 
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="cal-error" />
         ) : events === null ? (
           <LoadingState testId="cal-loading" />
-        ) : view === "month" ? (
+        ) : (
+          <>
+          <TabsContent value="month" className="mt-0">
           <div className="space-y-6">
             <MonthGrid events={filtered} selectedDate={selectedDay} onSelect={setSelectedDay} t={t} lang={lang} />
             {selectedDay ? (
@@ -394,20 +398,27 @@ export default function CommunityCalendar() {
               <p className="text-sm text-[#f7f7f7]/40" data-testid="cal-month-hint">← {t("cal.empty")}</p>
             )}
           </div>
-        ) : upcoming.length === 0 && past.length === 0 ? (
+          </TabsContent>
+
+          <TabsContent value="list" className="mt-0">
+          {upcoming.length === 0 && past.length === 0 ? (
           <EmptyState icon={CalendarDays} text={t("cal.empty")} testId="cal-empty" />
-        ) : (
+          ) : (
           <div className="space-y-3" data-testid="cal-list">
             {upcoming.length === 0 && <p className="text-[#f7f7f7]/40 mb-4" data-testid="cal-no-upcoming">{t("cal.empty")}</p>}
             {upcoming.map((ev) => <EventRow key={ev.id} ev={ev} user={user} displayName={displayName} />)}
             {past.length > 0 && (
               <>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#f7f7f7]/30 pt-8 pb-2">{t("cal.past")}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-tertiary-token pt-8 pb-2">{t("cal.past")}</p>
                 {past.slice(0, 10).map((ev) => <EventRow key={ev.id} ev={ev} dim user={user} displayName={displayName} />)}
               </>
             )}
           </div>
-        )}
+          )}
+          </TabsContent>
+          </>
+          )}
+        </Tabs>
       </section>
     </div>
   );

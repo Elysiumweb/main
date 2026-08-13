@@ -10,6 +10,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Trophy, CalendarClock, ChevronDown, CalendarDays } from "lucide-react";
 import { GAMES, getElysiumTeamName } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
@@ -93,6 +94,36 @@ export default function Results() {
 
   const resetFilters = () => { setGame("all"); setCompetition("all"); setFrom(""); setTo(""); };
 
+  // Contenu commun des panneaux d'onglets (Terminés / À venir)
+  const resultsPanel = error ? (
+    <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="results-error" />
+  ) : matches === null ? (
+    <LoadingState testId="results-loading" />
+  ) : filtered.length === 0 ? (
+    <EmptyState icon={tab === "upcoming" ? CalendarClock : Trophy}
+      text={tab === "upcoming" ? t("results.noUpcoming") : t("results.empty")} testId="results-empty" />
+  ) : (
+    <>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
+        {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} />)}
+      </div>
+      {filtered.length > visibleCount && (
+        <div className="mt-10 flex flex-col items-center gap-3" data-testid="results-load-more">
+          <button
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            data-testid="results-load-more-btn"
+            className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-[#D8CA82]/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+          >
+            <ChevronDown size={14} aria-hidden="true" /> {t("results.loadMore")}
+          </button>
+          <p className="text-[11px] text-[#f7f7f7]/40">
+            {Math.min(visibleCount, filtered.length)} {t("results.loaded")} {filtered.length}
+          </p>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
@@ -140,83 +171,55 @@ export default function Results() {
           </div>
         )}
 
-        <div
-          className="flex gap-1 border-b border-white/10 mb-8"
-          data-testid="results-tabs"
-          role="tablist"
-          aria-label={t("results.title")}
-        >
-          {[["finished", Trophy], ["upcoming", CalendarClock]].map(([k, Icon]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              data-testid={`results-tab-${k}`}
-              role="tab"
-              aria-selected={tab === k}
-              className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#c8c8c8] hover:text-[#f7f7f7]"}`}
-            >
-              <Icon size={14} aria-hidden="true" /> {t(`results.tab.${k}`)}
-            </button>
-          ))}
-        </div>
+        <Tabs value={tab} onValueChange={setTab} data-testid="results-tabs">
+          <TabsList
+            className="flex gap-1 border-b border-white/10 mb-8 w-full h-auto justify-start bg-transparent p-0 rounded-none"
+            aria-label={t("results.title")}
+          >
+            {[["finished", Trophy], ["upcoming", CalendarClock]].map(([k, Icon]) => (
+              <TabsTrigger
+                key={k}
+                value={k}
+                data-testid={`results-tab-${k}`}
+                className="flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors rounded-none bg-transparent shadow-none border-transparent text-[#c8c8c8] hover:text-[#f7f7f7] data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-[#D8CA82] data-[state=active]:text-[#D8CA82] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+              >
+                <Icon size={14} aria-hidden="true" /> {t(`results.tab.${k}`)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="results-filters">
-          <div>
-            <label htmlFor="filter-game" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("common.game")}</label>
-            <select id="filter-game" value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="results-filter-game">
-              <option value="all">{t("results.filter.all")}</option>
-              {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="filter-competition" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.competition")}</label>
-            <select id="filter-competition" value={competition} onChange={(e) => setCompetition(e.target.value)} className={selectCls} data-testid="results-filter-competition">
-              <option value="all">{t("results.filter.all")}</option>
-              {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="filter-from" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.from")}</label>
-            <input id="filter-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} data-testid="results-filter-from" />
-          </div>
-          <div>
-            <label htmlFor="filter-to" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.to")}</label>
-            <input id="filter-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
-          </div>
-          <button onClick={resetFilters} data-testid="results-filter-reset"
-            className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none">
-            {t("results.filter.reset")}
-          </button>
-        </div>
-
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="results-error" />
-        ) : matches === null ? (
-          <LoadingState testId="results-loading" />
-        ) : filtered.length === 0 ? (
-          <EmptyState icon={tab === "upcoming" ? CalendarClock : Trophy}
-            text={tab === "upcoming" ? t("results.noUpcoming") : t("results.empty")} testId="results-empty" />
-        ) : (
-          <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
-              {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} />)}
+          <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="results-filters">
+            <div>
+              <label htmlFor="filter-game" className="text-[10px] uppercase tracking-[0.25em] text-tertiary-token block mb-1.5">{t("common.game")}</label>
+              <select id="filter-game" value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="results-filter-game">
+                <option value="all">{t("results.filter.all")}</option>
+                {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
+              </select>
             </div>
-            {filtered.length > visibleCount && (
-              <div className="mt-10 flex flex-col items-center gap-3" data-testid="results-load-more">
-                <button
-                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                  data-testid="results-load-more-btn"
-                  className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-[#D8CA82]/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
-                >
-                  <ChevronDown size={14} aria-hidden="true" /> {t("results.loadMore")}
-                </button>
-                <p className="text-[11px] text-[#f7f7f7]/40">
-                  {Math.min(visibleCount, filtered.length)} {t("results.loaded")} {filtered.length}
-                </p>
-              </div>
-            )}
-          </>
-        )}
+            <div>
+              <label htmlFor="filter-competition" className="text-[10px] uppercase tracking-[0.25em] text-tertiary-token block mb-1.5">{t("results.filter.competition")}</label>
+              <select id="filter-competition" value={competition} onChange={(e) => setCompetition(e.target.value)} className={selectCls} data-testid="results-filter-competition">
+                <option value="all">{t("results.filter.all")}</option>
+                {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="filter-from" className="text-[10px] uppercase tracking-[0.25em] text-tertiary-token block mb-1.5">{t("results.filter.from")}</label>
+              <input id="filter-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} data-testid="results-filter-from" />
+            </div>
+            <div>
+              <label htmlFor="filter-to" className="text-[10px] uppercase tracking-[0.25em] text-tertiary-token block mb-1.5">{t("results.filter.to")}</label>
+              <input id="filter-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
+            </div>
+            <button onClick={resetFilters} data-testid="results-filter-reset"
+              className="border border-white/20 text-tertiary-token text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none">
+              {t("results.filter.reset")}
+            </button>
+          </div>
+
+          <TabsContent value="finished" className="mt-0">{resultsPanel}</TabsContent>
+          <TabsContent value="upcoming" className="mt-0">{resultsPanel}</TabsContent>
+        </Tabs>
       </section>
     </div>
   );

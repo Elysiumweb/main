@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 const dict = {
   fr: {
@@ -974,6 +974,63 @@ const dict = {
     "common.preview": "Aperçu",
     "common.yes": "Oui",
     "common.no": "Non",
+    /* ---- Erreurs (boundary, login, MFA) ---- */
+    "error.boundary.title": "Oups, une erreur est survenue",
+    "error.boundary.desc": "L'application a rencontré un problème. Vérifiez la console pour plus de détails. Si vous êtes sur Vercel, assurez-vous que les variables d'environnement Firebase sont configurées.",
+    "error.boundary.reload": "Recharger",
+    "login.error.invalidCredential": "Identifiants invalides.",
+    "login.error.emailInUse": "Cet email est déjà utilisé.",
+    "login.error.weakPassword": "Mot de passe trop faible (6 caractères min).",
+    "login.error.invalidEmail": "Email invalide.",
+    "login.error.tooManyRequests": "Trop de tentatives. Réessayez plus tard.",
+    "login.error.default": "Erreur d'authentification.",
+    "login.error.unsupportedFactor": "Second facteur non supporté.",
+    "mfa.error.identityPlatform": "Passez Firebase Authentication en Identity Platform (console Firebase → Authentication → Mettre à niveau), puis réessayez.",
+    "mfa.error.functionNotDeployed": "La 2FA n'est pas encore activée côté serveur. Déployez la Cloud Function ensureTotpMfa puis réessayez.",
+    "mfa.error.requiresRecentLogin": "Pour des raisons de sécurité, confirmez votre identité pour continuer.",
+    "mfa.error.unverifiedEmail": "Vérifiez votre adresse email avant d'activer la double authentification.",
+    "mfa.error.invalidCode": "Code invalide ou expiré. Générez un nouveau code et réessayez.",
+    "mfa.error.codeExpired": "Le délai d'activation est dépassé. Recommencez l'enrôlement.",
+    "mfa.error.factorAlreadyActive": "Un second facteur TOTP est déjà actif sur ce compte.",
+    "mfa.error.unsupportedFirstFactor": "Ce mode de connexion ne permet pas la double authentification.",
+    "mfa.error.activationPending": "Activation automatique de la 2FA en cours. Si ça persiste : console Firebase → Authentication → MFA → activer TOTP.",
+    "mfa.error.sessionExpired": "Session expirée. Reconnectez-vous puis réessayez.",
+    "mfa.error.wrongPassword": "Mot de passe incorrect.",
+    "mfa.error.tooManyAttempts": "Trop de tentatives. Réessayez dans quelques minutes.",
+    "mfa.error.popupClosed": "Fenêtre de confirmation fermée.",
+    "mfa.error.mfaRequired": "Code de double authentification requis.",
+    "mfa.error.permissionDenied": "Écriture refusée par Firestore. La 2FA est maintenant enregistrée sur votre profil (pas besoin de nouvelle collection). Rechargez et réessayez.",
+    "mfa.error.default": "Impossible de configurer la double authentification.",
+    "mfa.challenge.title": "Double authentification",
+    "mfa.challenge.desc": "Entrez le code à 6 chiffres de votre application d'authentification pour continuer.",
+    "mfa.challenge.codeLabel": "Code à 6 chiffres",
+    "mfa.challenge.submit": "Valider",
+    "mfa.challenge.logout": "Se déconnecter",
+    "mfa.challenge.noSecret": "Aucun secret 2FA trouvé. Réactivez-le depuis votre profil.",
+    "mfa.challenge.invalidCode": "Code invalide ou expiré.",
+    "mfa.challenge.verified": "Double authentification validée.",
+    "mfa.challenge.unavailable": "Impossible de vérifier le code pour le moment.",
+    "mfa.totp.title": "Double authentification (TOTP)",
+    "mfa.totp.appName": "Application d'authentification",
+    "mfa.totp.requiredDesc": "Obligatoire pour les comptes officiels et bureau. Utilisez Google Authenticator, 1Password, Bitwarden ou une application TOTP compatible.",
+    "mfa.totp.optionalDesc": "Ajoutez un code temporaire depuis une application d'authentification pour renforcer votre compte.",
+    "mfa.totp.enabled": "Activée · Application d'authentification",
+    "mfa.totp.remove": "Retirer",
+    "mfa.totp.enable": "Activer la 2FA",
+    "mfa.totp.qrUnavailable": "QR indisponible — copiez la clé ci-contre.",
+    "mfa.totp.scanHint": "Scannez le QR code ou copiez cette clé secrète dans votre application :",
+    "mfa.totp.copySecret": "Copier la clé secrète",
+    "mfa.totp.openApp": "Ouvrir dans une application compatible",
+    "mfa.totp.codeLabel": "Code à 6 chiffres",
+    "mfa.totp.confirm": "Confirmer",
+    "mfa.totp.cancel": "Annuler",
+    "mfa.totp.activated": "Double authentification activée.",
+    "mfa.totp.factorRemoved": "Second facteur retiré.",
+    "mfa.totp.secretCopied": "Clé secrète copiée.",
+    "mfa.totp.invalidCode": "Code invalide ou expiré. Réessayez avec un nouveau code.",
+    "mfa.totp.qrAlt": "QR code TOTP",
+    /* ---- Résultats ---- */
+    "results.viewDetails": "Voir les détails du match",
   },
   en: {
     "nav.home": "Home",
@@ -1948,6 +2005,63 @@ const dict = {
     "common.preview": "Preview",
     "common.yes": "Yes",
     "common.no": "No",
+    /* ---- Errors (boundary, login, MFA) ---- */
+    "error.boundary.title": "Oops, something went wrong",
+    "error.boundary.desc": "The application ran into a problem. Check the console for more details. If you are on Vercel, make sure the Firebase environment variables are configured.",
+    "error.boundary.reload": "Reload",
+    "login.error.invalidCredential": "Invalid credentials.",
+    "login.error.emailInUse": "This email is already in use.",
+    "login.error.weakPassword": "Password too weak (6 characters min).",
+    "login.error.invalidEmail": "Invalid email.",
+    "login.error.tooManyRequests": "Too many attempts. Try again later.",
+    "login.error.default": "Authentication error.",
+    "login.error.unsupportedFactor": "Unsupported second factor.",
+    "mfa.error.identityPlatform": "Upgrade Firebase Authentication to Identity Platform (Firebase console → Authentication → Upgrade), then try again.",
+    "mfa.error.functionNotDeployed": "2FA is not enabled server-side yet. Deploy the ensureTotpMfa Cloud Function, then try again.",
+    "mfa.error.requiresRecentLogin": "For security reasons, please confirm your identity to continue.",
+    "mfa.error.unverifiedEmail": "Verify your email address before enabling two-factor authentication.",
+    "mfa.error.invalidCode": "Invalid or expired code. Generate a new code and try again.",
+    "mfa.error.codeExpired": "The enrollment window has expired. Restart the enrollment.",
+    "mfa.error.factorAlreadyActive": "A TOTP second factor is already active on this account.",
+    "mfa.error.unsupportedFirstFactor": "This sign-in method does not support two-factor authentication.",
+    "mfa.error.activationPending": "Automatic 2FA activation in progress. If it persists: Firebase console → Authentication → MFA → enable TOTP.",
+    "mfa.error.sessionExpired": "Session expired. Sign back in, then try again.",
+    "mfa.error.wrongPassword": "Incorrect password.",
+    "mfa.error.tooManyAttempts": "Too many attempts. Try again in a few minutes.",
+    "mfa.error.popupClosed": "Confirmation window closed.",
+    "mfa.error.mfaRequired": "Two-factor authentication code required.",
+    "mfa.error.permissionDenied": "Write denied by Firestore. Your 2FA is now saved on your profile (no new collection needed). Reload and try again.",
+    "mfa.error.default": "Unable to set up two-factor authentication.",
+    "mfa.challenge.title": "Two-factor authentication",
+    "mfa.challenge.desc": "Enter the 6-digit code from your authenticator app to continue.",
+    "mfa.challenge.codeLabel": "6-digit code",
+    "mfa.challenge.submit": "Validate",
+    "mfa.challenge.logout": "Sign out",
+    "mfa.challenge.noSecret": "No 2FA secret found. Re-enable it from your profile.",
+    "mfa.challenge.invalidCode": "Invalid or expired code.",
+    "mfa.challenge.verified": "Two-factor authentication verified.",
+    "mfa.challenge.unavailable": "Unable to verify the code right now.",
+    "mfa.totp.title": "Two-factor authentication (TOTP)",
+    "mfa.totp.appName": "Authenticator app",
+    "mfa.totp.requiredDesc": "Required for official and bureau accounts. Use Google Authenticator, 1Password, Bitwarden or any compatible TOTP app.",
+    "mfa.totp.optionalDesc": "Add a temporary code from an authenticator app to strengthen your account.",
+    "mfa.totp.enabled": "Enabled · Authenticator app",
+    "mfa.totp.remove": "Remove",
+    "mfa.totp.enable": "Enable 2FA",
+    "mfa.totp.qrUnavailable": "QR unavailable — copy the key instead.",
+    "mfa.totp.scanHint": "Scan the QR code or copy this secret key into your app:",
+    "mfa.totp.copySecret": "Copy secret key",
+    "mfa.totp.openApp": "Open in a compatible app",
+    "mfa.totp.codeLabel": "6-digit code",
+    "mfa.totp.confirm": "Confirm",
+    "mfa.totp.cancel": "Cancel",
+    "mfa.totp.activated": "Two-factor authentication enabled.",
+    "mfa.totp.factorRemoved": "Second factor removed.",
+    "mfa.totp.secretCopied": "Secret key copied.",
+    "mfa.totp.invalidCode": "Invalid or expired code. Try again with a new code.",
+    "mfa.totp.qrAlt": "TOTP QR code",
+    /* ---- Results ---- */
+    "results.viewDetails": "View match details",
   },
 };
 
@@ -1963,6 +2077,13 @@ export const LanguageProvider = ({ children }) => {
     });
   }, []);
   const t = useCallback((key) => dict[lang][key] || dict.fr[key] || key, [lang]);
+
+  // A11y : garde <html lang> synchronisé avec la langue active pour que les
+  // lecteurs d'écran annoncent le contenu dans la bonne langue.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   return <LangContext.Provider value={{ lang, toggle, t }}>{children}</LangContext.Provider>;
 };
 

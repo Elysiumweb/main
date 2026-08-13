@@ -250,8 +250,8 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
               <div className={`max-w-[75%] px-3 py-2 border relative ${mine ? "bg-[#D8CA82]/10 border-[#D8CA82]/40" : "bg-[#1A1A1A] border-white/10"}`}>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-display font-bold text-[#D8CA82]">{m.name}</span>
-                  {m.createdAt && <span className="text-[10px] text-[#f7f7f7]/30">{fmtDate(m.createdAt)}</span>}
-                  {m.editedAt && <span className="text-[9px] italic text-[#f7f7f7]/30">({t("chat.edited")})</span>}
+                  {m.createdAt && <span className="text-[10px] text-tertiary-token">{fmtDate(m.createdAt)}</span>}
+                  {m.editedAt && <span className="text-[9px] italic text-tertiary-token">({t("chat.edited")})</span>}
                   {/* Actions : édition personnelle + suppression personnelle/modération */}
                   {canDeleteMessage && !isEditing && (
                     <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`msg-actions-${m.id}`}>

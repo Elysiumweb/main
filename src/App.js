@@ -64,57 +64,59 @@ function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <SEOManager />
-          <SkipLink />
-          <Navbar />
-          <VerifyEmailBanner />
-          <GlobalSearch />
-          <Routes>
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/resultats" element={<Results />} />
-              <Route path="/equipe" element={<Team />} />
-              <Route path="/equipe/:id" element={<PlayerDetail />} />
-              <Route path="/actus" element={<News />} />
-              <Route path="/actus/:id" element={<ArticleDetail />} />
-              <Route path="/medias" element={<MediaGallery />} />
-              <Route path="/calendrier" element={<CommunityCalendar />} />
-              <Route path="/competitions" element={<Competitions />} />
-              <Route path="/a-propos" element={<About />} />
-              <Route path="/presse" element={<Press />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/recrutement" element={<Recruitment />} />
-              <Route path="/statistiques" element={<Stats />} />
-              <Route path="/partenaires" element={<Partners />} />
-              <Route path="/soutenir" element={<Donate />} />
-              <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
-              <Route path="/newsletter" element={<NewsletterSignup />} />
-              <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
-              <Route path="/connexion" element={<Login />} />
-              <Route path="/profil" element={<Profile />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/mentions-legales" element={<LegalPage kind="mentions" />} />
-              <Route path="/confidentialite" element={<LegalPage kind="privacy" />} />
-              <Route path="/cgu" element={<LegalPage kind="terms" />} />
-            </Route>
-            <Route path="/espace-joueur" element={<PlayerLayout />}>
-              <Route index element={<Navigate to="chat" replace />} />
-              <Route path="chat" element={<ChatSpace />} />
-              <Route path="planning" element={<Planning />} />
-              <Route path="notes" element={<Notes />} />
-              <Route path="tableau" element={<CanvasSpace />} />
-              <Route path="activite" element={<ActivityLog />} />
-            </Route>
-            <Route element={<PublicLayout />}>
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-          <MfaChallenge />
-          <PushConsent />
-          <CookieConsent />
-          <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", color: "#f7f7f7", borderRadius: 0 } }} />
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <SEOManager />
+            <SkipLink />
+            <Navbar />
+            <VerifyEmailBanner />
+            <GlobalSearch />
+            <Routes>
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/resultats" element={<Results />} />
+                <Route path="/equipe" element={<Team />} />
+                <Route path="/equipe/:id" element={<PlayerDetail />} />
+                <Route path="/actus" element={<News />} />
+                <Route path="/actus/:id" element={<ArticleDetail />} />
+                <Route path="/medias" element={<MediaGallery />} />
+                <Route path="/calendrier" element={<CommunityCalendar />} />
+                <Route path="/competitions" element={<Competitions />} />
+                <Route path="/a-propos" element={<About />} />
+                <Route path="/presse" element={<Press />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/recrutement" element={<Recruitment />} />
+                <Route path="/statistiques" element={<Stats />} />
+                <Route path="/partenaires" element={<Partners />} />
+                <Route path="/soutenir" element={<Donate />} />
+                <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
+                <Route path="/newsletter" element={<NewsletterSignup />} />
+                <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
+                <Route path="/connexion" element={<Login />} />
+                <Route path="/profil" element={<Profile />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/mentions-legales" element={<LegalPage kind="mentions" />} />
+                <Route path="/confidentialite" element={<LegalPage kind="privacy" />} />
+                <Route path="/cgu" element={<LegalPage kind="terms" />} />
+              </Route>
+              <Route path="/espace-joueur" element={<PlayerLayout />}>
+                <Route index element={<Navigate to="chat" replace />} />
+                <Route path="chat" element={<ChatSpace />} />
+                <Route path="planning" element={<Planning />} />
+                <Route path="notes" element={<Notes />} />
+                <Route path="tableau" element={<CanvasSpace />} />
+                <Route path="activite" element={<ActivityLog />} />
+              </Route>
+              <Route element={<PublicLayout />}>
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+            <MfaChallenge />
+            <PushConsent />
+            <CookieConsent />
+            <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", color: "#f7f7f7", borderRadius: 0 } }} />
+          </BrowserRouter>
+        </ErrorBoundary>
       </AuthProvider>
     </LanguageProvider>
   );
