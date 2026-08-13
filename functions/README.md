@@ -6,9 +6,12 @@ Cette fonction transforme les **notifications in-app** (collection Firestore
 
 ## 2FA / TOTP
 
-La fonction callable `ensureTotpMfa` active le second facteur TOTP sur le
-projet Firebase Auth (Identity Platform). Le panneau profil l'appelle
-automatiquement si l'enrôlement échoue avec `auth/operation-not-allowed`.
+Sur le plan **Spark**, Firebase Identity Platform (TOTP natif) n'est pas
+disponible. L'app utilise alors une 2FA applicative (secret TOTP dans
+`mfaSecrets/{uid}`, vérification dans le navigateur).
+
+`ensureTotpMfa` reste utile uniquement si le projet passe en **Blaze** +
+Identity Platform.
 
 ```bash
 firebase deploy --only functions:ensureTotpMfa
