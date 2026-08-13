@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Check, Copy, ShieldCheck } from "lucide-react";
 import { auth, googleProvider } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
-import { mfaErrorMessage, userHasGoogle, userHasPassword } from "../lib/mfa";
+import { ensureProjectTotpEnabled, isTotpDisabledError, mfaErrorMessage, userHasGoogle, userHasPassword } from "../lib/mfa";
 import { toQrDataUrl } from "../lib/qrDataUrl";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
@@ -71,6 +71,15 @@ export const MfaTotpPanel = () => {
       if (err.code === "auth/requires-recent-login") {
         setNeedReauth(true);
         toast.error(mfaErrorMessage(err));
+      } else if (isTotpDisabledError(err)) {
+        try {
+          toast.message("Activation de la 2FA sur le projet Firebase…");
+          await ensureProjectTotpEnabled();
+          await beginSecret();
+        } catch (enableErr) {
+          console.error(enableErr);
+          toast.error(mfaErrorMessage(enableErr));
+        }
       } else {
         toast.error(mfaErrorMessage(err));
       }

@@ -1,5 +1,6 @@
 import { getMultiFactorResolver, multiFactor } from "firebase/auth";
-import { mfaErrorMessage, readEnrolledFactors, resolverFromMfaError } from "./mfa";
+import { httpsCallable } from "firebase/functions";
+import { ensureProjectTotpEnabled, isTotpDisabledError, mfaErrorMessage, readEnrolledFactors, resolverFromMfaError } from "./mfa";
 
 jest.mock("firebase/auth", () => ({
   __esModule: true,
@@ -11,8 +12,14 @@ jest.mock("firebase/auth", () => ({
   reauthenticateWithPopup: jest.fn(),
 }));
 
+jest.mock("firebase/functions", () => ({
+  __esModule: true,
+  httpsCallable: jest.fn(() => jest.fn(async () => ({ data: { enabled: true } }))),
+}));
+
 jest.mock("./firebase", () => ({
   auth: { currentUser: null },
+  functions: {},
   googleProvider: {},
 }));
 
@@ -20,13 +27,17 @@ describe("mfa helpers", () => {
   beforeEach(() => {
     multiFactor.mockImplementation((user) => ({ enrolledFactors: user?.__factors || [] }));
     getMultiFactorResolver.mockImplementation((auth, err) => ({ auth, hints: err?.customData?.hints || [] }));
+    httpsCallable.mockImplementation(() => jest.fn(async () => ({ data: { enabled: true } })));
   });
 
   it("maps Firebase MFA errors to actionable French copy", () => {
     expect(mfaErrorMessage({ code: "auth/requires-recent-login" })).toMatch(/confirmez votre identité/i);
     expect(mfaErrorMessage({ code: "auth/unverified-email" })).toMatch(/email/i);
     expect(mfaErrorMessage({ code: "auth/invalid-verification-code" })).toMatch(/invalide/i);
-    expect(mfaErrorMessage({ code: "auth/operation-not-allowed" })).toMatch(/projet/i);
+    expect(mfaErrorMessage({ code: "auth/operation-not-allowed" })).toMatch(/TOTP|Identity|projet|console/i);
+    expect(mfaErrorMessage({ code: "functions/not-found" })).toMatch(/ensureTotpMfa|serveur/i);
+    expect(isTotpDisabledError({ code: "auth/operation-not-allowed" })).toBe(true);
+    expect(isTotpDisabledError({ code: "auth/wrong-password" })).toBe(false);
     expect(mfaErrorMessage({ code: "auth/unknown-xyz" })).toMatch(/Impossible de configurer/i);
   });
 
@@ -47,6 +58,11 @@ describe("mfa helpers", () => {
     expect(readEnrolledFactors(user)).toEqual([
       { uid: "totp-1", displayName: "Auth app", factorId: "totp" },
     ]);
+  });
+
+  it("calls ensureTotpMfa when the project has TOTP disabled", async () => {
+    await expect(ensureProjectTotpEnabled()).resolves.toEqual({ enabled: true });
+    expect(httpsCallable).toHaveBeenCalledWith({}, "ensureTotpMfa");
   });
 
   it("builds a resolver only for multi-factor-auth-required", () => {

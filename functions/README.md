@@ -4,6 +4,20 @@ Cette fonction transforme les **notifications in-app** (collection Firestore
 `notifications`) en **emails** envoyés aux joueurs/staff concernés, via
 **Resend** (par défaut) ou **Brevo** (si la clé Brevo est fournie).
 
+## 2FA / TOTP
+
+La fonction callable `ensureTotpMfa` active le second facteur TOTP sur le
+projet Firebase Auth (Identity Platform). Le panneau profil l'appelle
+automatiquement si l'enrôlement échoue avec `auth/operation-not-allowed`.
+
+```bash
+firebase deploy --only functions:ensureTotpMfa
+```
+
+Prérequis : le projet doit être passé en **Firebase Authentication with
+Identity Platform** (console → Authentication → Mettre à niveau). Sans ça,
+l'API refuse d'activer le TOTP.
+
 ## Cas couverts
 
 | Événement métier              | Type de notification | Qui est notifié            |
