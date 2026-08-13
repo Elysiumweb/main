@@ -3,12 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signInWithPopup, updateProfile, sendPasswordResetEmail, sendEmailVerification,
-  getMultiFactorResolver, TotpMultiFactorGenerator,
+  TotpMultiFactorGenerator,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { auth, db, googleProvider } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { mfaErrorMessage, resolverFromMfaError } from "../lib/mfa";
 
 const errMsg = (code) => {
   const map = {
@@ -66,9 +67,10 @@ export default function Login() {
       completeLogin();
     } catch (err) {
       console.error(err);
-      if (err.code === "auth/multi-factor-auth-required") {
-        setMfaResolver(getMultiFactorResolver(auth, err));
-        setFormError("Code de double authentification requis.");
+      const resolver = resolverFromMfaError(err);
+      if (resolver) {
+        setMfaResolver(resolver);
+        setFormError(mfaErrorMessage(err));
         setBusy(false);
         return;
       }
@@ -86,7 +88,14 @@ export default function Login() {
       completeLogin();
     } catch (err) {
       console.error(err);
-      if (err.code !== "auth/popup-closed-by-user") {
+      const resolver = resolverFromMfaError(err);
+      if (resolver) {
+        setMfaResolver(resolver);
+        setFormError(mfaErrorMessage(err));
+        setBusy(false);
+        return;
+      }
+      if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
         const msg = errMsg(err.code);
         setFormError(msg);
         toast.error(msg);
@@ -112,7 +121,7 @@ export default function Login() {
       completeLogin();
     } catch (err) {
       console.error(err);
-      const msg = "Code de double authentification invalide ou expiré.";
+      const msg = mfaErrorMessage(err.code ? err : { code: "auth/invalid-verification-code" });
       setFormError(msg);
       toast.error(msg);
     }

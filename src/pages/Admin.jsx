@@ -18,6 +18,7 @@ import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
+import { MfaTotpPanel } from "../components/MfaTotpPanel";
 import { logAdminAction } from "../lib/notify";
 import {
   AlertDialog,
@@ -196,12 +197,14 @@ export default function Admin() {
     </div>
   );
   if (requiresMfa && !mfaEnrolled) return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="max-w-lg border border-orange-300/40 bg-orange-300/5 p-8 text-center" data-testid="admin-mfa-required">
-        <Shield className="text-orange-200 mx-auto mb-4" size={32} aria-hidden="true" />
-        <h1 className="font-display text-xl uppercase tracking-[0.25em] text-orange-100 mb-3">Double authentification requise</h1>
-        <p className="text-sm text-[#c8c8c8] mb-6">Les rôles sensibles (officiel/bureau) doivent activer un second facteur TOTP avant d'accéder à l'administration.</p>
-        <a href="/profil" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 inline-block">Configurer dans mon profil</a>
+    <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-lg space-y-6" data-testid="admin-mfa-required">
+        <div className="border border-orange-300/40 bg-orange-300/5 p-8 text-center">
+          <Shield className="text-orange-200 mx-auto mb-4" size={32} aria-hidden="true" />
+          <h1 className="font-display text-xl uppercase tracking-[0.25em] text-orange-100 mb-3">Double authentification requise</h1>
+          <p className="text-sm text-[#c8c8c8]">Les rôles sensibles (officiel/bureau) doivent activer un second facteur TOTP avant d'accéder à l'administration. Configurez-la ci-dessous — pas besoin de quitter cette page.</p>
+        </div>
+        <MfaTotpPanel />
       </div>
     </div>
   );
