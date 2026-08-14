@@ -68,11 +68,13 @@ const isBypassed = (url) =>
 /**
  * Le shell SPA n'est utile hors-ligne que si le bundle JS correspondant est lui
  * aussi en cache — sinon on afficherait une page blanche. On vérifie donc la
- * présence d'au moins un chunk avant de servir index.html.
+ * présence du bundle principal avant de servir index.html. Les routes étant
+ * découpées en chunks, un chunk isolé ne suffit pas : c'est `main` qui porte
+ * le runtime et la logique de repli.
  */
 const hasCachedBundle = async (cache) => {
   const keys = await cache.keys();
-  return keys.some((req) => req.url.includes("/static/js/"));
+  return keys.some((req) => /\/static\/js\/main\.[^/]*\.js$/.test(new URL(req.url).pathname));
 };
 
 /** Navigations : réseau d'abord, puis shell en cache, puis page hors-ligne. */

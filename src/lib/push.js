@@ -1,8 +1,14 @@
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import { app, db } from "./firebase";
 
 const VAPID_KEY = process.env.REACT_APP_FIREBASE_VAPID_KEY;
+
+/**
+ * firebase/messaging n'est chargé qu'à la demande : sans clé VAPID le module
+ * est inerte, et même configuré il ne sert qu'aux utilisateurs qui activent
+ * les notifications. L'import dynamique le sort du bundle principal.
+ */
+const loadMessaging = () => import("firebase/messaging");
 
 const tokenDocId = (uid, token) => {
   const suffix = btoa(unescape(encodeURIComponent(token))).replace(/[^a-zA-Z0-9_-]/g, "").slice(-80);
@@ -15,8 +21,10 @@ export const canUsePush = async () => {
   if (!isPushConfigured()) return false;
   if (typeof window === "undefined") return false;
   if (!("Notification" in window) || !("serviceWorker" in navigator)) return false;
-  try { return await isSupported(); }
-  catch { return false; }
+  try {
+    const { isSupported } = await loadMessaging();
+    return await isSupported();
+  } catch { return false; }
 };
 
 export const subscribeToPush = async ({ uid }) => {
@@ -30,6 +38,7 @@ export const subscribeToPush = async ({ uid }) => {
   if (permission !== "granted") throw new Error("Permission de notification refusée.");
 
   const registration = await navigator.serviceWorker.ready;
+  const { getMessaging, getToken } = await loadMessaging();
   const messaging = getMessaging(app);
   const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
   if (!token) throw new Error("Jeton FCM indisponible.");
@@ -49,6 +58,7 @@ export const subscribeToPush = async ({ uid }) => {
 
 export const listenForegroundPush = async (handler) => {
   if (!(await canUsePush())) return () => {};
+  const { getMessaging, onMessage } = await loadMessaging();
   const messaging = getMessaging(app);
   return onMessage(messaging, handler);
 };
