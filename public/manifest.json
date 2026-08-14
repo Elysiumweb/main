@@ -4,22 +4,58 @@
   "description": "ELYSIUM Esport — Not given. Earned. Équipe esport française.",
   "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#111111",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/brand/logo-icon-gold.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/brand/logo-icon-gold.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Espace joueur",
+      "short_name": "Joueur",
+      "description": "Accéder au chat, au planning et aux notes de l'équipe.",
+      "url": "/espace-joueur/chat",
+      "icons": [{ "src": "/icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Calendrier",
+      "short_name": "Calendrier",
+      "description": "Voir les événements communautaires et les prochains rendez-vous.",
+      "url": "/calendrier",
+      "icons": [{ "src": "/icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Résultats",
+      "short_name": "Résultats",
+      "description": "Consulter les derniers scores et les matchs à venir.",
+      "url": "/resultats",
+      "icons": [{ "src": "/icons/shortcut-96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],
   "categories": ["entertainment", "sports"],

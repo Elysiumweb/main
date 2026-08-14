@@ -3,6 +3,7 @@ import { MessageSquare, CalendarDays, StickyNote, LayoutDashboard, Activity } fr
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { AbsentTodayBar } from "../../components/AbsentTodayBar";
+import { RouteChunkBoundary } from "../../components/RouteChunkBoundary";
 
 export default function PlayerLayout() {
   const { user, loading, hasPlayerAccess, game, roster, role, isOfficial } = useAuth();
@@ -48,7 +49,10 @@ export default function PlayerLayout() {
       <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 min-h-0 overflow-hidden outline-none focus-visible:outline-none flex flex-col">
         <AbsentTodayBar />
         <div className="flex-1 min-h-0 overflow-hidden">
-          <Outlet />
+          {/* Chaque onglet est un chunk chargé à la demande. */}
+          <RouteChunkBoundary routeKey={location.pathname}>
+            <Outlet />
+          </RouteChunkBoundary>
         </div>
       </main>
     </div>

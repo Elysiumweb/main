@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getElysiumTeamName } from "./constants";
+import { useLang } from "./i18n";
 
 export const SITE_URL = (process.env.REACT_APP_SITE_URL || "https://elysium-esport.fr").replace(/\/$/, "");
 export const SITE_NAME = "ELYSIUM Esport";
@@ -37,6 +38,16 @@ const cleanPath = (path) => {
   return pathname === "/" ? "/" : pathname.replace(/\/$/, "");
 };
 
+/**
+ * Langues servies par le site et leur code Open Graph.
+ * L'URL est identique dans les deux langues (la langue est un préférence
+ * utilisateur persistée côté client), donc les annotations hreflang sont
+ * auto-référentes : chaque langue pointe vers la même URL canonique.
+ */
+export const SUPPORTED_LANGS = ["fr", "en"];
+export const OG_LOCALES = { fr: "fr_FR", en: "en_US" };
+const DEFAULT_LANG = "fr";
+
 export const useSEO = ({
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
@@ -49,6 +60,8 @@ export const useSEO = ({
   modifiedTime,
 } = {}) => {
   const location = useLocation();
+  const { lang: activeLang } = useLang() || {};
+  const lang = SUPPORTED_LANGS.includes(activeLang) ? activeLang : DEFAULT_LANG;
   const canonicalPath = cleanPath(url || location.pathname);
   const fullUrl = absoluteUrl(canonicalPath);
   const imageUrl = absoluteUrl(image) || DEFAULT_IMAGE;
@@ -58,12 +71,18 @@ export const useSEO = ({
   useEffect(() => {
     document.title = title;
 
+    // Garde l'attribut lang du document aligné sur la langue active :
+    // lecteurs d'écran, moteurs de recherche et traduction automatique s'en servent.
+    document.documentElement.setAttribute("lang", lang);
+
     setMeta("description", description);
     setMeta("robots", noIndex ? "noindex,nofollow" : "index,follow");
     setMeta("theme-color", "#111111");
 
     setMeta("og:site_name", SITE_NAME);
-    setMeta("og:locale", "fr_FR");
+    setMeta("og:locale", OG_LOCALES[lang]);
+    setLocaleAlternates(SUPPORTED_LANGS.filter((l) => l !== lang).map((l) => OG_LOCALES[l]));
+    setAlternateLinks(noIndex ? null : fullUrl);
     setMeta("og:title", title);
     setMeta("og:description", description);
     setMeta("og:image", imageUrl);
@@ -79,8 +98,40 @@ export const useSEO = ({
 
     setCanonical(fullUrl);
     setJsonLd("elysium-jsonld", structuredData);
-  }, [title, description, imageUrl, fullUrl, type, noIndex, publishedTime, modifiedTime, JSON.stringify(structuredData)]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [title, description, imageUrl, fullUrl, type, noIndex, lang, publishedTime, modifiedTime, JSON.stringify(structuredData)]); // eslint-disable-line react-hooks/exhaustive-deps
 };
+
+/**
+ * Réécrit les balises og:locale:alternate (il peut y en avoir plusieurs,
+ * contrairement aux autres balises meta gérées par setMeta).
+ */
+function setLocaleAlternates(locales) {
+  document.querySelectorAll('meta[property="og:locale:alternate"]').forEach((el) => el.remove());
+  locales.filter(Boolean).forEach((locale) => {
+    const el = document.createElement("meta");
+    el.setAttribute("property", "og:locale:alternate");
+    el.setAttribute("content", locale);
+    document.head.appendChild(el);
+  });
+}
+
+/**
+ * Écrit les liens alternate hreflang. Le site sert la même URL dans les deux
+ * langues, les annotations sont donc auto-référentes et complétées par
+ * x-default, comme recommandé par Google pour un sélecteur de langue côté client.
+ * Les pages noindex n'en reçoivent pas.
+ */
+function setAlternateLinks(href) {
+  document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+  if (!href) return;
+  [...SUPPORTED_LANGS, "x-default"].forEach((hreflang) => {
+    const el = document.createElement("link");
+    el.setAttribute("rel", "alternate");
+    el.setAttribute("hreflang", hreflang);
+    el.setAttribute("href", href);
+    document.head.appendChild(el);
+  });
+}
 
 function setMeta(name, content) {
   if (!content) return;

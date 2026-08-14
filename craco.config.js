@@ -79,6 +79,21 @@ let webpackConfig = {
       },
     },
   },
+  jest: {
+    configure: (jestConfig) => {
+      jestConfig.moduleNameMapper = {
+        ...jestConfig.moduleNameMapper,
+        '^@/(.*)$': '<rootDir>/src/$1',
+        // react-router v7 ne publie que le champ "exports" (son "main" pointe
+        // vers un dist/main.js inexistant) et le résolveur de Jest fourni par
+        // CRA ne le lit pas. On cible donc directement le build CommonJS.
+        '^react-router-dom$': '<rootDir>/node_modules/react-router-dom/dist/index.js',
+        '^react-router/dom$': '<rootDir>/node_modules/react-router/dist/development/dom-export.js',
+        '^react-router$': '<rootDir>/node_modules/react-router/dist/development/index.js',
+      };
+      return jestConfig;
+    },
+  },
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

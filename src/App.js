@@ -1,5 +1,6 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router-dom";
+import { lazy } from "react";
+import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/context/AuthContext";
@@ -8,39 +9,55 @@ import { Footer } from "@/components/Footer";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { PushConsent } from "@/components/PushConsent";
 import { registerSW } from "@/lib/pwa";
-import Home from "@/pages/Home";
-import Results from "@/pages/Results";
-import Support from "@/pages/Support";
-import Recruitment from "@/pages/Recruitment";
-import Login from "@/pages/Login";
-import Admin from "@/pages/Admin";
-import Team from "@/pages/Team";
-import PlayerDetail from "@/pages/PlayerDetail";
-import Profile from "@/pages/Profile";
-import LegalPage from "@/pages/LegalPage";
-import Stats from "@/pages/Stats";
-import Partners from "@/pages/Partners";
-import Donate from "@/pages/Donate";
-import { NewsletterSignup } from "@/components/NewsletterSignup";
-import { NewsletterConfirm } from "@/components/NewsletterConfirm";
+import { RouteChunkBoundary } from "@/components/RouteChunkBoundary";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { MfaChallenge } from "@/components/MfaChallenge";
 import { SEOManager } from "@/components/SEOManager";
-import PlayerLayout from "@/pages/player/PlayerLayout";
-import ChatSpace from "@/pages/player/ChatSpace";
-import Planning from "@/pages/player/Planning";
-import Notes from "@/pages/player/Notes";
-import CanvasSpace from "@/pages/player/CanvasSpace";
-import ActivityLog from "@/pages/player/ActivityLog";
-import News from "@/pages/News";
-import ArticleDetail from "@/pages/ArticleDetail";
-import MediaGallery from "@/pages/MediaGallery";
-import CommunityCalendar from "@/pages/CommunityCalendar";
-import Competitions from "@/pages/Competitions";
-import About from "@/pages/About";
-import Press from "@/pages/Press";
-import NotFound from "@/pages/NotFound";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
+// La page d'accueil reste en import statique : c'est la cible la plus
+// fréquente, lui imposer un aller-retour réseau supplémentaire dégraderait
+// le LCP. Toutes les autres routes sont chargées à la demande.
+import Home from "@/pages/Home";
+
+const Results = lazy(() => import("@/pages/Results"));
+const Support = lazy(() => import("@/pages/Support"));
+const Recruitment = lazy(() => import("@/pages/Recruitment"));
+const Login = lazy(() => import("@/pages/Login"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const Team = lazy(() => import("@/pages/Team"));
+const PlayerDetail = lazy(() => import("@/pages/PlayerDetail"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const LegalPage = lazy(() => import("@/pages/LegalPage"));
+const Stats = lazy(() => import("@/pages/Stats"));
+const Partners = lazy(() => import("@/pages/Partners"));
+const Donate = lazy(() => import("@/pages/Donate"));
+const News = lazy(() => import("@/pages/News"));
+const ArticleDetail = lazy(() => import("@/pages/ArticleDetail"));
+const MediaGallery = lazy(() => import("@/pages/MediaGallery"));
+const CommunityCalendar = lazy(() => import("@/pages/CommunityCalendar"));
+const Competitions = lazy(() => import("@/pages/Competitions"));
+const About = lazy(() => import("@/pages/About"));
+const Press = lazy(() => import("@/pages/Press"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Offline = lazy(() => import("@/pages/Offline"));
+
+// Composants exportés nommément : React.lazy attend un export default.
+const NewsletterSignup = lazy(() =>
+  import("@/components/NewsletterSignup").then((m) => ({ default: m.NewsletterSignup }))
+);
+const NewsletterConfirm = lazy(() =>
+  import("@/components/NewsletterConfirm").then((m) => ({ default: m.NewsletterConfirm }))
+);
+
+// L'espace joueur est privé : son layout et ses onglets forment un groupe
+// de chunks que les visiteurs publics ne téléchargent jamais.
+const PlayerLayout = lazy(() => import("@/pages/player/PlayerLayout"));
+const ChatSpace = lazy(() => import("@/pages/player/ChatSpace"));
+const Planning = lazy(() => import("@/pages/player/Planning"));
+const Notes = lazy(() => import("@/pages/player/Notes"));
+const CanvasSpace = lazy(() => import("@/pages/player/CanvasSpace"));
+const ActivityLog = lazy(() => import("@/pages/player/ActivityLog"));
 
 // Register service worker on load
 registerSW();
@@ -51,14 +68,28 @@ const SkipLink = () => (
   </a>
 );
 
-const PublicLayout = () => (
-  <>
-    <main id="main-content" tabIndex={-1} className="outline-none focus-visible:outline-none">
-      <Outlet />
-    </main>
-    <Footer />
-  </>
-);
+const PublicLayout = () => {
+  const { pathname } = useLocation();
+  return (
+    <>
+      <main id="main-content" tabIndex={-1} className="outline-none focus-visible:outline-none">
+        <RouteChunkBoundary routeKey={pathname}>
+          <Outlet />
+        </RouteChunkBoundary>
+      </main>
+      <Footer />
+    </>
+  );
+};
+
+const LazyPlayerLayout = () => {
+  const { pathname } = useLocation();
+  return (
+    <RouteChunkBoundary routeKey={pathname}>
+      <PlayerLayout />
+    </RouteChunkBoundary>
+  );
+};
 
 function App() {
   return (
@@ -97,8 +128,9 @@ function App() {
               <Route path="/mentions-legales" element={<LegalPage kind="mentions" />} />
               <Route path="/confidentialite" element={<LegalPage kind="privacy" />} />
               <Route path="/cgu" element={<LegalPage kind="terms" />} />
+              <Route path="/offline" element={<Offline />} />
             </Route>
-            <Route path="/espace-joueur" element={<PlayerLayout />}>
+            <Route path="/espace-joueur" element={<LazyPlayerLayout />}>
               <Route index element={<Navigate to="chat" replace />} />
               <Route path="chat" element={<ChatSpace />} />
               <Route path="planning" element={<Planning />} />
@@ -110,6 +142,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          <UpdatePrompt />
           <MfaChallenge />
           <PushConsent />
           <CookieConsent />
