@@ -27,6 +27,7 @@ import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { MfaChallenge } from "@/components/MfaChallenge";
 import { SEOManager } from "@/components/SEOManager";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 import PlayerLayout from "@/pages/player/PlayerLayout";
 import ChatSpace from "@/pages/player/ChatSpace";
 import Planning from "@/pages/player/Planning";
@@ -41,6 +42,7 @@ import Competitions from "@/pages/Competitions";
 import About from "@/pages/About";
 import Press from "@/pages/Press";
 import NotFound from "@/pages/NotFound";
+import Offline from "@/pages/Offline";
 
 // Register service worker on load
 registerSW();
@@ -97,6 +99,7 @@ function App() {
               <Route path="/mentions-legales" element={<LegalPage kind="mentions" />} />
               <Route path="/confidentialite" element={<LegalPage kind="privacy" />} />
               <Route path="/cgu" element={<LegalPage kind="terms" />} />
+              <Route path="/offline" element={<Offline />} />
             </Route>
             <Route path="/espace-joueur" element={<PlayerLayout />}>
               <Route index element={<Navigate to="chat" replace />} />
@@ -110,6 +113,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          <UpdatePrompt />
           <MfaChallenge />
           <PushConsent />
           <CookieConsent />

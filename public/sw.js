@@ -1,45 +1,133 @@
+/* eslint-disable no-restricted-globals */
 // Service Worker for Elysium PWA
-const CACHE_NAME = "elysium-v1";
+// ---------------------------------------------------------------------------
+// - Précache le shell applicatif + la page de repli /offline.
+// - Navigations : network-first, repli sur le cache puis sur /offline.
+// - Assets statiques : cache-first (stale-while-revalidate pour les hashés).
+// - Cycle de mise à jour piloté par la page (message SKIP_WAITING) afin
+//   d'afficher un toast « nouvelle version disponible » plutôt que de couper
+//   l'utilisateur en pleine navigation.
+const VERSION = "v2";
+const CACHE_NAME = `elysium-${VERSION}`;
+const OFFLINE_URL = "/offline.html";
+
 const STATIC_ASSETS = [
+  OFFLINE_URL,
+  "/manifest.json",
   "/brand/logo-icon-gold.png",
   "/brand/logo-horizontal-white.png",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // `reload` évite de précacher une réponse HTTP déjà périmée.
+      Promise.allSettled(
+        STATIC_ASSETS.map((url) => cache.add(new Request(url, { cache: "reload" })))
+      )
+    )
   );
-  self.skipWaiting();
+  // Pas de skipWaiting automatique : la page décide quand activer la MAJ.
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    )
+    (async () => {
+      if (self.registration.navigationPreload) {
+        await self.registration.navigationPreload.enable().catch(() => {});
+      }
+      const names = await caches.keys();
+      await Promise.all(
+        names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))
+      );
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
 });
 
-self.addEventListener("fetch", (event) => {
-  // Network-first for API/Firebase calls, cache-first for static assets
-  if (event.request.url.includes("firestore") || event.request.url.includes("identitytoolkit") || event.request.url.includes("securetoken")) {
-    return; // Let network requests pass through for Firebase
+// La page demande l'activation immédiate après clic sur « Mettre à jour ».
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING" || event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
-  // Never cache PayPal: the SDK and checkout flows must always hit the network
-  if (event.request.url.includes("paypal.com") || event.request.url.includes("paypalobjects.com")) {
+});
+
+const isBypassed = (url) =>
+  url.includes("firestore") ||
+  url.includes("identitytoolkit") ||
+  url.includes("securetoken") ||
+  url.includes("firebaseinstallations") ||
+  url.includes("fcmregistrations") ||
+  url.includes("googleapis.com/identitytoolkit") ||
+  // Ne jamais mettre PayPal en cache : SDK et tunnel de paiement toujours réseau.
+  url.includes("paypal.com") ||
+  url.includes("paypalobjects.com");
+
+/**
+ * Le shell SPA n'est utile hors-ligne que si le bundle JS correspondant est lui
+ * aussi en cache — sinon on afficherait une page blanche. On vérifie donc la
+ * présence d'au moins un chunk avant de servir index.html.
+ */
+const hasCachedBundle = async (cache) => {
+  const keys = await cache.keys();
+  return keys.some((req) => req.url.includes("/static/js/"));
+};
+
+/** Navigations : réseau d'abord, puis shell en cache, puis page hors-ligne. */
+const handleNavigation = async (event) => {
+  try {
+    const preload = await event.preloadResponse;
+    if (preload) return preload;
+    const network = await fetch(event.request);
+    // On garde une copie du shell pour les rechargements hors-ligne.
+    if (network.ok) {
+      const clone = network.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put("/index.html", clone)).catch(() => {});
+    }
+    return network;
+  } catch (err) {
+    const cache = await caches.open(CACHE_NAME);
+    const cachedShell = await cache.match("/index.html");
+    if (cachedShell && (await hasCachedBundle(cache))) return cachedShell;
+    const offline = await cache.match(OFFLINE_URL);
+    if (offline) return offline;
+    return new Response("Hors ligne — reconnectez-vous à Internet pour continuer.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+};
+
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  if (request.method !== "GET") return;
+
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
     return;
   }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+  if (isBypassed(request.url)) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(handleNavigation(event));
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
+    caches.match(request).then((cached) => {
       if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === "GET") {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
+      return fetch(request)
+        .then((response) => {
+          if (response.ok && response.type !== "opaque") {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
+          }
+          return response;
+        })
+        .catch(() => cached);
     })
   );
 });
