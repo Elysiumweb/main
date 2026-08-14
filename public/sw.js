@@ -16,6 +16,8 @@ const STATIC_ASSETS = [
   "/manifest.json",
   "/brand/logo-icon-gold.png",
   "/brand/logo-horizontal-white.png",
+  "/icons/icon-192.png",
+  "/icons/shortcut-96.png",
 ];
 
 self.addEventListener("install", (event) => {
