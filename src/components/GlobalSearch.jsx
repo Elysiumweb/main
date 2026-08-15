@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import {
@@ -41,8 +41,12 @@ export const GlobalSearch = () => {
   const [matches, setMatches] = useState([]);
   const [articles, setArticles] = useState([]);
 
-  // Load data
+  // Les trois collections ne sont chargées qu'à l'OUVERTURE de la recherche
+  // (aucun listener actif sinon). Les articles sont filtrés côté serveur :
+  // `status == published` — même requête que la page Actualités — pour que la
+  // requête passe les règles publiques (les brouillons sont invisibles).
   useEffect(() => {
+    if (!open) return;
     const unsubs = [
       onSnapshot(collection(db, "roster"), (snap) => {
         setPlayers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
@@ -50,12 +54,12 @@ export const GlobalSearch = () => {
       onSnapshot(collection(db, "matches"), (snap) => {
         setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {}),
-      onSnapshot(collection(db, "articles"), (snap) => {
-        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => a.status !== "deleted"));
+      onSnapshot(query(collection(db, "articles"), where("status", "==", "published")), (snap) => {
+        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {}),
     ];
     return () => unsubs.forEach((u) => u());
-  }, []);
+  }, [open]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -116,7 +120,7 @@ export const GlobalSearch = () => {
             const label = `${teamName} vs ${m.opponentName || ""} ${m.roster || ""} ${m.competition || ""} ${m.date || ""}`;
             return (
               <CommandItem key={`match-${m.id}`} value={label}
-                onSelect={() => runCommand(() => navigate("/resultats"))}>
+                onSelect={() => runCommand(() => navigate(`/resultats?match=${m.id}`))}>
                 <Trophy size={14} className="mr-2 text-[#D8CA82]" />
                 <span>{teamName} vs {m.opponentName}</span>
                 {m.roster && <span className="ml-2 text-xs text-[#D8CA82]">{m.roster}</span>}

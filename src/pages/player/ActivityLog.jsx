@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { StickyNote, CalendarDays, LayoutDashboard, Activity } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
@@ -13,9 +13,16 @@ export default function ActivityLog() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    return onSnapshot(collection(db, "activity"), (snap) => {
+    // Le journal est filtré côté règles par pôle : on souscrit uniquement au
+    // pôle du membre + au canal global (l'officiel voit tout).
+    const base = collection(db, "activity");
+    const q = isOfficial
+      ? base
+      : game
+        ? query(base, where("game", "in", [game, "global"]))
+        : query(base, where("game", "==", "global"));
+    return onSnapshot(q, (snap) => {
       let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      if (!isOfficial) list = list.filter((a) => a.game === game || a.game === "global");
       list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setItems(list.slice(0, 50));
     }, console.error);

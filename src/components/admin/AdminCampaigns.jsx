@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Trash2, Pencil, Target } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
+import { requireMfaOnDenied } from "../../lib/notify";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { title: "", goalAmount: "", currentAmount: "", active: true };
@@ -42,10 +43,19 @@ export const AdminCampaigns = () => {
       else await addDoc(collection(db, "campaigns"), { ...data, createdAt: serverTimestamp() });
       setForm(EMPTY); setEditId(null);
       toast.success(t("common.saved"));
-    } catch (err) { console.error(err); toast.error(t("common.error")); }
+    } catch (err) {
+      console.error(err);
+      requireMfaOnDenied(err);
+      toast.error(t("common.error"));
+    }
   };
 
-  const edit = (c) => setForm({ title: c.title || "", goalAmount: c.goalAmount ?? "", currentAmount: c.currentAmount ?? "", active: !!c.active });
+  const edit = (c) => {
+    // Mode édition : on affecte TOUJOURS editId, sinon « Enregistrer » créerait
+    // une nouvelle campagne au lieu de modifier l'existante.
+    setEditId(c.id);
+    setForm({ title: c.title || "", goalAmount: c.goalAmount ?? "", currentAmount: c.currentAmount ?? "", active: !!c.active });
+  };
 
   const toggleActive = async (c) => {
     try { await updateDoc(doc(db, "campaigns", c.id), { active: !c.active }); toast.success(t("common.saved")); }
@@ -62,7 +72,14 @@ export const AdminCampaigns = () => {
   return (
     <div className="grid lg:grid-cols-12 gap-10">
       <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-campaigns-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.campaigns.add")}</p>
+        <div className="flex items-center gap-3">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.campaigns.add")}</p>
+          {editId && (
+            <span className="text-[9px] uppercase tracking-widest border border-[#D8CA82]/50 text-[#D8CA82] px-1.5 py-0.5" data-testid="admin-campaign-edit-badge">
+              {t("admin.campaigns.editing")}
+            </span>
+          )}
+        </div>
         <input value={form.title} onChange={set("title")} placeholder="Ex : Objectif LAN 2026" required className={inputCls} data-testid="admin-campaign-title" />
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -81,7 +98,7 @@ export const AdminCampaigns = () => {
         <p className="text-[11px] text-[#f7f7f7]/40 leading-relaxed">{t("admin.campaigns.hint")}</p>
         <button type="submit" data-testid="admin-campaign-submit"
           className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
-          {t("notes.save")}
+          {editId ? t("admin.campaigns.saveEdit") : t("notes.save")}
         </button>
         {editId && (
           <button type="button" onClick={() => { setEditId(null); setForm(EMPTY); }} className="text-[#f7f7f7]/50 text-xs uppercase tracking-widest px-3">

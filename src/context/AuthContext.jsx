@@ -47,6 +47,14 @@ export const AuthProvider = ({ children }) => {
     setMfaVerified(true);
   }, []);
 
+  // Une opération sensible refusée (session MFA expirée) rouvre l'écran 2FA :
+  // n'importe quel composant peut émettre l'événement « elysium:mfa-required ».
+  useEffect(() => {
+    const onMfaRequired = () => setMfaVerified(false);
+    window.addEventListener("elysium:mfa-required", onMfaRequired);
+    return () => window.removeEventListener("elysium:mfa-required", onMfaRequired);
+  }, []);
+
   useEffect(() => {
     let unsubProfile = null;
     const unsub = onAuthStateChanged(auth, async (u) => {

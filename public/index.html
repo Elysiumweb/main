@@ -11,10 +11,11 @@
         <link rel="icon" type="image/png" href="%PUBLIC_URL%/brand/logo-icon-gold.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/icons/apple-touch-icon.png" />
         <link rel="canonical" href="https://elysium-esport.fr/" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" />
+        <!-- Polices auto-hébergées (public/fonts + public/fonts.css, voir
+             scripts/fetch-fonts.mjs). Aucune requête vers Google Fonts :
+             pas d'appel tiers. Les fichiers manquants retombent sur la
+             police système sans casser le build. -->
+        <link rel="stylesheet" href="%PUBLIC_URL%/fonts.css" />
         <meta
             name="description"
             content="ELYSIUM Esport - Not given. Earned. Équipe esport française EVA et Rocket League."

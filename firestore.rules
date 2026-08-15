@@ -48,11 +48,48 @@ service cloud.firestore {
       return value is string && value.size() <= max;
     }
 
+    // ===== Preuve MFA côté serveur =====
+    // La doc mfaSessions/{uid} est écrite UNIQUEMENT par la Cloud Function
+    // verifyMfaSession après vérification serveur du code TOTP. Les opérations
+    // sensibles (administration, changement de rôle…) exigent une session MFA
+    // datant de moins de 6 heures — un contournement de l'interface ne suffit
+    // plus : sans vérification serveur récente, la règle refuse.
+    function mfaSessionRecent() {
+      return isAuth()
+        && exists(/databases/$(database)/documents/mfaSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/mfaSessions/$(request.auth.uid)).data.verifiedAt.seconds > request.time.seconds - 21600;
+    }
+
+    // ===== Canaux de chat : pôle / roster du membre =====
+    // Les canaux sont nommés game_<jeu>, roster_<roster> ou global. Un membre
+    // n'accède qu'à : son pôle, son roster, le canal global. Le filtrage n'est
+    // plus fait côté React : il est imposé par les règles (SDK et API REST).
+    function canReadChannel(channel) {
+      return isOfficial()
+        || channel == 'global'
+        || channel == 'game_' + userGame()
+        || (userRoster() is string && channel == 'roster_' + userRoster());
+    }
+
+    function canModerateChannel(channel) {
+      return isBureau()
+        || (userRole() == 'manager'
+            && (channel == 'game_' + userGame()
+                || (userRoster() is string && channel == 'roster_' + userRoster())));
+    }
+
     // ===== Utilisateurs =====
     // Secrets TOTP applicatifs (plan Spark : pas d'Identity Platform).
     // Lecture/écriture uniquement par le propriétaire — jamais par le staff.
     match /mfaSecrets/{uid} {
       allow read, write: if isAuth() && request.auth.uid == uid;
+    }
+
+    // Sessions MFA vérifiées côté serveur : lecture par le propriétaire,
+    // écriture réservée à la Cloud Function (compte de service).
+    match /mfaSessions/{uid} {
+      allow read: if isAuth() && request.auth.uid == uid;
+      allow create, update, delete: if false;
     }
 
     match /users/{uid} {
@@ -67,16 +104,24 @@ service cloud.firestore {
 
       // Rôles validés côté règles. Les utilisateurs ne peuvent jamais s'auto-promouvoir
       // ni changer leur pôle/roster : séparation stricte joueur/staff côté serveur.
+      // Le compte officiel doit disposer d'une session MFA récente (côté serveur).
       allow update: if (isOfficial()
+          && mfaSessionRecent()
           && isValidRole(request.resource.data.role)
           && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League', 'Valorant'])
           && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null || request.resource.data.roster is string))
+        // Auto-mise à jour SANS toucher aux champs sensibles (photo, email,
+        // totpEnabled…) : aucune lecture de clé manquante.
+        || (request.auth.uid == uid
+            && !request.resource.data.keys().hasAny(['role', 'game', 'roster']))
+        // Auto-mise à jour en renvoyant explicitement role/game/roster à
+        // l'identique (profil) : aucun changement de rôle possible.
         || (request.auth.uid == uid
             && request.resource.data.role == resource.data.role
             && request.resource.data.game == resource.data.game
             && request.resource.data.roster == resource.data.roster);
 
-      allow delete: if isOfficial() || request.auth.uid == uid;
+      allow delete: if isOfficial() && mfaSessionRecent();
     }
 
     // ===== Annuaire joueurs (espace privé) =====
@@ -97,45 +142,45 @@ service cloud.firestore {
     // ===== Roster public =====
     match /roster/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau();
+      allow create, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Postes =====
     match /positions/{id} {
       allow read: if true;
-      allow create, update, delete: if isManagerPlus();
+      allow create, update, delete: if isManagerPlus() && mfaSessionRecent();
     }
 
     // ===== Matchs =====
     match /matches/{id} {
       allow read: if true;
-      allow create, update, delete: if isOfficial();
+      allow create, update, delete: if isOfficial() && mfaSessionRecent();
     }
 
     // ===== Chats (game + roster + global) =====
     // Channels: game_EVA, game_Rocket League, game_Valorant, roster_Espoir, roster_Académique,
     // roster_Esport, roster_Junior, roster_Valeureux, roster_Vaillant, global
     match /chats/{channel}/messages/{id} {
-      allow read: if hasPlayerAccess();
-      allow create: if hasPlayerAccess()
+      allow read: if hasPlayerAccess() && canReadChannel(channel);
+      allow create: if hasPlayerAccess() && canReadChannel(channel)
         && request.resource.data.uid == request.auth.uid
         && isShortString(request.resource.data.text, 2000)
         && (!request.resource.data.keys().hasAny(['image'])
-            || isShortString(request.resource.data.image, 2000));
+            || isShortString(request.resource.data.image, 2000))
+        && (!request.resource.data.keys().hasAny(['mentions'])
+            || request.resource.data.mentions is list
+            && request.resource.data.mentions.size() <= 20);
       // Un joueur peut modifier/supprimer SON PROPRE message (édition, retrait
       // d'une image, mention). Le bureau (officiel) reste modérateur global.
-      allow update: if hasPlayerAccess()
+      allow update: if hasPlayerAccess() && canReadChannel(channel)
         && resource.data.uid == request.auth.uid
         && request.resource.data.uid == resource.data.uid
         && isShortString(request.resource.data.text, 2000)
         && (!request.resource.data.keys().hasAny(['image'])
             || request.resource.data.image is string);
       allow delete: if isOfficial()
-        || (hasPlayerAccess() && resource.data.uid == request.auth.uid)
-        || isBureau()
-        || (isAuth() && userRole() == 'manager'
-            && (channel == 'game_' + userGame()
-                || (userRoster() is string && channel == 'roster_' + userRoster())));
+        || (hasPlayerAccess() && canReadChannel(channel) && resource.data.uid == request.auth.uid)
+        || canModerateChannel(channel);
     }
 
     // ===== Planning =====
@@ -185,13 +230,13 @@ service cloud.firestore {
     // ===== Actualités =====
     match /articles/{id} {
       allow read: if resource.data.status == 'published' || isBureau();
-      allow create, update, delete: if isBureau();
+      allow create, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Médiathèque =====
     match /media/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau();
+      allow create, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Calendrier communautaire =====
@@ -212,20 +257,63 @@ service cloud.firestore {
     // ===== Compétitions (page /competitions) =====
     match /competitions/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau();
+      allow create, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Campagnes / objectifs de financement (barre de progression) =====
     // Données saisies manuellement en admin (comptabilité de l'association).
     match /campaigns/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau();
+      allow create, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Notifications =====
+    // Lecture : uniquement le destinataire réel — cible directe (targetUid),
+    // rôle visé (targetRoles) ou utilisateur ayant déjà marqué la notification
+    // comme lue (readBy). Un joueur EVA ne voit pas les notifications ciblées
+    // sur un autre pôle (targetGame).
     match /notifications/{id} {
-      allow read, create, update: if isAuth();
-      allow delete: if isBureau();
+      allow read: if isAuth() && (
+        resource.data.targetUid == request.auth.uid
+        || (resource.data.targetRoles is list
+            && resource.data.targetRoles.hasAny([userRole()]))
+        || (resource.data.readBy is list
+            && resource.data.readBy.hasAny([request.auth.uid]))
+      ) && (isOfficial()
+            || !resource.data.keys().hasAny(['targetGame'])
+            || resource.data.targetGame == 'global'
+            || resource.data.targetGame == userGame());
+
+      // Création : réservée aux actions métier précisément autorisées (mention
+      // chat vers un autre membre, rappel de match sur soi-même). Toutes les
+      // autres notifications (event_new, support_new, thread_reply…) passent
+      // par la Cloud Function `createNotification` qui valide l'auteur.
+      allow create: if isAuth() && (
+        (request.resource.data.type == 'chat_mention'
+          && request.resource.data.targetUid is string
+          && request.resource.data.targetUid != request.auth.uid
+          && !request.resource.data.keys().hasAny(['targetRoles', 'targetGame']))
+        || (request.resource.data.type == 'match_reminder'
+          && request.resource.data.targetUid == request.auth.uid
+          && !request.resource.data.keys().hasAny(['targetRoles', 'targetGame']))
+      ) && request.resource.data.readBy is list
+        && request.resource.data.readBy.size() == 0
+        && isShortString(request.resource.data.extra, 300)
+        && isShortString(request.resource.data.link, 300);
+
+      // Mise à jour : uniquement « marquer comme lu » (readBy) par le
+      // destinataire — jamais la cible, le type ou le contenu. Le bureau peut
+      // nettoyer (ex : notification obsolète) avec une session MFA récente.
+      allow update: if isAuth() && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])
+          && request.resource.data.readBy is list
+          && request.resource.data.readBy.hasAny([request.auth.uid])
+          && request.resource.data.readBy.size()
+             <= (resource.data.readBy is list ? resource.data.readBy.size() : 0) + 1)
+        || isBureau()
+      );
+
+      allow delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Jetons push FCM Web =====
@@ -246,22 +334,32 @@ service cloud.firestore {
 
     // ===== Logs d'envoi newsletter =====
     match /newsletterDigestLogs/{id} {
-      allow read: if isBureau();
+      allow read: if isBureau() && mfaSessionRecent();
       allow create, update, delete: if false;
     }
 
     // ===== Journal d'activité =====
+    // Chaque entrée porte un `game` (pôle ou 'global') : un membre ne voit que
+    // son pôle et le canal global. Le filtrage est imposé par les règles.
     match /activity/{id} {
-      allow read, create: if hasPlayerAccess();
-      allow delete: if isBureau();
+      allow read: if hasPlayerAccess()
+        && (isOfficial() || resource.data.game == userGame() || resource.data.game == 'global');
+      allow create: if hasPlayerAccess()
+        && (request.resource.data.game == userGame() || request.resource.data.game == 'global')
+        && isShortString(request.resource.data.type, 60)
+        && isShortString(request.resource.data.label, 200);
+      allow delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Journal d'audit admin / modération =====
+    // La création reste ouverte aux managers+ (journalisation de la
+    // modération du chat) ; la lecture/consultation est réservée au bureau
+    // avec session MFA récente.
     match /admin_audit/{id} {
-      allow read: if isBureau();
+      allow read: if isBureau() && mfaSessionRecent();
       allow create: if isManagerPlus();
       allow update: if false;
-      allow delete: if isBureau();
+      allow delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Notes =====
@@ -286,8 +384,21 @@ service cloud.firestore {
     }
 
     // ===== Canvas =====
+    // Chaque tableau porte un `game` : un membre ne voit que les tableaux de
+    // son pôle (l'officiel voit tout). La création impose le pôle du membre —
+    // impossible de créer un tableau « privé » d'un autre pôle.
     match /canvases/{id} {
-      allow read, create, update, delete: if hasPlayerAccess();
+      allow read: if hasPlayerAccess() && (isOfficial() || resource.data.game == userGame());
+      allow create: if hasPlayerAccess()
+        && request.resource.data.game == userGame()
+        && isShortString(request.resource.data.title, 120)
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if hasPlayerAccess()
+        && (isOfficial() || resource.data.game == userGame())
+        && (isOfficial() || resource.data.createdBy == request.auth.uid
+            || userRole() == 'manager');
+      allow delete: if hasPlayerAccess()
+        && (isOfficial() || (resource.data.game == userGame() && resource.data.createdBy == request.auth.uid));
     }
 
     // ===== Support =====
@@ -318,7 +429,7 @@ service cloud.firestore {
     // ===== Partenaires =====
     match /partners/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau();
+      allow create, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Demandes de partenariat =====
@@ -330,21 +441,32 @@ service cloud.firestore {
         && isShortString(request.resource.data.company, 160)
         && isShortString(request.resource.data.email, 180)
         && isShortString(request.resource.data.message, 3000);
-      allow read, update, delete: if isBureau();
+      allow read, update, delete: if isBureau() && mfaSessionRecent();
     }
 
     // ===== Newsletter =====
+    // Lecture/écriture jamais publiques : l'inscription se fait par create
+    // limité (double opt-in), la confirmation et la désinscription par Cloud
+    // Functions à jeton. Le formulaire public n'interroge JAMAIS cette
+    // collection : il passe par `requestNewsletterUnsubscribe` (callable).
     match /newsletter/{id} {
-      allow read: if isBureau();
+      allow read: if isBureau() && mfaSessionRecent();
       allow create: if publicWriteThrottleFields()
         && request.resource.data.confirmed == false
         && request.resource.data.subscribedAt == request.time
         && request.resource.data.consentGivenAt == request.time
         && isShortString(request.resource.data.email, 180)
         && isShortString(request.resource.data.confirmToken, 160);
-      allow update: if isBureau()
-        || request.resource.data.email == resource.data.email;
-      allow delete: if isBureau();
+      allow update: if isBureau() && mfaSessionRecent();
+      allow delete: if isBureau() && mfaSessionRecent();
+    }
+
+    // ===== Rappels de match (planifiés côté serveur) =====
+    // Écriture réservée à la Cloud Function `scheduleMatchReminder`
+    // (compte de service) — jamais par le client directement.
+    match /matchReminders/{id} {
+      allow read: if isAuth() && resource.data.uid == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     // ===== Recrutement =====

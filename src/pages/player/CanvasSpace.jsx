@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { Plus, Trash2, LayoutDashboard } from "lucide-react";
 import { db } from "../../lib/firebase";
@@ -18,9 +18,13 @@ export default function CanvasSpace() {
   const gameKey = game || "EVA";
 
   useEffect(() => {
-    return onSnapshot(collection(db, "canvases"), (snap) => {
+    // Le filtrage pôle est imposé côté règles : on ne souscrit qu'aux
+    // tableaux du pôle du membre (l'officiel voit tout).
+    const q = isOfficial
+      ? collection(db, "canvases")
+      : query(collection(db, "canvases"), where("game", "==", gameKey));
+    return onSnapshot(q, (snap) => {
       let list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      if (!isOfficial) list = list.filter((c) => c.game === gameKey);
       list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
       setCanvases((prev) => {
         const snapIds = new Set(list.map((c) => c.id));
@@ -138,7 +142,8 @@ export default function CanvasSpace() {
                   </p>
                 </button>
                 <button onClick={() => del(c.id)} data-testid={`canvas-delete-${c.id}`}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-red-400/70 hover:text-red-400 transition-opacity">
+                  aria-label={`Supprimer le tableau ${c.title}`}
+                  className={`absolute top-3 right-3 transition-opacity ${isOfficial || c.createdBy === user?.uid ? "opacity-0 group-hover:opacity-100 text-red-400/70 hover:text-red-400" : "hidden"}`}>
                   <Trash2 size={14} />
                 </button>
               </div>

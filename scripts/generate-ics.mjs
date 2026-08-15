@@ -2,17 +2,25 @@
  * Génère public/matches.ics — le flux iCal global des matchs officiels.
  *
  * Les visiteurs s'abonnent à ce fichier statique (Google Agenda, Apple
- * Calendar, Outlook...) depuis la page /calendrier. Il doit être régénéré
- * avant chaque déploiement :
+ * Calendar, Outlook...) depuis la page /calendrier.
  *
- *   npm run ics
+ * Exécution :
+ *   - `npm run ics`            — régénère le flux (aussi lancé par `prebuild`,
+ *                                donc à chaque déploiement Vercel).
+ *   - `npm run ics:check`      — supervision CI : vérifie que le flux publié
+ *                                contient bien des matchs et échoue sinon.
  *
- * (ou via la CI). Le script lit la collection Firestore `matches` via l'API
- * REST publique (les règles de sécurité doivent autoriser la lecture) avec la
- * clé web du projet — aucune donnée privée n'est exposée.
+ * Le script lit la collection Firestore `matches` via l'API REST publique
+ * (les règles de sécurité doivent autoriser la lecture) avec la clé web du
+ * projet — aucune donnée privée n'est exposée.
+ *
+ * Principe de prudence (comme le sitemap) : si les identifiants manquent ou
+ * si Firestore répond une erreur, on NE touche PAS au fichier existant.
+ * Un abonnement qui reste à jour vaut mieux qu'un flux écrasé par une
+ * version vide.
  */
 
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -45,16 +53,10 @@ const matchSummary = (m) => {
 };
 
 async function fetchMatches() {
-  if (!projectId || !apiKey) {
-    console.warn("[ics] REACT_APP_FIREBASE_PROJECT_ID / REACT_APP_FIREBASE_API_KEY manquants — calendrier vide généré.");
-    return [];
-  }
+  if (!projectId || !apiKey) return null;
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/matches?pageSize=1000&key=${encodeURIComponent(apiKey)}`;
   const res = await fetch(url);
-  if (!res.ok) {
-    console.warn(`[ics] Réponse Firestore ${res.status} — calendrier vide généré.`);
-    return [];
-  }
+  if (!res.ok) throw new Error(`Firestore ${res.status} sur "matches"`);
   const data = await res.json();
   return (data.documents || [])
     .map((doc) => {
@@ -124,13 +126,54 @@ const buildICS = (matches) => {
   return rows.filter(Boolean).join("\r\n") + "\r\n";
 };
 
+/** Supervision : le flux publié doit contenir des événements exploitables. */
+function checkICS(filePath = OUT) {
+  if (!existsSync(filePath)) {
+    console.error(`[ics:check] Fichier introuvable : ${filePath}`);
+    process.exit(1);
+  }
+  const content = readFileSync(filePath, "utf8");
+  const eventCount = (content.match(/BEGIN:VEVENT/g) || []).length;
+  const hasValidEvent = /BEGIN:VEVENT[\s\S]*?DTSTART[\s\S]*?SUMMARY:/.test(content);
+  if (eventCount === 0 || !hasValidEvent) {
+    console.error(
+      `[ics:check] FLUX VIDE OU INVALIDE : ${eventCount} événement(s) dans ${filePath}. ` +
+        "Lancez `npm run ics` (identifiants Firebase requis) et vérifiez la collection matches."
+    );
+    process.exit(1);
+  }
+  console.log(`[ics:check] OK : ${eventCount} événement(s) dans le flux publié.`);
+}
+
+const CHECK_MODE = process.argv.includes("--check");
+
 try {
-  const matches = await fetchMatches();
-  const ics = buildICS(matches);
-  mkdirSync(path.dirname(OUT), { recursive: true });
-  writeFileSync(OUT, ics, "utf8");
-  console.log(`[ics] ${matches.length} match(s) écrits dans public/matches.ics`);
+  if (CHECK_MODE) {
+    checkICS();
+  } else {
+    const matches = await fetchMatches();
+    if (matches === null) {
+      if (existsSync(OUT)) {
+        console.warn(
+          "[ics] Identifiants Firebase absents — matches.ics existant conservé (aucune régression d'abonnement)."
+        );
+      } else {
+        mkdirSync(path.dirname(OUT), { recursive: true });
+        writeFileSync(OUT, buildICS([]), "utf8");
+        console.warn("[ics] Identifiants Firebase absents — calendrier vide créé.");
+      }
+    } else {
+      const ics = buildICS(matches);
+      mkdirSync(path.dirname(OUT), { recursive: true });
+      writeFileSync(OUT, ics, "utf8");
+      console.log(`[ics] ${matches.length} match(s) écrits dans public/matches.ics`);
+    }
+  }
 } catch (err) {
-  console.error("[ics] Erreur :", err);
-  process.exit(1);
+  if (existsSync(OUT) && !CHECK_MODE) {
+    console.warn(`[ics] ${err.message} — matches.ics existant conservé.`);
+  } else {
+    console.error("[ics] Erreur :", err);
+    process.exit(1);
+  }
 }

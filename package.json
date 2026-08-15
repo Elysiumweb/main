@@ -66,13 +66,16 @@
   },
   "scripts": {
     "start": "craco start",
-    "prebuild": "node scripts/generate-sitemap.mjs",
+    "prebuild": "node scripts/generate-sitemap.mjs && node scripts/generate-ics.mjs",
     "build": "craco build",
     "sitemap": "node scripts/generate-sitemap.mjs",
+    "ics": "node scripts/generate-ics.mjs",
+    "ics:check": "node scripts/generate-ics.mjs --check",
+    "fonts": "node scripts/fetch-fonts.mjs",
     "test": "craco test",
+    "test:rules": "firebase emulators:exec --only firestore,storage \"npx jest tests/rules --testEnvironment=node --runInBand\"",
     "test:e2e": "playwright test",
-    "test:lighthouse": "npx lighthouse http://127.0.0.1:3000 --preset=desktop --view",
-    "ics": "node scripts/generate-ics.mjs"
+    "test:lighthouse": "npx lighthouse http://127.0.0.1:3000 --preset=desktop --view"
   },
   "browserslist": {
     "production": [

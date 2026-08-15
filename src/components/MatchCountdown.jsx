@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Bell, BellRing, Clock } from "lucide-react";
+import { Bell, BellRing, Clock, Loader2 } from "lucide-react";
+import { httpsCallable } from "firebase/functions";
 import { useLang } from "../lib/i18n";
 import { useAuth } from "../context/AuthContext";
-import { createNotification } from "../lib/notify";
+import { functions } from "../lib/firebase";
 
 const REMINDERS_KEY = "elysium_match_reminders";
+const REMIND_MINUTES_BEFORE = 15;
 
 const matchTimestamp = (match) => {
   if (!match?.date) return null;
@@ -25,15 +27,21 @@ const setReminders = (reminders) => {
 
 /**
  * Compte à rebours (jours / heures / minutes / secondes) avant un match.
- * Propose un rappel « notification in-app » : si l'utilisateur est connecté,
- * une notification est créée dans son espace (cloche) au moment du match ;
- * sinon un toast local s'affiche à la visite.
+ *
+ * Rappel :
+ * - Connecté : le rappel est PLANIFIÉ CÔTÉ SERVEUR (Cloud Scheduler + FCM/email
+ *   via les triggers notifications). Il arrive même navigateur fermé, à l'heure
+ *   choisie, et peut être annulé.
+ * - Anonyme : simple rappel LOCAL — un toast s'affiche à la prochaine visite
+ *   une fois le match passé. C'est affiché honnêtement dans le libellé.
  */
 export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
   const { t } = useLang();
   const { user } = useAuth();
   const target = useMemo(() => matchTimestamp(match), [match]);
   const [now, setNow] = useState(() => Date.now());
+  const [serverReminder, setServerReminder] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!target) return;
@@ -41,29 +49,30 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
     return () => clearInterval(id);
   }, [target]);
 
-  // Au montage, on traite les rappels arrivés à échéance.
+  // Rappel LOCAL (anonyme uniquement) : on traite les échéances au montage —
+  // c'est un rappel « à la prochaine visite », pas un rappel programmé.
   useEffect(() => {
-    if (!match?.id) return;
+    if (!match?.id || user) return;
     const reminders = getReminders();
-    if (reminders[match.id]) {
-      if (target && now >= target && Date.now() - target < 6 * 3600 * 1000) {
-        if (user) {
-          createNotification({
-            targetUid: user.uid,
-            type: "match_reminder",
-            extra: match.opponentName || "",
-            link: "/resultats",
-          }).then(() => toast(t("reminder.fired")));
-        } else {
-          toast(t("reminder.fired"));
-        }
-        const next = { ...reminders };
-        delete next[match.id];
-        setReminders(next);
-      }
+    if (reminders[match.id] && target && now >= target) {
+      toast(t("reminder.fired"));
+      const next = { ...reminders };
+      delete next[match.id];
+      setReminders(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [target, now, user, match?.id]);
+
+  // Connecté : on lit l'état du rappel planifié côté serveur.
+  useEffect(() => {
+    if (!user || !match?.id) return;
+    let cancelled = false;
+    const call = httpsCallable(functions, "getMatchReminderState");
+    call({ matchId: match.id })
+      .then((res) => { if (!cancelled) setServerReminder(!!res.data?.active); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user, match?.id]);
 
   if (!target) return null;
   const diff = target - now;
@@ -74,24 +83,32 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
   const minutes = Math.floor((diff % 3600000) / 60000);
   const seconds = Math.floor((diff % 60000) / 1000);
 
-  const reminders = getReminders();
-  const reminded = !!reminders[match?.id];
+  const localReminded = !user && !!getReminders()[match?.id];
+  const reminded = user ? serverReminder : localReminded;
 
-  const toggleReminder = () => {
+  const toggleReminder = async () => {
     if (!match?.id) return;
-    const next = { ...reminders };
-    if (reminded) {
-      delete next[match.id];
-      setReminders(next);
-      toast(t("reminder.off"));
-    } else {
-      next[match.id] = target;
-      setReminders(next);
-      toast(t("reminder.on"));
-      if (!user) {
-        toast(t("reminder.loginHint"), { duration: 6000 });
+    if (user) {
+      setBusy(true);
+      try {
+        const call = httpsCallable(functions, reminded ? "cancelMatchReminder" : "scheduleMatchReminder");
+        await call({ matchId: match.id, minutesBefore: REMIND_MINUTES_BEFORE });
+        setServerReminder(!reminded);
+        toast(reminded ? t("reminder.off") : t("reminder.on"));
+      } catch (err) {
+        console.error("reminder", err);
+        toast.error(t("common.error"));
+      } finally {
+        setBusy(false);
       }
+      return;
     }
+    // Anonyme : rappel local « à la prochaine visite ».
+    const next = { ...getReminders() };
+    if (localReminded) delete next[match.id];
+    else next[match.id] = target;
+    setReminders(next);
+    toast(localReminded ? t("reminder.off") : t("reminder.onLocal"));
   };
 
   const parts = [
@@ -118,15 +135,16 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
       </div>
       <button
         onClick={toggleReminder}
+        disabled={busy}
         data-testid={`${testId}-remind`}
         aria-pressed={reminded}
-        className={`text-[10px] uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 transition-colors ${
+        className={`text-[10px] uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 transition-colors disabled:opacity-50 ${
           reminded
             ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10"
             : "border-white/20 text-[#f7f7f7]/60 hover:border-[#D8CA82] hover:text-[#D8CA82]"
         }`}
       >
-        {reminded ? <BellRing size={11} aria-hidden="true" /> : <Bell size={11} aria-hidden="true" />}
+        {busy ? <Loader2 size={11} className="animate-spin" aria-hidden="true" /> : reminded ? <BellRing size={11} aria-hidden="true" /> : <Bell size={11} aria-hidden="true" />}
         {reminded ? t("reminder.active") : t("reminder.set")}
       </button>
     </div>

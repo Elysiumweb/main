@@ -17,9 +17,11 @@
 
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const functionsV1 = require("firebase-functions/v1");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -512,3 +514,372 @@ exports.purgeDeletedAccount = functionsV1.auth.user().onDelete(async (user) => {
   logger.info(`purgeDeletedAccount: uid=${user.uid}, deleted≈${deleted}`);
   return { deleted };
 });
+
+/* ============================================================================
+ * 2FA côté serveur (TOTP) — vérification et sessions récentes
+ * ============================================================================
+ * Le secret TOTP vit dans mfaSecrets/{uid} (ou users/{uid}.totp en legacy).
+ * Le code n'est PLUS vérifié dans le navigateur : `verifyMfaSession` vérifie
+ * le code côté serveur puis écrit mfaSessions/{uid} (horodatage serveur).
+ * Les règles Firestore exigent cette session récente (< 6 h) pour toutes les
+ * opérations sensibles (rôles, matchs, campagnes, newsletter, audit…).
+ */
+
+const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+const base32Decode = (input) => {
+  const clean = String(input || "").toUpperCase().replace(/=+$/g, "").replace(/\s+/g, "");
+  let bits = 0;
+  let value = 0;
+  const out = [];
+  for (const ch of clean) {
+    const idx = BASE32_ALPHABET.indexOf(ch);
+    if (idx < 0) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      out.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(out);
+};
+
+const totpAt = (secret, timestamp, step = 30, digits = 6) => {
+  const key = base32Decode(secret);
+  if (!key.length) return "";
+  const counter = Math.floor(timestamp / 1000 / step);
+  const buf = Buffer.alloc(8);
+  buf.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  buf.writeUInt32BE(counter >>> 0, 4);
+  const hmac = crypto.createHmac("sha1", key).update(buf).digest();
+  const offset = hmac[hmac.length - 1] & 0x0f;
+  const bin =
+    ((hmac[offset] & 0x7f) << 24) |
+    (hmac[offset + 1] << 16) |
+    (hmac[offset + 2] << 8) |
+    hmac[offset + 3];
+  return String(bin % 10 ** digits).padStart(digits, "0");
+};
+
+const verifyTotpServer = (secret, code, { window = 1, step = 30 } = {}) => {
+  const trimmed = String(code || "").replace(/\D/g, "");
+  if (trimmed.length !== 6 || !secret) return false;
+  const now = Date.now();
+  for (let i = -window; i <= window; i += 1) {
+    if (totpAt(secret, now + i * step * 1000, step) === trimmed) return true;
+  }
+  return false;
+};
+
+const readTotpSecret = async (uid) => {
+  const snap = await db.collection("mfaSecrets").doc(uid).get();
+  if (snap.exists && snap.data().secret) return snap.data().secret;
+  // Legacy Spark : secret stocké sur users/{uid}.totp.secret.
+  const userSnap = await db.collection("users").doc(uid).get();
+  if (!userSnap.exists) return "";
+  const data = userSnap.data() || {};
+  return data.totp?.secret || data.totpSecret || "";
+};
+
+const MFA_SESSION_TTL_SECONDS = 21600; // 6 h — « session MFA récente »
+
+exports.verifyMfaSession = onCall(
+  { memory: "128MiB", timeoutSeconds: 15 },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Connexion requise.");
+    const code = String(request.data?.code || "").replace(/\D/g, "");
+    if (code.length !== 6) throw new HttpsError("invalid-argument", "Code à 6 chiffres requis.");
+    const secret = await readTotpSecret(uid);
+    if (!secret) throw new HttpsError("failed-precondition", "Aucun second facteur actif sur ce compte.");
+    if (!verifyTotpServer(secret, code)) {
+      throw new HttpsError("unauthenticated", "Code invalide ou expiré.");
+    }
+    await db.collection("mfaSessions").doc(uid).set({
+      uid,
+      method: "totp",
+      verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + MFA_SESSION_TTL_SECONDS * 1000),
+    });
+    // Synchronise le claim de rôle (custom claim) : les rôles sensibles sont
+    // administrés côté serveur, pas par le client.
+    try {
+      const userSnap = await db.collection("users").doc(uid).get();
+      const role = userSnap.exists ? userSnap.data().role : null;
+      if (role) {
+        await admin.auth().setCustomUserClaims(uid, { role, mfaVerifiedAt: Math.floor(Date.now() / 1000) });
+      }
+    } catch (err) {
+      logger.warn("verifyMfaSession: mise à jour des claims", err);
+    }
+    return { verified: true, expiresIn: MFA_SESSION_TTL_SECONDS };
+  }
+);
+
+exports.syncRoleClaims = onCall(
+  { memory: "128MiB", timeoutSeconds: 30 },
+  async (request) => {
+    if (!request.auth?.uid || !(await isBureauUser(request.auth.uid))) {
+      throw new HttpsError("permission-denied", "Accès réservé au bureau.");
+    }
+    const targetUid = String(request.data?.uid || "");
+    if (!targetUid) throw new HttpsError("invalid-argument", "uid requis.");
+    const snap = await db.collection("users").doc(targetUid).get();
+    if (!snap.exists) throw new HttpsError("not-found", "Utilisateur introuvable.");
+    const role = snap.data().role;
+    if (!["visitor", "player", "manager", "bureau"].includes(role)) {
+      throw new HttpsError("invalid-argument", "Rôle invalide.");
+    }
+    await admin.auth().setCustomUserClaims(targetUid, { role });
+    await db.collection("admin_audit").add({
+      action: "sync_role_claims",
+      actorUid: request.auth.uid,
+      targetUid,
+      role,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { ok: true, role };
+  }
+);
+
+/* ============================================================================
+ * Création de notifications validée côté serveur
+ * ============================================================================
+ * Les règles Firestore n'autorisent la création directe que pour les actions
+ * métier strictes (mention chat, rappel personnel). Toutes les autres
+ * notifications passent par ce callable qui valide l'auteur et le type.
+ */
+const NOTIFICATION_TYPES = new Set([
+  "chat_mention",
+  "match_reminder",
+  "event_new",
+  "support_new",
+  "recruit_new",
+  "thread_reply",
+  "absence_declared",
+  "attendance",
+]);
+const GAME_NAMES = ["EVA", "Rocket League", "Valorant"];
+
+const isManagerPlusUser = async (uid) => {
+  if (uid === OFFICIAL_UID) return true;
+  const snap = await db.collection("users").doc(uid).get();
+  return snap.exists && ["manager", "bureau"].includes(snap.data().role);
+};
+
+exports.createNotification = onCall(
+  { memory: "128MiB", timeoutSeconds: 20 },
+  async (request) => {
+    const actorUid = request.auth?.uid;
+    if (!actorUid) throw new HttpsError("unauthenticated", "Connexion requise.");
+    const data = request.data || {};
+    const type = String(data.type || "");
+    if (!NOTIFICATION_TYPES.has(type)) throw new HttpsError("invalid-argument", "Type de notification inconnu.");
+
+    const extra = String(data.extra || "").slice(0, 300);
+    const link = String(data.link || "/").slice(0, 300);
+    const targetUid = data.targetUid ? String(data.targetUid) : null;
+    let targetRoles = Array.isArray(data.targetRoles) ? data.targetRoles.map(String).filter(Boolean).slice(0, 4) : null;
+    const targetGame = data.targetGame ? String(data.targetGame) : null;
+
+    if (type === "chat_mention") {
+      if (!targetUid || targetUid === actorUid) throw new HttpsError("invalid-argument", "Mention invalide.");
+      targetRoles = null;
+    } else if (type === "match_reminder") {
+      if (targetUid !== actorUid) throw new HttpsError("invalid-argument", "Rappel personnel uniquement.");
+      targetRoles = null;
+    } else if (type === "event_new") {
+      if (!(await isManagerPlusUser(actorUid))) throw new HttpsError("permission-denied", "Réservé aux managers.");
+      if (!targetGame || !GAME_NAMES.includes(targetGame)) throw new HttpsError("invalid-argument", "Pôle requis.");
+      targetRoles = ["player", "manager", "bureau"];
+    } else if (type === "support_new") {
+      if (!targetRoles || targetRoles.join(",") !== "bureau") throw new HttpsError("invalid-argument", "Cible invalide.");
+      const threads = await db.collection("supportThreads").where("uid", "==", actorUid).limit(1).get();
+      if (threads.empty) throw new HttpsError("permission-denied", "Aucun ticket support associé.");
+    } else if (type === "recruit_new") {
+      if (!targetRoles || targetRoles.join(",") !== "manager,bureau") throw new HttpsError("invalid-argument", "Cible invalide.");
+      const apps = await db.collection("recruitThreads").where("uid", "==", actorUid).limit(1).get();
+      if (apps.empty) throw new HttpsError("permission-denied", "Aucune candidature associée.");
+    } else if (type === "thread_reply") {
+      if (!targetUid) throw new HttpsError("invalid-argument", "Cible invalide.");
+      const isStaff = await isManagerPlusUser(actorUid);
+      if (targetUid !== actorUid && !isStaff) throw new HttpsError("permission-denied", "Réponse non autorisée.");
+    } else if (type === "absence_declared") {
+      if (!(await isManagerPlusUser(actorUid)) && targetUid !== actorUid) {
+        throw new HttpsError("permission-denied", "Réponse non autorisée.");
+      }
+    }
+
+    if (targetGame && !GAME_NAMES.includes(targetGame)) throw new HttpsError("invalid-argument", "Pôle invalide.");
+
+    await db.collection("notifications").add({
+      targetUid,
+      targetRoles,
+      targetGame: targetGame || null,
+      type,
+      extra,
+      link,
+      readBy: [],
+      createdBy: actorUid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { ok: true };
+  }
+);
+
+/* ============================================================================
+ * Désinscription newsletter — jeton signé par email (jamais de lecture publique)
+ * ============================================================================
+ * Le formulaire public /newsletter appelle ce callable : on cherche l'email,
+ * on envoie un lien de désinscription à jeton (confirmToken) et on ne révèle
+ * jamais si l'email est inscrit (réponse générique).
+ */
+exports.requestNewsletterUnsubscribe = onCall(
+  { secrets: REGION_SECRETS, memory: "128MiB", timeoutSeconds: 15 },
+  async (request) => {
+    const email = String(request.data?.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpsError("invalid-argument", "Email invalide.");
+    const snap = await db.collection("newsletter").where("email", "==", email).limit(5).get();
+    if (snap.empty) {
+      // Réponse générique : aucune fuite sur l'existence de l'abonnement.
+      return { sent: true };
+    }
+    const docSnap = snap.docs[0];
+    const sub = docSnap.data() || {};
+    if (!sub.confirmToken) {
+      throw new HttpsError("failed-precondition", "Abonnement sans jeton de désinscription.");
+    }
+    if (!getResendKey() && !getBrevoKey()) {
+      throw new HttpsError("failed-precondition", "Aucun fournisseur email configuré.");
+    }
+    const unsubscribeUrl = cloudFunctionUrl("unsubscribeNewsletter", sub.confirmToken);
+    const subject = "Confirmez votre désinscription à la newsletter Elysium";
+    const html = `
+      <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#111111;color:#f7f7f7;border:1px solid #222;">
+        <div style="padding:24px 28px;border-bottom:1px solid #222;"><p style="margin:0;letter-spacing:.3em;font-size:11px;text-transform:uppercase;color:#D8CA82;">ELYSIUM NEWSLETTER</p></div>
+        <div style="padding:28px;">
+          <h1 style="font-size:20px;margin:0 0 12px;color:#D8CA82;">Désinscription</h1>
+          <p style="font-size:15px;line-height:1.6;color:#cfcfcf;">Vous recevez cet email parce qu'une demande de désinscription a été faite pour ${escapeHtml(email)}. Cliquez sur le bouton pour confirmer : vous ne recevrez plus aucun digest.</p>
+          <p style="margin:24px 0 0;"><a href="${escapeHtml(unsubscribeUrl)}" style="display:inline-block;background:#D8CA82;color:#111111;font-weight:700;text-transform:uppercase;letter-spacing:.15em;font-size:12px;padding:12px 22px;text-decoration:none;">Confirmer ma désinscription</a></p>
+        </div>
+      </div>`;
+    await sendEmail(email, subject, html);
+    await docSnap.ref.set({ unsubRequestedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    return { sent: true };
+  }
+);
+
+/* ============================================================================
+ * Rappels de match planifiés côté serveur
+ * ============================================================================
+ * scheduleMatchReminder (callable) enregistre un rappel dans matchReminders.
+ * processMatchReminders (planificateur, toutes les minutes) crée la
+ * notification + email + push à l'heure choisie — navigateur fermé ou pas.
+ */
+exports.scheduleMatchReminder = onCall(
+  { memory: "128MiB", timeoutSeconds: 20 },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Connexion requise.");
+    const matchId = String(request.data?.matchId || "");
+    if (!matchId) throw new HttpsError("invalid-argument", "matchId requis.");
+    const minutesBefore = Math.max(1, Math.min(120, Number(request.data?.minutesBefore) || 15));
+
+    const matchSnap = await db.collection("matches").doc(matchId).get();
+    if (!matchSnap.exists) throw new HttpsError("not-found", "Match introuvable.");
+    const match = matchSnap.data() || {};
+    const kickoff = new Date(`${match.date || ""}T${(match.time || "20:00").slice(0, 5)}:00`);
+    if (isNaN(kickoff.getTime())) throw new HttpsError("invalid-argument", "Date de match invalide.");
+    if (kickoff.getTime() <= Date.now()) throw new HttpsError("failed-precondition", "Ce match est déjà passé.");
+    const fireAt = new Date(kickoff.getTime() - minutesBefore * 60000);
+    if (fireAt.getTime() <= Date.now()) throw new HttpsError("failed-precondition", "L'heure du rappel est déjà passée.");
+
+    const existing = await db.collection("matchReminders")
+      .where("uid", "==", uid)
+      .where("matchId", "==", matchId)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+    if (existing.empty) {
+      await db.collection("matchReminders").add({
+        uid,
+        matchId,
+        matchName: String(match.opponentName || "").slice(0, 120),
+        minutesBefore,
+        fireAt: admin.firestore.Timestamp.fromDate(fireAt),
+        status: "pending",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    return { ok: true, fireAt: fireAt.toISOString() };
+  }
+);
+
+exports.cancelMatchReminder = onCall(
+  { memory: "128MiB", timeoutSeconds: 15 },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Connexion requise.");
+    const matchId = String(request.data?.matchId || "");
+    if (!matchId) return { ok: true };
+    const snap = await db.collection("matchReminders")
+      .where("uid", "==", uid)
+      .where("matchId", "==", matchId)
+      .where("status", "==", "pending")
+      .get();
+    await Promise.all(snap.docs.map((d) => d.ref.update({
+      status: "cancelled",
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+    })));
+    return { ok: true };
+  }
+);
+
+exports.processMatchReminders = onSchedule(
+  { schedule: "every 1 minutes", memory: "128MiB", timeoutSeconds: 60 },
+  async () => {
+    const now = admin.firestore.Timestamp.now();
+    const snap = await db.collection("matchReminders")
+      .where("status", "==", "pending")
+      .where("fireAt", "<=", now)
+      .get();
+    let fired = 0;
+    for (const docSnap of snap.docs) {
+      const r = docSnap.data() || {};
+      try {
+        await db.collection("notifications").add({
+          targetUid: r.uid || null,
+          type: "match_reminder",
+          extra: String(r.matchName || "").slice(0, 120),
+          link: "/resultats",
+          readBy: [],
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        await docSnap.ref.update({ status: "fired", firedAt: now });
+        fired += 1;
+      } catch (err) {
+        logger.error("processMatchReminders", err);
+      }
+    }
+    logger.info(`processMatchReminders: ${fired} rappel(s) traités (${snap.size} dû(s)).`);
+    return { fired, due: snap.size };
+  }
+);
+
+exports.getMatchReminderState = onCall(
+  { memory: "128MiB", timeoutSeconds: 15 },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Connexion requise.");
+    const matchId = String(request.data?.matchId || "");
+    if (!matchId) return { active: false };
+    const snap = await db.collection("matchReminders")
+      .where("uid", "==", uid)
+      .where("matchId", "==", matchId)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+    return { active: !snap.empty };
+  }
+);

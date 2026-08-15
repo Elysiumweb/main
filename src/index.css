@@ -2,9 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== Polices auto-hébergées =====
+   Les @font-face vivent dans public/fonts.css (fichiers dans public/fonts,
+   récupérables avec `npm run fonts`, voir scripts/fetch-fonts.mjs).
+   Si un fichier manque, le navigateur retombe sur la police système :
+   AUCUNE requête vers Google Fonts n'est émise. */
+
 body {
     margin: 0;
-    font-family: "Rajdhani", sans-serif;
+    font-family: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
     background-color: #111111;
     color: #f7f7f7;
     -webkit-font-smoothing: antialiased;
@@ -12,7 +18,7 @@ body {
 }
 
 .font-display {
-    font-family: "Orbitron", sans-serif;
+    font-family: "Orbitron", ui-sans-serif, system-ui, sans-serif;
 }
 
 ::selection {

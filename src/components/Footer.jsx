@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { SocialIcon } from "./SocialIcon";
 import { NewsletterSignup } from "./NewsletterSignup";
-import { Mail, Heart } from "lucide-react";
+import { openConsentManager } from "../lib/consent";
+import { Mail, Heart, SlidersHorizontal } from "lucide-react";
 
 export const Footer = () => {
   const { t } = useLang();
@@ -183,6 +184,10 @@ export const Footer = () => {
             <Link to="/cgu" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-link-terms">
               {t("legal.terms")}
             </Link>
+            <button onClick={openConsentManager} data-testid="footer-manage-consent"
+              className="flex items-center gap-1.5 hover:text-[#D8CA82] transition-colors motion-reduce:transition-none cursor-pointer focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+              <SlidersHorizontal size={11} aria-hidden="true" /> {t("footer.manageChoices")}
+            </button>
           </nav>
         </div>
       </div>

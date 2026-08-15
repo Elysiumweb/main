@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { deleteField, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { deleteDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { Check, Copy, ShieldCheck } from "lucide-react";
 import { db } from "../lib/firebase";
@@ -64,15 +64,16 @@ export const MfaTotpPanel = () => {
         setBusy(false);
         return;
       }
-      // Stocké sur users/{uid} : déjà autorisé par les règles Spark existantes.
-      await setDoc(doc(db, "users", user.uid), {
-        totpEnabled: true,
-        totp: {
-          secret,
-          displayName: "Application d'authentification",
-          enrolledAt: serverTimestamp(),
-        },
-      }, { merge: true });
+      // Le secret TOTP vit dans mfaSecrets/{uid} : lecture/écriture réservées
+      // au propriétaire, jamais exposé au staff ni au profil. users/{uid} ne
+      // porte que le drapeau totpEnabled. La vérification des codes est faite
+      // CÔTÉ SERVEUR (Cloud Function verifyMfaSession).
+      await setDoc(doc(db, "mfaSecrets", user.uid), {
+        secret,
+        displayName: "Application d'authentification",
+        enrolledAt: serverTimestamp(),
+      });
+      await setDoc(doc(db, "users", user.uid), { totpEnabled: true }, { merge: true });
       markMfaSessionOk(user.uid);
       confirmMfaSession?.();
       await refreshMfa?.();
@@ -93,7 +94,8 @@ export const MfaTotpPanel = () => {
   const removeFactor = async () => {
     setBusy(true);
     try {
-      await setDoc(doc(db, "users", user.uid), { totpEnabled: false, totp: deleteField() }, { merge: true });
+      await deleteDoc(doc(db, "mfaSecrets", user.uid)).catch(() => {});
+      await setDoc(doc(db, "users", user.uid), { totpEnabled: false }, { merge: true });
       await refreshMfa?.();
       toast.success("Second facteur retiré.");
     } catch (err) {

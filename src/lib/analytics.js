@@ -1,4 +1,5 @@
-const CONSENT_KEY = "elysium_analytics_consent";
+import { hasConsent, setConsent } from "./consent";
+
 const SESSION_KEY = "elysium_analytics_session";
 const ENDPOINT = process.env.REACT_APP_ANALYTICS_ENDPOINT || "";
 const ENABLE_DEV_LOG = process.env.REACT_APP_ANALYTICS_DEBUG === "true";
@@ -24,19 +25,10 @@ const getSessionId = () => {
   }
 };
 
-export const analyticsConsentGranted = () => {
-  try {
-    return localStorage.getItem(CONSENT_KEY) === "granted";
-  } catch (_) {
-    return false;
-  }
-};
+export const analyticsConsentGranted = () => hasConsent("analytics");
 
-export const setAnalyticsConsent = (granted) => {
-  try {
-    localStorage.setItem(CONSENT_KEY, granted ? "granted" : "denied");
-  } catch (_) {}
-};
+/** Conservé pour compatibilité : l'état vit désormais dans lib/consent. */
+export const setAnalyticsConsent = (granted) => setConsent({ analytics: !!granted });
 
 const scrub = (value) => {
   if (value == null) return value;

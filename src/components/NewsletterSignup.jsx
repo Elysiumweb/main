@@ -1,6 +1,7 @@
 import { useState, useId } from "react";
-import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
@@ -238,21 +239,14 @@ const UnsubscribeForm = () => {
     if (!isValidEmail(email)) return;
     setStatus("loading");
     try {
-      const q = query(collection(db, "newsletter"), where("email", "==", email.toLowerCase()));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        setStatus("error");
-        setMessage(t("newsletter.notFound"));
-        return;
-      }
-      // Delete subscriptions for this email
-      const deletions = [];
-      snap.forEach((d) => {
-        deletions.push(deleteDoc(doc(db, "newsletter", d.id)));
-      });
-      await Promise.all(deletions);
+      // La collection newsletter n'est JAMAIS lue par le client : on passe par
+      // la Cloud Function qui vérifie l'abonnement côté serveur et envoie un
+      // lien de désinscription à jeton. Réponse générique (pas d'énumération).
+      const call = httpsCallable(functions, "requestNewsletterUnsubscribe");
+      await call({ email: email.toLowerCase() });
       setStatus("success");
-      setMessage(t("newsletter.unsubscribe.success"));
+      setMessage(t("newsletter.unsubscribe.sent"));
+      setEmail("");
     } catch (err) {
       console.error(err);
       setStatus("error");

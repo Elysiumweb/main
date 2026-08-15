@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
@@ -15,8 +15,18 @@ import { SITE_URL, useSEO } from "../lib/useSEO";
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const PAGE_SIZE = 9;
 
+/**
+ * Résout le match ciblé par un lien de partage (`/resultats?match=ID`).
+ * Exporté pour être testé : renvoie null si l'ID est absent ou introuvable.
+ */
+export const resolveFocusedMatch = (matches, matchId) => {
+  if (!matchId || !Array.isArray(matches)) return null;
+  return matches.find((m) => m.id === matchId) || null;
+};
+
 export default function Results() {
   const { t } = useLang();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [matches, setMatches] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -26,6 +36,19 @@ export default function Results() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  // Lien de partage `/resultats?match=ID` : ouvre directement la modale du
+  // match ciblé (fonctionne aussi après rechargement de la page).
+  const matchParam = searchParams.get("match");
+  const focusedMatch = useMemo(() => resolveFocusedMatch(matches, matchParam), [matches, matchParam]);
+
+  const closeFocusedMatch = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("match");
+      return next;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     setError(false); setMatches(null);
@@ -188,6 +211,25 @@ export default function Results() {
             {t("results.filter.reset")}
           </button>
         </div>
+
+        {/* Lien partagé vers un match introuvable */}
+        {matches && matchParam && !focusedMatch && (
+          <div className="border border-orange-300/40 bg-orange-300/5 px-5 py-4 mb-8 flex items-center flex-wrap gap-3" data-testid="results-match-not-found">
+            <p className="text-sm text-[#f7f7f7]/80">{t("results.matchNotFound")}</p>
+            <button onClick={closeFocusedMatch} data-testid="results-match-not-found-close"
+              className="text-[11px] uppercase tracking-widest border border-white/20 text-[#c8c8c8] px-3 py-1.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+              {t("common.cancel")}
+            </button>
+          </div>
+        )}
+
+        {/* Modale du match ciblé par ?match=ID (hors grille pour rester visible
+            quel que soit le filtre actif ; Radix portail la rend dans <body>). */}
+        {focusedMatch && (
+          <div className="hidden" aria-hidden="true">
+            <MatchCard match={focusedMatch} open onOpenChange={(o) => { if (!o) closeFocusedMatch(); }} />
+          </div>
+        )}
 
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="results-error" />

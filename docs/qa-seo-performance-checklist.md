@@ -29,3 +29,32 @@ Dans DevTools ou WebPageTest : Fast 3G / Slow 4G.
 - Installation navigateurs : `npx playwright install`.
 - Lancement : `npm run test:e2e`.
 - Les tests couvrent navigation mobile, connexion anonyme, candidature/login prompt, résultats/modale match, support/login prompt et visibilité du raccourci d'absence planning.
+
+## Règles de sécurité (Firestore / Storage) — émulateur
+
+Les règles sont couvertes par des tests d'émulateur (Java requis ; outils à
+installer une fois : `npm i -D firebase-tools @firebase/rules-unit-testing`) :
+
+```bash
+npm run test:rules
+# équivalent : npx firebase emulators:exec --only firestore,storage \
+#   "npx jest tests/rules --testEnvironment=node --runInBand --maxWorkers=1"
+```
+
+Couverture (cf. audit sécurité) :
+- Notifications : lecture/marquage réservés au destinataire réel ; création
+  directe limitée aux mentions chat et rappels personnels ; le reste passe
+  par la Cloud Function `createNotification`.
+- Chats / canvas / journal d'activité : pôle et roster imposés par les règles
+  (un joueur EVA ne lit pas un canal ou un tableau Valorant via SDK ou REST).
+- Newsletter : aucune lecture publique (désinscription par jeton via
+  Cloud Functions).
+- Storage : dossiers (avatars, players, media, articles, chat), propriétaires,
+  rôles, MIME autorisés (interdiction SVG/exécutables/HTML) et tailles max.
+- MFA : session serveur récente (< 6 h) requise pour les opérations sensibles
+  (changement de rôle, matchs, campagne, newsletter, audit…).
+
+Rappels de match : `npm run ics` régénère `public/matches.ics` à chaque build
+(prebuild) ; `npm run ics:check` supervise en CI que le flux publié contient
+bien des événements (échoue si vide). Polices auto-hébergées : `npm run fonts`
+télécharge Orbitron/Rajdhani dans `public/fonts` (exécuter avec accès réseau).

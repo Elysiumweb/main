@@ -1,0 +1,94 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // ===== Helpers =====
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOfficial() {
+      return request.auth != null && request.auth.uid == '9IzGlpp6DHhrN9GW72haeb869Om1';
+    }
+
+    // Rôle lu côté serveur (collection users) — jamais de rôle client.
+    function userRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isBureau() {
+      return isAuth() && (isOfficial() || userRole() == 'bureau');
+    }
+
+    function hasPlayerAccess() {
+      return isAuth() && (isOfficial() || userRole() in ['player', 'manager', 'bureau']);
+    }
+
+    // MIME autorisés : images raster uniquement. Pas de SVG (actif), pas
+    // d'exécutables, pas de HTML — contentType imposé par la règle.
+    function isImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+    }
+
+    function isSmallerThan(maxMB) {
+      return request.resource.size < maxMB * 1024 * 1024;
+    }
+
+    function isImageWrite(maxMB) {
+      return isImage() && isSmallerThan(maxMB);
+    }
+
+    // ===== Avatars (photos de profil) =====
+    // Lecture publique (fiche joueur, commentaires), écriture réservée au
+    // propriétaire du compte. JPEG/PNG/WebP/GIF, 2 Mo max.
+    match /avatars/{uid}/{file} {
+      allow read: if true;
+      allow create, update: if isAuth() && uid == request.auth.uid && isImageWrite(2);
+      allow delete: if isAuth() && uid == request.auth.uid;
+    }
+
+    // ===== Photos des joueurs (page équipe) =====
+    // Lecture publique ; écriture bureau uniquement (3 Mo max).
+    match /players/{file} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageWrite(3);
+      allow delete: if isBureau();
+    }
+
+    // ===== Médiathèque (photos/événements) =====
+    // Lecture publique ; écriture bureau uniquement (10 Mo max).
+    match /media/{file} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageWrite(10);
+      allow delete: if isBureau();
+    }
+
+    // ===== Couvertures d'articles =====
+    // Lecture publique ; écriture bureau uniquement (3 Mo max).
+    match /articles/{file} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageWrite(3);
+      allow delete: if isBureau();
+    }
+
+    // ===== Images de chat =====
+    // Réservées aux membres de l'espace joueur (comme les messages qu'elles
+    // illustrent) ; écriture par tout membre, 5 Mo max.
+    match /chat/{file} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if hasPlayerAccess() && isImageWrite(5);
+      allow delete: if isBureau();
+    }
+
+    // ===== Téléversements génériques (composant ImageUpload par défaut) =====
+    match /uploads/{file} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if hasPlayerAccess() && isImageWrite(5);
+      allow delete: if isBureau();
+    }
+
+    // ===== Tout le reste : refusé =====
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

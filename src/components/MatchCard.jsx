@@ -113,7 +113,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   );
 };
 
-export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming }) => {
+export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming, open, onOpenChange }) => {
   const { t, lang } = useLang();
   const upcoming = match.status === "upcoming";
   const live = match.status === "live";
@@ -257,11 +257,15 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   );
 
   return (
-    <Dialog onOpenChange={(open) => {
-      if (open) {
-        trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (open !== undefined) onOpenChange?.(nextOpen);
+        if (nextOpen) {
+          trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
+        }
+      }}
+    >
       <DialogTrigger asChild>{card}</DialogTrigger>
       <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg" data-testid={`match-detail-${match.id}`}>
         <DialogHeader>

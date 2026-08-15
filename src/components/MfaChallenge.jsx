@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { ShieldCheck } from "lucide-react";
+import { httpsCallable } from "firebase/functions";
 import { useAuth } from "../context/AuthContext";
-import { readStoredTotpSecret, verifyTotp } from "../lib/totp";
+import { functions } from "../lib/firebase";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
+/**
+ * Écran de double authentification.
+ *
+ * Le code TOTP n'est PAS vérifié dans le navigateur : il est envoyé à la Cloud
+ * Function `verifyMfaSession` qui vérifie le code côté serveur (secret stocké
+ * dans mfaSecrets/{uid}) puis écrit mfaSessions/{uid} avec un horodatage
+ * serveur. Les règles Firestore exigent cette session récente (< 6 h) pour
+ * toute opération sensible — contourner l'interface ne suffit plus.
+ */
 export const MfaChallenge = () => {
-  const { user, profile, mfaPending, confirmMfaSession, logout } = useAuth() || {};
+  const { user, mfaPending, confirmMfaSession, logout } = useAuth() || {};
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -19,23 +29,20 @@ export const MfaChallenge = () => {
     setBusy(true);
     setError("");
     try {
-      const secret = readStoredTotpSecret(profile);
-      if (!secret) {
-        setError("Aucun secret 2FA trouvé. Réactivez-la depuis votre profil.");
-        setBusy(false);
-        return;
-      }
-      const ok = await verifyTotp(secret, code);
-      if (!ok) {
-        setError("Code invalide ou expiré.");
-        setBusy(false);
-        return;
-      }
+      const call = httpsCallable(functions, "verifyMfaSession");
+      await call({ code });
       confirmMfaSession?.();
       toast.success("Double authentification validée.");
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Impossible de vérifier le code pour le moment.");
+      const codeErr = err?.code || "";
+      if (codeErr === "functions/unauthenticated" || codeErr === "functions/permission-denied") {
+        setError("Code invalide ou expiré.");
+      } else if (codeErr === "functions/failed-precondition") {
+        setError("Aucun second facteur actif sur ce compte. Réactivez la 2FA depuis votre profil.");
+      } else {
+        setError(err?.message || "Impossible de vérifier le code pour le moment.");
+      }
     }
     setBusy(false);
   };

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { db, functions } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
-import { logAdminAction } from "../../lib/notify";
+import { logAdminAction, requireMfaOnDenied } from "../../lib/notify";
 import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
@@ -27,7 +27,7 @@ export const AdminNewsletter = () => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       list.sort((a, b) => (b.subscribedAt?.seconds || 0) - (a.subscribedAt?.seconds || 0));
       setSubs(list);
-    }, console.error);
+    }, (err) => { console.error(err); requireMfaOnDenied(err); });
   }, []);
 
   const filtered = useMemo(() => {

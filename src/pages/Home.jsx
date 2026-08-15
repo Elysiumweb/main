@@ -16,6 +16,7 @@ import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { fmtMatchDate } from "../lib/formatters";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { setConsent, useConsent } from "../lib/consent";
 
 /* Neutral initials plate when the opponent logo is missing/broken
    (mirrors MatchCard behavior, without implying any partnership). */
@@ -36,6 +37,7 @@ const OpponentMark = ({ src, name }) => {
 
 export default function Home() {
   const { t, lang } = useLang();
+  const consent = useConsent();
   const [matches, setMatches] = useState([]);
   const [members, setMembers] = useState([]);
   const [videos, setVideos] = useState([]);
@@ -47,12 +49,25 @@ export default function Home() {
       vids.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setVideos(vids.slice(0, 2));
     }, () => {});
-    fetch("https://discord.com/api/v9/invites/RH3ZZkMJsw?with_counts=true")
-      .then((r) => r.json())
-      .then((d) => setDiscord({ online: d.approximate_presence_count, members: d.approximate_member_count }))
-      .catch(() => {});
     return u;
   }, []);
+
+  // L'API Discord n'est interrogée qu'après le consentement « social » :
+  // aucun appel réseau tiers avant le choix de l'utilisateur.
+  useEffect(() => {
+    if (!consent.social) {
+      setDiscord(null);
+      return;
+    }
+    let cancelled = false;
+    fetch("https://discord.com/api/v9/invites/RH3ZZkMJsw?with_counts=true")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setDiscord({ online: d.approximate_presence_count, members: d.approximate_member_count });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [consent.social]);
 
   useEffect(() => {
     return onSnapshot(collection(db, "matches"), (snap) => {
@@ -383,9 +398,19 @@ export default function Home() {
           </div>
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="border border-white/10 bg-[#0d0d0d]">
-              <iframe title="Twitch Elysium" data-testid="home-twitch-embed"
-                src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=true`}
-                className="w-full aspect-video" allowFullScreen />
+              {consent.social ? (
+                <iframe title="Twitch Elysium" data-testid="home-twitch-embed"
+                  src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=true`}
+                  className="w-full aspect-video" allowFullScreen />
+              ) : (
+                <div className="w-full aspect-video flex flex-col items-center justify-center gap-4 px-6 text-center" data-testid="home-twitch-consent">
+                  <p className="text-xs text-[#f7f7f7]/60 max-w-sm leading-relaxed">{t("consent.social.prompt")}</p>
+                  <button onClick={() => setConsent({ social: true })} data-testid="home-twitch-consent-btn"
+                    className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-5 py-2.5 hover:bg-[#D8CA82]/10 transition-colors">
+                    {t("consent.social.load")}
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">{t("home.live.replays")}</p>
@@ -415,8 +440,16 @@ export default function Home() {
                           </button>
                         </DialogTrigger>
                         <DialogContent className="bg-[#111111] border border-[#D8CA82]/30 rounded-none max-w-3xl p-2" data-testid={`home-replay-lightbox-${v.id}`}>
-                          {embed ? (
+                          {embed && consent.social ? (
                             <iframe src={embed} title={v.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
+                          ) : embed ? (
+                            <div className="w-full aspect-video flex flex-col items-center justify-center gap-3 px-6 text-center">
+                              <p className="text-xs text-[#f7f7f7]/60 max-w-sm">{t("consent.social.prompt")}</p>
+                              <button onClick={() => setConsent({ social: true })} data-testid={`home-replay-consent-btn-${v.id}`}
+                                className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:bg-[#D8CA82]/10 transition-colors">
+                                {t("consent.social.load")}
+                              </button>
+                            </div>
                           ) : (
                             <a href={v.url} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] underline p-8 block text-center flex items-center justify-center gap-2">
                               <ExternalLink size={15} aria-hidden="true" /> {v.title}
