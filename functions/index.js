@@ -24,6 +24,10 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
+const {
+  getMailFrom, getResendKey, getBrevoKey, escapeHtml, sendEmail,
+} = require("./lib/mail");
+
 const TOTP_PROVIDER = {
   state: "ENABLED",
   totpProviderConfig: { adjacentIntervals: 5 },
@@ -126,23 +130,6 @@ exports.ensureTotpMfa = onCall(
 const OFFICIAL_UID = "9IzGlpp6DHhrN9GW72haeb869Om1";
 const REGION_SECRETS = ["RESEND_API_KEY", "BREVO_API_KEY"];
 const APP_URL = process.env.APP_URL || "https://elysium-esport.fr";
-
-const getMailFrom = () => process.env.MAIL_FROM || "Elysium <noreply@elysium-esport.fr>";
-const getResendKey = () => process.env.RESEND_API_KEY;
-const getBrevoKey = () => process.env.BREVO_API_KEY;
-
-const escapeHtml = (s = "") => String(s)
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;")
-  .replace(/'/g, "&#039;");
-
-const parseMailFrom = (from) => {
-  const match = String(from).match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
-  if (!match) return { email: String(from).trim(), name: "Elysium" };
-  return { name: match[1].replace(/^"|"$/g, "") || "Elysium", email: match[2].trim() };
-};
 
 // ---- Templates de contenu par type de notification ----
 const TEMPLATES = {
@@ -253,33 +240,7 @@ const resolveRecipientUsers = async (n) => {
 
 const resolveRecipients = async (n) => (await resolveRecipientUsers(n)).map((u) => u.email).filter(Boolean);
 
-// ---- Fournisseurs d'envoi ----
-const sendWithResend = async (to, subject, html) => {
-  const key = getResendKey();
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: getMailFrom(), to, subject, html }),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
-  return `resend:${to}`;
-};
-
-const sendWithBrevo = async (to, subject, html) => {
-  const sender = parseMailFrom(getMailFrom());
-  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: { "api-key": getBrevoKey(), "Content-Type": "application/json", accept: "application/json" },
-    body: JSON.stringify({ sender, to: [{ email: to }], subject, htmlContent: html }),
-  });
-  if (!res.ok) throw new Error(`Brevo ${res.status}: ${await res.text()}`);
-  return `brevo:${to}`;
-};
-
-const sendEmail = async (to, subject, html) => {
-  if (!getResendKey() && !getBrevoKey()) throw new Error("Aucun fournisseur email configuré.");
-  return getBrevoKey() ? sendWithBrevo(to, subject, html) : sendWithResend(to, subject, html);
-};
+// ---- Fournisseurs d'envoi : voir lib/mail.js (sendEmail, Resend/Brevo) ----
 
 exports.notifyEmail = onDocumentCreated(
   { document: "notifications/{id}", secrets: REGION_SECRETS, memory: "256MiB", timeoutSeconds: 30 },
@@ -467,7 +428,7 @@ const deleteQueryDocs = async (querySnapOrQuery, recursive = false) => {
   return snap.size;
 };
 
-const purgeAccountData = async (uid) => {
+const purgeAccountData = async (uid, email = "") => {
   let deleted = 0;
   const roots = [
     [db.collection("users").doc(uid), true],
@@ -476,6 +437,7 @@ const purgeAccountData = async (uid) => {
     [db.collection("notifications").where("targetUid", "==", uid), false],
     [db.collection("notifications").where("uid", "==", uid), false],
     [db.collection("activity").where("uid", "==", uid), false],
+    [db.collection("activity").where("byUid", "==", uid), false],
     [db.collection("availabilities").where("uid", "==", uid), false],
     [db.collection("recurringAvailabilities").where("uid", "==", uid), false],
     [db.collection("absences").where("uid", "==", uid), false],
@@ -483,7 +445,12 @@ const purgeAccountData = async (uid) => {
     [db.collection("supportThreads").where("uid", "==", uid), true],
     [db.collection("recruitThreads").where("uid", "==", uid), true],
     [db.collectionGroup("messages").where("uid", "==", uid), false],
+    [db.collectionGroup("rsvps").where("uid", "==", uid), false],
+    [db.collection("mfaSecrets").doc(uid), false],
   ];
+  if (email) {
+    roots.push([db.collection("newsletter").where("email", "==", String(email).toLowerCase()), false]);
+  }
 
   for (const [target, recursive] of roots) {
     try {
@@ -508,7 +475,24 @@ const purgeAccountData = async (uid) => {
 };
 
 exports.purgeDeletedAccount = functionsV1.auth.user().onDelete(async (user) => {
-  const deleted = await purgeAccountData(user.uid);
+  const deleted = await purgeAccountData(user.uid, user.email || "");
   logger.info(`purgeDeletedAccount: uid=${user.uid}, deleted≈${deleted}`);
   return { deleted };
 });
+
+// ============================================================================
+// Modules additionnels
+// ============================================================================
+// - forms.js     : formulaires publics protégés (App Check, quotas IP/compte,
+//   CAPTCHA adaptatif, validation serveur) + consentement parental.
+// - rsvp.js      : RSVP transactionnel du calendrier communautaire.
+// - gdpr.js      : export RGPD complet côté serveur.
+// - retention.js : purges planifiées (corbeille Notes 30 j, threads 24 mois…).
+Object.assign(
+  exports,
+  require("./forms"),
+  require("./rsvp"),
+  require("./gdpr"),
+  require("./retention"),
+);
+

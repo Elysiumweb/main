@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { HelpCircle, LifeBuoy } from "lucide-react";
-import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
-import { createNotification, CONTACT_EMAIL } from "../lib/notify";
+import { CONTACT_EMAIL } from "../lib/notify";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
+import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
@@ -25,7 +24,7 @@ const FAQ_GROUPS = [
 ];
 
 export default function Support() {
-  const { user, displayName, canSeeSupport } = useAuth();
+  const { user, canSeeSupport } = useAuth();
   const { t } = useLang();
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -38,25 +37,27 @@ export default function Support() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     if (isHoneypotFilled(fd.get("website"))) return;
+    // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
+    // est appliquée côté serveur par la Cloud Function.
     const limit = checkSessionRateLimit("support_ticket", { max: 3, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     if (!subject.trim() || !description.trim()) return;
     if (attachment && !/^https?:\/\/.+/.test(attachment)) { toast.error(t("support.invalidAttachment")); return; }
     setSending(true);
     try {
-      const meta = `[${t(`support.cat.${category}`)} · ${t(`support.prio.${priority}`)}]\n${description.trim()}${attachment ? `\n📎 ${attachment}` : ""}`;
-      const ref = await addDoc(collection(db, "supportThreads"), {
-        uid: user.uid, name: displayName, email: user.email || "",
-        subject: subject.trim(), meta, category, priority, attachment: attachment.trim(),
-        status: "open", createdAt: serverTimestamp(),
+      await callProtected("submitSupportTicket", {
+        subject: subject.trim(),
+        description: description.trim(),
+        category,
+        priority,
+        attachment: attachment.trim(),
       });
-      await addDoc(collection(db, "supportThreads", ref.id, "messages"), {
-        uid: user.uid, name: displayName, text: meta, createdAt: serverTimestamp(),
-      });
-      createNotification({ targetRoles: ["bureau"], type: "support_new", extra: subject.trim(), link: "/support" });
       setSubject(""); setDescription(""); setAttachment(""); setCategory("other"); setPriority("normal");
       toast.success(t("common.saved"));
-    } catch (err) { console.error(err); toast.error(t("common.error")); }
+    } catch (err) {
+      console.error(err);
+      toast.error(protectedErrorMessage(err, t("common.error")));
+    }
     setSending(false);
   };
 

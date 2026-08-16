@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { updateProfile, sendEmailVerification, sendPasswordResetEmail, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { collection, doc, getDocs, query, setDoc, where, serverTimestamp } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
 import { BadgeCheck, MailWarning, KeyRound, Trash2, Download } from "lucide-react";
-import { auth, db } from "../lib/firebase";
+import { auth, db, functions } from "../lib/firebase";
+import { PASSWORD_MIN_LENGTH, passwordIssues } from "../lib/passwordPolicy";
+import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { gameHasRosters } from "../lib/constants";
@@ -60,7 +63,8 @@ export default function Profile() {
 
   const changePassword = async (e) => {
     e.preventDefault();
-    if (passwordForm.next.length < 8) { toast.error("Le nouveau mot de passe doit contenir au moins 8 caractères."); return; }
+    const issues = passwordIssues(passwordForm.next);
+    if (issues.length > 0) { toast.error(issues[0]); return; }
     if (passwordForm.next !== passwordForm.confirm) { toast.error("Les mots de passe ne correspondent pas."); return; }
     setPasswordBusy(true);
     try {
@@ -87,19 +91,17 @@ export default function Profile() {
   const exportAccountData = async () => {
     setExporting(true);
     try {
-      const supportSnap = await getDocs(query(collection(db, "supportThreads"), where("uid", "==", user.uid)));
-      const recruitSnap = await getDocs(query(collection(db, "recruitThreads"), where("uid", "==", user.uid)));
-      const collectThreads = async (snap, collectionName) => Promise.all(snap.docs.map(async (d) => {
-        const messages = await getDocs(collection(db, collectionName, d.id, "messages"));
-        return { id: d.id, ...toJson(d.data()), messages: messages.docs.map((m) => ({ id: m.id, ...toJson(m.data()) })) };
-      }));
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        account: { uid: user.uid, email: user.email, displayName: user.displayName, emailVerified: user.emailVerified, providers: user.providerData.map((p) => p.providerId) },
-        profile: toJson(profile || {}),
-        supportTickets: await collectThreads(supportSnap, "supportThreads"),
-        applications: await collectThreads(recruitSnap, "recruitThreads"),
-      };
+      // Archive RGPD complète produite côté serveur (Cloud Function) : profil,
+      // notes, messages, tableaux, disponibilités, absences, notifications,
+      // journaux d'activité/audit, newsletter, jetons push…
+      let payload;
+      try {
+        const { data } = await httpsCallable(functions, "exportMyData")();
+        payload = data;
+      } catch (fnErr) {
+        console.error("exportMyData indisponible, repli client", fnErr);
+        payload = await buildClientSideExport();
+      }
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -115,6 +117,25 @@ export default function Profile() {
       toast.error("Export impossible pour le moment.");
     }
     setExporting(false);
+  };
+
+  /** Repli minimal côté client si la Cloud Function n'est pas déployée. */
+  const buildClientSideExport = async () => {
+    const supportSnap = await getDocs(query(collection(db, "supportThreads"), where("uid", "==", user.uid)));
+    const recruitSnap = await getDocs(query(collection(db, "recruitThreads"), where("uid", "==", user.uid)));
+    const collectThreads = async (snap, collectionName) => Promise.all(snap.docs.map(async (d) => {
+      const messages = await getDocs(collection(db, collectionName, d.id, "messages"));
+      return { id: d.id, ...toJson(d.data()), messages: messages.docs.map((m) => ({ id: m.id, ...toJson(m.data()) })) };
+    }));
+    return {
+      format: "elysium-gdpr-export/client-fallback",
+      exportedAt: new Date().toISOString(),
+      note: "Export partiel généré côté client (fonction serveur indisponible). Contactez le support pour une archive complète.",
+      account: { uid: user.uid, email: user.email, displayName: user.displayName, emailVerified: user.emailVerified, providers: user.providerData.map((p) => p.providerId) },
+      profile: toJson(profile || {}),
+      supportTickets: await collectThreads(supportSnap, "supportThreads"),
+      applications: await collectThreads(recruitSnap, "recruitThreads"),
+    };
   };
 
   const deleteAccount = async () => {
@@ -188,7 +209,7 @@ export default function Profile() {
 
         <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-4" data-testid="profile-export-panel">
           <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Exporter mes données</p>
-          <p className="text-xs text-[#c8c8c8] leading-relaxed">Téléchargez un fichier JSON contenant votre profil, vos tickets support et vos candidatures.</p>
+          <p className="text-xs text-[#c8c8c8] leading-relaxed">Téléchargez une archive JSON complète générée côté serveur : profil, tickets support, candidatures, notes, messages, tableaux, disponibilités, absences, notifications et journaux liés à votre compte.</p>
           <button type="button" onClick={exportAccountData} disabled={exporting} data-testid="profile-export-data-btn"
             className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 inline-flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors disabled:opacity-50">
             <Download size={14} aria-hidden="true" /> Exporter en JSON
@@ -206,11 +227,12 @@ export default function Profile() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="profile-new-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Nouveau mot de passe</label>
-                  <input id="profile-new-password" type="password" value={passwordForm.next} onChange={(e) => setPasswordForm((f) => ({ ...f, next: e.target.value }))} required minLength={8} autoComplete="new-password" className={inputCls} data-testid="profile-new-password" />
+                  <input id="profile-new-password" type="password" value={passwordForm.next} onChange={(e) => setPasswordForm((f) => ({ ...f, next: e.target.value }))} required minLength={PASSWORD_MIN_LENGTH} autoComplete="new-password" aria-describedby="profile-password-strength" className={inputCls} data-testid="profile-new-password" />
+                  <PasswordStrengthMeter password={passwordForm.next} id="profile-password-strength" testId="profile-password-strength" />
                 </div>
                 <div>
                   <label htmlFor="profile-confirm-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Confirmer</label>
-                  <input id="profile-confirm-password" type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))} required minLength={8} autoComplete="new-password" className={inputCls} data-testid="profile-confirm-password" />
+                  <input id="profile-confirm-password" type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))} required minLength={PASSWORD_MIN_LENGTH} autoComplete="new-password" className={inputCls} data-testid="profile-confirm-password" />
                 </div>
               </div>
               <div className="flex gap-3 flex-wrap">

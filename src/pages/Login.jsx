@@ -8,6 +8,8 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { auth, db, googleProvider } from "../lib/firebase";
+import { PASSWORD_MIN_LENGTH, passwordIssues } from "../lib/passwordPolicy";
+import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter";
 import { useLang } from "../lib/i18n";
 import { mfaErrorMessage, resolverFromMfaError } from "../lib/mfa";
 
@@ -15,7 +17,7 @@ const errMsg = (code) => {
   const map = {
     "auth/invalid-credential": "Identifiants invalides.",
     "auth/email-already-in-use": "Cet email est déjà utilisé.",
-    "auth/weak-password": "Mot de passe trop faible (6 caractères min).",
+    "auth/weak-password": "Mot de passe trop faible (8 caractères min).",
     "auth/invalid-email": "Email invalide.",
     "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
   };
@@ -56,6 +58,14 @@ export default function Login() {
     setBusy(true);
     try {
       if (mode === "register") {
+        const issues = passwordIssues(password);
+        if (issues.length > 0) {
+          const msg = issues[0];
+          setFormError(msg);
+          toast.error(msg);
+          setBusy(false);
+          return;
+        }
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const name = pseudo.trim() || email.split("@")[0];
         await setDoc(doc(db, "users", cred.user.uid), { displayName: name, email, role: "visitor", game: null }, { merge: true });
@@ -258,15 +268,19 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={mode === "register" ? PASSWORD_MIN_LENGTH : undefined}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               aria-describedby={`${passwordHintId}${formError ? " " + errorId : ""}`}
               data-testid="login-password-input"
               className={inputCls}
             />
-            <p id={passwordHintId} className="form-hint">
-              6 caractères minimum.
-            </p>
+            {mode === "register" ? (
+              <PasswordStrengthMeter password={password} id={passwordHintId} testId="login-password-strength" />
+            ) : (
+              <p id={passwordHintId} className="sr-only">
+                Saisissez votre mot de passe.
+              </p>
+            )}
           </div>
           <button
             type="submit"
