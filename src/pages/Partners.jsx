@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { collection, addDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
+import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart } from "lucide-react";
@@ -70,21 +71,21 @@ export default function Partners() {
     if (isHoneypotFilled(fd.get("website"))) return;
     const limit = checkSessionRateLimit("partner_request", { max: 2, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
-    const data = {
-      name: fd.get("name"),
-      company: fd.get("company"),
-      email: fd.get("email"),
-      budget: fd.get("budget"),
-      message: fd.get("message"),
-      createdAt: serverTimestamp(),
-    };
     try {
-      await addDoc(collection(db, "partner_requests"), data);
+      // Traitement côté serveur : App Check, quota par IP, CAPTCHA adaptatif
+      // et validation des champs dans la Cloud Function.
+      await callProtected("submitPartnerRequest", {
+        name: fd.get("name"),
+        company: fd.get("company"),
+        email: fd.get("email"),
+        budget: fd.get("budget"),
+        message: fd.get("message"),
+      });
       toast.success(t("partners.contact.success"));
       e.target.reset();
     } catch (err) {
       console.error(err);
-      toast.error(t("partners.contact.error"));
+      toast.error(protectedErrorMessage(err, t("partners.contact.error")));
     }
   };
 

@@ -39,11 +39,6 @@ service cloud.firestore {
       return role in ['visitor', 'player', 'manager', 'bureau'];
     }
 
-    function publicWriteThrottleFields() {
-      return request.resource.data.keys().hasOnly(['name', 'company', 'email', 'budget', 'message', 'createdAt'])
-        || request.resource.data.keys().hasOnly(['email', 'confirmed', 'confirmToken', 'lang', 'subscribedAt', 'consentGivenAt']);
-    }
-
     function isShortString(value, max) {
       return value is string && value.size() <= max;
     }
@@ -195,18 +190,21 @@ service cloud.firestore {
     }
 
     // ===== Calendrier communautaire =====
-    // RSVP « je participe » : tout visiteur (connecté ou non) peut mettre à jour
-    // UNIQUEMENT la liste des participants. Le reste de l'événement reste
-    // réservé aux managers. Validation possible sans itération : liste +
-    // taille plafonnée (le langage des règles ne permet pas de typer chaque
-    // élément — la validation fine est faite côté application).
+    // RSVP « je participe » : passe exclusivement par la Cloud Function
+    // transactionnelle `rsvpCommunityEvent` (Admin SDK), qui garantit qu'un
+    // visiteur ne modifie QUE sa propre participation (jeton secret pour les
+    // anonymes, uid pour les connectés). Plus aucune écriture publique directe
+    // du tableau `participants`.
     match /communityEvents/{id} {
       allow read: if true;
       allow create, delete: if isManagerPlus();
-      allow update: if isManagerPlus()
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
-            && request.resource.data.participants is list
-            && request.resource.data.participants.size() <= 500);
+      allow update: if isManagerPlus();
+
+      // Preuves de participation (hash de jeton) écrites par la Function.
+      match /rsvps/{pid} {
+        allow read: if isManagerPlus();
+        allow write: if false;
+      }
     }
 
     // ===== Compétitions (page /competitions) =====
@@ -293,12 +291,9 @@ service cloud.firestore {
     // ===== Support =====
     match /supportThreads/{id} {
       allow read: if isAuth() && (resource.data.uid == request.auth.uid || isBureau());
-      allow create: if isAuth()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'open'
-        && request.resource.data.createdAt == request.time
-        && isShortString(request.resource.data.subject, 140)
-        && isShortString(request.resource.data.meta, 4000);
+      // Création exclusivement via la Cloud Function `submitSupportTicket`
+      // (quotas par compte/IP, CAPTCHA adaptatif, validation serveur).
+      allow create: if false;
       allow update: if isBureau()
         || (isAuth() && resource.data.uid == request.auth.uid
             && request.resource.data.uid == resource.data.uid
@@ -323,40 +318,31 @@ service cloud.firestore {
 
     // ===== Demandes de partenariat =====
     match /partner_requests/{id} {
-      // Public form: field allow-list, mandatory timestamp and length caps to reduce spam/abuse.
-      allow create: if publicWriteThrottleFields()
-        && request.resource.data.createdAt == request.time
-        && isShortString(request.resource.data.name, 120)
-        && isShortString(request.resource.data.company, 160)
-        && isShortString(request.resource.data.email, 180)
-        && isShortString(request.resource.data.message, 3000);
+      // Formulaire public : création exclusivement via la Cloud Function
+      // `submitPartnerRequest` (App Check, quotas IP, CAPTCHA adaptatif,
+      // validation des champs côté serveur). Plus d'écriture directe client.
+      allow create: if false;
       allow read, update, delete: if isBureau();
     }
 
     // ===== Newsletter =====
     match /newsletter/{id} {
       allow read: if isBureau();
-      allow create: if publicWriteThrottleFields()
-        && request.resource.data.confirmed == false
-        && request.resource.data.subscribedAt == request.time
-        && request.resource.data.consentGivenAt == request.time
-        && isShortString(request.resource.data.email, 180)
-        && isShortString(request.resource.data.confirmToken, 160);
-      allow update: if isBureau()
-        || request.resource.data.email == resource.data.email;
+      // Inscription / désinscription exclusivement via les Cloud Functions
+      // `subscribeNewsletter` et `requestNewsletterUnsubscribe` (quotas par IP,
+      // CAPTCHA adaptatif, jeton généré côté serveur, pas d'énumération).
+      allow create: if false;
+      allow update: if isBureau();
       allow delete: if isBureau();
     }
 
     // ===== Recrutement =====
     match /recruitThreads/{id} {
       allow read: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
-      allow create: if isAuth()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.consent == true
-        && request.resource.data.createdAt == request.time
-        && isShortString(request.resource.data.position, 140)
-        && isShortString(request.resource.data.meta, 4000);
+      // Création exclusivement via la Cloud Function `submitRecruitApplication`
+      // (quotas, CAPTCHA adaptatif, validation serveur et parcours de
+      // consentement parental vérifié par email pour les moins de 15 ans).
+      allow create: if false;
       allow update: if isManagerPlus()
         || (isAuth() && resource.data.uid == request.auth.uid
             && request.resource.data.uid == resource.data.uid
@@ -371,6 +357,17 @@ service cloud.firestore {
           && request.resource.data.uid == request.auth.uid
           && isShortString(request.resource.data.text, 4000);
       }
+    }
+
+    // ===== Compteurs de quotas anti-abus (Cloud Functions uniquement) =====
+    match /rateLimits/{id} {
+      allow read, write: if false;
+    }
+
+    // ===== Archives anonymisées (rétention 24 mois, Cloud Functions) =====
+    match /archivedThreads/{id} {
+      allow read: if isBureau();
+      allow write: if false;
     }
   }
 }

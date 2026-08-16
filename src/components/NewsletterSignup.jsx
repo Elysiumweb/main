@@ -1,8 +1,7 @@
 import { useState, useId } from "react";
-import { collection, addDoc, query, where, getDocs, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
-import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
+import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -41,17 +40,12 @@ export const NewsletterSignup = ({ compact = false }) => {
 
     setStatus("loading");
     try {
-      // Create subscription with pending confirmation (double opt-in).
-      // Les doublons sont filtrés côté Cloud Function afin de ne pas exposer
-      // publiquement la collection newsletter en lecture.
-      const confirmToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      await addDoc(collection(db, "newsletter"), {
+      // Inscription via Cloud Function : quota par IP, CAPTCHA adaptatif,
+      // validation serveur et jeton de confirmation généré côté serveur.
+      await callProtected("subscribeNewsletter", {
         email: email.toLowerCase(),
-        confirmed: false,
-        confirmToken,
+        consent: true,
         lang: localStorage.getItem("elysium_lang") || "fr",
-        subscribedAt: serverTimestamp(),
-        consentGivenAt: serverTimestamp(),
       });
 
       setStatus("success");
@@ -61,7 +55,7 @@ export const NewsletterSignup = ({ compact = false }) => {
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setMessage(t("newsletter.error"));
+      setMessage(protectedErrorMessage(err, t("newsletter.error")));
     }
   };
 
@@ -238,25 +232,16 @@ const UnsubscribeForm = () => {
     if (!isValidEmail(email)) return;
     setStatus("loading");
     try {
-      const q = query(collection(db, "newsletter"), where("email", "==", email.toLowerCase()));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        setStatus("error");
-        setMessage(t("newsletter.notFound"));
-        return;
-      }
-      // Delete subscriptions for this email
-      const deletions = [];
-      snap.forEach((d) => {
-        deletions.push(deleteDoc(doc(db, "newsletter", d.id)));
-      });
-      await Promise.all(deletions);
+      // Désinscription via Cloud Function (la collection newsletter n'est ni
+      // lisible ni modifiable publiquement) — réponse identique que l'email
+      // existe ou non, pour éviter l'énumération d'adresses.
+      await callProtected("requestNewsletterUnsubscribe", { email: email.toLowerCase() });
       setStatus("success");
       setMessage(t("newsletter.unsubscribe.success"));
     } catch (err) {
       console.error(err);
       setStatus("error");
-      setMessage(t("newsletter.unsubscribe.error"));
+      setMessage(protectedErrorMessage(err, t("newsletter.unsubscribe.error")));
     }
   };
 

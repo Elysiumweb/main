@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { collection, addDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { useSearchParams } from "react-router-dom";
+import { collection, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import { Briefcase, CalendarX } from "lucide-react";
 import { db } from "../lib/firebase";
@@ -7,25 +8,35 @@ import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { EmptyState } from "../components/States";
-import { createNotification } from "../lib/notify";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
+import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const AGE_RANGES = ["-16", "16-17", "18-24", "25+"];
+/* La tranche « -15 » matérialise le seuil légal français de consentement
+   numérique (15 ans, art. 45 loi Informatique et Libertés) : en dessous, un
+   parcours de consentement parental vérifié par email est obligatoire. */
+const AGE_RANGES = ["-15", "15-17", "18-24", "25+"];
+const MINOR_RANGE = "-15";
 const EMPTY_FORM = { pseudo: "", position: "", ageRange: "", country: "", experience: "", videos: "", availability: "", discord: "" };
+const EMPTY_PARENT = { parentName: "", parentEmail: "" };
 
 export default function Recruitment() {
-  const { user, displayName, canSeeRecruit } = useAuth();
+  const { user, canSeeRecruit } = useAuth();
   const { t } = useLang();
+  const [searchParams] = useSearchParams();
   const [positions, setPositions] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [parent, setParent] = useState(EMPTY_PARENT);
   const [consent, setConsent] = useState(false);
+  const [parentConsent, setParentConsent] = useState(false);
   const [sending, setSending] = useState(false);
   const formRef = useRef(null);
   const applicationStartedRef = useRef(false);
+  const isMinor = form.ageRange === MINOR_RANGE;
+  const parentalStatus = searchParams.get("parental"); // confirmed | invalid (retour du lien email)
   const markApplicationStarted = (source = "form") => {
     if (applicationStartedRef.current) return;
     applicationStartedRef.current = true;
@@ -35,6 +46,7 @@ export default function Recruitment() {
     markApplicationStarted(`field_${k}`);
     setForm((f) => ({ ...f, [k]: e.target.value }));
   };
+  const setParentField = (k) => (e) => setParent((p) => ({ ...p, [k]: e.target.value }));
 
   useEffect(() => {
     return onSnapshot(collection(db, "positions"), (snap) => {
@@ -55,33 +67,49 @@ export default function Recruitment() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     if (isHoneypotFilled(fd.get("website"))) return;
+    // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
+    // est appliquée côté serveur par la Cloud Function.
     const limit = checkSessionRateLimit("recruit_application", { max: 2, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     if (!consent) { toast.error(t("recruit.consentRequired")); return; }
+    if (isMinor) {
+      if (!parent.parentName.trim() || !parent.parentEmail.trim()) {
+        toast.error("Renseignez le nom et l'email du titulaire de l'autorité parentale.");
+        return;
+      }
+      if (!parentConsent) {
+        toast.error("L'accord explicite du titulaire de l'autorité parentale est requis.");
+        return;
+      }
+    }
     setSending(true);
     try {
-      const meta = [
-        `${t("recruit.form.pseudo")}: ${form.pseudo}`,
-        `${t("recruit.form.age")} ${form.ageRange}`,
-        `${t("recruit.form.country")}: ${form.country}`,
-        `${t("recruit.form.experience")} ${form.experience}`,
-        form.videos ? `${t("recruit.form.videos")}: ${form.videos}` : null,
-        `${t("recruit.form.availability")} ${form.availability}`,
-        form.discord ? `${t("recruit.form.discord")}: ${form.discord}` : null,
-      ].filter(Boolean).join("\n");
-      const ref = await addDoc(collection(db, "recruitThreads"), {
-        uid: user.uid, name: displayName, email: user.email || "",
-        ...form, meta, consent: true, status: "pending", createdAt: serverTimestamp(),
+      const result = await callProtected("submitRecruitApplication", {
+        ...form,
+        consent: true,
+        ...(isMinor ? {
+          parentName: parent.parentName.trim(),
+          parentEmail: parent.parentEmail.trim(),
+          parentConsent: true,
+        } : {}),
       });
-      await addDoc(collection(db, "recruitThreads", ref.id, "messages"), {
-        uid: user.uid, name: displayName, text: meta, createdAt: serverTimestamp(),
-      });
-      createNotification({ targetRoles: ["manager", "bureau"], type: "recruit_new", extra: form.position.trim(), link: "/recrutement" });
       trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMITTED, { position: form.position, ageRange: form.ageRange, country: form.country });
-      setForm(EMPTY_FORM); setConsent(false);
+      setForm(EMPTY_FORM); setConsent(false); setParent(EMPTY_PARENT); setParentConsent(false);
       applicationStartedRef.current = false;
-      toast.success(t("recruit.confirmation"));
-    } catch (err) { console.error(err); toast.error(t("common.error")); }
+      if (result?.parentalConsentRequired) {
+        toast.success(
+          result.parentalEmailSent
+            ? "Candidature enregistrée. Un email de confirmation vient d'être envoyé au parent : elle sera examinée après son accord."
+            : "Candidature enregistrée. Elle sera examinée après vérification du consentement parental.",
+          { duration: 9000 },
+        );
+      } else {
+        toast.success(t("recruit.confirmation"));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(protectedErrorMessage(err, t("common.error")));
+    }
     setSending(false);
   };
 
@@ -149,6 +177,16 @@ export default function Recruitment() {
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12" ref={formRef}>
         <div className="lg:col-span-5">
           <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6">{t("recruit.newApp")}</h2>
+          {parentalStatus === "confirmed" && (
+            <div className="mb-6 border border-emerald-300/40 bg-emerald-300/5 p-4" role="status" data-testid="recruit-parental-confirmed">
+              <p className="text-sm text-emerald-300">✅ Consentement parental confirmé. La candidature va être examinée par l'équipe.</p>
+            </div>
+          )}
+          {parentalStatus === "invalid" && (
+            <div className="mb-6 border border-red-300/40 bg-red-300/5 p-4" role="alert" data-testid="recruit-parental-invalid">
+              <p className="text-sm text-red-300">Lien de consentement invalide ou expiré. La candidature concernée a peut-être déjà été confirmée ou supprimée.</p>
+            </div>
+          )}
           {!user ? (
             <LoginPrompt messageKey="recruit.loginRequired" prefix="recruit" />
           ) : (
@@ -165,9 +203,35 @@ export default function Recruitment() {
                 <label htmlFor="recruit-ageRange" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.age")}</label>
                 <select id="recruit-ageRange" value={form.ageRange} onChange={set("ageRange")} required className={inputCls} data-testid="recruit-ageRange-input">
                   <option value="">—</option>
-                  {AGE_RANGES.map((a) => <option key={a} value={a}>{a}</option>)}
+                  {AGE_RANGES.map((a) => <option key={a} value={a}>{a === MINOR_RANGE ? "Moins de 15 ans" : a}</option>)}
                 </select>
               </div>
+              {isMinor && (
+                <div className="border border-[#D8CA82]/40 bg-[#D8CA82]/5 p-4 space-y-4" data-testid="recruit-parental-section">
+                  <p className="text-xs text-[#D8CA82] uppercase tracking-[0.2em] font-display">Consentement parental requis</p>
+                  <p className="text-xs text-[#c8c8c8] leading-relaxed">
+                    Tu as moins de 15 ans : l'accord d'un titulaire de l'autorité parentale est obligatoire (RGPD / loi
+                    Informatique et Libertés). Un email de confirmation lui sera envoyé — ta candidature ne sera examinée
+                    qu'après sa validation. Sans confirmation sous 30 jours, elle sera automatiquement supprimée.
+                  </p>
+                  <div>
+                    <label htmlFor="recruit-parentName" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Nom et prénom du parent / tuteur</label>
+                    <input id="recruit-parentName" type="text" value={parent.parentName} onChange={setParentField("parentName")} required={isMinor} className={inputCls} data-testid="recruit-parentName-input" />
+                  </div>
+                  <div>
+                    <label htmlFor="recruit-parentEmail" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Email du parent / tuteur</label>
+                    <input id="recruit-parentEmail" type="email" value={parent.parentEmail} onChange={setParentField("parentEmail")} required={isMinor} placeholder="parent@exemple.fr" className={inputCls} data-testid="recruit-parentEmail-input" />
+                  </div>
+                  <label htmlFor="recruit-parent-consent" className="flex items-start gap-3 cursor-pointer" data-testid="recruit-parent-consent-label">
+                    <input id="recruit-parent-consent" type="checkbox" checked={parentConsent} onChange={(e) => setParentConsent(e.target.checked)} data-testid="recruit-parent-consent-checkbox"
+                      className="mt-1 accent-[#D8CA82]" />
+                    <span className="text-xs text-[#c8c8c8] leading-relaxed">
+                      Je certifie que le titulaire de l'autorité parentale indiqué ci-dessus est informé de cette candidature
+                      et recevra un email pour confirmer son accord au traitement de mes données.
+                    </span>
+                  </label>
+                </div>
+              )}
               {fields.slice(2).map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>

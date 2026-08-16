@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot, updateDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import {
   CalendarDays, Download, ExternalLink, Trophy, Dumbbell, Radio, PartyPopper,
   List, Grid3X3, ChevronLeft, ChevronRight, Check, UserPlus, UserCheck, Link2,
 } from "lucide-react";
 import { db } from "../lib/firebase";
+import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { useLang } from "../lib/i18n";
 import { useAuth } from "../context/AuthContext";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
@@ -17,15 +18,27 @@ const TYPE_ICONS = { tournament: Trophy, training: Dumbbell, stream: Radio, comm
 const TYPE_COLORS = { tournament: "#D8CA82", training: "#4FC3F7", stream: "#E53935", community: "#81C784" };
 const TYPES = ["tournament", "training", "stream", "community"];
 
-const getAnonId = () => {
+/* Identifiant anonyme HISTORIQUE : conservé uniquement pour reconnaître les
+   participations enregistrées avant le passage au RSVP transactionnel. */
+const getLegacyAnonId = () => {
+  try { return localStorage.getItem("elysium_anon_id") || ""; } catch { return ""; }
+};
+
+/* Reçu de participation anonyme émis par la Cloud Function `rsvpCommunityEvent` :
+   { participantId, token }. Le serveur ne stocke que le hash du jeton, si bien
+   qu'un visiteur ne peut retirer QUE sa propre participation. */
+const rsvpReceiptKey = (eventId) => `elysium_rsvp_${eventId}`;
+const readRsvpReceipt = (eventId) => {
   try {
-    let id = localStorage.getItem("elysium_anon_id");
-    if (!id) {
-      id = `anon_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-      localStorage.setItem("elysium_anon_id", id);
-    }
-    return id;
-  } catch { return `anon_${Math.random().toString(36).slice(2, 8)}`; }
+    const raw = localStorage.getItem(rsvpReceiptKey(eventId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+const writeRsvpReceipt = (eventId, receipt) => {
+  try {
+    if (receipt) localStorage.setItem(rsvpReceiptKey(eventId), JSON.stringify(receipt));
+    else localStorage.removeItem(rsvpReceiptKey(eventId));
+  } catch { /* stockage indisponible */ }
 };
 
 /* ---------- Vue mois ---------- */
@@ -129,20 +142,40 @@ const EventRow = ({ ev, dim, user, displayName }) => {
   const [askName, setAskName] = useState(false);
 
   const participants = Array.isArray(ev.participants) ? ev.participants : [];
-  const anonId = getAnonId();
-  const myId = user ? user.uid : anonId;
-  const isIn = participants.some((p) => p.id === myId);
+  const receipt = user ? null : readRsvpReceipt(ev.id);
+  const legacyAnonId = user ? "" : getLegacyAnonId();
+  const myId = user ? user.uid : (receipt?.participantId || legacyAnonId);
+  const isIn = Boolean(myId) && participants.some((p) => p.id === myId);
 
+  /* RSVP via Cloud Function transactionnelle : le serveur ne modifie que la
+     participation du demandeur (uid pour les connectés, jeton secret pour les
+     anonymes) — impossible d'écraser la liste des autres participants. */
   const toggleRsvp = async (name) => {
     if (dim) return;
     setPending(true);
     try {
-      const next = isIn
-        ? participants.filter((p) => p.id !== myId)
-        : [...participants, { id: myId, name: name || (user ? displayName : "Anonyme") }];
-      await updateDoc(doc(db, "communityEvents", ev.id), { participants: next });
+      if (isIn) {
+        await callProtected("rsvpCommunityEvent", {
+          eventId: ev.id,
+          action: "leave",
+          ...(user ? {} : { participantId: myId, token: receipt?.token || "" }),
+        });
+        if (!user) writeRsvpReceipt(ev.id, null);
+      } else {
+        const result = await callProtected("rsvpCommunityEvent", {
+          eventId: ev.id,
+          action: "join",
+          name: name || (user ? displayName : "Anonyme"),
+        });
+        if (!user && result?.participantId) {
+          writeRsvpReceipt(ev.id, { participantId: result.participantId, token: result.token || "" });
+        }
+      }
       toast.success(t("common.saved"));
-    } catch (err) { console.error(err); toast.error(t("common.error")); }
+    } catch (err) {
+      console.error(err);
+      toast.error(protectedErrorMessage(err, t("common.error")));
+    }
     setPending(false);
   };
 
