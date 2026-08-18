@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, deleteField, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { FileUp, Search, Shield, Trophy, Users } from "lucide-react";
+import { FileUp, Search, Shield, Trophy, Users, LayoutDashboard } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
+import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName, MATCH_FORMATS } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRoster } from "../components/admin/AdminRoster";
@@ -16,6 +16,8 @@ import { AdminEvents } from "../components/admin/AdminEvents";
 import { AdminCompetitions } from "../components/admin/AdminCompetitions";
 import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
+import { AdminPartners } from "../components/admin/AdminPartners";
+import { AdminDashboard } from "../components/admin/AdminDashboard";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
 import { MfaTotpPanel } from "../components/MfaTotpPanel";
@@ -34,12 +36,11 @@ import {
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", players: [] };
+const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", competitionId: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", vodUrl: "", bracketUrl: "", reportArticleId: "", format: "BO3", maps: [], players: [], substitutions: [], notes: "" };
 const PAGE_SIZE = 12;
 
 const sanitizeMatchForClone = (m) => {
   const { id, createdAt, updatedAt, ...rest } = m || {};
-  ["maps", "mvp", "vodUrl", "players"].forEach((key) => { delete rest[key]; });
   return JSON.parse(JSON.stringify(rest));
 };
 const parseCsvLine = (line) => {
@@ -78,6 +79,16 @@ const sanitizeMatchPlayers = (players = []) => (Array.isArray(players) ? players
   }))
   .filter((p) => p.playerId || p.pseudo);
 
+const sanitizeMaps = (maps = []) => (Array.isArray(maps) ? maps : [])
+  .map((m) => ({
+    name: String(m.name || m.map || "").trim(),
+    map: String(m.map || m.mode || "").trim(),
+    mode: String(m.mode || "").trim(),
+    scoreUs: m.scoreUs ?? "",
+    scoreThem: m.scoreThem ?? "",
+  }))
+  .filter((m) => m.name || m.map || m.scoreUs !== "" || m.scoreThem !== "");
+
 const normalizeImportedMatch = (raw) => ({
   opponentName: raw.opponentName || raw.opponent || raw.adversaire || "",
   opponentLogo: raw.opponentLogo || raw.logo || "",
@@ -85,6 +96,7 @@ const normalizeImportedMatch = (raw) => ({
   scoreThem: raw.scoreThem ?? raw.opponentScore ?? "",
   date: raw.date || "",
   competition: raw.competition || "",
+  competitionId: raw.competitionId || "",
   game: raw.game || "EVA",
   roster: raw.roster || null,
   status: raw.status || "upcoming",
@@ -92,18 +104,25 @@ const normalizeImportedMatch = (raw) => ({
   timezone: raw.timezone || "Europe/Paris",
   platform: raw.platform || "",
   watchUrl: raw.watchUrl || raw.stream || "",
+  vodUrl: raw.vodUrl || raw.replayUrl || "",
+  bracketUrl: raw.bracketUrl || "",
+  reportArticleId: raw.reportArticleId || raw.articleId || "",
+  format: raw.format || "BO3",
+  maps: sanitizeMaps(raw.maps || raw.manches || []),
   players: sanitizeMatchPlayers(raw.players),
 });
 
 export default function Admin() {
   const { user, displayName, isOfficial, role, loading, requiresMfa, mfaEnrolled } = useAuth();
   const { t } = useLang();
-  const [tab, setTab] = useState("users");
+  const [tab, setTab] = useState("dashboard");
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [form, setForm] = useState(EMPTY_MATCH);
   const [editMatchId, setEditMatchId] = useState(null);
   const [rosterMembers, setRosterMembers] = useState([]);
+  const [competitions, setCompetitions] = useState([]);
+  const [articles, setArticles] = useState([]);
   const [selectedRosterPlayer, setSelectedRosterPlayer] = useState("");
   const [userQuery, setUserQuery] = useState("");
   const [userPage, setUserPage] = useState(1);
@@ -131,28 +150,31 @@ export default function Admin() {
   const isBureau = isOfficial || role === "bureau";
   const isStaff = isBureau || role === "manager";
   const allowed = {
+    dashboard: isStaff,
     users: isOfficial, matches: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
-    competitions: isBureau, campaigns: isBureau, partners: isBureau,
+    competitions: isBureau, campaigns: isBureau, partners: isBureau, partnerRequests: isBureau,
     newsletter: isBureau, audit: isBureau,
   };
-  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events", "competitions", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
+  const tabs = ["dashboard", "users", "matches", "roster", "articles", "media", "positions", "events", "competitions", "campaigns", "partners", "partnerRequests", "newsletter", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
   }, [role, isOfficial]); // eslint-disable-line
 
   useEffect(() => {
-    if (!isOfficial) return;
-    const u1 = onSnapshot(collection(db, "users"), (s) => setUsers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    if (!isStaff) return;
+    const u1 = isOfficial ? onSnapshot(collection(db, "users"), (s) => setUsers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error) : () => {};
     const u2 = onSnapshot(collection(db, "matches"), (s) => {
       const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, console.error);
     const u3 = onSnapshot(collection(db, "roster"), (s) => setRosterMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
-    return () => { u1(); u2(); u3(); };
-  }, [isOfficial]);
+    const u4 = onSnapshot(collection(db, "competitions"), (s) => setCompetitions(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    const u5 = onSnapshot(collection(db, "articles"), (s) => setArticles(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    return () => { u1(); u2(); u3(); u4(); u5(); };
+  }, [isOfficial, isStaff]);
 
   const filteredUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
@@ -277,6 +299,14 @@ export default function Admin() {
     });
   };
 
+  const addMap = () => setForm((f) => ({ ...f, maps: [...(f.maps || []), { name: "", map: "", mode: "", scoreUs: "", scoreThem: "" }] }));
+  const updateMap = (idx, key, val) => setForm((f) => {
+    const next = [...(f.maps || [])];
+    next[idx] = { ...next[idx], [key]: val };
+    return { ...f, maps: next };
+  });
+  const removeMap = (idx) => setForm((f) => ({ ...f, maps: (f.maps || []).filter((_, i) => i !== idx) }));
+
   const addMatch = async (e) => {
     e.preventDefault();
     const rosterOptions = ROSTERS[form.game] || [];
@@ -285,7 +315,7 @@ export default function Admin() {
       toast.error(t("admin.match.rosterRequired"));
       return;
     }
-    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl)) {
+    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl) || !isUrl(form.vodUrl) || !isUrl(form.bracketUrl)) {
       toast.error("URL invalide (doit commencer par http:// ou https://)");
       return;
     }
@@ -294,13 +324,11 @@ export default function Admin() {
         ...form,
         roster: rosterOptions.length > 0 ? roster : null,
         players: sanitizeMatchPlayers(form.players),
+        maps: sanitizeMaps(form.maps),
       };
       if (editMatchId) {
         await updateDoc(doc(db, "matches", editMatchId), {
           ...matchData,
-          maps: deleteField(),
-          mvp: deleteField(),
-          vodUrl: deleteField(),
           updatedAt: serverTimestamp(),
         });
         await logAdminAction({
@@ -327,10 +355,14 @@ export default function Admin() {
     setEditMatchId(m.id);
     setForm({
       opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
-      date: m.date || "", competition: m.competition || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
-      time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
+      date: m.date || "", competition: m.competition || "", competitionId: m.competitionId || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
+      time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "", vodUrl: m.vodUrl || m.replayUrl || "", bracketUrl: m.bracketUrl || "", reportArticleId: m.reportArticleId || m.articleId || "", format: m.format || "BO3",
+      maps: sanitizeMaps(m.maps || m.manches || []),
       players: sanitizeMatchPlayers(m.players),
+      substitutions: Array.isArray(m.substitutions) ? m.substitutions : [],
+      notes: m.notes || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const opponents = [...new Map(matches.filter((m) => m.opponentName).map((m) => [m.opponentName, m])).values()];
@@ -385,10 +417,6 @@ export default function Admin() {
         status: "upcoming",
         scoreUs: "",
         scoreThem: "",
-        maps: deleteField(),
-        mvp: deleteField(),
-        vodUrl: deleteField(),
-        players: deleteField(),
         updatedAt: serverTimestamp(),
       });
       await logAdminAction({
@@ -445,6 +473,9 @@ export default function Admin() {
             </button>
           ))}
         </div>
+
+        {tab === "dashboard" && <AdminDashboard />}
+
         {tab === "users" && (
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -455,13 +486,7 @@ export default function Admin() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <label className="relative w-full sm:max-w-md">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
-              <input
-                value={userQuery}
-                onChange={(e) => setUserQuery(e.target.value)}
-                placeholder={t("admin.search.users")}
-                className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
-                data-testid="admin-users-search"
-              />
+              <input value={userQuery} onChange={(e) => setUserQuery(e.target.value)} placeholder={t("admin.search.users")} className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" data-testid="admin-users-search" />
             </label>
             <p className="text-xs text-[#f7f7f7]/40">{filteredUsers.length} résultat(s)</p>
           </div>
@@ -479,37 +504,11 @@ export default function Admin() {
               <tbody>
                 {pagedUsers.map((u) => (
                   <tr key={u.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-user-row-${u.id}`}>
-                    <td className="px-4 py-3 font-semibold text-[#f7f7f7]">
-                      {u.displayName} {u.id === OFFICIAL_UID && <span className="text-[10px] text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
-                    </td>
+                    <td className="px-4 py-3 font-semibold text-[#f7f7f7]">{u.displayName} {u.id === OFFICIAL_UID && <span className="text-[10px] text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}</td>
                     <td className="px-4 py-3 text-[#f7f7f7]/50">{u.email}</td>
-                    <td className="px-4 py-3">
-                      <select value={u.role || "visitor"} onChange={(e) => setRole(u.id, e.target.value)} disabled={u.id === OFFICIAL_UID}
-                        data-testid={`admin-role-select-${u.id}`}
-                        className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
-                        {ROLES.map((r) => <option key={r} value={r}>{t(`admin.role.${r}`)}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      <select value={u.game || "none"} onChange={(e) => setGame(u.id, e.target.value)}
-                        data-testid={`admin-game-select-${u.id}`}
-                        className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
-                        <option value="none">—</option>
-                        {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-4 py-3">
-                      {(ROSTERS[u.game] || []).length > 0 ? (
-                        <select value={u.roster || "none"} onChange={(e) => setRoster(u.id, e.target.value)}
-                          data-testid={`admin-roster-select-${u.id}`}
-                          className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
-                          <option value="none">{t("admin.roster.none")}</option>
-                          {(ROSTERS[u.game] || []).map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
-                        </select>
-                      ) : (
-                        <span className="text-xs text-[#f7f7f7]/30">—</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3"><select value={u.role || "visitor"} onChange={(e) => setRole(u.id, e.target.value)} disabled={u.id === OFFICIAL_UID} data-testid={`admin-role-select-${u.id}`} className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">{ROLES.map((r) => <option key={r} value={r}>{t(`admin.role.${r}`)}</option>)}</select></td>
+                    <td className="px-4 py-3"><select value={u.game || "none"} onChange={(e) => setGame(u.id, e.target.value)} data-testid={`admin-game-select-${u.id}`} className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"><option value="none">—</option>{GAMES.map((g) => <option key={g} value={g}>{g}</option>)}</select></td>
+                    <td className="px-4 py-3">{(ROSTERS[u.game] || []).length > 0 ? <select value={u.roster || "none"} onChange={(e) => setRoster(u.id, e.target.value)} data-testid={`admin-roster-select-${u.id}`} className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"><option value="none">{t("admin.roster.none")}</option>{(ROSTERS[u.game] || []).map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}</select> : <span className="text-xs text-[#f7f7f7]/30">—</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -517,11 +516,9 @@ export default function Admin() {
           </div>
           {filteredUsers.length > PAGE_SIZE && (
             <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-users-pagination">
-              <button onClick={() => setUserPage((p) => Math.max(1, p - 1))} disabled={userPage <= 1}
-                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
+              <button onClick={() => setUserPage((p) => Math.max(1, p - 1))} disabled={userPage <= 1} className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
               <span className="text-xs text-[#f7f7f7]/40">{t("admin.pagination.page")} {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
-              <button onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))} disabled={userPage >= userTotalPages}
-                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
+              <button onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))} disabled={userPage >= userTotalPages} className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
             </div>
           )}
         </div>
@@ -537,29 +534,22 @@ export default function Admin() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
             <label className="relative w-full lg:max-w-md">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
-              <input
-                value={matchQuery}
-                onChange={(e) => setMatchQuery(e.target.value)}
-                placeholder={t("admin.search.matches")}
-                className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
-                data-testid="admin-matches-search"
-              />
+              <input value={matchQuery} onChange={(e) => setMatchQuery(e.target.value)} placeholder={t("admin.search.matches")} className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" data-testid="admin-matches-search" />
             </label>
             <div className="flex gap-2 flex-wrap">
               <input ref={importInputRef} type="file" accept=".csv,.json,application/json,text/csv" onChange={importMatches} className="sr-only" data-testid="admin-match-import-input" />
-              <button type="button" onClick={() => importInputRef.current?.click()}
-                className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10" data-testid="admin-match-import-btn">
-                <FileUp size={14} /> {t("admin.import.button")}
-              </button>
+              <button type="button" onClick={() => importInputRef.current?.click()} className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10" data-testid="admin-match-import-btn"><FileUp size={14} /> {t("admin.import.button")}</button>
             </div>
           </div>
           <div className="grid lg:grid-cols-12 gap-10">
             <form onSubmit={addMatch} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-match-form">
+              <div className="flex items-center justify-between">
+                <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{editMatchId ? t("admin.edit") : t("admin.match.add")}</p>
+                {editMatchId && <button type="button" onClick={() => { setEditMatchId(null); setForm(EMPTY_MATCH); }} className="text-xs text-[#f7f7f7]/50 hover:text-[#D8CA82]">Annuler édition</button>}
+              </div>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("common.game")}</label>
-                <select value={form.game} onChange={onMatchGameChange} className={inputCls} data-testid="admin-match-game">
-                  {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
+                <select value={form.game} onChange={onMatchGameChange} className={inputCls} data-testid="admin-match-game">{GAMES.map((g) => <option key={g} value={g}>{g}</option>)}</select>
               </div>
               {matchRosters.length > 0 && (
                 <div>
@@ -568,164 +558,107 @@ export default function Admin() {
                     <option value="">{t("admin.roster.none")}</option>
                     {matchRosters.map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
                   </select>
-                  <p className="text-[11px] text-[#f7f7f7]/40 mt-2" data-testid="admin-match-roster-preview">
-                    {t("admin.match.rosterPreview")} <span className="text-[#D8CA82]">{getElysiumTeamName(form.roster)}</span>
-                  </p>
+                  <p className="text-[11px] text-[#f7f7f7]/40 mt-2" data-testid="admin-match-roster-preview">{t("admin.match.rosterPreview")} <span className="text-[#D8CA82]">{getElysiumTeamName(form.roster)}</span></p>
                 </div>
               )}
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.opponent")}</label>
                 <input value={form.opponentName} onChange={onOpponentChange} required list="admin-opponents" className={inputCls} data-testid="admin-match-opponent" />
-                <datalist id="admin-opponents">
-                  {opponents.map((o) => <option key={o.opponentName} value={o.opponentName} />)}
-                </datalist>
+                <datalist id="admin-opponents">{opponents.map((o) => <option key={o.opponentName} value={o.opponentName} />)}</datalist>
               </div>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.logo")}</label>
                 <input value={form.opponentLogo} onChange={set("opponentLogo")} placeholder="https://..." className={inputCls} data-testid="admin-match-logo" />
-                {form.opponentLogo && /^https?:\/\//.test(form.opponentLogo) && (
-                  <img src={form.opponentLogo} alt="" className="h-10 mt-2 object-contain border border-white/10 p-1" onError={(e) => { e.target.style.display = "none"; }} data-testid="admin-match-logo-preview" />
-                )}
+                {form.opponentLogo && /^https?:\/\//.test(form.opponentLogo) && <img src={form.opponentLogo} alt="" className="h-10 mt-2 object-contain border border-white/10 p-1" onError={(e) => { e.target.style.display = "none"; }} data-testid="admin-match-logo-preview" />}
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreUs")}</label>
-                  <input type="number" min="0" value={form.scoreUs} onChange={set("scoreUs")} required={form.status === "finished"} className={inputCls} data-testid="admin-match-score-us" />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2 grid grid-cols-2 gap-4">
+                  <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreUs")}</label><input type="number" min="0" value={form.scoreUs} onChange={set("scoreUs")} required={form.status === "finished"} className={inputCls} data-testid="admin-match-score-us" /></div>
+                  <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreThem")}</label><input type="number" min="0" value={form.scoreThem} onChange={set("scoreThem")} required={form.status === "finished"} className={inputCls} data-testid="admin-match-score-them" /></div>
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreThem")}</label>
-                  <input type="number" min="0" value={form.scoreThem} onChange={set("scoreThem")} required={form.status === "finished"} className={inputCls} data-testid="admin-match-score-them" />
+                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Format</label>
+                  <select value={form.format} onChange={set("format")} className={inputCls} data-testid="admin-match-format">{MATCH_FORMATS.map((f) => <option key={f} value={f}>{f}</option>)}</select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.date")}</label>
-                  <input type="date" value={form.date} onChange={set("date")} required className={inputCls} data-testid="admin-match-date" />
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.competition")}</label>
-                  <input value={form.competition} onChange={set("competition")} className={inputCls} data-testid="admin-match-competition" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.status")}</label>
-                  <select value={form.status} onChange={set("status")} className={inputCls} data-testid="admin-match-status">
-                    <option value="finished">{t("admin.match.finished")}</option>
-                    <option value="upcoming">{t("admin.match.upcoming")}</option>
-                    <option value="live">{t("admin.match.live")}</option>
-                  </select>
-                  {form.status === "live" && <p className="text-[11px] text-[#f7f7f7]/40 mt-1">{t("admin.match.scoreHint")}</p>}
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.time")}</label>
-                  <input type="time" value={form.time} onChange={set("time")} className={inputCls} data-testid="admin-match-time" />
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.timezone")}</label>
-                  <input value={form.timezone} onChange={set("timezone")} className={inputCls} data-testid="admin-match-timezone" />
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.platform")}</label>
-                  <input value={form.platform} onChange={set("platform")} placeholder="PC / Salle EVA..." className={inputCls} data-testid="admin-match-platform" />
-                </div>
-              </div>
-              {(form.status === "upcoming" || form.status === "live") && (
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.watch")}</label>
-                  <input value={form.watchUrl} onChange={set("watchUrl")} placeholder="https://twitch.tv/..." className={inputCls} data-testid="admin-match-watch" />
-                  {form.status === "live" && form.watchUrl && (
-                    <p className="text-[11px] text-emerald-300/80 mt-1" data-testid="admin-match-live-hint">
-                      ✓ {t("results.watchLive")} — le lien sera mis en avant (badge rouge).
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="border-t border-white/10 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
-                <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">
-                    {t("admin.match.players")}
-                  </label>
-                  <p className="text-[11px] text-[#f7f7f7]/40 mt-1">
-                    {t("admin.match.playersHint")}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedRosterPlayer}
-                    onChange={(e) => setSelectedRosterPlayer(e.target.value)}
-                    className={inputCls}
-                    data-testid="admin-match-player-select"
-                  >
-                    <option value="">{t("admin.match.selectPlayer")}</option>
-                    {availableRosterPlayers.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.pseudo} ({m.game || "EVA"}{m.roster ? ` · ${m.roster}` : ""})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={addPlayerToMatch}
-                    disabled={!selectedRosterPlayer}
-                    data-testid="admin-match-add-player-btn"
-                    className="bg-[#D8CA82]/20 border border-[#D8CA82] text-[#D8CA82] px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50 hover:bg-[#D8CA82] hover:text-[#111111] transition-colors whitespace-nowrap"
-                  >
-                    +
-                  </button>
-                </div>
-                {(form.players || []).length > 0 && (
-                  <div className="flex flex-wrap gap-2" data-testid="admin-match-players-list">
-                    {(form.players || []).map((p, pIndex) => (
-                      <span
-                        key={p.playerId || `${p.pseudo}-${pIndex}`}
-                        className="inline-flex items-center gap-2 border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]"
-                        data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}
-                      >
-                        {p.pseudo || "Joueur"}
-                        <button
-                          type="button"
-                          onClick={() => removePlayerFromMatch(pIndex)}
-                          className="text-red-300/80 hover:text-red-300"
-                          aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              <button type="submit" data-testid="admin-match-submit"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
-                {t("admin.match.add")}
-              </button>
+              {/* Maps / manches */}
+              <div className="border border-white/10 p-3 space-y-3" data-testid="admin-match-maps">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82]">Détail par manche / carte</label>
+                  <button type="button" onClick={addMap} className="text-[11px] uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-2 py-1 hover:bg-[#D8CA82]/10">+ Manche</button>
+                </div>
+                {(form.maps || []).length === 0 && <p className="text-[11px] text-[#f7f7f7]/30">Format {form.format} : ajoutez les cartes/manches une par une (ex: Bind 13-7)</p>}
+                {(form.maps || []).map((m, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-end border border-white/5 p-2 bg-[#111111]">
+                    <div className="col-span-5"><input value={m.name} onChange={(e) => updateMap(idx, "name", e.target.value)} placeholder="Carte / Manche" className={inputCls} data-testid={`admin-match-map-name-${idx}`} /></div>
+                    <div className="col-span-3"><input value={m.mode} onChange={(e) => updateMap(idx, "mode", e.target.value)} placeholder="Mode" className={inputCls} /></div>
+                    <div className="col-span-2"><input value={m.scoreUs} onChange={(e) => updateMap(idx, "scoreUs", e.target.value)} placeholder="Ely" className={inputCls} /></div>
+                    <div className="col-span-1"><input value={m.scoreThem} onChange={(e) => updateMap(idx, "scoreThem", e.target.value)} placeholder="Adv" className={inputCls} /></div>
+                    <div className="col-span-1"><button type="button" onClick={() => removeMap(idx)} className="text-red-300 text-xs">×</button></div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.date")}</label><input type="date" value={form.date} onChange={set("date")} required className={inputCls} data-testid="admin-match-date" /></div>
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.competition")}</label><input value={form.competition} onChange={set("competition")} className={inputCls} data-testid="admin-match-competition" /></div>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Compétition liée (ID)</label>
+                <select value={form.competitionId} onChange={set("competitionId")} className={inputCls} data-testid="admin-match-competitionId">
+                  <option value="">— Aucune (texte libre ci-dessus) —</option>
+                  {competitions.map((c) => <option key={c.id} value={c.id}>{c.name} {c.season ? `(${c.season})` : ""} — {c.game || ""}</option>)}
+                </select>
+                <p className="text-[11px] text-[#f7f7f7]/30 mt-1">Relie le match à la fiche compétition pour la progression auto & la page détail.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.status")}</label><select value={form.status} onChange={set("status")} className={inputCls} data-testid="admin-match-status"><option value="finished">{t("admin.match.finished")}</option><option value="upcoming">{t("admin.match.upcoming")}</option><option value="live">{t("admin.match.live")}</option><option value="postponed">Reporté</option><option value="cancelled">Annulé</option></select>{form.status === "live" && <p className="text-[11px] text-[#f7f7f7]/40 mt-1">{t("admin.match.scoreHint")}</p>}</div>
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.time")}</label><input type="time" value={form.time} onChange={set("time")} className={inputCls} data-testid="admin-match-time" /></div>
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.timezone")}</label><input value={form.timezone} onChange={set("timezone")} className={inputCls} data-testid="admin-match-timezone" /></div>
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.platform")}</label><input value={form.platform} onChange={set("platform")} placeholder="PC / Salle EVA..." className={inputCls} data-testid="admin-match-platform" /></div>
+              </div>
+              {(form.status === "upcoming" || form.status === "live") && (
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.watch")}</label><input value={form.watchUrl} onChange={set("watchUrl")} placeholder="https://twitch.tv/..." className={inputCls} data-testid="admin-match-watch" />{form.status === "live" && form.watchUrl && <p className="text-[11px] text-emerald-300/80 mt-1" data-testid="admin-match-live-hint">✓ {t("results.watchLive")} — le lien sera mis en avant (badge rouge).</p>}</div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">VOD / Replay (URL)</label><input value={form.vodUrl} onChange={set("vodUrl")} placeholder="https://youtube.com/..." className={inputCls} data-testid="admin-match-vod" /></div>
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Bracket (URL)</label><input value={form.bracketUrl} onChange={set("bracketUrl")} placeholder="https://..." className={inputCls} data-testid="admin-match-bracket" /></div>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Compte rendu — article lié</label>
+                <select value={form.reportArticleId} onChange={set("reportArticleId")} className={inputCls} data-testid="admin-match-report">
+                  <option value="">— Aucun —</option>
+                  {articles.filter((a) => a.status === "published").map((a) => <option key={a.id} value={a.id}>{a.title?.slice(0,60)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Notes / contexte</label>
+                <textarea value={form.notes} onChange={set("notes")} rows={2} className={inputCls} placeholder="Infos complémentaires, contexte, arbitrage..." data-testid="admin-match-notes" />
+              </div>
+              <div className="border-t border-white/10 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
+                <div><label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">{t("admin.match.players")}</label><p className="text-[11px] text-[#f7f7f7]/40 mt-1">{t("admin.match.playersHint")}</p></div>
+                <div className="flex gap-2">
+                  <select value={selectedRosterPlayer} onChange={(e) => setSelectedRosterPlayer(e.target.value)} className={inputCls} data-testid="admin-match-player-select"><option value="">{t("admin.match.selectPlayer")}</option>{availableRosterPlayers.map((m) => <option key={m.id} value={m.id}>{m.pseudo} ({m.game || "EVA"}{m.roster ? ` · ${m.roster}` : ""})</option>)}</select>
+                  <button type="button" onClick={addPlayerToMatch} disabled={!selectedRosterPlayer} data-testid="admin-match-add-player-btn" className="bg-[#D8CA82]/20 border border-[#D8CA82] text-[#D8CA82] px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50 hover:bg-[#D8CA82] hover:text-[#111111] transition-colors whitespace-nowrap">+</button>
+                </div>
+                {(form.players || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2" data-testid="admin-match-players-list">{(form.players || []).map((p, pIndex) => <span key={p.playerId || `${p.pseudo}-${pIndex}`} className="inline-flex items-center gap-2 border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}>{p.pseudo || "Joueur"}<button type="button" onClick={() => removePlayerFromMatch(pIndex)} className="text-red-300/80 hover:text-red-300" aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}>×</button></span>)}</div>
+                )}
+              </div>
+              <button type="submit" data-testid="admin-match-submit" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">{editMatchId ? "Mettre à jour" : t("admin.match.add")}</button>
             </form>
             <div className="lg:col-span-7">
-              {filteredMatches.length === 0 ? (
-                <p className="text-[#f7f7f7]/40" data-testid="admin-matches-empty">{t("results.empty")}</p>
-              ) : (
+              {filteredMatches.length === 0 ? <p className="text-[#f7f7f7]/40" data-testid="admin-matches-empty">{t("results.empty")}</p> : (
                 <>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {pagedMatches.map((m) => (
-                      <MatchCard
-                        key={m.id}
-                        match={m}
-                        onDelete={(match) => setConfirmMatch(match)}
-                        onEdit={editMatch}
-                        onDuplicate={duplicateMatch}
-                        onMarkUpcoming={markMatchUpcoming}
-                      />
-                    ))}
+                    {pagedMatches.map((m) => <MatchCard key={m.id} match={m} onDelete={(match) => setConfirmMatch(match)} onEdit={editMatch} onDuplicate={duplicateMatch} onMarkUpcoming={markMatchUpcoming} />)}
                   </div>
                   {filteredMatches.length > PAGE_SIZE && (
                     <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-matches-pagination">
-                      <button onClick={() => setMatchPage((p) => Math.max(1, p - 1))} disabled={matchPage <= 1}
-                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
+                      <button onClick={() => setMatchPage((p) => Math.max(1, p - 1))} disabled={matchPage <= 1} className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
                       <span className="text-xs text-[#f7f7f7]/40">{t("admin.pagination.page")} {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
-                      <button onClick={() => setMatchPage((p) => Math.min(matchTotalPages, p + 1))} disabled={matchPage >= matchTotalPages}
-                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
+                      <button onClick={() => setMatchPage((p) => Math.min(matchTotalPages, p + 1))} disabled={matchPage >= matchTotalPages} className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
                     </div>
                   )}
                 </>
@@ -742,7 +675,8 @@ export default function Admin() {
         {tab === "events" && <AdminEvents />}
         {tab === "competitions" && <AdminCompetitions />}
         {tab === "campaigns" && <AdminCampaigns />}
-        {tab === "partners" && <AdminPartnerRequests />}
+        {tab === "partners" && <AdminPartners />}
+        {tab === "partnerRequests" && <AdminPartnerRequests />}
         {tab === "newsletter" && <AdminNewsletter />}
         {tab === "audit" && <AdminAudit />}
       </section>
@@ -751,18 +685,11 @@ export default function Admin() {
         <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">{t("admin.match.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
-              {t("admin.match.deleteDesc")} ({confirmMatch?.opponentName || "Adversaire"})
-            </AlertDialogDescription>
+            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">{t("admin.match.deleteDesc")} ({confirmMatch?.opponentName || "Adversaire"})</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:space-x-0">
             <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => { const target = confirmMatch; setConfirmMatch(null); delMatch(target); }}
-              className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => { const target = confirmMatch; setConfirmMatch(null); delMatch(target); }} className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none">{t("common.delete")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -37,6 +37,8 @@ const ArticleDetail = lazy(() => import("@/pages/ArticleDetail"));
 const MediaGallery = lazy(() => import("@/pages/MediaGallery"));
 const CommunityCalendar = lazy(() => import("@/pages/CommunityCalendar"));
 const Competitions = lazy(() => import("@/pages/Competitions"));
+const CompetitionDetail = lazy(() => import("@/pages/CompetitionDetail"));
+const MatchDetail = lazy(() => import("@/pages/MatchDetail"));
 const About = lazy(() => import("@/pages/About"));
 const Press = lazy(() => import("@/pages/Press"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -105,6 +107,8 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/resultats" element={<Results />} />
+              <Route path="/resultats/:id" element={<MatchDetail />} />
+              <Route path="/match/:id" element={<MatchDetail />} />
               <Route path="/equipe" element={<Team />} />
               <Route path="/equipe/:id" element={<PlayerDetail />} />
               <Route path="/actus" element={<News />} />
@@ -112,6 +116,7 @@ function App() {
               <Route path="/medias" element={<MediaGallery />} />
               <Route path="/calendrier" element={<CommunityCalendar />} />
               <Route path="/competitions" element={<Competitions />} />
+              <Route path="/competitions/:id" element={<CompetitionDetail />} />
               <Route path="/a-propos" element={<About />} />
               <Route path="/presse" element={<Press />} />
               <Route path="/support" element={<Support />} />

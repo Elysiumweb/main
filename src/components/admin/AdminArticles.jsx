@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { GAMES } from "../../lib/constants";
 import { toast } from "sonner";
 import { Trash2, Pencil, Eye, RotateCcw, Send, Star } from "lucide-react";
 import { db } from "../../lib/firebase";
@@ -13,29 +14,34 @@ import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
+const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false, scheduledAt: "", unpublishAt: "", linkedMatchId: "", linkedCompetitionId: "", segment: "all" };
 
 export const AdminArticles = () => {
   const { t } = useLang();
   const { user, displayName, isOfficial } = useAuth();
   const [articles, setArticles] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [competitions, setCompetitions] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const [editorTab, setEditorTab] = useState("write"); // write | preview
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
-    return onSnapshot(collection(db, "articles"), (s) => {
+    const u1 = onSnapshot(collection(db, "articles"), (s) => {
       const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
       list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setArticles(list);
     }, console.error);
+    const u2 = onSnapshot(collection(db, "matches"), (s) => setMatches(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => {});
+    const u3 = onSnapshot(collection(db, "competitions"), (s) => setCompetitions(s.docs.map((d) => ({ id: d.id, ...d.data() }))), () => {});
+    return () => { u1(); u2(); u3(); };
   }, []);
 
   const save = async (status) => {
     if (!form.title.trim()) { toast.error(t("common.error")); return; }
     try {
-      const data = { ...form, status, updatedAt: serverTimestamp(), ...(status === "published" ? { publishedAt: serverTimestamp() } : {}) };
+      const data = { ...form, status, updatedAt: serverTimestamp(), ...(status === "published" ? { publishedAt: serverTimestamp(), scheduledAt: form.scheduledAt || null, unpublishAt: form.unpublishAt || null } : { scheduledAt: form.scheduledAt || null }) };
       if (editId) await updateDoc(doc(db, "articles", editId), data);
       else await addDoc(collection(db, "articles"), { ...data, createdAt: serverTimestamp() });
       setForm(EMPTY); setEditId(null);
@@ -85,7 +91,7 @@ export const AdminArticles = () => {
   const edit = (a) => {
     setEditId(a.id);
     setEditorTab("write");
-    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured });
+    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured, scheduledAt: a.scheduledAt || "", unpublishAt: a.unpublishAt || "", linkedMatchId: a.linkedMatchId || "", linkedCompetitionId: a.linkedCompetitionId || "", segment: a.segment || "all" });
   };
 
   const STATUS_BADGE = {
@@ -130,6 +136,15 @@ export const AdminArticles = () => {
           <p className="text-[10px] text-[#f7f7f7]/35 mt-1">{form.excerpt.length}/220</p>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 block mb-1">Publication programmée</label><input type="datetime-local" value={form.scheduledAt} onChange={set("scheduledAt")} className={inputCls} data-testid="admin-article-scheduled" /></div>
+          <div><label className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 block mb-1">Dépublication programmée</label><input type="datetime-local" value={form.unpublishAt} onChange={set("unpublishAt")} className={inputCls} data-testid="admin-article-unpublish" /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><label className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 block mb-1">Match lié</label><select value={form.linkedMatchId} onChange={set("linkedMatchId")} className={inputCls} data-testid="admin-article-linked-match"><option value="">— Aucun —</option>{matches.slice(0,50).map((m)=><option key={m.id} value={m.id}>{m.game} vs {m.opponentName} — {m.date}</option>)}</select></div>
+          <div><label className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 block mb-1">Compétition liée</label><select value={form.linkedCompetitionId} onChange={set("linkedCompetitionId")} className={inputCls} data-testid="admin-article-linked-competition"><option value="">— Aucune —</option>{competitions.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+        </div>
+        <div><label className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 block mb-1">Segmentation newsletter</label><select value={form.segment} onChange={set("segment")} className={inputCls} data-testid="admin-article-segment"><option value="all">Tous (FR+EN)</option><option value="fr">FR uniquement</option><option value="en">EN uniquement</option><option value="EVA">EVA</option><option value="Rocket League">Rocket League</option><option value="Valorant">Valorant</option></select></div>
         {/* Onglets éditeur / aperçu markdown */}
         <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label={t("admin.article.title")}>
           <button onClick={() => setEditorTab("write")} data-testid="admin-article-tab-write" role="tab" aria-selected={editorTab === "write"}

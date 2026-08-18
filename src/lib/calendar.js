@@ -86,6 +86,36 @@ export const downloadICS = (events, filename = "elysium.ics", opts) => {
   URL.revokeObjectURL(a.href);
 };
 
+/** Construit l'URL d'abonnement ICS dynamique avec filtres (jeu/roster/type) */
+export const buildICSSubscribeUrl = (filters = {}) => {
+  const base = `${typeof window !== "undefined" ? window.location.origin : "https://elysium-esport.fr"}/api/calendar.ics`;
+  const params = new URLSearchParams();
+  if (filters.game && filters.game !== "all") params.set("game", filters.game);
+  if (filters.roster && filters.roster !== "all") params.set("roster", filters.roster);
+  if (filters.type && filters.type !== "all") params.set("type", filters.type);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+};
+
+/** Convertit un match en entrée calendrier normalisée (pour ICS / vue mois) */
+export const matchToCalendarEvent = (m) => {
+  const roster = m.roster ? `Elysium ${m.roster}` : "Elysium";
+  const title = `${roster} vs ${m.opponentName || "Adversaire"}${m.status === "finished" ? ` (${m.scoreUs}-${m.scoreThem})` : ""}${m.status === "postponed" ? " — Reporté" : m.status === "cancelled" ? " — Annulé" : ""}`;
+  const dateStr = m.date ? `${m.date}T${m.time || "20:00"}` : "";
+  return {
+    id: `match-${m.id}`,
+    title,
+    date: dateStr,
+    description: `${m.competition || ""} ${m.format || ""} ${m.game || ""}`.trim(),
+    link: m.watchUrl || m.vodUrl || "",
+    type: "tournament",
+    game: m.game,
+    roster: m.roster,
+    status: m.status,
+    raw: m,
+  };
+};
+
 /** URL Google Agenda « ajouter cet événement » pour un événement. */
 export const gcalUrl = (ev) => {
   const start = getEventStart(ev);

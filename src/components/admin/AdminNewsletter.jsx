@@ -17,7 +17,8 @@ export const AdminNewsletter = () => {
   const { t, lang } = useLang();
   const [subs, setSubs] = useState([]);
   const [query, setQuery] = useState("");
-  const [digest, setDigest] = useState({ subject: "", body: "" });
+  const [digest, setDigest] = useState({ subject: "", body: "", segment: "all", scheduledAt: "", testEmail: "" });
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [sendingDigest, setSendingDigest] = useState(false);
 
   const fmtDate = (ts) => ts?.toDate ? ts.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
@@ -75,7 +76,7 @@ export const AdminNewsletter = () => {
     setSendingDigest(true);
     try {
       const call = httpsCallable(functions, "sendNewsletterDigest");
-      const result = await call({ subject: digest.subject.trim(), body: digest.body.trim() });
+      const result = await call({ subject: digest.subject.trim(), body: digest.body.trim(), segment: digest.segment, scheduledAt: digest.scheduledAt || null });
       await logAdminAction({
         action: "newsletter_digest_sent",
         label: `${digest.subject.trim()} (${result.data?.sent || 0}/${result.data?.total || 0})`,
@@ -127,6 +128,16 @@ export const AdminNewsletter = () => {
           <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.newsletter.sendDigest")}</p>
           <p className="text-xs text-[#c8c8c8] mt-2">{t("admin.newsletter.sendDigestSub")}</p>
         </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <select value={digest.segment} onChange={(e) => setDigest((d) => ({ ...d, segment: e.target.value }))} className={`${inputCls}`} data-testid="admin-newsletter-segment"><option value="all">Segment : Tous</option><option value="fr">FR</option><option value="en">EN</option><option value="EVA">EVA</option><option value="Rocket League">Rocket League</option><option value="Valorant">Valorant</option></select>
+          <input type="datetime-local" value={digest.scheduledAt} onChange={(e) => setDigest((d) => ({ ...d, scheduledAt: e.target.value }))} className={`${inputCls}`} placeholder="Envoi programmé" data-testid="admin-newsletter-scheduled" />
+        </div>
+        <div className="flex gap-2">
+          <input value={digest.testEmail} onChange={(e) => setDigest((d) => ({ ...d, testEmail: e.target.value }))} placeholder="Email test (preview)" className={`${inputCls} flex-1`} data-testid="admin-newsletter-test-email" />
+          <button type="button" onClick={async ()=>{ if(!digest.testEmail) return; try{ const call = httpsCallable(functions, "sendNewsletterDigest"); await call({ subject: digest.subject, body: digest.body, testEmail: digest.testEmail, segment: digest.segment }); toast.success("Email test envoyé"); } catch(e){ toast.error("Erreur test"); } }} className="border border-white/20 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-3 py-2" data-testid="admin-newsletter-test-send">Email test</button>
+          <button type="button" onClick={()=>setPreviewOpen(!previewOpen)} className="border border-[#D8CA82]/40 text-[#D8CA82] text-xs uppercase tracking-widest px-3 py-2" data-testid="admin-newsletter-preview-toggle">Aperçu</button>
+        </div>
+        {previewOpen && <div className="border border-white/10 bg-[#111111] p-4" data-testid="admin-newsletter-preview"><p className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 mb-2">Aperçu réel</p><p className="font-bold text-[#f7f7f7]">{digest.subject || "(Sujet vide)"}</p><p className="text-sm text-[#f7f7f7]/70 whitespace-pre-wrap mt-2">{digest.body || "(Contenu vide)"}</p><p className="text-[11px] text-[#f7f7f7]/30 mt-2">Segment : {digest.segment} {digest.scheduledAt ? `· Programmé : ${digest.scheduledAt}` : "· Envoi immédiat"}</p></div>}
         <input
           value={digest.subject}
           onChange={(e) => setDigest((d) => ({ ...d, subject: e.target.value }))}

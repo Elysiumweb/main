@@ -64,6 +64,16 @@ export const SOCIALS = [
   { name: "Discord", url: "https://discord.gg/RH3ZZkMJsw", icon: "discord" },
 ];
 
+export const MATCH_FORMATS = ["BO1", "BO3", "BO5", "BO7"];
+export const MATCH_STATUSES = ["upcoming", "live", "finished", "postponed", "cancelled"];
+
+export const COMPETITION_LEVELS = ["local", "regional", "national", "international", "major"];
+export const COMPETITION_TYPES = ["league", "cup", "tournament", "qualifier"];
+export const COMPETITION_GROUPS = ["group", "playoff", "final"];
+
+export const PARTNER_TIERS = ["gold", "silver", "bronze"];
+export const PARTNER_LEVELS = ["premium", "official", "technical", "media"];
+
 export const isPlayerInMatch = (match, player) => {
   if (!match || !player) return false;
   if (match.players && Array.isArray(match.players) && match.players.length > 0) {
@@ -74,4 +84,31 @@ export const isPlayerInMatch = (match, player) => {
     );
   }
   return false;
+};
+
+/** Normalise un lien : vérifie http/https */
+export const isValidUrl = (s) => !s || /^https?:\/\/.+/.test(s);
+
+/** Génère un slug stable pour URL : pseudo-date */
+export const slugify = (str) =>
+  String(str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+
+/** URL stable d'un match */
+export const matchDetailUrl = (match) => {
+  if (!match?.id) return "/resultats";
+  const slug = slugify(`${match.opponentName || "adversaire"}-${match.date || ""}`);
+  return `/match/${match.id}${slug ? `-${slug}` : ""}`;
+};
+
+/** URL stable d'une compétition */
+export const competitionDetailUrl = (comp) => {
+  if (!comp?.id) return "/competitions";
+  const slug = slugify(comp.name || "");
+  return `/competitions/${comp.id}${slug ? `-${slug}` : ""}`;
 };

@@ -53,7 +53,16 @@ export default function Partners() {
   useEffect(() => {
     setError(false); setPartners(null);
     const u = onSnapshot(collection(db, "partners"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const now = new Date().toISOString().slice(0,10);
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p)=>{
+        if (p.archived) return false;
+        if (p.active === false) return false;
+        if (p.startDate && p.startDate > now) return false;
+        if (p.endDate && p.endDate < now) return false;
+        // validate link before showing
+        if (p.website && !/^https?:\/\/.+/.test(p.website)) return false;
+        return true;
+      });
       list.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
       setPartners(list);
     }, (e) => { console.error(e); setError(true); });

@@ -6,7 +6,7 @@ import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", goalAmount: "", currentAmount: "", active: true };
+const EMPTY = { title: "", goalAmount: "", currentAmount: "", active: true, paypalWebhookConfigured: false, paypalLastSyncAt: "", paypalLastTxnId: "" };
 
 /**
  * Objectif de campagne (ex : « Objectif LAN 2026 : 3 000 € ») avec barre de
@@ -37,6 +37,9 @@ export const AdminCampaigns = () => {
         goalAmount: Number(form.goalAmount) || 0,
         currentAmount: Number(form.currentAmount) || 0,
         active: form.active,
+        paypalWebhookConfigured: !!form.paypalWebhookConfigured,
+        paypalLastTxnId: form.paypalLastTxnId || "",
+        paypalLastSyncAt: form.paypalLastSyncAt || "",
       };
       if (editId) await updateDoc(doc(db, "campaigns", editId), data);
       else await addDoc(collection(db, "campaigns"), { ...data, createdAt: serverTimestamp() });
@@ -45,7 +48,7 @@ export const AdminCampaigns = () => {
     } catch (err) { console.error(err); toast.error(t("common.error")); }
   };
 
-  const edit = (c) => setForm({ title: c.title || "", goalAmount: c.goalAmount ?? "", currentAmount: c.currentAmount ?? "", active: !!c.active });
+  const edit = (c) => { setEditId(c.id); setForm({ title: c.title || "", goalAmount: c.goalAmount ?? "", currentAmount: c.currentAmount ?? "", active: !!c.active, paypalWebhookConfigured: !!c.paypalWebhookConfigured, paypalLastTxnId: c.paypalLastTxnId || "", paypalLastSyncAt: c.paypalLastSyncAt || "" }); };
 
   const toggleActive = async (c) => {
     try { await updateDoc(doc(db, "campaigns", c.id), { active: !c.active }); toast.success(t("common.saved")); }
@@ -78,6 +81,15 @@ export const AdminCampaigns = () => {
           <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} className="accent-[#D8CA82] h-4 w-4" data-testid="admin-campaign-active" />
           {t("admin.campaigns.active")}
         </label>
+        <div className="border border-white/10 bg-[#0c0c0c] p-3 space-y-2">
+          <p className="text-[11px] uppercase tracking-widest text-[#D8CA82]">Synchro PayPal (F-09)</p>
+          <label className="flex items-center gap-2 text-xs text-[#f7f7f7]/70"><input type="checkbox" checked={!!form.paypalWebhookConfigured} onChange={(e)=> setForm((f)=>({...f, paypalWebhookConfigured: e.target.checked}))} className="accent-[#D8CA82]" /> Webhook vérifié côté serveur</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={form.paypalLastTxnId} onChange={set("paypalLastTxnId")} placeholder="Dernier txn ID (déduplication)" className={inputCls} data-testid="admin-campaign-txn" />
+            <input value={form.paypalLastSyncAt} onChange={set("paypalLastSyncAt")} placeholder="Dernier sync" className={inputCls} readOnly />
+          </div>
+          <p className="text-[11px] text-[#f7f7f7]/30">Le webhook PayPal met à jour automatiquement & de façon dédupliquée la campagne, envoie un email de remerciement et historise côté admin. Ne jamais exposer les données donateur côté public.</p>
+        </div>
         <p className="text-[11px] text-[#f7f7f7]/40 leading-relaxed">{t("admin.campaigns.hint")}</p>
         <button type="submit" data-testid="admin-campaign-submit"
           className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">

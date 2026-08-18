@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { Link } from "react-router-dom";
-import { Trophy, ExternalLink, Medal, CalendarRange } from "lucide-react";
+import { Trophy, ExternalLink, Medal, CalendarRange, Layers, Award } from "lucide-react";
+import { competitionDetailUrl } from "../lib/constants";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
@@ -70,7 +71,7 @@ export default function Competitions() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="competitions-grid">
             {filtered.map((c) => (
-              <div key={c.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col hover:border-[#D8CA82]/50 transition-colors" data-testid={`competition-card-${c.id}`}>
+              <Link key={c.id} to={competitionDetailUrl(c)} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col hover:border-[#D8CA82]/50 transition-colors group" data-testid={`competition-card-${c.id}`}>
                 <div className="flex items-center justify-between mb-4">
                   <span className={`text-[9px] uppercase tracking-widest border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>
                     {t(`competitions.status.${c.status}`)}
@@ -81,7 +82,11 @@ export default function Competitions() {
                     </span>
                   )}
                 </div>
-                <h2 className="font-display font-bold text-lg text-[#f7f7f7] leading-snug">{c.name}</h2>
+                <h2 className="font-display font-bold text-lg text-[#f7f7f7] leading-snug group-hover:text-[#D8CA82]">{c.name}</h2>
+                <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-[#f7f7f7]/50">
+                  {c.game && <span className="flex items-center gap-1"><Layers size={11} className="text-[#D8CA82]" />{c.game}{c.roster?` · ${c.roster}`:""}</span>}
+                  {c.prizePool && <span className="flex items-center gap-1"><Award size={11} className="text-[#D8CA82]" />{c.prizePool}</span>}
+                </div>
                 {c.position ? (
                   <div className="mt-4 flex items-center gap-3" data-testid={`competition-position-${c.id}`}>
                     <Medal size={18} className="text-[#D8CA82]" aria-hidden="true" />
@@ -94,19 +99,11 @@ export default function Competitions() {
                   <p className="mt-4 text-xs text-[#f7f7f7]/30">{t("competitions.position.na")}</p>
                 )}
                 {c.notes && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{c.notes}</p>}
-                <div className="mt-auto pt-5">
-                  {c.officialUrl ? (
-                    <a href={c.officialUrl} target="_blank" rel="noopener noreferrer" data-testid={`competition-link-${c.id}`}
-                      className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-[#D8CA82] hover:underline">
-                      <ExternalLink size={12} aria-hidden="true" /> {t("competitions.visit")}
-                    </a>
-                  ) : (
-                    <Link to="/resultats" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-[#f7f7f7]/40 hover:text-[#D8CA82]">
-                      {t("results.title")} →
-                    </Link>
-                  )}
+                <div className="mt-auto pt-5 flex items-center gap-3">
+                  <span className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-[#D8CA82]">Détail →</span>
+                  {c.officialUrl && <span onClick={(e)=>{e.preventDefault(); window.open(c.officialUrl,"_blank");}} data-testid={`competition-link-${c.id}`} className="ml-auto inline-flex items-center gap-1 text-xs text-[#f7f7f7]/40 hover:text-[#D8CA82]"><ExternalLink size={11} /></span>}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
