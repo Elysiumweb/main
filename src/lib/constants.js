@@ -10,6 +10,10 @@ export const ROSTERS = {
   "EVA": [],
 };
 
+// Alias temporaire de compatibilité avec l'administration des compétitions
+// déployée sur certaines branches. Le nom canonique reste `ROSTERS`.
+export const ROOSTERS = ROSTERS;
+
 // Flat list of all rosters (for selects / validation)
 export const ALL_ROSTERS = Object.values(ROSTERS).flat();
 

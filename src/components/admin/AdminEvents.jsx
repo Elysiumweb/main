@@ -5,9 +5,10 @@ import { Trash2 } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { fmtDate } from "../../lib/formatters";
+import { GAMES, ROSTERS } from "../../lib/constants";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", type: "tournament", date: "", description: "", link: "" };
+const EMPTY = { title: "", type: "tournament", date: "", description: "", link: "", game: "EVA", roster: "", competition: "" };
 const TYPES = ["tournament", "training", "stream", "community"];
 
 export const AdminEvents = () => {
@@ -48,6 +49,11 @@ export const AdminEvents = () => {
             {TYPES.map((ty) => <option key={ty} value={ty}>{t(`cal.type.${ty}`)}</option>)}
           </select>
           <input type="datetime-local" value={form.date} onChange={set("date")} required className={inputCls} data-testid="admin-event-date" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <select value={form.game} onChange={(e) => setForm((current) => ({ ...current, game: e.target.value, roster: "" }))} className={inputCls} aria-label="Jeu associé">{GAMES.map((game) => <option key={game}>{game}</option>)}</select>
+          <select value={form.roster} onChange={set("roster")} className={inputCls} aria-label="Roster associé"><option value="">Tous les rosters</option>{(ROSTERS[form.game] || []).map((roster) => <option key={roster}>{roster}</option>)}</select>
+          <input value={form.competition} onChange={set("competition")} placeholder="Compétition" className={inputCls} />
         </div>
         <input value={form.link} onChange={set("link")} placeholder={t("admin.events.linkPlaceholder")} className={inputCls} data-testid="admin-event-link" />
         <textarea value={form.description} onChange={set("description")} placeholder={t("admin.events.descPlaceholder")} rows={3} className={inputCls} data-testid="admin-event-desc" />

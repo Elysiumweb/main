@@ -14,6 +14,7 @@ import { gameHasRosters } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { ImageUpload } from "../components/ImageUpload";
 import { MfaTotpPanel } from "../components/MfaTotpPanel";
+import { SupporterPreferences } from "../components/SupporterPreferences";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -206,6 +207,8 @@ export default function Profile() {
         </form>
 
         <MfaTotpPanel />
+
+        <SupporterPreferences user={user} />
 
         <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-4" data-testid="profile-export-panel">
           <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Exporter mes données</p>

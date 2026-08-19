@@ -220,9 +220,30 @@ service cloud.firestore {
       allow create, update, delete: if isBureau();
     }
 
+    // ===== Préférences supporter =====
+    match /supporterPreferences/{uid} {
+      allow read, delete: if isAuth() && request.auth.uid == uid;
+      allow create, update: if isAuth()
+        && request.auth.uid == uid
+        && (!request.resource.data.keys().hasAny(['uid']) || request.resource.data.uid == request.auth.uid)
+        && request.resource.data.games is list
+        && request.resource.data.rosters is list
+        && request.resource.data.competitions is list
+        && request.resource.data.notificationTypes is list;
+    }
+
     // ===== Notifications =====
     match /notifications/{id} {
-      allow read, create, update: if isAuth();
+      allow read: if isAuth() && (resource.data.targetUid == request.auth.uid
+        || (resource.data.targetRoles is list && userRole() in resource.data.targetRoles));
+      // Les rappels personnels peuvent être créés par leur destinataire ; les
+      // autres notifications sont produites par les Functions (Admin SDK).
+      allow create: if isAuth() && (isManagerPlus()
+        || request.resource.data.targetUid == request.auth.uid);
+      allow update: if isAuth()
+        && (resource.data.targetUid == request.auth.uid
+          || (resource.data.targetRoles is list && userRole() in resource.data.targetRoles))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']);
       allow delete: if isBureau();
     }
 
@@ -312,6 +333,12 @@ service cloud.firestore {
 
     // ===== Partenaires =====
     match /partners/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Dossier sponsor public maintenu par le bureau =====
+    match /sponsorKit/{id} {
       allow read: if true;
       allow create, update, delete: if isBureau();
     }

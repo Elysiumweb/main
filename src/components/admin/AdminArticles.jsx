@@ -11,9 +11,10 @@ import { Markdown } from "../../lib/markdown";
 import { logAdminAction } from "../../lib/notify";
 import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
+import { GAMES, ROSTERS } from "../../lib/constants";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
+const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false, game: "EVA", roster: "", competition: "" };
 
 export const AdminArticles = () => {
   const { t } = useLang();
@@ -85,7 +86,7 @@ export const AdminArticles = () => {
   const edit = (a) => {
     setEditId(a.id);
     setEditorTab("write");
-    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured });
+    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured, game: a.game || "EVA", roster: a.roster || "", competition: a.competition || "" });
   };
 
   const STATUS_BADGE = {
@@ -111,6 +112,11 @@ export const AdminArticles = () => {
             <Star size={12} className={form.featured ? "text-[#D8CA82] fill-[#D8CA82]" : "text-[#f7f7f7]/40"} aria-hidden="true" />
             {t("admin.article.featured")}
           </label>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <select value={form.game} onChange={(e) => setForm((current) => ({ ...current, game: e.target.value, roster: "" }))} className={inputCls} aria-label="Jeu associé">{GAMES.map((game) => <option key={game}>{game}</option>)}</select>
+          <select value={form.roster} onChange={set("roster")} className={inputCls} aria-label="Roster associé"><option value="">Tous les rosters</option>{(ROSTERS[form.game] || []).map((roster) => <option key={roster}>{roster}</option>)}</select>
+          <input value={form.competition} onChange={set("competition")} placeholder="Compétition" className={inputCls} />
         </div>
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.cover")}</label>

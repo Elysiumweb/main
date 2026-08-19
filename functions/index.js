@@ -15,7 +15,7 @@
  *   firebase functions:config:set app.url="https://elysium-esport.fr" (ou APP_URL)
  */
 
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const functionsV1 = require("firebase-functions/v1");
 const logger = require("firebase-functions/logger");
@@ -169,9 +169,29 @@ const TEMPLATES = {
     intro: (n) => `${n.extra || "Un coéquipier"} vous a mentionné.`,
   },
   match_reminder: {
-    subject: (n) => `[Match] Coup d'envoi imminent — ${n.extra || ""}`,
+    subject: (n) => `[Match] À venir — ${n.extra || ""}`,
     title: "Match à venir",
-    intro: () => "Un match démarre bientôt. Préparez-vous !",
+    intro: () => "Un match suivi est programmé. Retrouvez les détails sur le site.",
+  },
+  match_result: {
+    subject: (n) => `[Résultat] ${n.extra || "Nouveau résultat"}`,
+    title: "Nouveau résultat",
+    intro: () => "Le résultat d’un match que vous suivez est disponible.",
+  },
+  article_new: {
+    subject: (n) => `[Actualité] ${n.extra || "Nouvel article"}`,
+    title: "Nouvel article",
+    intro: () => "Un nouvel article lié à vos sujets favoris vient d’être publié.",
+  },
+  live_started: {
+    subject: (n) => `[Live] ${n.extra || "Elysium est en direct"}`,
+    title: "Le live commence",
+    intro: () => "Un match que vous suivez est maintenant en direct.",
+  },
+  event_new_public: {
+    subject: (n) => `[Événement] ${n.extra || "Nouvel événement"}`,
+    title: "Nouvel événement",
+    intro: () => "Un événement correspondant à vos favoris vient d’être publié.",
   },
 };
 
@@ -433,6 +453,7 @@ const purgeAccountData = async (uid, email = "") => {
   const roots = [
     [db.collection("users").doc(uid), true],
     [db.collection("profiles").doc(uid), true],
+    [db.collection("supporterPreferences").doc(uid), false],
     [db.collection("pushTokens").where("uid", "==", uid), false],
     [db.collection("notifications").where("targetUid", "==", uid), false],
     [db.collection("notifications").where("uid", "==", uid), false],
@@ -479,6 +500,80 @@ exports.purgeDeletedAccount = functionsV1.auth.user().onDelete(async (user) => {
   logger.info(`purgeDeletedAccount: uid=${user.uid}, deleted≈${deleted}`);
   return { deleted };
 });
+
+// ============================================================================
+// Alertes supporter — fan-out idempotent selon les favoris du visiteur
+// ============================================================================
+const supporterMatches = (preference, content) => {
+  const games = Array.isArray(preference.games) ? preference.games : [];
+  const rosters = Array.isArray(preference.rosters) ? preference.rosters : [];
+  const competitions = Array.isArray(preference.competitions) ? preference.competitions : [];
+  return (content.game && games.includes(content.game))
+    || (content.roster && rosters.includes(content.roster))
+    || (content.competition && competitions.includes(content.competition))
+    || (content.competitionId && competitions.includes(content.competitionId));
+};
+
+const notifySupporters = async ({ source, sourceId, type, content, extra, link }) => {
+  const snapshot = await db.collection("supporterPreferences").where("notificationTypes", "array-contains", type).get();
+  const writes = [];
+  snapshot.forEach((preferenceDoc) => {
+    const preference = preferenceDoc.data();
+    if (!supporterMatches(preference, content || {})) return;
+    const id = `${source}_${sourceId}_${type}_${preferenceDoc.id}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+    writes.push(db.collection("notifications").doc(id).set({
+      targetUid: preferenceDoc.id,
+      targetRoles: null,
+      targetGame: null,
+      type,
+      extra: extra || "",
+      link: link || "/",
+      source,
+      sourceId,
+      readBy: [],
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: false }));
+  });
+  await Promise.all(writes);
+  logger.info(`supporter fan-out ${source}/${sourceId}/${type}: ${writes.length}`);
+};
+
+exports.fanOutMatchSupporters = onDocumentWritten(
+  { document: "matches/{id}", memory: "256MiB", timeoutSeconds: 60 },
+  async (event) => {
+    const before = event.data?.before?.exists ? event.data.before.data() : null;
+    const after = event.data?.after?.exists ? event.data.after.data() : null;
+    if (!after) return null;
+    const content = { game: after.game, roster: after.roster, competition: after.competition, competitionId: after.competitionId };
+    const label = `Elysium vs ${after.opponentName || "adversaire"}${after.competition ? ` · ${after.competition}` : ""}`;
+    const jobs = [];
+    if (!before && after.status !== "finished") jobs.push(notifySupporters({ source: "match", sourceId: event.params.id, type: "match_reminder", content, extra: label, link: "/resultats" }));
+    if ((!before || before.status !== "live") && after.status === "live") jobs.push(notifySupporters({ source: "match", sourceId: event.params.id, type: "live_started", content, extra: label, link: after.watchUrl || "/resultats" }));
+    const resultChanged = after.status === "finished" && (!before || before.status !== "finished" || before.scoreUs !== after.scoreUs || before.scoreThem !== after.scoreThem);
+    if (resultChanged) jobs.push(notifySupporters({ source: "match", sourceId: event.params.id, type: "match_result", content, extra: `${label} · ${after.scoreUs ?? "–"}-${after.scoreThem ?? "–"}`, link: "/resultats" }));
+    await Promise.all(jobs);
+    return null;
+  },
+);
+
+exports.fanOutArticleSupporters = onDocumentWritten(
+  { document: "articles/{id}", memory: "256MiB", timeoutSeconds: 60 },
+  async (event) => {
+    const before = event.data?.before?.exists ? event.data.before.data() : null;
+    const after = event.data?.after?.exists ? event.data.after.data() : null;
+    if (!after || after.status !== "published" || before?.status === "published") return null;
+    return notifySupporters({ source: "article", sourceId: event.params.id, type: "article_new", content: after, extra: after.title || "Nouvel article", link: `/actus/${event.params.id}` });
+  },
+);
+
+exports.fanOutEventSupporters = onDocumentCreated(
+  { document: "communityEvents/{id}", memory: "256MiB", timeoutSeconds: 60 },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return null;
+    return notifySupporters({ source: "event", sourceId: event.params.id, type: "event_new_public", content: data, extra: data.title || "Nouvel événement", link: "/calendrier" });
+  },
+);
 
 // ============================================================================
 // Modules additionnels

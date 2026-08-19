@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart } from "lucide-react";
+import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart, Download, BarChart3, Megaphone, MapPin } from "lucide-react";
 import { DonateBlock } from "../components/DonateButton";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
@@ -48,6 +48,7 @@ export default function Partners() {
   const [partners, setPartners] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [sponsorKit, setSponsorKit] = useState(null);
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -57,7 +58,8 @@ export default function Partners() {
       list.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
       setPartners(list);
     }, (e) => { console.error(e); setError(true); });
-    return () => u();
+    const uKit = onSnapshot(doc(db, "sponsorKit", "current"), (snap) => setSponsorKit(snap.exists() ? snap.data() : null), console.error);
+    return () => { u(); uKit(); };
   }, [retryKey]);
 
   const grouped = partners ? tiers.map((tier) => ({
@@ -129,6 +131,29 @@ export default function Partners() {
               <p className="text-sm text-[#f7f7f7]/60 leading-relaxed">{t(`partners.offers.${tier}.desc`)}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* DOSSIER SPONSOR — contenu maintenu depuis l'administration */}
+      <section className="border-t border-white/10 bg-[#1A1A1A]" data-testid="sponsor-kit">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Dossier sponsor</p>
+              <h2 className="font-display font-black text-3xl text-[#f7f7f7] uppercase">Construisons une activation utile</h2>
+              {sponsorKit?.updatedAtLabel && <p className="text-xs text-[#f7f7f7]/45 mt-2">{sponsorKit.updatedAtLabel}</p>}
+            </div>
+            {sponsorKit?.pdfUrl && <a href={sponsorKit.pdfUrl} target="_blank" rel="noopener noreferrer" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 inline-flex items-center gap-2" download><Download size={16} /> Télécharger le dossier PDF</a>}
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              [BarChart3, "Audience datée & sourcée", sponsorKit?.metrics],
+              [Megaphone, "Activations possibles", sponsorKit?.activations],
+              [MapPin, "Zones géographiques", sponsorKit?.regions],
+              [Trophy, "Cas concrets", sponsorKit?.cases],
+            ].map(([Icon, title, items]) => <div key={title} className="border border-white/10 bg-[#111111] p-5"><Icon className="text-[#D8CA82] mb-3" size={20} /><h3 className="font-display text-sm uppercase tracking-wider text-[#f7f7f7] mb-3">{title}</h3>{Array.isArray(items) && items.length ? <ul className="space-y-2">{items.map((item) => <li key={item} className="text-xs text-[#f7f7f7]/60 leading-relaxed border-l border-[#D8CA82]/40 pl-3">{item}</li>)}</ul> : <p className="text-xs text-[#f7f7f7]/35">Informations disponibles dans le dossier commercial.</p>}</div>)}
+          </div>
+          <div className="mt-8 border border-[#D8CA82]/25 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-[#D8CA82]">Contact commercial dédié</p><p className="text-sm text-[#f7f7f7] mt-1">{sponsorKit?.commercialName || "Équipe partenariats Elysium"}</p></div><a href={`mailto:${sponsorKit?.commercialEmail || "partenariats@elysium-esport.fr"}`} className="text-[#D8CA82] hover:underline">{sponsorKit?.commercialEmail || "partenariats@elysium-esport.fr"}</a></div>
         </div>
       </section>
 
