@@ -218,8 +218,10 @@ export const usePlayerSEO = (player) => {
 };
 
 export const useMatchSEO = (match) => {
+  const { t } = useLang();
   const teamName = match ? getElysiumTeamName(match.roster) : "Elysium";
-  const title = match ? `${teamName} vs ${match.opponentName} — ${match.competition || "Match"}` : undefined;
+  const fallbackAdversary = t("common.adversary");
+  const title = match ? `${teamName} vs ${match.opponentName || fallbackAdversary} — ${match.competition || "Match"}` : undefined;
   const description = match ? `${match.scoreUs ?? "?"} – ${match.scoreThem ?? "?"} · ${match.date || ""}${match.competition ? ` · ${match.competition}` : ""}` : undefined;
   const image = match?.opponentLogo || undefined;
   const startDate = match?.date ? `${match.date}${match.time ? `T${match.time}` : ""}` : undefined;
@@ -227,13 +229,13 @@ export const useMatchSEO = (match) => {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     "@id": `${SITE_URL}/resultats#match-${match.id}`,
-    name: `${teamName} vs ${match.opponentName || t("common.adversary")}`,
+    name: `${teamName} vs ${match.opponentName || fallbackAdversary}`,
     startDate,
     eventStatus: match.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
     sport: match.game || "Esport",
     competitor: [
       { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
-      { "@type": "SportsTeam", name: match.opponentName || t("common.adversary"), logo: absoluteUrl(match.opponentLogo) },
+      { "@type": "SportsTeam", name: match.opponentName || fallbackAdversary, logo: absoluteUrl(match.opponentLogo) },
     ],
     location: match.platform ? { "@type": "VirtualLocation", name: match.platform, url: match.watchUrl } : undefined,
   } : undefined;
