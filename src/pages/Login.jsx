@@ -14,14 +14,24 @@ import { useLang } from "../lib/i18n";
 import { mfaErrorMessage, resolverFromMfaError } from "../lib/mfa";
 
 const errMsg = (code) => {
-  const map = {
-    "auth/invalid-credential": "Identifiants invalides.",
-    "auth/email-already-in-use": "Cet email est déjà utilisé.",
-    "auth/weak-password": "Mot de passe trop faible (8 caractères min).",
-    "auth/invalid-email": "Email invalide.",
-    "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
+  const lang = (()=>{ try { return localStorage.getItem("elysium_lang") || "fr"; } catch { return "fr"; }})();
+  const dict = {
+    fr: {
+      "auth/invalid-credential": "Identifiants invalides.",
+      "auth/email-already-in-use": "Cet email est déjà utilisé.",
+      "auth/weak-password": "Mot de passe trop faible (8 caractères min).",
+      "auth/invalid-email": "Email invalide.",
+      "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
+    },
+    en: {
+      "auth/invalid-credential": "Invalid credentials.",
+      "auth/email-already-in-use": "This email is already in use.",
+      "auth/weak-password": "Password too weak (8 characters min).",
+      "auth/invalid-email": "Invalid email.",
+      "auth/too-many-requests": "Too many attempts. Try again later.",
+    },
   };
-  return map[code] || "Erreur d'authentification.";
+  return (dict[lang]||dict.fr)[code] || (lang==="en" ? "Authentication error." : "Erreur d'authentification.");
 };
 
 const inputCls =

@@ -51,11 +51,11 @@ export const HeadToHead = ({ matches, opponentName, testId = "h2h" }) => {
           <div key={label} className="border border-white/10 bg-[#1A1A1A] p-3 text-center">
             <Icon size={13} className={`mx-auto mb-1 ${cls}`} aria-hidden="true" />
             <p className={`font-display font-black text-2xl ${cls}`}>{value}</p>
-            <p className="text-[9px] uppercase tracking-widest text-[#f7f7f7]/40">{label}</p>
+            <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">{label}</p>
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-[#f7f7f7]/50 mb-3">
+      <p className="text-xs text-[#f7f7f7]/50 mb-3">
         {t("h2h.total")} : <span className="text-[#f7f7f7]">{h2h.total}</span> — {t("h2h.score")} :{" "}
         <span className="text-[#f7f7f7]">{h2h.scoreFor} — {h2h.scoreAgainst}</span>
       </p>
@@ -71,7 +71,7 @@ export const HeadToHead = ({ matches, opponentName, testId = "h2h" }) => {
               <span className={`font-display font-bold ${r === "win" ? "text-emerald-300" : r === "loss" ? "text-red-300" : "text-[#c8c8c8]"}`}>
                 {m.scoreUs}—{m.scoreThem}
               </span>
-              {m.competition && <span className="w-24 truncate text-right text-[#f7f7f7]/40">{m.competition}</span>}
+              {m.competition && <span className="w-24 truncate text-right text-[#c8c8c8]">{m.competition}</span>}
             </div>
           );
         })}
@@ -97,7 +97,7 @@ export const HeadToHeadPanel = ({ matches, testId = "h2h-panel" }) => {
     <div className="space-y-4" data-testid={testId}>
       <div className="flex items-end gap-4 flex-wrap">
         <div>
-          <label htmlFor="h2h-opponent" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">
+          <label htmlFor="h2h-opponent" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">
             {t("h2h.choose")}
           </label>
           <select id="h2h-opponent" value={selected} onChange={(e) => setSelected(e.target.value)} data-testid={`${testId}-select`}

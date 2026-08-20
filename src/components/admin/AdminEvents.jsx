@@ -57,12 +57,12 @@ export const AdminEvents = () => {
         </button>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-events-list">
-        {events.length === 0 && <p className="text-[#f7f7f7]/40">{t("cal.empty")}</p>}
+        {events.length === 0 && <p className="text-[#c8c8c8]">{t("cal.empty")}</p>}
         {events.map((ev) => (
           <div key={ev.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{ev.title}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{t(`cal.type.${ev.type}`)} · {ev.date ? fmtDate(ev.date, lang, { hour: "2-digit", minute: "2-digit" }) : ""}</p>
+              <p className="text-xs text-[#c8c8c8]">{t(`cal.type.${ev.type}`)} · {ev.date ? fmtDate(ev.date, lang, { hour: "2-digit", minute: "2-digit" }) : ""}</p>
             </div>
             <button onClick={() => del(ev.id)} title={t("common.delete")} aria-label={`${t("common.delete")} ${ev.title}`} className="text-red-400/70 hover:text-red-400" data-testid={`admin-event-delete-${ev.id}`}><Trash2 size={15} /></button>
           </div>

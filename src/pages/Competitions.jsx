@@ -56,7 +56,7 @@ export default function Competitions() {
         <div className="flex flex-wrap gap-2 mb-10" data-testid="competitions-filters">
           {["all", "ongoing", "upcoming", "finished"].map((s) => (
             <button key={s} onClick={() => setStatusFilter(s)} data-testid={`competitions-filter-${s}`}
-              className={`text-[11px] uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${statusFilter === s ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${statusFilter === s ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
               {s === "all" ? t("media.all") : t(`competitions.status.${s}`)}
             </button>
           ))}
@@ -68,15 +68,50 @@ export default function Competitions() {
         ) : filtered.length === 0 ? (
           <EmptyState icon={Trophy} text={t("competitions.empty")} testId="competitions-empty" />
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="competitions-grid">
+          <>
+            {/* Timeline — D-03 : identité Compétitions distincte */}
+            <div className="border border-white/10 bg-[#0c0c0c] p-6 mb-8" data-testid="competitions-timeline">
+              <h2 className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">Timeline des compétitions</h2>
+              <div className="relative border-l border-[#D8CA82]/30 pl-6 space-y-4">
+                {(filtered.slice(0,4)).map((c,i)=> (
+                  <div key={c.id} className="relative">
+                    <span className="absolute -left-[25px] top-1 w-3 h-3 bg-[#D8CA82] rounded-full" />
+                    <p className="font-display font-bold text-sm text-[#f7f7f7]">{c.name} — {c.season || "2026"}</p>
+                    <p className="text-xs text-[#c8c8c8]">{c.status} {c.position ? `· ${c.position}` : ""}</p>
+                  </div>
+                ))}
+                {filtered.length===0 && <p className="text-xs text-[#c8c8c8]">Aucune compétition — la timeline apparaîtra ici.</p>}
+              </div>
+            </div>
+            {/* Classement — bloc distinct */}
+            <div className="border border-[#D8CA82]/20 bg-[#1A1A1A] p-6 mb-8" data-testid="competitions-standings">
+              <h2 className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">Classement actuel</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-[#c8c8c8] uppercase tracking-widest">
+                    <tr><th className="text-left py-2">Compétition</th><th className="text-left">Saison</th><th className="text-right">Position</th></tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((c)=> (
+                      <tr key={c.id} className="border-t border-white/5">
+                        <td className="py-2 text-[#f7f7f7]">{c.name}</td>
+                        <td className="text-[#c8c8c8]">{c.season || "—"}</td>
+                        <td className="text-right font-bold text-[#D8CA82]">{c.position || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="competitions-grid">
             {filtered.map((c) => (
               <div key={c.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col hover:border-[#D8CA82]/50 transition-colors" data-testid={`competition-card-${c.id}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`text-[9px] uppercase tracking-widest border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>
+                  <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>
                     {t(`competitions.status.${c.status}`)}
                   </span>
                   {c.season && (
-                    <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 flex items-center gap-1.5">
+                    <span className="text-xs uppercase tracking-widest text-[#c8c8c8] flex items-center gap-1.5">
                       <CalendarRange size={11} aria-hidden="true" /> {t("competitions.season")} {c.season}
                     </span>
                   )}
@@ -86,12 +121,12 @@ export default function Competitions() {
                   <div className="mt-4 flex items-center gap-3" data-testid={`competition-position-${c.id}`}>
                     <Medal size={18} className="text-[#D8CA82]" aria-hidden="true" />
                     <div>
-                      <p className="text-[9px] uppercase tracking-widest text-[#f7f7f7]/40">{t("competitions.position")}</p>
+                      <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">{t("competitions.position")}</p>
                       <p className="font-display font-black text-2xl text-[#D8CA82]">{c.position}</p>
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-4 text-xs text-[#f7f7f7]/30">{t("competitions.position.na")}</p>
+                  <p className="mt-4 text-xs text-[#c8c8c8]">{t("competitions.position.na")}</p>
                 )}
                 {c.notes && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{c.notes}</p>}
                 <div className="mt-auto pt-5">
@@ -101,7 +136,7 @@ export default function Competitions() {
                       <ExternalLink size={12} aria-hidden="true" /> {t("competitions.visit")}
                     </a>
                   ) : (
-                    <Link to="/resultats" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-[#f7f7f7]/40 hover:text-[#D8CA82]">
+                    <Link to="/resultats" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
                       {t("results.title")} →
                     </Link>
                   )}
@@ -109,6 +144,7 @@ export default function Competitions() {
               </div>
             ))}
           </div>
+          </>
         )}
       </section>
     </div>

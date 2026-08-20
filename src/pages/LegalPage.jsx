@@ -85,7 +85,7 @@ export default function LegalPage({ kind }) {
       </section>
       <section className="max-w-4xl mx-auto px-4 sm:px-8 py-12" data-testid={`legal-content-${kind}`}>
         {c.body}
-        <p className="text-xs text-[#f7f7f7]/30 mt-12">Dernière mise à jour : juillet 2026</p>
+        <p className="text-xs text-[#c8c8c8] mt-12">Dernière mise à jour : juillet 2026</p>
       </section>
     </div>
   );

@@ -153,7 +153,7 @@ export const AdminNewsletter = () => {
       <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
         <table className="w-full text-sm" data-testid="admin-newsletter-table">
           <thead>
-            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#f7f7f7]/40">
+            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#c8c8c8]">
               <th className="px-4 py-3">{t("admin.table.email")}</th>
               <th className="px-4 py-3">{t("admin.table.language")}</th>
               <th className="px-4 py-3">{t("admin.table.confirmed")}</th>
@@ -163,13 +163,13 @@ export const AdminNewsletter = () => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-[#f7f7f7]/40 text-center">{t("admin.newsletter.empty")}</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-[#c8c8c8] text-center">{t("admin.newsletter.empty")}</td></tr>
             ) : filtered.map((s) => (
               <tr key={s.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-newsletter-row-${s.id}`}>
                 <td className="px-4 py-3 text-[#f7f7f7] font-medium">{s.email}</td>
                 <td className="px-4 py-3 text-[#f7f7f7]/60 uppercase">{s.lang || "fr"}</td>
                 <td className="px-4 py-3">
-                  <span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${s.confirmed ? "text-emerald-300 border-emerald-300/40" : "text-orange-300 border-orange-300/40"}`}>
+                  <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${s.confirmed ? "text-emerald-300 border-emerald-300/40" : "text-orange-300 border-orange-300/40"}`}>
                     {s.confirmed ? t("common.yes") : t("common.no")}
                   </span>
                 </td>

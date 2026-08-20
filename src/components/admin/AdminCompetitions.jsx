@@ -69,15 +69,15 @@ export const AdminCompetitions = () => {
         )}
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-competitions-list">
-        {items.length === 0 && <p className="text-[#f7f7f7]/40">{t("competitions.empty")}</p>}
+        {items.length === 0 && <p className="text-[#c8c8c8]">{t("competitions.empty")}</p>}
         {items.map((c) => (
           <div key={c.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${c.status === "ongoing" ? "border-emerald-300/40 text-emerald-300" : c.status === "upcoming" ? "border-sky-300/40 text-sky-300" : "border-white/20 text-[#f7f7f7]/40"}`}>
+            <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${c.status === "ongoing" ? "border-emerald-300/40 text-emerald-300" : c.status === "upcoming" ? "border-sky-300/40 text-sky-300" : "border-white/20 text-[#c8c8c8]"}`}>
               {t(`competitions.status.${c.status}`)}
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{c.name}</p>
-              <p className="text-xs text-[#f7f7f7]/40">
+              <p className="text-xs text-[#c8c8c8]">
                 {c.season ? `${t("competitions.season")} ${c.season}` : ""}{c.position ? ` · ${t("competitions.position")} : ${c.position}` : ""}
               </p>
             </div>

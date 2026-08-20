@@ -34,8 +34,8 @@ export const Footer = () => {
             >
               <SocialIcon name="discord" size={18} className="text-[#5865F2]" aria-hidden="true" />
               <div className="text-left">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#f7f7f7]">{t("footer.discordTitle")}</p>
-                <p className="text-[9px] text-[#c8c8c8] uppercase tracking-widest">{t("footer.discordSub")}</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-[#f7f7f7]">{t("footer.discordTitle")}</p>
+                <p className="text-xs text-[#c8c8c8] uppercase tracking-widest">{t("footer.discordSub")}</p>
               </div>
             </a>
           </div>
@@ -124,7 +124,7 @@ export const Footer = () => {
           </ul>
 
           <div className="pt-3">
-            <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mb-1">{t("footer.contact")}</p>
+            <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mb-1">{t("footer.contact")}</p>
             <a
               href="mailto:contact@elysium-esport.fr"
               data-testid="footer-contact-email"
@@ -144,7 +144,7 @@ export const Footer = () => {
           <NewsletterSignup compact />
 
           <div className="pt-2">
-            <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mb-2" id="footer-socials-label">{t("footer.followUs")}</p>
+            <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mb-2" id="footer-socials-label">{t("footer.followUs")}</p>
             <div className="flex items-center gap-4" data-testid="footer-socials" role="list" aria-labelledby="footer-socials-label">
               {SOCIALS.map((s) => (
                 <a
@@ -173,7 +173,7 @@ export const Footer = () => {
             © 2026 Elysium — {t("footer.rights")}
           </p>
 
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-widest text-[#c8c8c8]" data-testid="footer-legal-links" aria-label={t("footer.ariaLegal")}>
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-[#c8c8c8]" data-testid="footer-legal-links" aria-label={t("footer.ariaLegal")}>
             <Link to="/mentions-legales" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-link-mentions">
               {t("legal.mentions")}
             </Link>

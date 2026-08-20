@@ -30,11 +30,11 @@ export default function Donate() {
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
         <div className="absolute -right-20 top-1/2 -translate-y-1/2 opacity-[0.06] pointer-events-none">
-          <OptimizedImage src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" width="520" height="520" loading="lazy" className="w-[520px] max-w-none" />
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" width="808" height="798" loading="lazy" className="w-[520px] h-auto max-w-none" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("donate.title") }]} />
-          <p className="text-[10px] font-display uppercase tracking-[0.45em] text-[#D8CA82] mb-5">
+          <p className="text-xs font-display uppercase tracking-[0.45em] text-[#D8CA82] mb-5">
             {t("donate.badge")}
           </p>
           <h1
@@ -47,10 +47,10 @@ export default function Donate() {
             src="/brand/accent-blade.png"
             alt=""
             aria-hidden="true"
-            width="160"
-            height="27"
+            width="787"
+            height="658"
             loading="lazy"
-            className="w-40 my-7 opacity-80"
+            className="w-40 h-auto my-7 opacity-80"
           />
           <p className="text-[#c8c8c8] text-base sm:text-lg tracking-wide max-w-2xl leading-relaxed">
             {t("donate.sub")}
@@ -104,10 +104,10 @@ export default function Donate() {
               src="/brand/accent-brackets-gold.png"
               alt=""
               aria-hidden="true"
-              width="176"
-              height="176"
+              width="600"
+              height="754"
               loading="lazy"
-              className="pointer-events-none absolute -right-10 -bottom-10 w-44 opacity-[0.06]"
+              className="pointer-events-none absolute -right-10 -bottom-10 w-44 h-auto opacity-[0.06]"
             />
             <div className="relative">
               <div className="flex items-center gap-3 mb-5">
@@ -125,7 +125,7 @@ export default function Donate() {
               <DonateSubscriptionCard testId="donate-page-subscription" />
 
               <div className="mt-7 pt-6 border-t border-white/10">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-2">
+                <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2">
                   {t("donate.card.other")}
                 </p>
                 <a

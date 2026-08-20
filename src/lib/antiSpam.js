@@ -55,7 +55,8 @@ export const checkSessionRateLimit = (bucket, { max = 3, windowMs = DEFAULT_WIND
   return { allowed: true, retryAt: null };
 };
 
-export const rateLimitMessage = (retryAt) => {
-  const time = retryAt?.toLocaleTimeString?.("fr-FR", { hour: "2-digit", minute: "2-digit" }) || "quelques minutes";
-  return `Trop d'envois depuis cette session. Réessayez vers ${time}.`;
+export const rateLimitMessage = (retryAt, lang = "fr") => {
+  const locale = lang === "en" ? "en-US" : "fr-FR";
+  const time = retryAt?.toLocaleTimeString?.(locale, { hour: "2-digit", minute: "2-digit" }) || (lang === "en" ? "a few minutes" : "quelques minutes");
+  return lang === "en" ? `Too many submissions from this session. Try again around ${time}.` : `Trop d'envois depuis cette session. Réessayez vers ${time}.`;
 };

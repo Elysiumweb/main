@@ -25,7 +25,7 @@ const EMPTY_PARENT = { parentName: "", parentEmail: "" };
 
 export default function Recruitment() {
   const { user, canSeeRecruit } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [searchParams] = useSearchParams();
   const [positions, setPositions] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -100,7 +100,7 @@ export default function Recruitment() {
         toast.success(
           result.parentalEmailSent
             ? "Candidature enregistrée. Un email de confirmation vient d'être envoyé au parent : elle sera examinée après son accord."
-            : "Candidature enregistrée. Elle sera examinée après vérification du consentement parental.",
+            : lang==="en" ? "Application recorded. It will be reviewed after parental consent verification." : "Candidature enregistrée. Elle sera examinée après vérification du consentement parental.",
           { duration: 9000 },
         );
       } else {
@@ -149,7 +149,7 @@ export default function Recruitment() {
               <div key={p.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col gap-4 hover:border-[#D8CA82]/50 transition-colors" data-testid={`recruit-position-${p.id}`}>
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-display font-bold text-[#f7f7f7]">{p.title}</p>
-                  <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5 shrink-0">{p.game}</span>
+                  <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5 shrink-0">{p.game}</span>
                 </div>
                 {p.prerequisites && <p className="text-sm text-[#f7f7f7]/60"><span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.prereq")} :</span> {p.prerequisites}</p>}
                 {p.availability && <p className="text-sm text-[#f7f7f7]/60"><span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.avail")} :</span> {p.availability}</p>}
@@ -162,7 +162,7 @@ export default function Recruitment() {
                   </div>
                 )}
                 <div className="mt-auto pt-3 border-t border-white/10 flex items-center justify-between">
-                  <span className="text-xs text-[#f7f7f7]/40">{p.deadline ? `${t("recruit.deadline")} : ${p.deadline}` : ""}</span>
+                  <span className="text-xs text-[#c8c8c8]">{p.deadline ? `${t("recruit.deadline")} : ${p.deadline}` : ""}</span>
                   <button onClick={() => applyTo(p)} data-testid={`recruit-apply-${p.id}`}
                     className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
                     {t("recruit.apply")}

@@ -15,7 +15,7 @@ export const PageBreadcrumb = ({ items = [] }) => {
         const isLast = index === items.length - 1;
         return (
           <span key={index} className="flex items-center gap-2">
-            <ChevronRight size={12} className="text-[#f7f7f7]/30" />
+            <ChevronRight size={12} className="text-[#c8c8c8]" />
             {isLast || !item.to ? (
               <span className="text-[#D8CA82] font-semibold truncate max-w-[200px] sm:max-w-md" aria-current="page">
                 {item.label}

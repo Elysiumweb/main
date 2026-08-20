@@ -13,7 +13,7 @@ import { ShareButtons } from "../components/ShareButtons";
 
 export default function ArticleDetail() {
   const { id } = useParams();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [article, setArticle] = useState(undefined);
 
   useEffect(() => {
@@ -46,12 +46,12 @@ export default function ArticleDetail() {
               <ArrowLeft size={14} /> {t("news.back")}
             </Link>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`news.cat.${article.category}`)}</span>
+              <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`news.cat.${article.category}`)}</span>
               {article.status === "draft" && (
-                <span className="text-[10px] font-display tracking-[0.25em] uppercase text-orange-300 border border-orange-300/40 px-2 py-0.5" data-testid="article-draft-badge">{t("news.draftBadge")}</span>
+                <span className="text-xs font-display tracking-[0.25em] uppercase text-orange-300 border border-orange-300/40 px-2 py-0.5" data-testid="article-draft-badge">{t("news.draftBadge")}</span>
               )}
-              <span className="text-xs text-[#f7f7f7]/40">
-                {(article.publishedAt || article.createdAt)?.toDate ? (article.publishedAt || article.createdAt).toDate().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : ""}
+              <span className="text-xs text-[#c8c8c8]">
+                {(article.publishedAt || article.createdAt)?.toDate ? (article.publishedAt || article.createdAt).toDate().toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "long", year: "numeric" }) : ""}
               </span>
             </div>
             <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-[#f7f7f7] mt-3" data-testid="article-title">{article.title}</h1>

@@ -68,7 +68,7 @@ export const AdminAudit = () => {
       <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
         <table className="w-full text-sm" data-testid="admin-audit-table">
           <thead>
-            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#f7f7f7]/40">
+            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#c8c8c8]">
               <th className="px-4 py-3">{t("admin.table.date")}</th>
               <th className="px-4 py-3">{t("admin.table.action")}</th>
               <th className="px-4 py-3">{t("admin.table.target")}</th>
@@ -77,12 +77,12 @@ export const AdminAudit = () => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-[#f7f7f7]/40 text-center">{t("admin.audit.empty")}</td></tr>
+              <tr><td colSpan={4} className="px-4 py-8 text-[#c8c8c8] text-center">{t("admin.audit.empty")}</td></tr>
             ) : filtered.slice(0, 250).map((l) => (
               <tr key={l.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-audit-row-${l.id}`}>
                 <td className="px-4 py-3 text-[#f7f7f7]/50 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
                 <td className="px-4 py-3">
-                  <span className="text-[10px] uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-2 py-0.5">
+                  <span className="text-xs uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-2 py-0.5">
                     {ACTION_LABELS[l.action] || l.action}
                   </span>
                   {l.label && <p className="text-[#f7f7f7] mt-1">{l.label}</p>}
@@ -98,7 +98,7 @@ export const AdminAudit = () => {
           </tbody>
         </table>
       </div>
-      {filtered.length > 250 && <p className="text-xs text-[#f7f7f7]/40">250 {t("admin.audit.lastLines")} {filtered.length} {t("admin.audit.results")}</p>}
+      {filtered.length > 250 && <p className="text-xs text-[#c8c8c8]">250 {t("admin.audit.lastLines")} {filtered.length} {t("admin.audit.results")}</p>}
     </div>
   );
 };

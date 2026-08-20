@@ -23,7 +23,7 @@ const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm
 
 export default function Profile() {
   const { user, profile, loading, role, game, roster, isOfficial } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const navigate = useNavigate();
   const location = useLocation();
   const [pseudo, setPseudo] = useState(profile?.displayName || user?.displayName || "");
@@ -34,7 +34,7 @@ export default function Profile() {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
+  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#c8c8c8]">{t("common.loading")}</div>;
   if (!user && deleting) return <Navigate to="/" replace />;
   if (!user) return <Navigate to="/connexion" replace state={{ from: location }} />;
 
@@ -65,17 +65,17 @@ export default function Profile() {
     e.preventDefault();
     const issues = passwordIssues(passwordForm.next);
     if (issues.length > 0) { toast.error(issues[0]); return; }
-    if (passwordForm.next !== passwordForm.confirm) { toast.error("Les mots de passe ne correspondent pas."); return; }
+    if (passwordForm.next !== passwordForm.confirm) { toast.error(lang==="en" ? "Passwords do not match." : "Les mots de passe ne correspondent pas."); return; }
     setPasswordBusy(true);
     try {
       const credential = EmailAuthProvider.credential(user.email, passwordForm.current);
       await reauthenticateWithCredential(auth.currentUser, credential);
       await updatePassword(auth.currentUser, passwordForm.next);
       setPasswordForm({ current: "", next: "", confirm: "" });
-      toast.success("Mot de passe mis à jour.");
+      toast.success(lang==="en" ? "Password updated." : "Mot de passe mis à jour.");
     } catch (err) {
       console.error(err);
-      toast.error(err.code === "auth/wrong-password" || err.code === "auth/invalid-credential" ? "Ancien mot de passe incorrect." : t("common.error"));
+      toast.error(err.code === "auth/wrong-password" || err.code === "auth/invalid-credential" ? (lang==="en" ? "Previous password incorrect." : "Ancien mot de passe incorrect.") : t("common.error"));
     }
     setPasswordBusy(false);
   };
@@ -111,10 +111,10 @@ export default function Profile() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success("Export JSON généré.");
+      toast.success(lang==="en" ? "JSON export generated." : "Export JSON généré.");
     } catch (err) {
       console.error(err);
-      toast.error("Export impossible pour le moment.");
+      toast.error(lang==="en" ? "Export failed for now." : "Export impossible pour le moment.");
     }
     setExporting(false);
   };
@@ -148,7 +148,7 @@ export default function Profile() {
         requestedAt: serverTimestamp(),
       }, { merge: true });
       await deleteUser(auth.currentUser);
-      toast.success("Suppression du compte lancée. Les données associées vont être purgées.");
+      toast.success(lang==="en" ? "Account deletion initiated. Associated data will be purged." : "Suppression du compte lancée. Les données associées vont être purgées.");
       navigate("/", { replace: true });
     } catch (err) {
       console.error(err);
@@ -167,7 +167,7 @@ export default function Profile() {
             {isOfficial ? "Compte officiel" : t(`admin.role.${role}`)}{game ? ` · ${game}` : ""}{roster ? ` · ${roster}` : ""}
           </p>
           {gameHasRosters(game) && (
-            <p className="text-[#f7f7f7]/40 text-xs uppercase tracking-[0.2em] mt-1" data-testid="profile-roster">
+            <p className="text-[#c8c8c8] text-xs uppercase tracking-[0.2em] mt-1" data-testid="profile-roster">
               {t("profile.roster")} : {roster || t("profile.roster.none")}
             </p>
           )}

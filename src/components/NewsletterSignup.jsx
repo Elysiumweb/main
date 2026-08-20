@@ -128,7 +128,7 @@ export const NewsletterSignup = ({ compact = false }) => {
             className="mt-0.5 accent-[#D8CA82]"
             data-testid="newsletter-consent-checkbox"
           />
-          <span className="text-[11px] text-[#c8c8c8] leading-relaxed">{t("newsletter.consent")}</span>
+          <span className="text-xs text-[#c8c8c8] leading-relaxed">{t("newsletter.consent")}</span>
         </label>
       </div>
     );
@@ -159,7 +159,7 @@ export const NewsletterSignup = ({ compact = false }) => {
             <label htmlFor={`${emailId}-website`} className="sr-only">Site web</label>
             <input id={`${emailId}-website`} type="text" {...getHoneypotProps("website")} data-testid="newsletter-page-honeypot" />
             <div>
-              <label htmlFor={emailId} className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">
+              <label htmlFor={emailId} className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">
                 {t("newsletter.email")}
               </label>
               <input

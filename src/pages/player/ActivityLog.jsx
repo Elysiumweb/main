@@ -9,7 +9,7 @@ const ICONS = { note: StickyNote, event: CalendarDays, canvas: LayoutDashboard }
 
 export default function ActivityLog() {
   const { game, isOfficial } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [items, setItems] = useState([]);
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function ActivityLog() {
           <h2 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("player.activity")}</h2>
         </div>
         {items.length === 0 ? (
-          <p className="text-[#f7f7f7]/40" data-testid="activity-empty">{t("activity.empty")}</p>
+          <p className="text-[#c8c8c8]" data-testid="activity-empty">{t("activity.empty")}</p>
         ) : (
           <div className="space-y-1.5" data-testid="activity-list">
             {items.map((a) => {
@@ -41,8 +41,8 @@ export default function ActivityLog() {
                     <p className="text-sm text-[#f7f7f7]/80 truncate">
                       <span className="text-[#D8CA82]">{t(`activity.${a.type}`)}</span> — {a.label}
                     </p>
-                    <p className="text-[10px] text-[#f7f7f7]/35">
-                      {a.byName} · {a.game}{a.createdAt?.toDate ? ` · ${a.createdAt.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""}
+                    <p className="text-xs text-[#f7f7f7]/35">
+                      {a.byName} · {a.game}{a.createdAt?.toDate ? ` · ${a.createdAt.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""}
                     </p>
                   </div>
                 </div>

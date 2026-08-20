@@ -45,13 +45,38 @@ export default function About() {
         </div>
       </section>
 
-      {/* Histoire */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-8 py-16" data-testid="about-history">
-        <div className="flex items-center gap-3 mb-6">
-          <ScrollText className="text-[#D8CA82]" size={18} aria-hidden="true" />
-          <h2 className="font-display text-base tracking-[0.35em] uppercase text-[#f7f7f7]">{t("about.history.title")}</h2>
+      {/* Histoire + chronologie — D-03 */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="about-history">
+        <div className="grid lg:grid-cols-12 gap-12">
+          <div className="lg:col-span-7">
+            <div className="flex items-center gap-3 mb-6">
+              <ScrollText className="text-[#D8CA82]" size={18} aria-hidden="true" />
+              <h2 className="font-display text-base tracking-[0.35em] uppercase text-[#f7f7f7]">{t("about.history.title")}</h2>
+            </div>
+            <p className="text-[#c8c8c8] leading-relaxed text-lg">{t("about.history.text")}</p>
+            {/* Chronologie */}
+            <div className="mt-10 border-l border-[#D8CA82]/30 pl-6 space-y-6" data-testid="about-timeline">
+              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">2026 — Fondation</p><p className="text-sm text-[#c8c8c8]">Création de l’association, premier roster EVA, slogan “Not given. Earned.”</p></div>
+              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82]/60 rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">2026 — Expansion RL</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Rocket League — Junior → Esport.</p></div>
+              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#FF4655] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">2026 — Valorant</p><p className="text-sm text-[#c8c8c8]">Deux rosters Valeureux & Vaillant, même exigence.</p></div>
+            </div>
+          </div>
+          <div className="lg:col-span-5">
+            <div className="border border-white/10 bg-[#141414] p-4" data-testid="about-real-images">
+              <div className="h-64 bg-[#0d0d0d] border border-white/5 flex items-center justify-center overflow-hidden">
+                <img src="/brand/pattern.png" alt="" className="w-full h-full object-cover opacity-20 contrast-125 saturate-[0.85]" />
+                <span className="absolute text-xs uppercase tracking-widest text-[#c8c8c8]">Photos réelles — entraînements, LAN, coulisses</span>
+              </div>
+              <p className="text-xs text-[#c8c8c8] mt-3 leading-relaxed">Bibliothèque visuelle : portraits cohérents, matchs EVA/LAN, captures RL/Valorant aux droits maîtrisés — traitement contraste fort, légère désaturation, grain.</p>
+            </div>
+            {/* Chiffres-clés */}
+            <div className="grid grid-cols-3 gap-3 mt-6" data-testid="about-key-figures">
+              <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-4 text-center"><p className="font-display font-black text-2xl text-[#D8CA82]">3</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Pôles</p></div>
+              <div className="border border-white/10 bg-[#141414] p-4 text-center"><p className="font-display font-black text-2xl text-[#f7f7f7]">2026</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Fondation</p></div>
+              <div className="border border-white/10 bg-[#141414] p-4 text-center"><p className="font-display font-black text-2xl text-[#f7f7f7]">100%</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Bénévole</p></div>
+            </div>
+          </div>
         </div>
-        <p className="text-[#c8c8c8] leading-relaxed text-lg">{t("about.history.text")}</p>
       </section>
 
       {/* Valeurs */}
@@ -86,7 +111,7 @@ export default function About() {
           {bureau === null ? (
             <LoadingState testId="about-bureau-loading" />
           ) : bureau.length === 0 ? (
-            <p className="text-[#f7f7f7]/40" data-testid="about-bureau-empty">{t("about.bureau.empty")}</p>
+            <p className="text-[#c8c8c8]" data-testid="about-bureau-empty">{t("about.bureau.empty")}</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="about-bureau-grid">
               {bureau.map((m) => (

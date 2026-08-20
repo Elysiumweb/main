@@ -78,13 +78,13 @@ export const AdminMedia = () => {
         </button>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-media-list">
-        {media.length === 0 && <p className="text-[#f7f7f7]/40">{t("media.empty")}</p>}
+        {media.length === 0 && <p className="text-[#c8c8c8]">{t("media.empty")}</p>}
         {media.map((m) => (
           <div key={m.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <span className="text-[9px] uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-1.5 py-0.5">{t(`media.type.${m.type}`)}</span>
+            <span className="text-xs uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-1.5 py-0.5">{t(`media.type.${m.type}`)}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
-              <p className="text-xs text-[#f7f7f7]/40 truncate">{m.game}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}</p>
+              <p className="text-xs text-[#c8c8c8] truncate">{m.game}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}</p>
             </div>
             <ConfirmAction
               title={t("admin.media.deleteTitle")}

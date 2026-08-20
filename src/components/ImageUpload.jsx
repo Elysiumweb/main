@@ -136,7 +136,7 @@ export const ImageUpload = ({
           <span className="flex flex-col items-center gap-2 text-[#c8c8c8]">
             <UploadCloud size={20} className="text-[#D8CA82]" aria-hidden="true" />
             <span className="text-xs uppercase tracking-[0.2em]">{label || t("upload.label")}</span>
-            <span className="text-[11px] text-[#f7f7f7]/40">{t("upload.hint")}</span>
+            <span className="text-xs text-[#c8c8c8]">{t("upload.hint")}</span>
           </span>
         )}
       </div>
@@ -156,7 +156,7 @@ export const ImageUpload = ({
         </div>
       )}
 
-      <label className="flex items-center gap-2 text-[11px] text-[#f7f7f7]/40 cursor-pointer" data-testid={`${testId}-url-toggle`}>
+      <label className="flex items-center gap-2 text-xs text-[#c8c8c8] cursor-pointer" data-testid={`${testId}-url-toggle`}>
         <ImageIcon size={12} className="text-[#D8CA82]/70" aria-hidden="true" />
         <span>{t("upload.orUrl")}</span>
         <input

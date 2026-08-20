@@ -104,12 +104,12 @@ export const AdminRoster = () => {
         </div>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-roster-list">
-        {members.length === 0 && <p className="text-[#f7f7f7]/40">{t("team.empty")}</p>}
+        {members.length === 0 && <p className="text-[#c8c8c8]">{t("team.empty")}</p>}
         {members.map((m) => (
           <div key={m.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7]">{m.pseudo}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
+              <p className="text-xs text-[#c8c8c8]">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {m.ingameRole || "—"} · {t(`team.status.${m.status}`)}</p>
             </div>
             <button onClick={() => edit(m)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${m.pseudo}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-roster-edit-${m.id}`}><Pencil size={15} /></button>
             <button onClick={() => del(m.id)} title={t("common.delete")} aria-label={`${t("common.delete")} ${m.pseudo}`} className="text-red-400/70 hover:text-red-400" data-testid={`admin-roster-delete-${m.id}`}><Trash2 size={15} /></button>

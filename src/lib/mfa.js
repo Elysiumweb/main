@@ -63,11 +63,13 @@ export const ensureProjectTotpEnabled = async () => {
   return res?.data || { enabled: true };
 };
 
+const getLang = () => { try { return localStorage.getItem("elysium_lang") || "fr"; } catch { return "fr"; } };
 export const mfaErrorMessage = (err) => {
+  const lang = getLang();
   const code = err?.code || "";
   const details = String(err?.message || err?.details || "");
   if (/identity platform|IDENTITY_PLATFORM|Mettre à niveau/i.test(details)) {
-    return "Passez Firebase Authentication en Identity Platform (console Firebase → Authentication → Mettre à niveau), puis réessayez.";
+    return lang === "en" ? "Upgrade Firebase Authentication to Identity Platform (Firebase console → Authentication → Upgrade) then retry." : "Passez Firebase Authentication en Identity Platform (console Firebase → Authentication → Mettre à niveau), puis réessayez.";
   }
   if (code === "functions/not-found" || code === "functions/unimplemented" || code === "functions/unavailable") {
     return "La 2FA n'est pas encore activée côté serveur. Déployez la Cloud Function ensureTotpMfa puis réessayez.";
@@ -98,9 +100,9 @@ export const mfaErrorMessage = (err) => {
       return "Session expirée. Reconnectez-vous puis réessayez.";
     case "auth/wrong-password":
     case "auth/invalid-credential":
-      return "Mot de passe incorrect.";
+      return lang === "en" ? "Incorrect password." : "Mot de passe incorrect.";
     case "auth/too-many-requests":
-      return "Trop de tentatives. Réessayez dans quelques minutes.";
+      return lang === "en" ? "Too many attempts. Try again in a few minutes." : "Trop de tentatives. Réessayez dans quelques minutes.";
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
       return "Fenêtre de confirmation fermée.";

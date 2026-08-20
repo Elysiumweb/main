@@ -21,6 +21,32 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
 
   // ---- Historique pour annuler / rétablir (undo / redo) ----
   const [history, setHistory] = useState({ past: [], future: [] });
+
+  // Clavier : déplacement de l'élément sélectionné via flèches (D-07)
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!selected || editing) return;
+      const step = e.shiftKey ? 10 : 1;
+      let dx = 0, dy = 0;
+      if (e.key === "ArrowUp") dy = -step;
+      else if (e.key === "ArrowDown") dy = step;
+      else if (e.key === "ArrowLeft") dx = -step;
+      else if (e.key === "ArrowRight") dx = step;
+      else if (e.key === "Delete" || e.key === "Backspace") {
+        setElements(prev => prev.filter(el => el.id !== selected));
+        setSelected(null);
+        return;
+      } else if (e.key === "Enter") {
+        const el = elements.find(ee => ee.id === selected);
+        if (el) setEditing(el.id);
+        return;
+      } else return;
+      e.preventDefault();
+      setElements(prev => prev.map(el => el.id === selected ? { ...el, x: (el.x||0)+dx, y: (el.y||0)+dy } : el));
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [selected, editing, elements]);
   const itemsRef = useRef(items);
   useEffect(() => { itemsRef.current = items; }, [items]);
 
@@ -275,7 +301,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
       <div className="border-b border-white/10 bg-[#141414] px-3 py-2 flex items-center gap-2 flex-wrap shrink-0" data-testid="canvas-toolbar">
         <button onClick={onBack} className="text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors mr-1" data-testid="canvas-back-btn"><ArrowLeft size={17} /></button>
         <span className="font-display text-sm text-[#D8CA82] uppercase tracking-wider mr-2 truncate max-w-[140px]" data-testid="canvas-title">{title}</span>
-        <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 ${status === "draft" ? "text-orange-300 border-orange-300/40" : "text-emerald-300 border-emerald-300/40"}`} data-testid="canvas-status">
+        <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 ${status === "draft" ? "text-orange-300 border-orange-300/40" : "text-emerald-300 border-emerald-300/40"}`} data-testid="canvas-status">
           {status === "draft" ? t("canvas.draft") : t("common.saved")}
         </span>
         <div className="h-5 w-px bg-white/10 mx-1" />
@@ -321,7 +347,19 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
       <div ref={containerRef} data-canvasbg="1" data-testid="canvas-area"
         className={`flex-1 relative overflow-hidden canvas-dots bg-[#0d0d0d] touch-none ${tool === "draw" ? "cursor-crosshair" : tool === "select" ? "cursor-grab" : "cursor-copy"}`}
         onPointerDown={onBgPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
-        <p className="absolute bottom-2 left-3 text-[10px] text-[#f7f7f7]/25 pointer-events-none z-10">{t("canvas.hint")}</p>
+        <p className="absolute bottom-2 left-3 text-xs text-[#c8c8c8] pointer-events-none z-10">{t("canvas.hint")}</p>
+      {/* Alternative structurée au canvas : liste des éléments, édition clavier, déplacement via commandes — D-07 */}
+      <div className="absolute top-2 right-2 z-20 max-w-[280px] max-h-[40vh] overflow-auto border border-white/10 bg-[#111111]/90 backdrop-blur p-2 hidden lg:block" data-testid="canvas-elements-list">
+        <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mb-2">Éléments ({elements.length})</p>
+        {elements.length===0 ? <p className="text-xs text-[#c8c8c8]">Aucun élément</p> : elements.map((el,i)=> (
+          <div key={el.id} className="flex items-center gap-2 text-xs border-b border-white/5 py-1">
+            <span className="text-[#D8CA82]">{i+1}. {el.type}</span>
+            <span className="truncate text-[#c8c8c8]">{(el.text||"").slice(0,20) || el.id.slice(0,6)}</span>
+            <button onClick={()=> setElements(prev=> prev.filter(e=> e.id!==el.id))} className="ml-auto text-red-300 hover:text-red-200" aria-label="Supprimer l&apos;élément">✕</button>
+          </div>
+        ))}
+        <p className="text-xs text-[#c8c8c8]/60 mt-2">Déplacement clavier : flèches + Maj pour 10px, Entrée pour éditer.</p>
+      </div>
         <div className="absolute" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`, transformOrigin: "0 0" }}>
           <div className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: 0, top: 0 }}>
             <img src="/brand/logo-icon-gold.png" alt="" className="w-10 opacity-20" />
@@ -352,7 +390,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
                   className={`w-full min-h-[60px] bg-[#161616] text-sm text-[#f7f7f7] p-2 resize focus:outline-none border ${it.type === "box" ? "border-[#D8CA82]/60" : "border-white/20"}`} />
               ) : (
                 <div className={`min-h-[36px] p-2 text-sm text-[#f7f7f7]/90 whitespace-pre-wrap break-words ${it.type === "box" ? "border border-[#D8CA82]/60 bg-[#D8CA82]/5" : ""}`}>
-                  {it.text || <span className="text-[#f7f7f7]/30 italic">Double-clic...</span>}
+                  {it.text || <span className="text-[#c8c8c8] italic">Double-clic...</span>}
                 </div>
               )}
             </div>

@@ -88,7 +88,7 @@ const MonthGrid = ({ events, selectedDate, onSelect, t, lang }) => {
       </div>
       <div className="grid grid-cols-7 gap-px bg-white/10 border border-white/10" role="grid" aria-label={monthLabel}>
         {(lang === "en" ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] : ["L", "M", "M", "J", "V", "S", "D"]).map((d, i) => (
-          <div key={i} className="bg-[#0c0c0c] text-center text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 py-2">{d}</div>
+          <div key={i} className="bg-[#0c0c0c] text-center text-xs uppercase tracking-widest text-[#c8c8c8] py-2">{d}</div>
         ))}
         {cells.map((day, i) => {
           if (day === null) return <div key={i} className="bg-[#111111] min-h-[70px]" />;
@@ -114,13 +114,13 @@ const MonthGrid = ({ events, selectedDate, onSelect, t, lang }) => {
                 {dayEvents.slice(0, 3).map((ev) => (
                   <span key={ev.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLORS[ev.type] || "#D8CA82" }} title={ev.title} />
                 ))}
-                {dayEvents.length > 3 && <span className="text-[8px] text-[#f7f7f7]/40">+{dayEvents.length - 3}</span>}
+                {dayEvents.length > 3 && <span className="text-[8px] text-[#c8c8c8]">+{dayEvents.length - 3}</span>}
               </span>
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap gap-3 text-[10px] uppercase tracking-widest text-[#f7f7f7]/40">
+      <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-widest text-[#c8c8c8]">
         {TYPES.map((ty) => (
           <span key={ty} className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLORS[ty] }} />
@@ -134,7 +134,7 @@ const MonthGrid = ({ events, selectedDate, onSelect, t, lang }) => {
 
 /* ---------- Ligne d'événement avec RSVP ---------- */
 const EventRow = ({ ev, dim, user, displayName }) => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const Icon = TYPE_ICONS[ev.type] || PartyPopper;
   const d = ev.date ? new Date(ev.date) : null;
   const [pending, setPending] = useState(false);
@@ -200,17 +200,17 @@ const EventRow = ({ ev, dim, user, displayName }) => {
     <div className={`flex items-center gap-5 border border-white/10 bg-[#1A1A1A] px-5 py-4 flex-wrap ${dim ? "opacity-50" : ""}`} data-testid={`cal-event-${ev.id}`}>
       <div className="text-center shrink-0 w-16 border-r border-white/10 pr-4">
         <p className="font-display font-bold text-2xl text-[#D8CA82]">{d ? d.getDate() : "—"}</p>
-        <p className="text-[10px] uppercase text-[#f7f7f7]/40">{d ? d.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" }) : ""}</p>
+        <p className="text-xs uppercase text-[#c8c8c8]">{d ? d.toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { month: "short", year: "2-digit" }) : ""}</p>
       </div>
       <Icon size={18} className="text-[#D8CA82] shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-[#f7f7f7]">{ev.title}</p>
-        <p className="text-xs text-[#f7f7f7]/40 mt-0.5">
-          {t(`cal.type.${ev.type}`)}{d ? ` · ${d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}` : ""}
+        <p className="text-xs text-[#c8c8c8] mt-0.5">
+          {t(`cal.type.${ev.type}`)}{d ? ` · ${d.toLocaleTimeString(lang === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" })}` : ""}
           {ev.description ? ` — ${ev.description}` : ""}
         </p>
         {participants.length > 0 && (
-          <p className="text-[11px] text-[#f7f7f7]/50 mt-1 flex items-center gap-1.5" data-testid={`cal-rsvp-count-${ev.id}`}>
+          <p className="text-xs text-[#f7f7f7]/50 mt-1 flex items-center gap-1.5" data-testid={`cal-rsvp-count-${ev.id}`}>
             <UserCheck size={11} className="text-[#D8CA82]" aria-hidden="true" />
             {participants.length} {t("cal.rsvp.count")}
             {isIn && <span className="text-[#D8CA82]">· {t("cal.rsvp.you")}</span>}
@@ -225,7 +225,7 @@ const EventRow = ({ ev, dim, user, displayName }) => {
               onKeyDown={(e) => e.key === "Enter" && confirmAnon()}
               className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
             />
-            <button onClick={confirmAnon} className="bg-[#D8CA82] text-[#111111] text-[10px] font-bold uppercase tracking-widest px-3 py-1.5" data-testid={`cal-rsvp-confirm-${ev.id}`}>
+            <button onClick={confirmAnon} className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-3 py-1.5" data-testid={`cal-rsvp-confirm-${ev.id}`}>
               {t("cal.rsvp.confirm")}
             </button>
           </div>
@@ -238,7 +238,7 @@ const EventRow = ({ ev, dim, user, displayName }) => {
             disabled={pending}
             aria-pressed={isIn}
             data-testid={`cal-rsvp-${ev.id}`}
-            className={`text-[10px] uppercase tracking-widest border px-3 py-2 flex items-center gap-1.5 transition-colors disabled:opacity-50 ${
+            className={`text-xs uppercase tracking-widest border px-3 py-2 flex items-center gap-1.5 transition-colors disabled:opacity-50 ${
               isIn ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/20 text-[#f7f7f7]/60 hover:border-[#D8CA82] hover:text-[#D8CA82]"
             }`}
           >
@@ -256,7 +256,7 @@ const EventRow = ({ ev, dim, user, displayName }) => {
             <button onClick={() => downloadICS([ev], "elysium-calendrier.ics")} title={t("cal.export")} data-testid={`cal-ics-${ev.id}`}
               className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors"><Download size={15} /></button>
             <a href={gcalUrl(ev)} target="_blank" rel="noopener noreferrer" title={t("cal.gcal")} data-testid={`cal-gcal-${ev.id}`}
-              className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] border border-white/15 px-2 py-1 transition-colors">
+              className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] border border-white/15 px-2 py-1 transition-colors">
               GCal
             </a>
           </>
@@ -325,7 +325,7 @@ export default function CommunityCalendar() {
   const officialMatchesICS = useMemo(() =>
     matches.map((m) => ({
       id: `match-${m.id}`,
-      title: `${getTeamName(m)} vs ${m.opponentName || "Adversaire"}${m.status === "finished" ? ` (${m.scoreUs}-${m.scoreThem})` : ""}`,
+      title: `${getTeamName(m)} vs ${m.opponentName || t("common.adversary")}${m.status === "finished" ? ` (${m.scoreUs}-${m.scoreThem})` : ""}`,
       date: m.date ? `${m.date}T${m.time || "20:00"}` : "",
       description: m.competition ? `Compétition : ${m.competition}` : "",
       link: m.watchUrl || m.vodUrl || "",
@@ -391,18 +391,18 @@ export default function CommunityCalendar() {
           <div className="flex flex-wrap gap-2" data-testid="cal-filters">
             {["all", ...TYPES].map((ty) => (
               <button key={ty} onClick={() => setTypeFilter(ty)} data-testid={`cal-filter-${ty}`}
-                className={`text-[11px] uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${typeFilter === ty ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${typeFilter === ty ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
                 {ty === "all" ? t("media.all") : t(`cal.type.${ty}`)}
               </button>
             ))}
           </div>
           <div className="flex gap-1 border border-white/15 p-1" role="tablist" aria-label={t("cal.title")}>
             <button onClick={() => setView("list")} data-testid="cal-view-list" role="tab" aria-selected={view === "list"}
-              className={`px-3 py-1.5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "list" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-3 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "list" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
               <List size={12} aria-hidden="true" /> {t("cal.view.list")}
             </button>
             <button onClick={() => setView("month")} data-testid="cal-view-month" role="tab" aria-selected={view === "month"}
-              className={`px-3 py-1.5 text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "month" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-3 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "month" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
               <Grid3X3 size={12} aria-hidden="true" /> {t("cal.view.month")}
             </button>
           </div>
@@ -417,25 +417,25 @@ export default function CommunityCalendar() {
             <MonthGrid events={filtered} selectedDate={selectedDay} onSelect={setSelectedDay} t={t} lang={lang} />
             {selectedDay ? (
               <div className="space-y-3" data-testid="cal-month-day-events">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#f7f7f7]/40">
+                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8]">
                   {new Date(`${selectedDay}T12:00:00`).toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { weekday: "long", day: "numeric", month: "long" })} — {selectedDayEvents.length} {t("cal.month.events")}
                 </p>
-                {selectedDayEvents.length === 0 && <p className="text-[#f7f7f7]/40 text-sm">{t("cal.empty")}</p>}
+                {selectedDayEvents.length === 0 && <p className="text-[#c8c8c8] text-sm">{t("cal.empty")}</p>}
                 {selectedDayEvents.map((ev) => <EventRow key={ev.id} ev={ev} user={user} displayName={displayName} />)}
               </div>
             ) : (
-              <p className="text-sm text-[#f7f7f7]/40" data-testid="cal-month-hint">← {t("cal.empty")}</p>
+              <p className="text-sm text-[#c8c8c8]" data-testid="cal-month-hint">← {t("cal.empty")}</p>
             )}
           </div>
         ) : upcoming.length === 0 && past.length === 0 ? (
           <EmptyState icon={CalendarDays} text={t("cal.empty")} testId="cal-empty" />
         ) : (
           <div className="space-y-3" data-testid="cal-list">
-            {upcoming.length === 0 && <p className="text-[#f7f7f7]/40 mb-4" data-testid="cal-no-upcoming">{t("cal.empty")}</p>}
+            {upcoming.length === 0 && <p className="text-[#c8c8c8] mb-4" data-testid="cal-no-upcoming">{t("cal.empty")}</p>}
             {upcoming.map((ev) => <EventRow key={ev.id} ev={ev} user={user} displayName={displayName} />)}
             {past.length > 0 && (
               <>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#f7f7f7]/30 pt-8 pb-2">{t("cal.past")}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] pt-8 pb-2">{t("cal.past")}</p>
                 {past.slice(0, 10).map((ev) => <EventRow key={ev.id} ev={ev} dim user={user} displayName={displayName} />)}
               </>
             )}

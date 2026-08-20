@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
@@ -20,15 +20,21 @@ export default function Results() {
   const [matches, setMatches] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [tab, setTab] = useState("finished");
-  const [game, setGame] = useState("all");
-  const [competition, setCompetition] = useState("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "finished";
+  const game = searchParams.get("game") || "all";
+  const competition = searchParams.get("competition") || "all";
+  const from = searchParams.get("from") || "";
+  const to = searchParams.get("to") || "";
+  const setTab = (v) => { const p = new URLSearchParams(searchParams); p.set("tab", v); setSearchParams(p); };
+  const setGame = (v) => { const p = new URLSearchParams(searchParams); v==="all" ? p.delete("game") : p.set("game", v); setSearchParams(p); };
+  const setCompetition = (v) => { const p = new URLSearchParams(searchParams); v==="all" ? p.delete("competition") : p.set("competition", v); setSearchParams(p); };
+  const setFrom = (v) => { const p = new URLSearchParams(searchParams); v ? p.set("from", v) : p.delete("from"); setSearchParams(p); };
+  const setTo = (v) => { const p = new URLSearchParams(searchParams); v ? p.set("to", v) : p.delete("to"); setSearchParams(p); };
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
-    setError(false); setMatches(null);
+    setError(false);
     return onSnapshot(collection(db, "matches"), (snap) => {
       setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     }, (e) => { console.error(e); setError(true); });
@@ -70,13 +76,13 @@ export default function Results() {
         item: {
           "@type": "SportsEvent",
           "@id": `${SITE_URL}/resultats#match-${m.id}`,
-          name: `${teamName} vs ${m.opponentName || "adversaire"}`,
+          name: `${teamName} vs ${m.opponentName || t("common.adversary")}`,
           startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
           eventStatus: m.status === "upcoming" || m.status === "live" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
           sport: m.game || "Esport",
           competitor: [
             { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
-            { "@type": "SportsTeam", name: m.opponentName || "Adversaire", logo: m.opponentLogo },
+            { "@type": "SportsTeam", name: m.opponentName || t("common.adversary"), logo: m.opponentLogo },
           ],
           location: m.platform ? { "@type": "VirtualLocation", name: m.platform, url: m.watchUrl } : undefined,
         },
@@ -91,7 +97,7 @@ export default function Results() {
     jsonLd: sportsEventsJsonLd,
   });
 
-  const resetFilters = () => { setGame("all"); setCompetition("all"); setFrom(""); setTo(""); };
+  const resetFilters = () => { setSearchParams(new URLSearchParams()); };
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
@@ -160,27 +166,46 @@ export default function Results() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="results-filters">
+        {/* Compteur + badges actifs — D-08 : barre de filtres partagée */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4" data-testid="results-filter-bar">
+          <p className="text-xs text-[#c8c8c8]" data-testid="results-count">
+            {filtered.length} résultat{filtered.length !== 1 ? "s" : ""} {game!=="all" || competition!=="all" || from || to ? "· filtres actifs" : ""}
+          </p>
+          {(game!=="all" || competition!=="all" || from || to) && (
+            <button onClick={resetFilters} data-testid="results-filter-reset-all" className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Tout réinitialiser</button>
+          )}
+        </div>
+        {(game!=="all" || competition!=="all" || from || to) && (
+          <div className="flex flex-wrap gap-2 mb-4" data-testid="results-active-filters">
+            {game!=="all" && <button onClick={()=>setGame("all")} data-testid="results-badge-game" className="border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] text-xs px-3 py-1.5 flex items-center gap-2">Jeu: {game} ✕</button>}
+            {competition!=="all" && <button onClick={()=>setCompetition("all")} data-testid="results-badge-competition" className="border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] text-xs px-3 py-1.5 flex items-center gap-2">Compétition: {competition} ✕</button>}
+            {from && <button onClick={()=>setFrom("")} data-testid="results-badge-from" className="border border-white/20 bg-[#1A1A1A] text-[#c8c8c8] text-xs px-3 py-1.5">Du: {from} ✕</button>}
+            {to && <button onClick={()=>setTo("")} data-testid="results-badge-to" className="border border-white/20 bg-[#1A1A1A] text-[#c8c8c8] text-xs px-3 py-1.5">Au: {to} ✕</button>}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-4 mb-10 overflow-x-auto pb-2 scrollbar-thin" data-testid="results-filters" style={{scrollbarWidth:"thin"}}>
+          <span className="hidden sm:inline text-xs text-[#c8c8c8]/50 mr-2">← faire défiler →</span>
           <div>
-            <label htmlFor="filter-game" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("common.game")}</label>
+            <label htmlFor="filter-game" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("common.game")}</label>
             <select id="filter-game" value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="results-filter-game">
               <option value="all">{t("results.filter.all")}</option>
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="filter-competition" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.competition")}</label>
+            <label htmlFor="filter-competition" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.competition")}</label>
             <select id="filter-competition" value={competition} onChange={(e) => setCompetition(e.target.value)} className={selectCls} data-testid="results-filter-competition">
               <option value="all">{t("results.filter.all")}</option>
               {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="filter-from" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.from")}</label>
+            <label htmlFor="filter-from" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.from")}</label>
             <input id="filter-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} data-testid="results-filter-from" />
           </div>
           <div>
-            <label htmlFor="filter-to" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.to")}</label>
+            <label htmlFor="filter-to" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.to")}</label>
             <input id="filter-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
           </div>
           <button onClick={resetFilters} data-testid="results-filter-reset"
@@ -192,10 +217,39 @@ export default function Results() {
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="results-error" />
         ) : matches === null ? (
-          <LoadingState testId="results-loading" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-loading">
+            {[1,2,3,4,5,6].map((i)=> (
+              <div key={i} className="border border-white/10 bg-[#1A1A1A] p-6 animate-pulse">
+                <div className="flex justify-between mb-4">
+                  <div className="h-5 w-16 bg-white/10" />
+                  <div className="h-5 w-20 bg-white/10" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 bg-white/5" />
+                  <div className="h-6 w-12 bg-white/10" />
+                  <div className="h-12 w-12 bg-white/5" />
+                </div>
+                <div className="mt-4 h-3 w-full bg-white/5" />
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
-          <EmptyState icon={tab === "upcoming" ? CalendarClock : Trophy}
-            text={tab === "upcoming" ? t("results.noUpcoming") : t("results.empty")} testId="results-empty" />
+          matches && matches.length===0 ? (
+            <div className="border border-white/10 bg-[#1A1A1A] py-20 flex flex-col items-center gap-4" data-testid="results-empty">
+              <Trophy className="text-[#D8CA82]/50" size={36} aria-hidden="true" />
+              <p className="text-[#c8c8c8]">{t("results.empty")}</p>
+              <p className="text-xs text-[#c8c8c8]/70">Aucune donnée publiée — l’admin peut publier un match.</p>
+            </div>
+          ) : (
+            <div className="border border-white/10 bg-[#1A1A1A] py-20 flex flex-col items-center gap-4" data-testid="results-empty">
+              <Trophy className="text-[#D8CA82]/50" size={36} aria-hidden="true" />
+              <p className="text-[#c8c8c8]">Aucun résultat avec ces filtres.</p>
+              <div className="flex gap-3">
+                <button onClick={resetFilters} data-testid="results-empty-reset" className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-2.5 hover:bg-[#D8CA82]/10">Réinitialiser</button>
+                <Link to="/calendrier" className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-2.5 hover:border-[#D8CA82]">Voir le calendrier</Link>
+              </div>
+            </div>
+          )
         ) : (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
@@ -210,7 +264,7 @@ export default function Results() {
                 >
                   <ChevronDown size={14} aria-hidden="true" /> {t("results.loadMore")}
                 </button>
-                <p className="text-[11px] text-[#f7f7f7]/40">
+                <p className="text-xs text-[#c8c8c8]">
                   {Math.min(visibleCount, filtered.length)} {t("results.loaded")} {filtered.length}
                 </p>
               </div>

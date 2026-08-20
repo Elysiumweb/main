@@ -24,7 +24,7 @@ export const ArticleCover = ({ src, className }) => {
 };
 
 export default function News() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [articles, setArticles] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -49,7 +49,7 @@ export default function News() {
 
   const dateLabel = (a) =>
     (a.publishedAt || a.createdAt)?.toDate
-      ? (a.publishedAt || a.createdAt).toDate().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+      ? (a.publishedAt || a.createdAt).toDate().toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { day: "numeric", month: "long", year: "numeric" })
       : "";
 
   const excerpt = (a) => (a.excerpt?.trim() || markdownToText(a.content)).slice(0, 140);
@@ -68,7 +68,7 @@ export default function News() {
         <div className="flex flex-wrap gap-2 mb-10" data-testid="news-category-filters">
           {["all", ...CATEGORIES].map((c) => (
             <button key={c} onClick={() => setCat(c)} data-testid={`news-cat-${c}`}
-              className={`text-[11px] uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${cat === c ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${cat === c ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
               {c === "all" ? t("media.all") : t(`news.cat.${c}`)}
             </button>
           ))}
@@ -89,15 +89,15 @@ export default function News() {
                   <ArticleCover src={featured.coverUrl} className="absolute inset-0 w-full h-full" />
                 </div>
                 <div className="sm:w-1/2 p-8 flex flex-col justify-center relative">
-                  <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#D8CA82] flex items-center gap-2">
+                  <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82] flex items-center gap-2">
                     <Star size={11} className="fill-[#D8CA82]" aria-hidden="true" /> {t("news.featured")}
                     <span aria-hidden="true">·</span> {t(`news.cat.${featured.category}`)}
                   </span>
                   <p className="font-display font-black text-2xl sm:text-3xl text-[#f7f7f7] mt-3 group-hover:text-[#D8CA82] transition-colors leading-tight">{featured.title}</p>
                   <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-3">{excerpt(featured)}{excerpt(featured).length >= 140 ? "…" : ""}</p>
                   <div className="mt-5 flex items-center justify-between">
-                    <span className="text-xs text-[#f7f7f7]/30">{dateLabel(featured)}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-[#D8CA82]">{t("news.readMore")} →</span>
+                    <span className="text-xs text-[#c8c8c8]">{dateLabel(featured)}</span>
+                    <span className="text-xs uppercase tracking-widest text-[#D8CA82]">{t("news.readMore")} →</span>
                   </div>
                 </div>
               </Link>
@@ -109,12 +109,12 @@ export default function News() {
                   className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/60 transition-colors overflow-hidden flex flex-col">
                   <ArticleCover src={a.coverUrl} className="w-full h-44" />
                   <div className="p-5 flex-1 flex flex-col">
-                    <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#D8CA82]">{t(`news.cat.${a.category}`)}</span>
+                    <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82]">{t(`news.cat.${a.category}`)}</span>
                     <p className="font-display font-bold text-[#f7f7f7] mt-2 group-hover:text-[#D8CA82] transition-colors">{a.title}</p>
                     <p className="text-sm text-[#f7f7f7]/50 mt-2 line-clamp-3">{excerpt(a)}{excerpt(a).length >= 140 ? "…" : ""}</p>
                     <div className="mt-auto pt-4 flex items-center justify-between">
-                      <span className="text-xs text-[#f7f7f7]/30">{dateLabel(a)}</span>
-                      <span className="text-[10px] uppercase tracking-widest text-[#D8CA82]/70">{t("news.readMore")} →</span>
+                      <span className="text-xs text-[#c8c8c8]">{dateLabel(a)}</span>
+                      <span className="text-xs uppercase tracking-widest text-[#D8CA82]/70">{t("news.readMore")} →</span>
                     </div>
                   </div>
                 </Link>
@@ -130,7 +130,7 @@ export default function News() {
                 >
                   <ChevronDown size={14} aria-hidden="true" /> {t("news.loadMore")}
                 </button>
-                <p className="text-[11px] text-[#f7f7f7]/40">
+                <p className="text-xs text-[#c8c8c8]">
                   {Math.min(visibleCount, rest.length)} {t("news.loaded")} {rest.length}
                 </p>
               </div>

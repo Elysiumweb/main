@@ -21,7 +21,7 @@ const parseStats = (txt) =>
 
 export default function PlayerDetail() {
   const { id } = useParams();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [player, setPlayer] = useState(undefined);
   const [matches, setMatches] = useState([]);
   const [error, setError] = useState(false);
@@ -62,7 +62,7 @@ export default function PlayerDetail() {
   const fmtArrival = (d) => {
     if (!d) return "";
     const dt = new Date(d);
-    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { month: "long", year: "numeric" });
   };
 
   const history = matches.filter((m) => {
@@ -87,23 +87,23 @@ export default function PlayerDetail() {
           <div className="flex flex-col sm:flex-row gap-10 items-start">
             <PlayerPhoto src={player.photo} alt={player.pseudo} className="w-44 h-44 border border-[#D8CA82]/30" />
             <div className="flex-1">
-              <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`team.status.${player.status || "player"}`)}</span>
+              <span className="text-xs font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`team.status.${player.status || "player"}`)}</span>
               <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase mt-4" data-testid="player-pseudo">{player.pseudo}</h1>
               <p className="text-[#D8CA82] uppercase tracking-[0.3em] text-sm mt-2">{player.game}{player.ingameRole ? ` — ${player.ingameRole}` : ""}</p>
               {hasRank && (
                 <div className="flex items-center gap-2 mt-3 flex-wrap" data-testid="player-rank">
                   {player.rank && (
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/70 border border-[#D8CA82]/40 bg-[#D8CA82]/5 px-2.5 py-1">
+                    <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/70 border border-[#D8CA82]/40 bg-[#D8CA82]/5 px-2.5 py-1">
                       {t("playerpage.rank")}: <span className="text-[#D8CA82] font-bold">{player.rank}</span>
                     </span>
                   )}
                   {player.mmr && (
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/70 border border-white/15 px-2.5 py-1">
+                    <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/70 border border-white/15 px-2.5 py-1">
                       {t("playerpage.mmr")}: <span className="text-[#f7f7f7] font-bold">{player.mmr}</span>
                     </span>
                   )}
                   {player.arrivalDate && (
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#f7f7f7]/50 px-2.5 py-1" data-testid="player-arrival">
+                    <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/50 px-2.5 py-1" data-testid="player-arrival">
                       {t("playerpage.arrival")}: {fmtArrival(player.arrivalDate)}
                     </span>
                   )}
@@ -130,7 +130,7 @@ export default function PlayerDetail() {
           <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.history")}</h2>
         </div>
         {history.length === 0 ? (
-          <p className="text-[#f7f7f7]/40" data-testid="player-no-history">{t("playerpage.noHistory")}</p>
+          <p className="text-[#c8c8c8]" data-testid="player-no-history">{t("playerpage.noHistory")}</p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="player-history">
             {history.map((m) => <MatchCard key={m.id} match={m} />)}

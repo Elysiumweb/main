@@ -128,14 +128,14 @@ export default function Stats() {
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="stats-filters">
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("stats.filter.game")}</label>
+            <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("stats.filter.game")}</label>
             <select value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="stats-filter-game">
               <option value="all">{t("results.filter.all")}</option>
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 block mb-1.5">{t("stats.filter.period")}</label>
+            <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("stats.filter.period")}</label>
             <select value={period} onChange={(e) => setPeriod(e.target.value)} className={selectCls} data-testid="stats-filter-period">
               <option value="all">{t("stats.period.all")}</option>
               <option value="month">{t("stats.period.month")}</option>
@@ -156,27 +156,27 @@ export default function Stats() {
             {/* KPI Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12" data-testid="stats-kpis">
               <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#D8CA82]/80 mb-1">{t("stats.winRate")}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/80 mb-1">{t("stats.winRate")}</p>
                 <p className="font-display font-black text-3xl text-[#D8CA82]">{stats.winRate}%</p>
               </div>
               <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.totalMatches")}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.totalMatches")}</p>
                 <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.total}</p>
               </div>
               <div className="border border-emerald-300/40 bg-emerald-300/5 p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-300 mb-1 flex items-center justify-center gap-1.5">
+                <p className="text-xs uppercase tracking-[0.25em] text-emerald-300 mb-1 flex items-center justify-center gap-1.5">
                   <Trophy size={11} aria-hidden="true" />{t("stats.wins")}
                 </p>
                 <p className="font-display font-black text-3xl text-emerald-300">{stats.wins}</p>
               </div>
               <div className="border border-red-300/40 bg-red-300/5 p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-red-300 mb-1 flex items-center justify-center gap-1.5">
+                <p className="text-xs uppercase tracking-[0.25em] text-red-300 mb-1 flex items-center justify-center gap-1.5">
                   <Skull size={11} aria-hidden="true" />{t("stats.losses")}
                 </p>
                 <p className="font-display font-black text-3xl text-red-300">{stats.losses}</p>
               </div>
               <div className="border border-white/10 bg-[#1A1A1A] p-5 text-center">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.draws")}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.draws")}</p>
                 <p className="font-display font-black text-3xl text-[#f7f7f7]">{stats.draws}</p>
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function Stats() {
                   </span>
                 </p>
                 <div className="mt-4 pt-4 border-t border-white/10">
-                  <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">{t("stats.bestStreak")}</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("stats.bestStreak")}</p>
                   <p className="font-display font-bold text-xl text-[#D8CA82]">{stats.bestStreak} {t("stats.series.wins")}</p>
                 </div>
               </div>
@@ -212,12 +212,12 @@ export default function Stats() {
                 </div>
                 <div className="flex items-center gap-6">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">Elysium</p>
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">Elysium</p>
                     <p className="font-display font-black text-2xl text-[#D8CA82]">{stats.avgUs}</p>
                   </div>
-                  <span className="text-[#f7f7f7]/20 text-2xl">—</span>
+                  <span className="text-[#c8c8c8] text-2xl">—</span>
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mb-1">Adversaire</p>
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("common.adversary")}</p>
                     <p className="font-display font-black text-2xl text-[#f7f7f7]">{stats.avgThem}</p>
                   </div>
                 </div>
@@ -235,7 +235,7 @@ export default function Stats() {
                   <div key={pg.game} className="border border-white/10 bg-[#1A1A1A] p-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="font-display font-bold text-[#f7f7f7]">{pg.game}</p>
-                      <span className="text-[10px] uppercase tracking-[0.25em] text-[#D8CA82]">{pg.total} {t("stats.totalMatches").toLowerCase()}</span>
+                      <span className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]">{pg.total} {t("stats.totalMatches").toLowerCase()}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
@@ -245,7 +245,7 @@ export default function Stats() {
                       </div>
                       <span className="font-display font-bold text-[#D8CA82]">{pg.winRate}%</span>
                     </div>
-                    <p className="text-xs text-[#f7f7f7]/40 mt-2">{pg.wins}W – {pg.losses}L{pg.draws ? ` – ${pg.draws}D` : ""}</p>
+                    <p className="text-xs text-[#c8c8c8] mt-2">{pg.wins}W – {pg.losses}L{pg.draws ? ` – ${pg.draws}D` : ""}</p>
                   </div>
                 ))}
               </div>

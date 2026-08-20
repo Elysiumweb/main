@@ -94,12 +94,12 @@ export default function Home() {
   return (
     <div className="bg-[#111111]">
       {/* HERO */}
-      <section className="relative overflow-hidden min-h-[88vh] flex items-center" data-testid="home-hero" aria-labelledby="home-h1">
+      <section className="relative overflow-hidden min-h-[64vh] flex items-center" data-testid="home-hero" aria-labelledby="home-h1">
         <div className="pattern-overlay" />
         <div className="absolute -right-10 sm:-right-16 lg:-right-24 top-1/2 -translate-y-1/2 opacity-[0.07] pointer-events-none" aria-hidden="true">
-          <OptimizedImage src="/brand/logo-icon-gold.png" alt="" width="640" height="640" loading="lazy" className="w-[260px] sm:w-[400px] lg:w-[560px] xl:w-[640px] max-w-none" />
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt="" width="808" height="798" loading="lazy" className="w-[260px] sm:w-[400px] lg:w-[560px] xl:w-[640px] max-w-none" />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 relative w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative w-full">
           <div className="max-w-3xl">
             <p className="anim-fade-up motion-reduce:animate-none text-[#D8CA82] font-display text-xs sm:text-sm tracking-[0.5em] uppercase mb-6">
               Esport Team — Est. 2026
@@ -110,7 +110,7 @@ export default function Home() {
             <p className="anim-fade-up motion-reduce:animate-none font-display text-[#D8CA82] text-lg sm:text-2xl tracking-[0.3em] uppercase mt-4" style={{ animationDelay: "0.2s" }} data-testid="home-tagline">
               {t("home.tagline")}
             </p>
-            <OptimizedImage src="/brand/accent-blade.png" alt="" aria-hidden="true" width="192" height="32" loading="lazy" className="anim-fade-up motion-reduce:animate-none w-48 my-8 opacity-80" style={{ animationDelay: "0.25s" }} />
+            <OptimizedImage src="/brand/accent-blade.png" alt="" aria-hidden="true" width="787" height="658" loading="lazy" className="anim-fade-up motion-reduce:animate-none w-48 h-auto my-8 opacity-80" style={{ animationDelay: "0.25s" }} />
             <p className="anim-fade-up motion-reduce:animate-none text-[#c8c8c8] text-base sm:text-lg max-w-xl leading-relaxed" style={{ animationDelay: "0.3s" }}>
               {t("home.heroSub")}
             </p>
@@ -131,6 +131,62 @@ export default function Home() {
         </div>
       </section>
 
+      {/* PRIMARY — live > prochain match > dernier résultat > article à la une — D-02 : immédiatement sous le hero, une seule preuve forte au-dessus de la ligne de flottaison */}
+      <section className="border-b border-white/10 bg-[#0c0c0c]" data-testid="home-primary" aria-labelledby="home-primary-h2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Radio className="text-[#D8CA82]" size={16} aria-hidden="true" />
+            <h2 id="home-primary-h2" className="font-display text-xs uppercase tracking-[0.35em] text-[#f7f7f7]">À la une</h2>
+            <div className="flex-1 h-px bg-white/10" />
+            <Link to="/resultats" className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Tous les matchs →</Link>
+          </div>
+          {liveMatches.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4" data-testid="home-primary-live">
+              {liveMatches.slice(0,2).map((m) => (
+                <div key={m.id} className="border border-red-400/40 bg-red-500/10 p-5 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-red-300 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" /> En direct</p>
+                    <p className="font-display font-bold text-[#f7f7f7] mt-2">{getElysiumTeamName(m.roster)} vs {m.opponentName || "?"}</p>
+                    <p className="text-xs text-[#c8c8c8] mt-1">{fmtMatchDate(m, lang)} · {m.competition || m.game || "EVA"}</p>
+                  </div>
+                  {m.watchUrl && (
+                    <a href={m.watchUrl} target="_blank" rel="noopener noreferrer" data-testid={`home-primary-watch-${m.id}`} onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_primary", matchId: m.id })} className="bg-red-500 text-white text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:bg-red-400">Regarder</a>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : nextMatch ? (
+            <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 flex flex-col sm:flex-row items-center gap-6" data-testid="home-primary-next">
+              <div className="flex items-center gap-4">
+                <OptimizedImage src="/brand/logo-icon-gold.png" alt="" width="808" height="798" className="h-12 w-12 object-contain gold-glow" />
+                <span className="font-display font-black text-xl text-[#f7f7f7]">VS</span>
+                <div className="h-12 w-12 flex items-center justify-center border border-white/15 bg-[#0c0c0c] text-[#c8c8c8] text-xs">{(nextMatch.opponentName||"?").slice(0,2).toUpperCase()}</div>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82]">Prochain match</p>
+                <p className="font-display font-bold text-[#f7f7f7] mt-1">{getElysiumTeamName(nextMatch.roster)} vs {nextMatch.opponentName || "TBD"} — {nextMatch.competition || nextMatch.game}</p>
+                <p className="text-xs text-[#c8c8c8] mt-1">{fmtMatchDate(nextMatch, lang)} {nextMatch.timezone ? `(${nextMatch.timezone})` : ""}</p>
+              </div>
+              <MatchCountdown match={nextMatch} testId="home-primary-countdown" />
+            </div>
+          ) : palmares.last ? (
+            <div className="border border-white/10 bg-[#1A1A1A] p-6 flex items-center justify-between" data-testid="home-primary-last">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82]">Dernier résultat</p>
+                <p className="font-display font-bold text-[#f7f7f7] mt-1">{getElysiumTeamName(palmares.last.roster)} {palmares.last.scoreUs}—{palmares.last.scoreThem} vs {palmares.last.opponentName}</p>
+                <p className="text-xs text-[#c8c8c8] mt-1">{fmtMatchDate(palmares.last, lang)} · {palmares.last.competition || ""} · {palmares.winRate}% win rate</p>
+              </div>
+              <Link to="/resultats" className="border border-[#D8CA82]/40 text-[#D8CA82] text-xs uppercase tracking-widest px-4 py-2 hover:bg-[#D8CA82]/10">Voir les résultats</Link>
+            </div>
+          ) : (
+            <div className="border border-white/10 bg-[#141414] p-6 text-center" data-testid="home-primary-empty">
+              <p className="text-sm text-[#c8c8c8]">Aucun match programmé — découvre l’équipe et notre univers.</p>
+              <Link to="/equipe" className="mt-3 inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#D8CA82] hover:underline">Découvrir l’équipe <ArrowRight size={12} /></Link>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* BANDEAU LIVE — match en direct */}
       {liveMatches.length > 0 && (
         <section className="border-b border-red-400/40 bg-red-500/10" data-testid="home-live-banner" aria-label={t("live.banner")}>
@@ -146,7 +202,7 @@ export default function Home() {
                 {m.watchUrl && (
                   <a href={m.watchUrl} target="_blank" rel="noopener noreferrer" data-testid={`home-live-banner-link-${m.id}`}
                     onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_live_banner", matchId: m.id, platform: m.platform || "watchUrl" })}
-                    className="ml-3 inline-flex items-center gap-1.5 bg-red-500 text-white text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1.5 hover:bg-red-400 transition-colors">
+                    className="ml-3 inline-flex items-center gap-1.5 bg-red-500 text-white text-xs font-display font-bold uppercase tracking-widest px-3 py-1.5 hover:bg-red-400 transition-colors">
                     <Radio size={12} aria-hidden="true" /> {t("live.banner.watch")}
                   </a>
                 )}
@@ -158,9 +214,9 @@ export default function Home() {
 
       {/* MANIFESTO */}
       <section className="border-y border-white/10 bg-[#0c0c0c] relative overflow-hidden" data-testid="home-manifesto" aria-labelledby="home-manifesto-h2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 grid lg:grid-cols-12 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 grid lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-4">
-            <OptimizedImage src="/brand/logo-vertical-gold.png" alt="Logo vertical Elysium" width="224" height="280" loading="lazy" className="w-40 sm:w-48 lg:w-56 mx-auto lg:mx-0 gold-glow" />
+            <OptimizedImage src="/brand/logo-vertical-gold.png" alt="Logo vertical Elysium" width="817" height="690" loading="lazy" className="w-40 sm:w-48 lg:w-56 h-auto mx-auto lg:mx-0 gold-glow" />
           </div>
           <div className="lg:col-span-8">
             <h2 id="home-manifesto-h2" className="font-display text-[#D8CA82] text-base md:text-lg tracking-[0.4em] uppercase mb-6">{t("home.manifesto.title")}</h2>
@@ -172,7 +228,7 @@ export default function Home() {
       </section>
 
       {/* GAMES */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-games" aria-labelledby="home-games-h2">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="home-games" aria-labelledby="home-games-h2">
         <div className="flex items-center gap-4 mb-10">
           <Swords className="text-[#D8CA82]" size={20} aria-hidden="true" />
           <h2 id="home-games-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.games.title")}</h2>
@@ -203,7 +259,7 @@ export default function Home() {
             <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.rl.short")}</p>
             <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.rl")}</p>
             <div className="mt-6 flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2.5 py-1 font-bold">{t("home.badge.new")}</span>
+              <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2.5 py-1 font-bold">{t("home.badge.new")}</span>
               <Link to="/equipe?game=Rocket%20League" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#c8c8c8] hover:text-[#D8CA82] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                 {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
               </Link>
@@ -218,7 +274,7 @@ export default function Home() {
             <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.valo.short")}</p>
             <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.valo")}</p>
             <div className="mt-6 flex items-center gap-3 flex-wrap">
-              <span className="text-[10px] uppercase tracking-widest border border-[#FF4655]/30 text-[#FF4655]/90 px-2 py-1">Valeureux · Vaillant</span>
+              <span className="text-xs uppercase tracking-widest border border-[#FF4655]/30 text-[#FF4655]/90 px-2 py-1">Valeureux · Vaillant</span>
               <Link to="/equipe?game=Valorant" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#c8c8c8] hover:text-[#FF4655] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF4655]">
                 {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
               </Link>
@@ -228,14 +284,14 @@ export default function Home() {
             <p className="font-display text-[#c8c8c8] tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
             <p className="text-[#c8c8c8] text-sm leading-relaxed">{t("home.games.pillars")}</p>
             <div className="mt-6 h-px bg-white/10" />
-            <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-[#D8CA82]/70">Not given. Earned.</p>
+            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-[#D8CA82]/70">Not given. Earned.</p>
           </div>
         </div>
       </section>
 
       {/* PREUVES — bento asymétrique : prochain match / palmarès / effectif */}
       <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="home-proof-h2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-latest-results">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="home-latest-results">
           <div className="flex items-center gap-4 mb-10">
             <Trophy className="text-[#D8CA82]" size={20} aria-hidden="true" />
             <h2 id="home-proof-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.proof.title")}</h2>
@@ -247,17 +303,18 @@ export default function Home() {
             <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative border border-white/10 bg-[#111111] overflow-hidden flex flex-col group hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-next-match">
               <img src="https://images.pexels.com/photos/9072212/pexels-photo-9072212.jpeg?auto=compress&cs=tinysrgb&w=1200"
                 alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800"
-                className="absolute inset-0 w-full h-full object-cover opacity-25 saturate-[0.4] contrast-125" />
+                className="absolute inset-0 w-full h-full object-cover opacity-25 saturate-[0.4] contrast-125 grayscale-[0.15]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0c] via-[#0c0c0c]/80 to-[#0c0c0c]/40" aria-hidden="true" />
+              <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{backgroundImage:"radial-gradient(rgba(216,202,130,0.3) 1px, transparent 1px)", backgroundSize:"3px 3px"}} aria-hidden="true" />
               <div className="relative p-8 lg:p-12 flex flex-col flex-1">
-                <p className="text-[10px] font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-8 flex items-center gap-2">
+                <p className="text-xs font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-8 flex items-center gap-2">
                   <CalendarClock size={13} aria-hidden="true" /> {t("home.proof.nextMatch")}
                 </p>
                 {nextMatch ? (
                   <div className="flex-1 flex flex-col justify-between gap-8">
                     <div className="flex items-center justify-center gap-6 sm:gap-12" data-testid="home-proof-vs">
                       <div className="flex flex-col items-center gap-3">
-                        <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${getElysiumTeamName(nextMatch.roster)}`} width="80" height="80" loading="lazy" className="h-16 sm:h-20 object-contain gold-glow" />
+                        <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${getElysiumTeamName(nextMatch.roster)}`} width="808" height="798" loading="lazy" className="h-16 sm:h-20 w-auto object-contain gold-glow" />
                         <span className="font-display uppercase tracking-[0.25em] text-sm text-[#f7f7f7] text-center leading-tight">{getElysiumTeamName(nextMatch.roster)}</span>
                       </div>
                       <span className="font-display font-black text-3xl sm:text-5xl text-[#D8CA82]" aria-hidden="true">VS</span>
@@ -268,8 +325,8 @@ export default function Home() {
                     </div>
                     <MatchCountdown match={nextMatch} testId="home-next-match-countdown" />
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-white/10 pt-6">
-                      <span className="text-[10px] font-display uppercase tracking-[0.3em] text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{nextMatch.game || "EVA"}</span>
-                      {nextMatch.roster && <span className="text-[10px] font-display uppercase tracking-[0.25em] text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5">{nextMatch.roster}</span>}
+                      <span className="text-xs font-display uppercase tracking-[0.3em] text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{nextMatch.game || "EVA"}</span>
+                      {nextMatch.roster && <span className="text-xs font-display uppercase tracking-[0.25em] text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5">{nextMatch.roster}</span>}
                       {nextMatch.competition && <span className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/70">{nextMatch.competition}</span>}
                       <span className="text-xs text-[#f7f7f7]/60">{fmtMatchDate(nextMatch, lang)}{nextMatch.timezone ? ` (${nextMatch.timezone})` : ""}</span>
                       {nextMatch.watchUrl && (
@@ -294,7 +351,7 @@ export default function Home() {
 
             {/* PALMARÈS */}
             <article className="lg:col-span-2 border border-white/10 bg-[#1A1A1A] p-8 flex flex-col hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-palmares">
-              <p className="text-[10px] font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-6 flex items-center gap-2">
+              <p className="text-xs font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-6 flex items-center gap-2">
                 <Trophy size={13} aria-hidden="true" /> {t("home.proof.palmares")}
               </p>
               {palmares.total === 0 ? (
@@ -302,44 +359,44 @@ export default function Home() {
               ) : (
                 <>
                   <p className="font-display font-black text-5xl text-[#D8CA82]" data-testid="home-proof-winrate">{palmares.winRate}<span className="text-2xl">%</span></p>
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#c8c8c8] mt-1 mb-6">{t("home.proof.winRate")}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] mt-1 mb-6">{t("home.proof.winRate")}</p>
                   <div className="flex gap-4 text-center">
                     <div>
                       <p className="font-display font-bold text-xl text-emerald-300">{palmares.wins}</p>
-                      <p className="text-[9px] uppercase tracking-widest text-[#c8c8c8]">W</p>
+                      <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">W</p>
                     </div>
                     <div>
                       <p className="font-display font-bold text-xl text-red-300">{palmares.losses}</p>
-                      <p className="text-[9px] uppercase tracking-widest text-[#c8c8c8]">L</p>
+                      <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">L</p>
                     </div>
                     <div>
                       <p className="font-display font-bold text-xl text-[#f7f7f7]/60">{palmares.draws}</p>
-                      <p className="text-[9px] uppercase tracking-widest text-[#c8c8c8]">D</p>
+                      <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">D</p>
                     </div>
                   </div>
                   {palmares.last && (
-                    <p className="mt-auto pt-5 text-[11px] text-[#f7f7f7]/50 leading-snug">
+                    <p className="mt-auto pt-5 text-xs text-[#f7f7f7]/50 leading-snug">
                       {t("home.proof.lastResult")} : <span className="text-[#f7f7f7]/80">{palmares.last.scoreUs}—{palmares.last.scoreThem}</span> {getElysiumTeamName(palmares.last.roster)} vs {palmares.last.opponentName || "?"}
                     </p>
                   )}
                 </>
               )}
               <Link to="/resultats" data-testid="home-latest-all-link"
-                className="mt-5 inline-flex items-center gap-2 text-[11px] font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                className="mt-5 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                 {t("home.latest.all")} <ArrowRight size={11} aria-hidden="true" />
               </Link>
             </article>
 
             {/* EFFECTIF */}
             <article className="lg:col-span-2 border border-white/10 bg-[#141414] p-8 flex flex-col hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-roster">
-              <p className="text-[10px] font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-6 flex items-center gap-2">
+              <p className="text-xs font-display uppercase tracking-[0.4em] text-[#D8CA82] mb-6 flex items-center gap-2">
                 <Users size={13} aria-hidden="true" /> {t("home.proof.roster")}
               </p>
               <p className="font-display font-black text-5xl text-[#f7f7f7]">{rosterStats.total}</p>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[#c8c8c8] mt-1 mb-6">{t("home.proof.players")}</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] mt-1 mb-6">{t("home.proof.players")}</p>
               <div className="flex flex-wrap gap-2">
                 {rosterStats.byGame.map((g) => (
-                  <span key={g.game} className="text-[10px] uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 px-2 py-1">
+                  <span key={g.game} className="text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 px-2 py-1">
                     {getGameShortLabel(g.game)} · {g.count}
                   </span>
                 ))}
@@ -347,15 +404,15 @@ export default function Home() {
               {rosterStats.sample.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-4" aria-hidden="true">
                   {rosterStats.sample.map((p) => (
-                    <span key={p.id} className="text-[10px] font-display uppercase tracking-wider bg-white/5 border border-white/10 text-[#f7f7f7]/60 px-2 py-0.5">{p.pseudo}</span>
+                    <span key={p.id} className="text-xs font-display uppercase tracking-wider bg-white/5 border border-white/10 text-[#f7f7f7]/60 px-2 py-0.5">{p.pseudo}</span>
                   ))}
                   {rosterStats.total > rosterStats.sample.length && (
-                    <span className="text-[10px] font-display uppercase tracking-wider text-[#D8CA82]/80 px-2 py-0.5">+{rosterStats.total - rosterStats.sample.length}</span>
+                    <span className="text-xs font-display uppercase tracking-wider text-[#D8CA82]/80 px-2 py-0.5">+{rosterStats.total - rosterStats.sample.length}</span>
                   )}
                 </div>
               )}
               <Link to="/equipe" data-testid="home-proof-team-link"
-                className="mt-auto pt-5 inline-flex items-center gap-2 text-[11px] font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                className="mt-auto pt-5 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
                 {t("home.proof.viewTeam")} <ArrowRight size={11} aria-hidden="true" />
               </Link>
             </article>
@@ -365,7 +422,7 @@ export default function Home() {
 
       {/* LIVE TWITCH / YOUTUBE */}
       <section className="border-t border-white/10" aria-labelledby="home-live-h2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-live">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="home-live">
           <div className="flex items-center gap-4 mb-10 flex-wrap">
             <Radio className="text-[#D8CA82]" size={20} aria-hidden="true" />
             <h2 id="home-live-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.live.title")}</h2>
@@ -434,73 +491,71 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DISCORD */}
-      <section className="border-t border-white/10 bg-[#0c0c0c] relative overflow-hidden" aria-labelledby="home-discord-h2">
+      {/* COMMUNAUTÉ — Discord + réseaux regroupés — D-02 */}
+      <section className="border-t border-white/10 bg-[#0c0c0c] relative overflow-hidden" aria-labelledby="home-community-h2" data-testid="home-community">
         <div className="pattern-overlay" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24 relative grid lg:grid-cols-2 gap-12 items-center" data-testid="home-discord">
-          <div>
-            <h2 id="home-discord-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7] mb-6">{t("home.discord.title")}</h2>
-            {discord && (
-              <div className="flex gap-8 mb-8" data-testid="home-discord-stats">
-                <div>
-                  <p className="font-display font-black text-4xl text-[#D8CA82]">{discord.online}</p>
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" aria-hidden="true" />
-                    <span>{t("home.discord.online")}</span>
-                  </p>
-                </div>
-                <div>
-                  <p className="font-display font-black text-4xl text-[#f7f7f7]">{discord.members}</p>
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8]">{t("home.discord.members")}</p>
-                </div>
-              </div>
-            )}
-            <Button variant="gold" size="lg" asChild>
-              <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta"
-                onClick={() => trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_discord" })}>
-                <SocialIcon name="discord" size={18} aria-hidden="true" /> {t("home.discord.cta")}
-              </a>
-            </Button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
+          <div className="flex items-center gap-4 mb-10">
+            <Users className="text-[#D8CA82]" size={20} aria-hidden="true" />
+            <h2 id="home-community-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">Communauté</h2>
+            <div className="flex-1 h-px bg-white/10" />
           </div>
-          <div className="border border-white/10 bg-[#141414] p-8" data-testid="home-discord-rules">
-            <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-5">{t("home.discord.faq")}</p>
-            <ul className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <li key={i} className="flex gap-4 text-sm text-[#c8c8c8]">
-                  <span className="font-display font-bold text-[#D8CA82] shrink-0">0{i}</span>
-                  {t(`home.discord.rule${i}`)}
-                </li>
-              ))}
-            </ul>
+          <div className="grid lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-5" data-testid="home-discord">
+              <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7] mb-4">{t("home.discord.title")}</h3>
+              {discord && (
+                <div className="flex gap-8 mb-6" data-testid="home-discord-stats">
+                  <div>
+                    <p className="font-display font-black text-4xl text-[#D8CA82]">{discord.online}</p>
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" /> {t("home.discord.online")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-display font-black text-4xl text-[#f7f7f7]">{discord.members}</p>
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8]">{t("home.discord.members")}</p>
+                  </div>
+                </div>
+              )}
+              <Button variant="gold" size="lg" asChild>
+                <a href="https://discord.gg/RH3ZZkMJsw" target="_blank" rel="noopener noreferrer" data-testid="home-discord-cta" onClick={() => trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_discord" })}>
+                  <SocialIcon name="discord" size={18} aria-hidden="true" /> {t("home.discord.cta")}
+                </a>
+              </Button>
+              <div className="border border-white/10 bg-[#141414] p-6 mt-6" data-testid="home-discord-rules">
+                <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">{t("home.discord.faq")}</p>
+                <ul className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <li key={i} className="flex gap-3 text-sm text-[#c8c8c8]"><span className="font-display font-bold text-[#D8CA82]">0{i}</span>{t(`home.discord.rule${i}`)}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="lg:col-span-7" data-testid="home-socials">
+              <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7] mb-4">{t("home.socials.title")}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {SOCIALS.map((s) => (
+                  <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" data-testid={`home-social-${s.icon}`} aria-label={`${s.name} (${t("footer.opensNewTab")})`} onClick={() => s.icon === "discord" && trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_socials" })} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 hover:-translate-y-1 u-micro group focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                    <span className="text-[#c8c8c8] group-hover:text-[#D8CA82] u-micro" aria-hidden="true"><SocialIcon name={s.icon} size={28} /></span>
+                    <span className="text-xs font-display uppercase tracking-widest text-[#c8c8c8]">{s.name}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* SOUTENIR / DONS */}
+      {/* SOUTENIR / DONS — réduit selon campagne — D-02 : moins de py-24, déplacé après communauté */}
       <section className="border-t border-white/10" aria-labelledby="donate-block-h2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-donate">
-          <div className="flex items-center gap-4 mb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12" data-testid="home-donate">
+          <div className="flex items-center gap-4 mb-6">
             <Heart className="text-[#D8CA82]" size={20} aria-hidden="true" />
             <h2 id="donate-block-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
             <div className="flex-1 h-px bg-white/10" />
           </div>
-          <div className="mb-8"><CampaignProgress testId="home-campaign-progress" /></div>
+          <div className="mb-6"><CampaignProgress testId="home-campaign-progress" /></div>
           <DonateBlock testId="home-donate-block" />
-        </div>
-      </section>
-
-      {/* SOCIALS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-24" data-testid="home-socials" aria-labelledby="home-socials-h2">
-        <h2 id="home-socials-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7] mb-10">{t("home.socials.title")}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {SOCIALS.map((s) => (
-            <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" data-testid={`home-social-${s.icon}`} aria-label={`${s.name} (${t("footer.opensNewTab")})`}
-              onClick={() => s.icon === "discord" && trackEvent(ANALYTICS_EVENTS.DISCORD_CLICK, { source: "home_socials" })}
-              className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 hover:-translate-y-1 motion-reduce:hover:translate-y-0 u-micro group focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
-              <span className="text-[#c8c8c8] group-hover:text-[#D8CA82] u-micro" aria-hidden="true"><SocialIcon name={s.icon} size={28} /></span>
-              <span className="text-xs font-display uppercase tracking-widest text-[#c8c8c8]">{s.name}</span>
-            </a>
-          ))}
         </div>
       </section>
     </div>
