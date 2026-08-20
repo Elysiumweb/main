@@ -6,10 +6,10 @@
  * reCAPTCHA v3 côté navigateur puis on rejoue l'appel avec ce jeton.
  */
 
-const getLang = () => { try { return localStorage.getItem("elysium_lang") || "fr"; } catch { return "fr"; } };
 import { httpsCallable } from "firebase/functions";
-const getLang = () => { try { return localStorage.getItem("elysium_lang") || "fr"; } catch { return "fr"; } };
 import { functions } from "./firebase";
+
+const getLang = () => { try { return localStorage.getItem("elysium_lang") || "fr"; } catch { return "fr"; } };
 
 const RECAPTCHA_SITE_KEY =
   process.env.REACT_APP_RECAPTCHA_SITE_KEY || process.env.REACT_APP_FIREBASE_APPCHECK_SITE_KEY || "";
@@ -69,16 +69,16 @@ export const callProtected = async (name, payload = {}) => {
 export const protectedErrorMessage = (err, fallback = "Une erreur est survenue. Réessayez plus tard.") => {
   const code = String(err?.code || "");
   const details = err?.details || {};
+  const lang = getLang();
   if (code.endsWith("resource-exhausted") || details.reason === "rate-limited") {
     if (details.retryAt) {
-      const lang = getLang();
       const time = new Date(details.retryAt).toLocaleTimeString(lang === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" });
-      return `Trop d'envois récents. Réessayez vers ${time}.`;
+      return lang === "en" ? `Too many recent submissions. Try again around ${time}.` : `Trop d'envois récents. Réessayez vers ${time}.`;
     }
-    return "Trop d'envois récents. Réessayez plus tard.";
+    return lang === "en" ? "Too many recent submissions. Try again later." : "Trop d'envois récents. Réessayez plus tard.";
   }
-  if (details.reason === "captcha-required") return "Vérification anti-robot impossible. Réessayez plus tard.";
+  if (details.reason === "captcha-required") return lang === "en" ? "Anti-bot check failed. Try again later." : "Vérification anti-robot impossible. Réessayez plus tard.";
   if (code.endsWith("invalid-argument")) return err.message || fallback;
-  if (code.endsWith("unauthenticated")) return "Connexion requise.";
+  if (code.endsWith("unauthenticated")) return lang === "en" ? "Sign-in required." : "Connexion requise.";
   return fallback;
 };
