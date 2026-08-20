@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import { collection, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import {

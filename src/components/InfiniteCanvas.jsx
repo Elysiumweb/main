@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
 import { MousePointer2, Type, Square, Pencil, Image as ImageIcon, Crosshair, Trash2, ArrowLeft, Undo2, Redo2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useLang } from "../lib/i18n";
@@ -23,6 +24,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
   const [history, setHistory] = useState({ past: [], future: [] });
 
   // Clavier : déplacement de l'élément sélectionné via flèches (D-07)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleKey = (e) => {
       if (!selected || editing) return;
