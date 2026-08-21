@@ -808,7 +808,7 @@ const dict = {
     "about.title": "À propos d'Elysium",
     "about.sub": "Histoire, valeurs, organisation — l'association derrière l'écusson.",
     "about.history.title": "Notre histoire",
-    "about.history.text": "Elysium est née en 2026 d'une conviction simple : rien n'est donné, tout se mérite. De l'arène virtuelle EVA à la Rocket League, l'association construit un esport exigeant, porté par des bénévoles et des joueurs qui partagent le même standard.",
+    "about.history.text": "Elysium est née en 2026 d'une conviction simple : rien n'est donné, tout se mérite. Des arènes physique du EVA au terrain virtuel de Rocket League, l'association construit un esport exigeant, porté par des bénévoles et des joueurs qui partagent le même standard.",
     "about.values.title": "Nos valeurs",
     "about.values.1": "Excellence",
     "about.values.1.desc": "Nous ne participons pas, nous gagnons. Chaque entraînement, chaque match, chaque contenu doit porter l'écusson au plus haut.",
