@@ -16,6 +16,7 @@ import { fmtMatchDate } from "../lib/formatters";
  *   (neutral, NOT Elysium branding, to avoid implying a partnership)
  * --------------------------------------------------------------------- */
 const OpponentLogo = ({ src, name, className = "" }) => {
+  const { t } = useLang();
   const [err, setErr] = useState(false);
   const safeName = (name || t("common.adversary")).trim();
 
