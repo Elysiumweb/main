@@ -56,9 +56,9 @@ export default function About() {
             <p className="text-[#c8c8c8] leading-relaxed text-lg">{t("about.history.text")}</p>
             {/* Chronologie */}
             <div className="mt-10 border-l border-[#D8CA82]/30 pl-6 space-y-6" data-testid="about-timeline">
-              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">2026 — Fondation</p><p className="text-sm text-[#c8c8c8]">Création de l’association, premier roster EVA, slogan “Not given. Earned.”</p></div>
-              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82]/60 rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">2026 — Expansion RL</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Rocket League — Junior → Esport.</p></div>
-              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#FF4655] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">2026 — Valorant</p><p className="text-sm text-[#c8c8c8]">Deux rosters Valeureux & Vaillant, même exigence.</p></div>
+              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Juillet 2026 — Fondation</p><p className="text-sm text-[#c8c8c8]">Création de l’association, premier roster EVA, slogan “Not given. Earned.”</p></div>
+              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82]/60 rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Juillet 2026 — Expansion RL</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Rocket League.</p></div>
+              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#FF4655] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Août 2026 — Valorant</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Valorant.</p></div>
             </div>
           </div>
           <div className="lg:col-span-5">
