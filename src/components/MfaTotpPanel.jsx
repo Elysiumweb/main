@@ -169,7 +169,7 @@ export const MfaTotpPanel = () => {
             {qrImage ? (
               <img src={qrImage} alt="QR code TOTP" className="border border-white/10 bg-white p-2 w-44 h-44" data-testid="profile-mfa-qr" />
             ) : (
-              <div className="border border-white/10 bg-[#111111] w-44 h-44 flex items-center justify-center p-3 text-center text-[11px] text-[#c8c8c8]">
+              <div className="border border-white/10 bg-[#111111] w-44 h-44 flex items-center justify-center p-3 text-center text-xs text-[#c8c8c8]">
                 QR indisponible — copiez la clé ci-contre.
               </div>
             )}

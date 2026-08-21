@@ -105,14 +105,14 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
     <div className="flex items-center flex-wrap gap-3" data-testid={testId}>
       <div className="flex items-center gap-1.5 text-[#c8c8c8]">
         <Clock size={13} className="text-[#D8CA82]" aria-hidden="true" />
-        <span className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/50 mr-1">{t("countdown.before")}</span>
+        <span className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50 mr-1">{t("countdown.before")}</span>
         {parts.map((p, i) => (
           <span key={p.label} className="flex items-center gap-1.5">
             <span className="font-display font-black text-lg text-[#f7f7f7] min-w-[2ch] text-center tabular-nums" title={p.label}>
               {String(p.value).padStart(2, "0")}
             </span>
-            <span className="text-[9px] uppercase tracking-widest text-[#f7f7f7]/40">{p.label}</span>
-            {i < parts.length - 1 && <span className="text-[#f7f7f7]/30">:</span>}
+            <span className="text-xs uppercase tracking-widest text-[#c8c8c8]">{p.label}</span>
+            {i < parts.length - 1 && <span className="text-[#c8c8c8]">:</span>}
           </span>
         ))}
       </div>
@@ -120,7 +120,7 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
         onClick={toggleReminder}
         data-testid={`${testId}-remind`}
         aria-pressed={reminded}
-        className={`text-[10px] uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 transition-colors ${
+        className={`text-xs uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 transition-colors ${
           reminded
             ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10"
             : "border-white/20 text-[#f7f7f7]/60 hover:border-[#D8CA82] hover:text-[#D8CA82]"

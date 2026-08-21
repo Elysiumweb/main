@@ -190,7 +190,7 @@ export default function Admin() {
   useEffect(() => { setUserPage(1); }, [userQuery]);
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#f7f7f7]/40">{t("common.loading")}</div>;
+  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#c8c8c8]">{t("common.loading")}</div>;
   if (!isStaff) return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <p className="text-[#f7f7f7]/50" data-testid="admin-denied">{t("player.noAccess")}</p>
@@ -454,7 +454,7 @@ export default function Admin() {
           <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("admin.users.sub")}</p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <label className="relative w-full sm:max-w-md">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
               <input
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
@@ -463,12 +463,12 @@ export default function Admin() {
                 data-testid="admin-users-search"
               />
             </label>
-            <p className="text-xs text-[#f7f7f7]/40">{filteredUsers.length} résultat(s)</p>
+            <p className="text-xs text-[#c8c8c8]">{filteredUsers.length} résultat(s)</p>
           </div>
           <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto" data-testid="admin-users-table">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#f7f7f7]/40">
+                <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#c8c8c8]">
                   <th className="px-4 py-3">{t("admin.table.member")}</th>
                   <th className="px-4 py-3">{t("admin.table.email")}</th>
                   <th className="px-4 py-3">{t("admin.role")}</th>
@@ -480,7 +480,7 @@ export default function Admin() {
                 {pagedUsers.map((u) => (
                   <tr key={u.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-user-row-${u.id}`}>
                     <td className="px-4 py-3 font-semibold text-[#f7f7f7]">
-                      {u.displayName} {u.id === OFFICIAL_UID && <span className="text-[10px] text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
+                      {u.displayName} {u.id === OFFICIAL_UID && <span className="text-xs text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
                     </td>
                     <td className="px-4 py-3 text-[#f7f7f7]/50">{u.email}</td>
                     <td className="px-4 py-3">
@@ -507,7 +507,7 @@ export default function Admin() {
                           {(ROSTERS[u.game] || []).map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
                         </select>
                       ) : (
-                        <span className="text-xs text-[#f7f7f7]/30">—</span>
+                        <span className="text-xs text-[#c8c8c8]">—</span>
                       )}
                     </td>
                   </tr>
@@ -519,7 +519,7 @@ export default function Admin() {
             <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-users-pagination">
               <button onClick={() => setUserPage((p) => Math.max(1, p - 1))} disabled={userPage <= 1}
                 className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
-              <span className="text-xs text-[#f7f7f7]/40">{t("admin.pagination.page")} {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
+              <span className="text-xs text-[#c8c8c8]">{t("admin.pagination.page")} {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
               <button onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))} disabled={userPage >= userTotalPages}
                 className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
             </div>
@@ -536,7 +536,7 @@ export default function Admin() {
           <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("admin.matches.sub")}</p>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
             <label className="relative w-full lg:max-w-md">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
               <input
                 value={matchQuery}
                 onChange={(e) => setMatchQuery(e.target.value)}
@@ -568,7 +568,7 @@ export default function Admin() {
                     <option value="">{t("admin.roster.none")}</option>
                     {matchRosters.map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
                   </select>
-                  <p className="text-[11px] text-[#f7f7f7]/40 mt-2" data-testid="admin-match-roster-preview">
+                  <p className="text-xs text-[#c8c8c8] mt-2" data-testid="admin-match-roster-preview">
                     {t("admin.match.rosterPreview")} <span className="text-[#D8CA82]">{getElysiumTeamName(form.roster)}</span>
                   </p>
                 </div>
@@ -615,7 +615,7 @@ export default function Admin() {
                     <option value="upcoming">{t("admin.match.upcoming")}</option>
                     <option value="live">{t("admin.match.live")}</option>
                   </select>
-                  {form.status === "live" && <p className="text-[11px] text-[#f7f7f7]/40 mt-1">{t("admin.match.scoreHint")}</p>}
+                  {form.status === "live" && <p className="text-xs text-[#c8c8c8] mt-1">{t("admin.match.scoreHint")}</p>}
                 </div>
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.time")}</label>
@@ -635,7 +635,7 @@ export default function Admin() {
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.watch")}</label>
                   <input value={form.watchUrl} onChange={set("watchUrl")} placeholder="https://twitch.tv/..." className={inputCls} data-testid="admin-match-watch" />
                   {form.status === "live" && form.watchUrl && (
-                    <p className="text-[11px] text-emerald-300/80 mt-1" data-testid="admin-match-live-hint">
+                    <p className="text-xs text-emerald-300/80 mt-1" data-testid="admin-match-live-hint">
                       ✓ {t("results.watchLive")} — le lien sera mis en avant (badge rouge).
                     </p>
                   )}
@@ -646,7 +646,7 @@ export default function Admin() {
                   <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">
                     {t("admin.match.players")}
                   </label>
-                  <p className="text-[11px] text-[#f7f7f7]/40 mt-1">
+                  <p className="text-xs text-[#c8c8c8] mt-1">
                     {t("admin.match.playersHint")}
                   </p>
                 </div>
@@ -704,7 +704,7 @@ export default function Admin() {
             </form>
             <div className="lg:col-span-7">
               {filteredMatches.length === 0 ? (
-                <p className="text-[#f7f7f7]/40" data-testid="admin-matches-empty">{t("results.empty")}</p>
+                <p className="text-[#c8c8c8]" data-testid="admin-matches-empty">{t("results.empty")}</p>
               ) : (
                 <>
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -723,7 +723,7 @@ export default function Admin() {
                     <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-matches-pagination">
                       <button onClick={() => setMatchPage((p) => Math.max(1, p - 1))} disabled={matchPage <= 1}
                         className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
-                      <span className="text-xs text-[#f7f7f7]/40">{t("admin.pagination.page")} {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
+                      <span className="text-xs text-[#c8c8c8]">{t("admin.pagination.page")} {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
                       <button onClick={() => setMatchPage((p) => Math.min(matchTotalPages, p + 1))} disabled={matchPage >= matchTotalPages}
                         className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
                     </div>
@@ -752,7 +752,7 @@ export default function Admin() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">{t("admin.match.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
-              {t("admin.match.deleteDesc")} ({confirmMatch?.opponentName || "Adversaire"})
+              {t("admin.match.deleteDesc")} ({confirmMatch?.opponentName || t("common.adversary")})
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:space-x-0">

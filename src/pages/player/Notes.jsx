@@ -11,7 +11,7 @@ const TRASH_RETENTION_DAYS = 30;
 
 export default function Notes() {
   const { user, game, isOfficial, displayName } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [tab, setTab] = useState("collective");
   const [view, setView] = useState("active"); // active | trash
   const [notes, setNotes] = useState([]);
@@ -149,7 +149,7 @@ export default function Notes() {
         <div className="flex border-b border-white/10 shrink-0">
           {[[("collective"), Users, "notes.collective"], ["private", Lock, "notes.private"]].map(([k, Icon, label]) => (
             <button key={k} onClick={() => { setTab(k); setSelected(null); }} data-testid={`notes-tab-${k}`}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] uppercase tracking-wider border-b-2 transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50"}`}>
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs uppercase tracking-wider border-b-2 transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50"}`}>
               <Icon size={13} /> {t(label)}
             </button>
           ))}
@@ -157,11 +157,11 @@ export default function Notes() {
         {/* Bascule actif / corbeille */}
         <div className="flex border-b border-white/10 shrink-0">
           <button onClick={() => { setView("active"); setSelected(null); }} data-testid="notes-view-active"
-            className={`flex-1 py-2 text-[10px] uppercase tracking-widest ${view === "active" ? "text-[#D8CA82] bg-[#D8CA82]/10" : "text-[#f7f7f7]/40 hover:text-[#f7f7f7]"}`}>
+            className={`flex-1 py-2 text-xs uppercase tracking-widest ${view === "active" ? "text-[#D8CA82] bg-[#D8CA82]/10" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
             {t("notes.all")}
           </button>
           <button onClick={() => { setView("trash"); setSelected(null); }} data-testid="notes-view-trash"
-            className={`flex-1 py-2 text-[10px] uppercase tracking-widest flex items-center justify-center gap-1 ${view === "trash" ? "text-red-300 bg-red-500/10" : "text-[#f7f7f7]/40 hover:text-[#f7f7f7]"}`}>
+            className={`flex-1 py-2 text-xs uppercase tracking-widest flex items-center justify-center gap-1 ${view === "trash" ? "text-red-300 bg-red-500/10" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
             <Trash size={11} /> {t("notes.trash")}
           </button>
         </div>
@@ -172,20 +172,20 @@ export default function Notes() {
           </button>
         )}
         {view === "trash" && (
-          <p className="mx-3 my-3 text-[10px] text-[#f7f7f7]/40 leading-relaxed shrink-0">{t("notes.trashHint")}</p>
+          <p className="mx-3 my-3 text-xs text-[#c8c8c8] leading-relaxed shrink-0">{t("notes.trashHint")}</p>
         )}
         <div className="mx-3 mb-2 relative shrink-0">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("notes.search")} data-testid="notes-search-input"
             className="w-full bg-[#111111] border border-white/15 pl-8 pr-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
         </div>
         <div className="flex-1 overflow-y-auto" data-testid="notes-list">
-          {visible.length === 0 && <p className="text-xs text-[#f7f7f7]/30 px-4 py-2" data-testid="notes-empty">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>}
+          {visible.length === 0 && <p className="text-xs text-[#c8c8c8] px-4 py-2" data-testid="notes-empty">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>}
           {visible.map((n) => (
             <div key={n.id} className={`group flex items-center border-b border-white/5 ${selected === n.id ? "bg-[#D8CA82]/10" : "hover:bg-white/5"}`}>
               <button onClick={() => { setSelected(n.id); setShowHistory(false); }} data-testid={`notes-item-${n.id}`} className="flex-1 text-left px-4 py-3 min-w-0">
                 <p className="text-sm text-[#f7f7f7] truncate">{n.title || "—"}</p>
-                <p className="text-[10px] text-[#f7f7f7]/40 uppercase tracking-wider">
+                <p className="text-xs text-[#c8c8c8] uppercase tracking-wider">
                   {n.status === "draft" ? t("notes.draft") : t("common.saved")}{tab === "collective" ? ` · ${n.ownerName || ""}` : ""}
                   {(n.tags || []).length > 0 && <span className="text-[#D8CA82]/60"> · {n.tags.join(", ")}</span>}
                 </p>
@@ -212,7 +212,7 @@ export default function Notes() {
                 className="flex-1 bg-transparent font-display text-lg text-[#f7f7f7] focus:outline-none" />
               <button onClick={() => setShowHistory((s) => !s)} title={t("notes.history")} data-testid="notes-history-btn"
                 className={`flex items-center gap-1.5 border px-3 py-2 text-xs uppercase tracking-widest ${showHistory ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/25 text-[#f7f7f7]/70 hover:border-[#D8CA82] hover:text-[#D8CA82]"}`}>
-                <History size={13} /> {t("notes.history")} {versions.length > 0 && <span className="text-[10px] opacity-60">({versions.length})</span>}
+                <History size={13} /> {t("notes.history")} {versions.length > 0 && <span className="text-xs opacity-60">({versions.length})</span>}
               </button>
               <button onClick={() => save("draft")} data-testid="notes-draft-btn"
                 className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-4 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
@@ -229,23 +229,23 @@ export default function Notes() {
               {showHistory && (
                 <aside className="w-72 border-l border-white/10 bg-[#0f0f0f] overflow-y-auto shrink-0" data-testid="notes-history-panel">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                    <p className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/50">{t("notes.history")}</p>
-                    <button onClick={() => setShowHistory(false)} className="text-[#f7f7f7]/40 hover:text-[#f7f7f7]"><X size={14} /></button>
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50">{t("notes.history")}</p>
+                    <button onClick={() => setShowHistory(false)} className="text-[#c8c8c8] hover:text-[#f7f7f7]"><X size={14} /></button>
                   </div>
                   {versions.length === 0 ? (
-                    <p className="text-xs text-[#f7f7f7]/30 px-4 py-3" data-testid="notes-history-empty">{t("notes.history.empty")}</p>
+                    <p className="text-xs text-[#c8c8c8] px-4 py-3" data-testid="notes-history-empty">{t("notes.history.empty")}</p>
                   ) : (
                     <div className="divide-y divide-white/5">
                       {versions.map((v) => (
                         <div key={v.id} className="px-4 py-3 hover:bg-white/5" data-testid={`notes-version-${v.id}`}>
-                          <p className="text-[10px] text-[#f7f7f7]/40 uppercase tracking-wider">
-                            {v.savedAt?.toDate ? v.savedAt.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                          <p className="text-xs text-[#c8c8c8] uppercase tracking-wider">
+                            {v.savedAt?.toDate ? v.savedAt.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
                             {v.by ? ` · ${t("notes.versionBy")} ${v.by}` : ""}
                           </p>
                           <p className="text-sm text-[#f7f7f7] truncate mt-0.5">{v.title || "—"}</p>
-                          <p className="text-[11px] text-[#f7f7f7]/40 line-clamp-2 mt-0.5">{v.content}</p>
+                          <p className="text-xs text-[#c8c8c8] line-clamp-2 mt-0.5">{v.content}</p>
                           <button onClick={() => restoreVersion(v)} data-testid={`notes-restore-version-${v.id}`}
-                            className="mt-2 flex items-center gap-1.5 text-[10px] uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-2.5 py-1 hover:bg-[#D8CA82]/10">
+                            className="mt-2 flex items-center gap-1.5 text-xs uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-2.5 py-1 hover:bg-[#D8CA82]/10">
                             <RotateCcw size={11} /> {t("notes.restoreVersion")}
                           </button>
                         </div>
@@ -262,7 +262,7 @@ export default function Notes() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-[#f7f7f7]/30 text-sm" data-testid="notes-no-selection">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>
+            <p className="text-[#c8c8c8] text-sm" data-testid="notes-no-selection">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>
           </div>
         )}
       </div>

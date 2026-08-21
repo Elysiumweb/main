@@ -10,7 +10,7 @@ import { useLang } from "../lib/i18n";
  * ------------------------------------------------------------------------- */
 
 export const CampaignProgress = ({ compact = false, testId = "campaign-progress" }) => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [campaigns, setCampaigns] = useState([]);
 
   useEffect(() => {
@@ -32,11 +32,11 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
     <div className="border border-[#D8CA82]/30 bg-[#141414] p-5" data-testid={testId}>
       <div className="flex items-center gap-2 mb-2">
         <Target size={14} className="text-[#D8CA82] shrink-0" aria-hidden="true" />
-        <p className={`font-display uppercase tracking-[0.25em] text-[#f7f7f7] ${compact ? "text-[10px]" : "text-xs"}`}>
+        <p className={`font-display uppercase tracking-[0.25em] text-[#f7f7f7] ${compact ? "text-xs" : "text-xs"}`}>
           {campaign.title}
         </p>
         {reached && (
-          <span className="ml-auto text-[9px] uppercase tracking-widest text-emerald-300 flex items-center gap-1">
+          <span className="ml-auto text-xs uppercase tracking-widest text-emerald-300 flex items-center gap-1">
             <CheckCircle2 size={11} aria-hidden="true" /> {t("campaign.reached")}
           </span>
         )}
@@ -53,10 +53,10 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
         />
       </div>
       <p className="text-xs text-[#f7f7f7]/60">
-        {t("campaign.progress")} <span className="font-display font-bold text-[#D8CA82]">{Number(campaign.currentAmount).toLocaleString("fr-FR")} €</span>
+        {t("campaign.progress")} <span className="font-display font-bold text-[#D8CA82]">{Number(campaign.currentAmount).toLocaleString(lang === "en" ? "en-US" : "fr-FR")} €</span>
         {" / "}
-        <span className="text-[#f7f7f7]">{Number(campaign.goalAmount).toLocaleString("fr-FR")} €</span>
-        <span className="text-[#f7f7f7]/40 ml-2">({pct}%)</span>
+        <span className="text-[#f7f7f7]">{Number(campaign.goalAmount).toLocaleString(lang === "en" ? "en-US" : "fr-FR")} €</span>
+        <span className="text-[#c8c8c8] ml-2">({pct}%)</span>
       </p>
     </div>
   );

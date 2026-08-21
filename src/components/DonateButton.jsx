@@ -116,7 +116,7 @@ export const DonateButton = ({
             <Heart size={16} aria-hidden="true" /> {t("donate.cta")}
             <ExternalLink size={13} aria-hidden="true" />
           </a>
-          <p className="text-[11px] text-[#c8c8c8] mt-3 max-w-xs leading-relaxed">{t("donate.fallback")}</p>
+          <p className="text-xs text-[#c8c8c8] mt-3 max-w-xs leading-relaxed">{t("donate.fallback")}</p>
         </div>
       )}
     </div>
@@ -133,7 +133,7 @@ export const DonateSubscriptionBlock = ({ testId = "donate-subscription" }) => {
   const { t } = useLang();
   if (!PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID) {
     return (
-      <div className="border border-white/15 bg-[#141414] px-4 py-3 text-[11px] text-[#c8c8c8] leading-relaxed" data-testid={testId}>
+      <div className="border border-white/15 bg-[#141414] px-4 py-3 text-xs text-[#c8c8c8] leading-relaxed" data-testid={testId}>
         {t("donate.monthly.notConfigured")}{" "}
         <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline">{CONTACT_EMAIL}</a>
       </div>
@@ -157,7 +157,7 @@ export const DonateSubscriptionCard = ({ testId = "donate-subscription-card" }) 
       </div>
       <p className="text-sm text-[#c8c8c8] leading-relaxed mb-4">{t("donate.monthly.text")}</p>
       <DonateSubscriptionBlock />
-      <p className="text-[11px] text-[#f7f7f7]/40 mt-3">{t("donate.monthly.member.desc")}</p>
+      <p className="text-xs text-[#c8c8c8] mt-3">{t("donate.monthly.member.desc")}</p>
     </div>
   );
 };
@@ -167,7 +167,7 @@ export const DonateSecureNote = ({ testId = "donate-secure-note" }) => {
   const { t } = useLang();
   return (
     <p
-      className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-[#c8c8c8]"
+      className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-[#c8c8c8]"
       data-testid={testId}
     >
       <ShieldCheck size={14} className="text-[#D8CA82] shrink-0 mt-px" aria-hidden="true" />
@@ -184,7 +184,7 @@ export const DonateLink = ({ testId = "donate-link", compact = false, className 
       to="/soutenir"
       data-testid={testId}
       className={`bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest inline-flex items-center justify-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${
-        compact ? "text-[11px] px-4 py-2.5 min-h-[44px]" : "text-sm px-8 py-4"
+        compact ? "text-xs px-4 py-2.5 min-h-[44px]" : "text-sm px-8 py-4"
       } ${className}`}
     >
       <Heart size={compact ? 13 : 16} aria-hidden="true" /> {t("donate.cta")}
@@ -207,11 +207,11 @@ export const DonateBlock = ({ testId = "donate-block" }) => {
         src="/brand/accent-brackets-gold.png"
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute -right-8 -top-8 w-40 opacity-[0.06]"
+        className="pointer-events-none absolute -right-8 -top-8 w-40 h-auto opacity-[0.06]"
       />
       <div className="relative grid lg:grid-cols-12 gap-8 items-center">
         <div className="lg:col-span-7">
-          <p className="text-[10px] font-display uppercase tracking-[0.35em] text-[#D8CA82] mb-4">
+          <p className="text-xs font-display uppercase tracking-[0.35em] text-[#D8CA82] mb-4">
             {t("donate.badge")}
           </p>
           <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-[#f7f7f7] leading-tight">

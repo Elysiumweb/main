@@ -157,7 +157,7 @@ export default function Partners() {
                         className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors">
                         <PartnerLogo src={p.logoUrl} name={p.name} className="w-full h-20" />
                         <p className="font-display font-bold text-sm text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors text-center">{p.name}</p>
-                        {p.website && <ExternalLink size={12} className="text-[#f7f7f7]/30" />}
+                        {p.website && <ExternalLink size={12} className="text-[#c8c8c8]" />}
                       </a>
                     ))}
                   </div>
@@ -189,30 +189,30 @@ export default function Partners() {
           <input id="partner-website" type="text" {...getHoneypotProps("website")} data-testid="partner-form-honeypot" />
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="partner-name" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.name")}</label>
+              <label htmlFor="partner-name" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.name")}</label>
               <input id="partner-name" name="name" required data-testid="partner-form-name"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
             </div>
             <div>
-              <label htmlFor="partner-company" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.company")}</label>
+              <label htmlFor="partner-company" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.company")}</label>
               <input id="partner-company" name="company" required data-testid="partner-form-company"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="partner-email" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.email")}</label>
+              <label htmlFor="partner-email" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.email")}</label>
               <input id="partner-email" name="email" type="email" required data-testid="partner-form-email"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
             </div>
             <div>
-              <label htmlFor="partner-budget" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.budget")}</label>
+              <label htmlFor="partner-budget" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.budget")}</label>
               <input id="partner-budget" name="budget" placeholder={t("partners.contact.budget.placeholder")} data-testid="partner-form-budget"
                 className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0]" />
             </div>
           </div>
           <div>
-            <label htmlFor="partner-message" className="text-[10px] uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.message")}</label>
+            <label htmlFor="partner-message" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.message")}</label>
             <textarea id="partner-message" name="message" rows={5} required placeholder={t("partners.contact.message.placeholder")} data-testid="partner-form-message"
               className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0] resize-none" />
           </div>

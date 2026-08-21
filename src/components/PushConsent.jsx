@@ -56,7 +56,7 @@ export const PushConsent = () => {
 
   return (
     <div className="fixed bottom-20 right-4 z-50 max-w-sm border border-[#D8CA82]/40 bg-[#1A1A1A] p-5 animate-in slide-in-from-bottom-4 fade-in duration-200 motion-reduce:animate-none" data-testid="push-consent-banner">
-      <button onClick={handleDecline} className="absolute top-2 right-2 text-[#f7f7f7]/30 hover:text-[#f7f7f7]/60" data-testid="push-consent-close" aria-label="Fermer">
+      <button onClick={handleDecline} className="absolute top-2 right-2 text-[#c8c8c8] hover:text-[#f7f7f7]/60" data-testid="push-consent-close" aria-label="Fermer">
         <X size={14} />
       </button>
       <p className="font-display text-sm font-bold text-[#D8CA82] mb-2">{t("pwa.push.consent.title")}</p>

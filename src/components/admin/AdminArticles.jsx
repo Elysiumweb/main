@@ -108,7 +108,7 @@ export const AdminArticles = () => {
           <label className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer border border-white/15 px-3 py-2.5 bg-[#111111]" title={t("admin.article.featuredHint")}>
             <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
               className="accent-[#D8CA82] h-4 w-4" data-testid="admin-article-featured" />
-            <Star size={12} className={form.featured ? "text-[#D8CA82] fill-[#D8CA82]" : "text-[#f7f7f7]/40"} aria-hidden="true" />
+            <Star size={12} className={form.featured ? "text-[#D8CA82] fill-[#D8CA82]" : "text-[#c8c8c8]"} aria-hidden="true" />
             {t("admin.article.featured")}
           </label>
         </div>
@@ -127,20 +127,20 @@ export const AdminArticles = () => {
             className={inputCls}
             data-testid="admin-article-excerpt"
           />
-          <p className="text-[10px] text-[#f7f7f7]/35 mt-1">{form.excerpt.length}/220</p>
+          <p className="text-xs text-[#f7f7f7]/35 mt-1">{form.excerpt.length}/220</p>
         </div>
 
         {/* Onglets éditeur / aperçu markdown */}
         <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label={t("admin.article.title")}>
           <button onClick={() => setEditorTab("write")} data-testid="admin-article-tab-write" role="tab" aria-selected={editorTab === "write"}
-            className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            className={`text-xs uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
             {t("admin.article.write")}
           </button>
           <button onClick={() => setEditorTab("preview")} data-testid="admin-article-tab-preview" role="tab" aria-selected={editorTab === "preview"}
-            className={`text-[10px] uppercase tracking-widest px-3 py-1.5 ${editorTab === "preview" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            className={`text-xs uppercase tracking-widest px-3 py-1.5 ${editorTab === "preview" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
             {t("admin.article.preview")}
           </button>
-          <span className="ml-auto text-[10px] text-[#f7f7f7]/30">{t("admin.article.markdownHint")}</span>
+          <span className="ml-auto text-xs text-[#c8c8c8]">{t("admin.article.markdownHint")}</span>
         </div>
         {editorTab === "write" ? (
           <textarea value={form.content} onChange={set("content")} placeholder={t("admin.article.contentPlaceholder")} rows={12} className={inputCls} data-testid="admin-article-content" />
@@ -166,10 +166,10 @@ export const AdminArticles = () => {
         </div>
       </div>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-articles-list">
-        {articles.length === 0 && <p className="text-[#f7f7f7]/40">{t("news.empty")}</p>}
+        {articles.length === 0 && <p className="text-[#c8c8c8]">{t("news.empty")}</p>}
         {articles.map((a) => (
           <div key={a.id} className="flex items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_BADGE[a.status] || ""}`}>
+            <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_BADGE[a.status] || ""}`}>
               {a.status === "published" ? t("admin.published") : a.status === "deleted" ? t("admin.deleted") : t("notes.draft")}
             </span>
             <button
@@ -179,13 +179,13 @@ export const AdminArticles = () => {
               aria-label={t("admin.article.featured")}
               aria-pressed={!!a.featured}
               data-testid={`admin-article-featured-${a.id}`}
-              className={`shrink-0 transition-colors ${a.featured ? "text-[#D8CA82]" : "text-[#f7f7f7]/30 hover:text-[#f7f7f7]/60"} disabled:opacity-30 disabled:cursor-not-allowed`}
+              className={`shrink-0 transition-colors ${a.featured ? "text-[#D8CA82]" : "text-[#c8c8c8] hover:text-[#f7f7f7]/60"} disabled:opacity-30 disabled:cursor-not-allowed`}
             >
               <Star size={15} className={a.featured ? "fill-[#D8CA82]" : ""} aria-hidden="true" />
             </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{a.title}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{t(`news.cat.${a.category}`)}</p>
+              <p className="text-xs text-[#c8c8c8]">{t(`news.cat.${a.category}`)}</p>
             </div>
             <Link to={`/actus/${a.id}`} target="_blank" title={t("admin.article.previewLink")} aria-label={t("admin.article.previewLink")} className="text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid={`admin-article-preview-${a.id}`}>
               <Eye size={15} />
@@ -194,9 +194,9 @@ export const AdminArticles = () => {
               <>
                 <button onClick={() => edit(a)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${a.title}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-article-edit-${a.id}`}><Pencil size={15} /></button>
                 {a.status === "published" ? (
-                  <button onClick={() => setStatus(a.id, "draft")} title={t("admin.unpublish")} aria-label={`${t("admin.unpublish")} ${a.title}`} className="text-orange-300/70 hover:text-orange-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-unpublish-${a.id}`}>{t("admin.unpublish")}</button>
+                  <button onClick={() => setStatus(a.id, "draft")} title={t("admin.unpublish")} aria-label={`${t("admin.unpublish")} ${a.title}`} className="text-orange-300/70 hover:text-orange-300 text-xs uppercase tracking-wider" data-testid={`admin-article-unpublish-${a.id}`}>{t("admin.unpublish")}</button>
                 ) : (
-                  <button onClick={() => setStatus(a.id, "published")} title={t("admin.publish")} aria-label={`${t("admin.publish")} ${a.title}`} className="text-emerald-300/70 hover:text-emerald-300 text-[10px] uppercase tracking-wider" data-testid={`admin-article-publish-inline-${a.id}`}>{t("admin.publish")}</button>
+                  <button onClick={() => setStatus(a.id, "published")} title={t("admin.publish")} aria-label={`${t("admin.publish")} ${a.title}`} className="text-emerald-300/70 hover:text-emerald-300 text-xs uppercase tracking-wider" data-testid={`admin-article-publish-inline-${a.id}`}>{t("admin.publish")}</button>
                 )}
                 <ConfirmAction
                   title={t("admin.article.deleteConfirm")}
@@ -217,7 +217,7 @@ export const AdminArticles = () => {
                     confirmLabel={t("admin.hardDeleteConfirm")}
                     onConfirm={() => hardDelete(a)}
                   >
-                    <button className="text-red-400 hover:text-red-300 text-[10px] uppercase tracking-wider" title={t("admin.hardDelete")} aria-label={`${t("admin.hardDelete")} ${a.title}`} data-testid={`admin-article-harddelete-${a.id}`}>{t("admin.hardDelete")}</button>
+                    <button className="text-red-400 hover:text-red-300 text-xs uppercase tracking-wider" title={t("admin.hardDelete")} aria-label={`${t("admin.hardDelete")} ${a.title}`} data-testid={`admin-article-harddelete-${a.id}`}>{t("admin.hardDelete")}</button>
                   </ConfirmAction>
                 )}
               </>

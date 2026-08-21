@@ -79,7 +79,7 @@ export const AdminPartnerRequests = () => {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-[#f7f7f7]/40 border border-white/10 bg-[#1A1A1A] p-6">{t("admin.partnerRequests.empty")}</p>
+        <p className="text-[#c8c8c8] border border-white/10 bg-[#1A1A1A] p-6">{t("admin.partnerRequests.empty")}</p>
       ) : (
         <div className="grid gap-4">
           {filtered.map((r) => {
@@ -90,7 +90,7 @@ export const AdminPartnerRequests = () => {
                 <div className="flex flex-col lg:flex-row lg:items-start gap-4 justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${statusCls(r.status)}`}>{statusLabel(r.status)}</span>
+                      <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${statusCls(r.status)}`}>{statusLabel(r.status)}</span>
                       <span className="text-xs text-[#f7f7f7]/35">{fmtReqDate(r.createdAt)}</span>
                     </div>
                     <h3 className="font-display font-bold text-[#f7f7f7] mt-3 text-lg truncate">{r.company || "Entreprise"}</h3>

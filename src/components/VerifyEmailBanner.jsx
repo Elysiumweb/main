@@ -25,7 +25,7 @@ export const VerifyEmailBanner = () => {
       <button onClick={resend} className="text-[#D8CA82] text-xs uppercase tracking-widest hover:underline" data-testid="verify-resend-btn">
         {t("verify.resend")}
       </button>
-      <button onClick={() => setHidden(true)} className="text-[#f7f7f7]/40 hover:text-[#f7f7f7]" data-testid="verify-dismiss-btn"><X size={14} /></button>
+      <button onClick={() => setHidden(true)} className="text-[#c8c8c8] hover:text-[#f7f7f7]" data-testid="verify-dismiss-btn"><X size={14} /></button>
     </div>
   );
 };

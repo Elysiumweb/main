@@ -28,7 +28,12 @@ export const passwordStrength = (password = "") => {
   }
   score = Math.max(0, Math.min(4, score));
 
-  const labels = ["Très faible", "Faible", "Correct", "Bon", "Excellent"];
+  const lang = (typeof localStorage !== "undefined" ? localStorage.getItem("elysium_lang") : "fr") || "fr";
+  const dict = {
+    fr: ["Très faible", "Faible", "Correct", "Bon", "Excellent"],
+    en: ["Very weak", "Weak", "Fair", "Good", "Excellent"],
+  };
+  const labels = dict[lang] || dict.fr;
   const colors = ["#E53935", "#F4511E", "#FBC02D", "#7CB342", "#43A047"];
   return {
     score,

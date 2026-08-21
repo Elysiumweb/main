@@ -77,15 +77,15 @@ export const AdminPositions = () => {
         </div>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-positions-list">
-        {positions.length === 0 && <p className="text-[#f7f7f7]/40">{t("recruit.positions.empty")}</p>}
+        {positions.length === 0 && <p className="text-[#c8c8c8]">{t("recruit.positions.empty")}</p>}
         {positions.map((p) => (
           <div key={p.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <span className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${p.open !== false ? "text-emerald-300 border-emerald-300/40" : "text-[#f7f7f7]/40 border-white/20"}`}>
+            <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${p.open !== false ? "text-emerald-300 border-emerald-300/40" : "text-[#c8c8c8] border-white/20"}`}>
               {p.open !== false ? t("status.open") : t("status.closed")}
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{p.title}</p>
-              <p className="text-xs text-[#f7f7f7]/40">{p.game}{p.deadline ? ` · ${t("recruit.deadline")}: ${p.deadline}` : ""}</p>
+              <p className="text-xs text-[#c8c8c8]">{p.game}{p.deadline ? ` · ${t("recruit.deadline")}: ${p.deadline}` : ""}</p>
             </div>
             <button onClick={() => edit(p)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${p.title}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-position-edit-${p.id}`}><Pencil size={15} /></button>
             <ConfirmAction

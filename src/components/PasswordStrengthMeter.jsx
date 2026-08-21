@@ -19,7 +19,7 @@ export const PasswordStrengthMeter = ({ password, id, testId = "password-strengt
         <span>{PASSWORD_HINT}</span>
         {!empty && (
           <span
-            className="shrink-0 text-[10px] uppercase tracking-widest font-semibold"
+            className="shrink-0 text-xs uppercase tracking-widest font-semibold"
             style={{ color }}
             data-testid={`${testId}-label`}
             data-score={score}

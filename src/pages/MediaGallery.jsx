@@ -63,7 +63,12 @@ export default function MediaGallery() {
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div className="flex flex-wrap gap-4 mb-10" data-testid="media-filters">
+        <div className="border border-white/10 bg-[#0c0c0c] p-4 mb-8 flex items-center gap-3" data-testid="media-editorial-note">
+          <span className="text-[#D8CA82]">◆</span>
+          <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8]">Grille éditoriale — tailles variables, pas uniforme 3 colonnes</p>
+          <span className="ml-auto text-xs text-[#c8c8c8]">{filtered.length} médias</span>
+        </div>
+        <div className="flex flex-wrap gap-4 mb-10 overflow-x-auto pb-2" data-testid="media-filters">
           <select value={type} onChange={(e) => setType(e.target.value)} className={selectCls} data-testid="media-filter-type">
             <option value="all">{t("media.all")}</option>
             <option value="photo">{t("media.type.photo")}</option>
@@ -89,14 +94,14 @@ export default function MediaGallery() {
         ) : filtered.length === 0 ? (
           <EmptyState icon={ImageIcon} text={t("media.empty")} testId="media-empty" />
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="media-grid">
-            {filtered.map((m) => {
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-5 space-y-5" data-testid="media-grid">
+            {filtered.map((m, i) => {
               const embed = m.type === "video" ? videoEmbedUrl(m.url) : null;
               return (
                 <Dialog key={m.id}>
                   <DialogTrigger asChild>
-                    <button className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/50 transition-colors text-left overflow-hidden" data-testid={`media-item-${m.id}`}>
-                      <div className="relative h-48 bg-[#0d0d0d] flex items-center justify-center overflow-hidden">
+                    <button className={`group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/50 transition-colors text-left overflow-hidden break-inside-avoid ${i%5===0 ? "sm:row-span-2" : ""} ${m.type==="video" ? "border-[#D8CA82]/20" : ""}`} data-testid={`media-item-${m.id}`}>
+                      <div className={`relative bg-[#0d0d0d] flex items-center justify-center overflow-hidden ${i%3===0 ? "h-72" : i%4===0 ? "h-56" : "h-48"}`}>
                         {m.type === "photo" ? (
                           <ImageWithFallback
                             src={m.url}
@@ -117,7 +122,7 @@ export default function MediaGallery() {
                       </div>
                       <div className="p-4">
                         <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
-                        <p className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 mt-1">
+                        <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mt-1">
                           {t(`media.type.${m.type}`)}{m.game ? ` · ${m.game}` : ""}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}
                         </p>
                       </div>

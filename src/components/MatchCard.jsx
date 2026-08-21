@@ -17,7 +17,7 @@ import { fmtMatchDate } from "../lib/formatters";
  * --------------------------------------------------------------------- */
 const OpponentLogo = ({ src, name, className = "" }) => {
   const [err, setErr] = useState(false);
-  const safeName = (name || "Adversaire").trim();
+  const safeName = (name || t("common.adversary")).trim();
 
   if (!src || err) {
     const initials = safeName
@@ -29,7 +29,7 @@ const OpponentLogo = ({ src, name, className = "" }) => {
     return (
       <div
         role="img"
-        aria-label={`Logo de l'équipe adverse indisponible : ${safeName}`}
+        aria-label={`${t("a11y.opponentLogoFallback")} : ${safeName}`}
         className={`${className} flex items-center justify-center border border-white/15 bg-[#0c0c0c] text-[#a0a0a0] font-display tracking-widest text-xs uppercase select-none`}
         data-testid="opponent-logo-fallback"
       >
@@ -41,7 +41,7 @@ const OpponentLogo = ({ src, name, className = "" }) => {
   return (
     <img
       src={src}
-      alt={`Logo de l'équipe adverse : ${safeName}`}
+      alt={`${t("a11y.opponentLogo")} : ${safeName}`}
       onError={() => setErr(true)}
       loading="lazy"
       decoding="async"
@@ -58,7 +58,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   if (live) {
     return (
       <span
-        className="text-[10px] font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-400/60 bg-red-500/10 flex items-center gap-1.5"
+        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-400/60 bg-red-500/10 flex items-center gap-1.5"
         data-testid="match-status-live"
       >
         <span className="relative flex h-2 w-2" aria-hidden="true">
@@ -72,7 +72,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   if (upcoming) {
     return (
       <span
-        className="text-[10px] font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-sky-300 border-sky-300/40 flex items-center gap-1"
+        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-sky-300 border-sky-300/40 flex items-center gap-1"
         data-testid="match-status-upcoming"
       >
         <CalendarClock size={11} aria-hidden="true" />
@@ -83,7 +83,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   if (result === "win") {
     return (
       <span
-        className="text-[10px] font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-emerald-300 border-emerald-300/50 flex items-center gap-1"
+        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-emerald-300 border-emerald-300/50 flex items-center gap-1"
         data-testid="match-status-win"
       >
         <Trophy size={11} aria-hidden="true" />
@@ -94,7 +94,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   if (result === "loss") {
     return (
       <span
-        className="text-[10px] font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-300/50 flex items-center gap-1"
+        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-300/50 flex items-center gap-1"
         data-testid="match-status-loss"
       >
         <Skull size={11} aria-hidden="true" />
@@ -104,7 +104,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   }
   return (
     <span
-      className="text-[10px] font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-[#c8c8c8] border-white/25 flex items-center gap-1"
+      className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-[#c8c8c8] border-white/25 flex items-center gap-1"
       data-testid="match-status-draw"
     >
       <span aria-hidden="true">=</span>
@@ -128,10 +128,10 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
 
   // Accessible description for the card
   const ariaDesc = live
-    ? `Match en direct : ${teamName} contre ${match.opponentName || "adversaire"}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
+    ? `Match en direct : ${teamName} contre ${match.opponentName || t("common.adversary")}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
     : upcoming
-      ? `Match à venir : ${teamName} contre ${match.opponentName || "adversaire"}`
-      : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || "adversaire"}`;
+      ? `Match à venir : ${teamName} contre ${match.opponentName || t("common.adversary")}`
+      : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || t("common.adversary")}`;
 
   const formattedDate = fmtMatchDate(match, lang);
 
@@ -155,9 +155,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       </span>
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game || "EVA"}</span>
+          <span className="text-xs font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game || "EVA"}</span>
           {roster && (
-            <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
+            <span className="text-xs font-display tracking-[0.25em] uppercase text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
               {roster}
             </span>
           )}
@@ -166,7 +166,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
-          <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="48" height="48" loading="lazy" className="h-12 object-contain" />
+          <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="808" height="798" loading="lazy" className="h-12 w-auto object-contain" />
           <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7] text-center leading-tight" data-testid={`match-team-name-${match.id}`}>{teamName}</span>
         </div>
         <div className="text-center">
@@ -272,7 +272,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
         <div className="space-y-4 text-sm">
           <div className="flex items-center justify-between border border-white/10 p-4">
             <div className="flex flex-col items-center gap-1 w-1/3">
-              <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="40" height="40" loading="lazy" className="h-10 object-contain" />
+              <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="808" height="798" loading="lazy" className="h-10 w-auto object-contain" />
               <span className="text-xs font-display uppercase text-center leading-tight">{teamName}</span>
             </div>
             <p className="font-display font-black text-3xl" aria-label={upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
@@ -309,7 +309,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
             <ShareButtons
               url={`${SITE_URL}/resultats?match=${match.id}`}
-              text={`${teamName} vs ${match.opponentName || "adversaire"}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
+              text={`${teamName} vs ${match.opponentName || t("common.adversary")}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
               title={`Partager le match ${teamName} vs ${match.opponentName}`}
               testId={`match-share-${match.id}`}
               compact

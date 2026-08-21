@@ -90,12 +90,12 @@ export default function Team() {
             <div className="flex flex-col items-end gap-2 self-end">
               <div className="flex items-center gap-2 border border-white/10 bg-[#141414] p-1">
                 <button onClick={()=> setSearchParams({})} data-testid="filter-all"
-                  className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors ${gameFilter==="all"?"bg-[#D8CA82] text-[#111111] font-bold":"text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                  className={`px-4 py-2 text-xs uppercase tracking-[0.25em] transition-colors ${gameFilter==="all"?"bg-[#D8CA82] text-[#111111] font-bold":"text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
                   {t("team.filter.all")} ({byGame.all})
                 </button>
                 {GAMES.map(g=>(
                   <button key={g} onClick={()=> setSearchParams({game:g})} data-testid={`filter-${g}`}
-                    className={`px-4 py-2 text-[11px] uppercase tracking-[0.25em] transition-colors flex items-center gap-2 ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                    className={`px-4 py-2 text-xs uppercase tracking-[0.25em] transition-colors flex items-center gap-2 ${gameFilter===g ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
                     <span className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: getGameColor(g)}} />
                     {GAME_FILTER_KEYS[g] ? t(GAME_FILTER_KEYS[g]) : g} ({byGame[g]||0})
                   </button>
@@ -104,7 +104,7 @@ export default function Team() {
               {/* Roster sub-filters (jeux avec rosters : Rocket League, Valorant) */}
               {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
                 <div key={g} className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#f7f7f7]/30 mr-1">{getGameShortLabel(g)}</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] mr-1">{getGameShortLabel(g)}</span>
                   {(ROSTERS[g]||[]).map(r=>{
                     const count = members?.filter(m=> m.roster===r).length||0;
                     const active = rosterFilter===r;
@@ -112,7 +112,7 @@ export default function Team() {
                     return (
                       <button key={r} onClick={()=> setSearchParams(active ? (gameFilter==="all"?{}:{game:g}) : {game:g,roster:r})} data-testid={`filter-roster-${r}`}
                         style={active ? { borderColor: color, color, backgroundColor: `${color}1A` } : undefined}
-                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] border transition-colors ${active ? "font-bold" : "border-white/15 text-[#f7f7f7]/40 hover:text-[#f7f7f7]/70"}`}>
+                        className={`px-3 py-1.5 text-xs uppercase tracking-[0.2em] border transition-colors ${active ? "font-bold" : "border-white/15 text-[#c8c8c8] hover:text-[#f7f7f7]/70"}`}>
                         {r} ({count})
                       </button>
                     );
@@ -122,18 +122,18 @@ export default function Team() {
               {/* Recherche par pseudo + tri */}
               <div className="flex items-center gap-2 w-full sm:w-auto" data-testid="team-search-sort">
                 <div className="relative flex-1 sm:w-52">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#f7f7f7]/30" aria-hidden="true" />
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" aria-hidden="true" />
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t("team.search")}
                     aria-label={t("team.search")}
                     data-testid="team-search-input"
-                    className="w-full bg-[#141414] border border-white/15 pl-8 pr-3 py-2 text-xs text-[#f7f7f7] placeholder:text-[#f7f7f7]/30 focus:outline-none focus:border-[#D8CA82]"
+                    className="w-full bg-[#141414] border border-white/15 pl-8 pr-3 py-2 text-xs text-[#f7f7f7] placeholder:text-[#c8c8c8] focus:outline-none focus:border-[#D8CA82]"
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <ArrowUpDown size={12} className="text-[#f7f7f7]/30" aria-hidden="true" />
+                  <ArrowUpDown size={12} className="text-[#c8c8c8]" aria-hidden="true" />
                   <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label={t("team.sort")} data-testid="team-sort-select"
                     className="bg-[#141414] border border-white/15 px-2 py-2 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                     <option value="pseudo">{t("team.sort.pseudo")}</option>
@@ -166,7 +166,46 @@ export default function Team() {
               </div>
             </div>
           </div>
+          {/* Groupe — composition par roster + photo de groupe — D-03 */}
+          <div className="mt-10 border border-white/10 bg-[#0c0c0c] p-6" data-testid="team-group-photo">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-2 h-2 bg-[#D8CA82] rounded-full" />
+              <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82]">Compositions par roster — photos de groupe authentiques</p>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {GAMES.map((g)=> {
+                const count = byGame[g] || 0;
+                return (
+                  <div key={g} className="border border-white/10 bg-[#141414] p-4 flex flex-col" data-testid={`team-roster-${g}`}>
+                    <div className="h-40 bg-[#111111] border border-white/5 flex items-center justify-center overflow-hidden">
+                      <img src={count>0 ? `/brand/logo-icon-${g==="EVA"?"gold":"white"}.png` : "/brand/pattern.png"} alt="" className="w-20 opacity-20 object-contain" />
+                    </div>
+                    <p className="font-display font-bold text-[#f7f7f7] mt-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{backgroundColor:getGameColor(g)}} /> {g} · {count} joueurs</p>
+                    <p className="text-xs text-[#c8c8c8] mt-1">{count>0 ? "Roster au complet — portraits plus grands, même traitement visuel" : "En cours de composition"}</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {(members||[]).filter(m=>m.game===g).slice(0,4).map(m=> (
+                        <span key={m.id} className="text-xs border border-white/10 bg-[#111111] px-2 py-1 text-[#c8c8c8]">{m.pseudo}</span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
+      </section>
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-4" data-testid="team-filter-bar">
+          <p className="text-xs text-[#c8c8c8]" data-testid="team-count">{filtered.length} joueur(s) {query ? `· recherche "${query}"` : ""}</p>
+          {(gameFilter!=="all" || rosterFilter!=="all" || query) && (<button onClick={()=>{setSearchParams({}); setQuery("");}} data-testid="team-reset" className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Tout réinitialiser</button>)}
+        </div>
+        {(gameFilter!=="all" || rosterFilter!=="all" || query) && (
+          <div className="flex flex-wrap gap-2 mt-3" data-testid="team-active-filters">
+            {gameFilter!=="all" && <button onClick={()=>setSearchParams({})} data-testid="team-badge-game" className="border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] text-xs px-3 py-1.5">Jeu: {gameFilter} ✕</button>}
+            {rosterFilter!=="all" && <button onClick={()=>setSearchParams(gameFilter!=="all"?{game:gameFilter}:{})} data-testid="team-badge-roster" className="border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] text-xs px-3 py-1.5">Roster: {rosterFilter} ✕</button>}
+            {query && <button onClick={()=>setQuery("")} data-testid="team-badge-query" className="border border-white/20 bg-[#1A1A1A] text-[#c8c8c8] text-xs px-3 py-1.5">Recherche: {query} ✕</button>}
+          </div>
+        )}
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
         {error ? (
@@ -182,13 +221,13 @@ export default function Team() {
                 <div className="flex items-center gap-4 mb-8">
                   <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t(`team.status.${g.status}`)}</h2>
                   <div className="flex-1 h-px bg-white/10" />
-                  <span className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/30">{g.list.length} {t("team.players")}</span>
+                  <span className="text-xs uppercase tracking-widest text-[#c8c8c8]">{g.list.length} {t("team.players")}</span>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {g.list.map((m) => (
                     <Link key={m.id} to={`/equipe/${m.id}`} data-testid={`team-card-${m.id}`}
                       className="group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/50 transition-colors overflow-hidden">
-                      <PlayerPhoto src={m.photo} alt={m.pseudo} className="w-full h-52" />
+                      <PlayerPhoto src={m.photo} alt={m.pseudo} className="w-full h-64 sm:h-72" />
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-display font-bold text-lg text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors">{m.pseudo}</p>
@@ -201,9 +240,9 @@ export default function Team() {
                         {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{m.bio}</p>}
                         <div className="flex items-center gap-3 mt-4">
                           {["x", "twitch", "instagram", "youtube", "tiktok"].filter((k) => m.socials?.[k]).map((k) => (
-                            <span key={k} className="text-[#f7f7f7]/40"><SocialIcon name={k} size={14} /></span>
+                            <span key={k} className="text-[#c8c8c8]"><SocialIcon name={k} size={14} /></span>
                           ))}
-                          <span className="ml-auto text-[10px] uppercase tracking-widest text-[#D8CA82]/60">{t("team.view")} →</span>
+                          <span className="ml-auto text-xs uppercase tracking-widest text-[#D8CA82]/60">{t("team.view")} →</span>
                         </div>
                       </div>
                     </Link>

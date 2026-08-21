@@ -126,14 +126,14 @@ export default function CanvasSpace() {
           </button>
         </form>
         {canvases.length === 0 ? (
-          <p className="text-[#f7f7f7]/40" data-testid="canvas-list-empty">{t("canvas.empty")}</p>
+          <p className="text-[#c8c8c8]" data-testid="canvas-list-empty">{t("canvas.empty")}</p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="canvas-list">
             {canvases.map((c) => (
               <div key={c.id} className="group border border-white/10 bg-[#1A1A1A] p-5 hover:border-[#D8CA82]/50 transition-colors relative">
                 <button onClick={() => setOpenId(c.id)} className="text-left w-full" data-testid={`canvas-open-${c.id}`}>
                   <p className="font-display text-[#f7f7f7] truncate">{c.title}</p>
-                  <p className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/40 mt-2">
+                  <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mt-2">
                     {c.status === "draft" ? t("canvas.draft") : t("common.saved")} · {c.game} · {(c.items || []).length} él.
                   </p>
                 </button>

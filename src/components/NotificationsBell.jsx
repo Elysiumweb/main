@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export const NotificationsBell = () => {
   const { user, role, game, isOfficial, hasPlayerAccess } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const navigate = useNavigate();
   const [direct, setDirect] = useState([]);
   const [roleNotifs, setRoleNotifs] = useState([]);
@@ -54,7 +54,7 @@ export const NotificationsBell = () => {
         <button className="relative text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors" data-testid="notifications-bell" title={t("notif.title")}>
           <Bell size={18} />
           {unread.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-[#D8CA82] text-[#111111] text-[9px] font-bold min-w-[15px] h-[15px] flex items-center justify-center px-0.5" data-testid="notifications-badge">
+            <span className="absolute -top-1.5 -right-1.5 bg-[#D8CA82] text-[#111111] text-xs font-bold min-w-[15px] h-[15px] flex items-center justify-center px-0.5" data-testid="notifications-badge">
               {unread.length}
             </span>
           )}
@@ -64,14 +64,14 @@ export const NotificationsBell = () => {
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82]">{t("notif.title")}</p>
           {unread.length > 0 && (
-            <button onClick={markAllRead} className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid="notifications-mark-read">
+            <button onClick={markAllRead} className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid="notifications-mark-read">
               {t("notif.markRead")}
             </button>
           )}
         </div>
         <div className="max-h-80 overflow-y-auto">
           {notifs.length === 0 ? (
-            <p className="text-sm text-[#f7f7f7]/40 px-4 py-6" data-testid="notifications-empty">{t("notif.empty")}</p>
+            <p className="text-sm text-[#c8c8c8] px-4 py-6" data-testid="notifications-empty">{t("notif.empty")}</p>
           ) : notifs.map((n) => {
             const isUnread = !(n.readBy || []).includes(user.uid);
             return (
@@ -81,8 +81,8 @@ export const NotificationsBell = () => {
                   {isUnread && <span className="inline-block w-1.5 h-1.5 bg-[#D8CA82] mr-2 align-middle" />}
                   {t(`notif.${n.type}`)}{n.extra ? ` — ${n.extra}` : ""}
                 </p>
-                <p className="text-[10px] text-[#f7f7f7]/30 mt-0.5">
-                  {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                <p className="text-xs text-[#c8c8c8] mt-0.5">
+                  {n.createdAt?.toDate ? n.createdAt.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
                 </p>
               </button>
             );

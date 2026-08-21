@@ -59,7 +59,7 @@ export const ShareButtons = ({ url, text, title, testId = "share-buttons", compa
 
   return (
     <div className="flex items-center gap-2 flex-wrap" data-testid={testId} role="group" aria-label={title || t("playerpage.share")}>
-      <span className="text-[10px] uppercase tracking-[0.25em] text-[#f7f7f7]/40 mr-1">
+      <span className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mr-1">
         {t("share.label")}
       </span>
       {NETWORKS.map((n) => (

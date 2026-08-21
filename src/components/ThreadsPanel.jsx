@@ -10,7 +10,7 @@ import { createNotification } from "../lib/notify";
 
 const STATUS_CLS = {
   open: "text-[#D8CA82] border-[#D8CA82]/40",
-  closed: "text-[#f7f7f7]/40 border-white/20",
+  closed: "text-[#c8c8c8] border-white/20",
   pending: "text-orange-300 border-orange-300/40",
   reviewing: "text-sky-300 border-sky-300/40",
   accepted: "text-emerald-300 border-emerald-300/40",
@@ -19,7 +19,7 @@ const STATUS_CLS = {
 
 export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, prefix, statusOptions = null, canSetStatus = false }) => {
   const { user } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [threads, setThreads] = useState([]);
   const [selected, setSelected] = useState(null);
 
@@ -38,31 +38,32 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
   const current = threads.find((x) => x.id === selected);
 
   if (threads.length === 0) {
-    return <p className="text-[#f7f7f7]/40 tracking-wide py-8" data-testid={`${prefix}-threads-empty`}>{t(emptyKey)}</p>;
+    return <p className="text-[#c8c8c8] tracking-wide py-8" data-testid={`${prefix}-threads-empty`}>{t(emptyKey)}</p>;
   }
 
   return (
-    <div className="grid md:grid-cols-12 border border-white/10 bg-[#141414] h-[560px]">
-      <div className="md:col-span-4 border-r border-white/10 overflow-y-auto" data-testid={`${prefix}-threads-list`}>
+    <div className="grid md:grid-cols-12 border border-white/10 bg-[#141414] min-h-[400px] md:h-[560px] h-[70vh] overflow-hidden">
+      <div className={`md:col-span-4 border-r border-white/10 overflow-y-auto ${selected ? "hidden md:block" : "block"}`} data-testid={`${prefix}-threads-list`}>
         {threads.map((th) => (
           <button key={th.id} onClick={() => setSelected(th.id)} data-testid={`${prefix}-thread-${th.id}`}
             className={`w-full text-left px-4 py-3 border-b border-white/5 transition-colors ${selected === th.id ? "bg-[#D8CA82]/10 border-l-2 border-l-[#D8CA82]" : "hover:bg-white/5"}`}>
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate flex-1">{th[titleField]}</p>
               {th.status && (
-                <span className={`text-[9px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_CLS[th.status] || "text-[#f7f7f7]/40 border-white/20"}`} data-testid={`${prefix}-status-${th.id}`}>
+                <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_CLS[th.status] || "text-[#c8c8c8] border-white/20"}`} data-testid={`${prefix}-status-${th.id}`}>
                   {t(`status.${th.status}`)}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#f7f7f7]/40 truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString("fr-FR") : ""}</p>
+            <p className="text-xs text-[#c8c8c8] truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString(lang === "en" ? "en-US" : "fr-FR") : ""}</p>
           </button>
         ))}
       </div>
-      <div className="md:col-span-8 flex flex-col min-h-0">
+      <div className={`md:col-span-8 flex flex-col min-h-0 ${selected ? "flex" : "hidden md:flex"}`} data-testid={`${prefix}-threads-detail`}>
         {current && (
           <>
             <div className="px-4 py-3 border-b border-white/10 bg-[#1A1A1A] shrink-0 flex items-start gap-3">
+              <button onClick={()=> setSelected(null)} className="md:hidden text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] mr-2">←</button>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-display text-[#D8CA82] uppercase tracking-wider flex items-center gap-2">
                   <MessageSquare size={14} /> {current[titleField]}
@@ -91,7 +92,7 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
 };
 
 export const LoginPrompt = ({ messageKey, prefix }) => {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const location = useLocation();
   return (
     <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-10 text-center" data-testid={`${prefix}-login-prompt`}>

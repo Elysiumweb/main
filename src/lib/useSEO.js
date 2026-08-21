@@ -5,9 +5,17 @@ import { useLang } from "./i18n";
 
 export const SITE_URL = (process.env.REACT_APP_SITE_URL || "https://elysium-esport.fr").replace(/\/$/, "");
 export const SITE_NAME = "ELYSIUM Esport";
+export const OG_VARIANTS = {
+  default: "/brand/og-default.jpg",
+  article: "/brand/og-article.jpg",
+  match: "/brand/og-match.jpg",
+  recrutement: "/brand/og-recrutement.jpg",
+  competition: "/brand/og-competition.jpg",
+};
+export const ogImageFor = (kind) => `${SITE_URL}${OG_VARIANTS[kind] || OG_VARIANTS.default}`;
 export const DEFAULT_TITLE = "ELYSIUM Esport — Not given. Earned.";
 export const DEFAULT_DESCRIPTION = "Équipe esport française sur EVA, Rocket League et Valorant : résultats, actualités, effectif, recrutement et communauté.";
-export const DEFAULT_IMAGE = `${SITE_URL}/brand/logo-icon-gold.png`;
+export const DEFAULT_IMAGE = `${SITE_URL}/brand/og-default.jpg`;
 
 const defaultOrganizationJsonLd = () => ({
   "@context": "https://schema.org",
@@ -210,8 +218,10 @@ export const usePlayerSEO = (player) => {
 };
 
 export const useMatchSEO = (match) => {
+  const { t } = useLang();
   const teamName = match ? getElysiumTeamName(match.roster) : "Elysium";
-  const title = match ? `${teamName} vs ${match.opponentName} — ${match.competition || "Match"}` : undefined;
+  const fallbackAdversary = t("common.adversary");
+  const title = match ? `${teamName} vs ${match.opponentName || fallbackAdversary} — ${match.competition || "Match"}` : undefined;
   const description = match ? `${match.scoreUs ?? "?"} – ${match.scoreThem ?? "?"} · ${match.date || ""}${match.competition ? ` · ${match.competition}` : ""}` : undefined;
   const image = match?.opponentLogo || undefined;
   const startDate = match?.date ? `${match.date}${match.time ? `T${match.time}` : ""}` : undefined;
@@ -219,13 +229,13 @@ export const useMatchSEO = (match) => {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     "@id": `${SITE_URL}/resultats#match-${match.id}`,
-    name: `${teamName} vs ${match.opponentName || "adversaire"}`,
+    name: `${teamName} vs ${match.opponentName || fallbackAdversary}`,
     startDate,
     eventStatus: match.status === "upcoming" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
     sport: match.game || "Esport",
     competitor: [
       { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
-      { "@type": "SportsTeam", name: match.opponentName || "Adversaire", logo: absoluteUrl(match.opponentLogo) },
+      { "@type": "SportsTeam", name: match.opponentName || fallbackAdversary, logo: absoluteUrl(match.opponentLogo) },
     ],
     location: match.platform ? { "@type": "VirtualLocation", name: match.platform, url: match.watchUrl } : undefined,
   } : undefined;

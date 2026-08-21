@@ -10,10 +10,10 @@ import {
 } from "./ui/dropdown-menu";
 
 const linkCls = ({ isActive }) =>
-  `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
+  `text-xs uppercase tracking-[0.18em] transition-colors ${isActive ? "text-[#D8CA82]" : "text-[#c8c8c8] hover:text-[#D8CA82]"}`;
 
 const mobileLinkCls = ({ isActive }) =>
-  `text-xs uppercase tracking-[0.18em] transition-colors min-h-[44px] flex items-center ${isActive ? "text-[#D8CA82] font-semibold" : "text-[#f7f7f7]/70 hover:text-[#D8CA82]"}`;
+  `text-xs uppercase tracking-[0.18em] transition-colors min-h-[44px] flex items-center ${isActive ? "text-[#D8CA82] font-semibold" : "text-[#c8c8c8] hover:text-[#D8CA82]"}`;
 
 export const UserAvatar = ({ src, name, className = "h-8 w-8" }) => {
   const [err, setErr] = useState(false);
@@ -26,7 +26,7 @@ export const UserAvatar = ({ src, name, className = "h-8 w-8" }) => {
 
   if (!src || err) {
     return (
-      <div className={`${className} rounded-full bg-[#1A1A1A] border border-[#D8CA82]/50 flex items-center justify-center text-[11px] font-display font-bold text-[#D8CA82] select-none shrink-0`} aria-hidden="true">
+      <div className={`${className} rounded-full bg-[#1A1A1A] border border-[#D8CA82]/50 flex items-center justify-center text-xs font-display font-bold text-[#D8CA82] select-none shrink-0`} aria-hidden="true">
         {initials}
       </div>
     );
@@ -42,6 +42,7 @@ export const UserAvatar = ({ src, name, className = "h-8 w-8" }) => {
   );
 };
 
+// Architecture D-05 : principal 5 + Découvrir 5 + CTA visibles + actions compactes
 export const Navbar = () => {
   const { user, profile, hasPlayerAccess, isOfficial, role, displayName, logout } = useAuth();
   const { t, lang, toggle } = useLang();
@@ -51,24 +52,28 @@ export const Navbar = () => {
 
   const photoUrl = profile?.photoURL || user?.photoURL || "";
 
-  const links = [
+  // Principal : 5 liens max — dense -> lisible (D-05)
+  const principalLinks = [
     { to: "/", label: t("nav.home") },
     { to: "/equipe", label: t("nav.team") },
     { to: "/resultats", label: t("nav.results") },
     { to: "/actus", label: t("nav.news") },
-    { to: "/medias", label: t("nav.media") },
     { to: "/calendrier", label: t("nav.calendar") },
-    { to: "/statistiques", label: t("nav.stats") },
-    { to: "/support", label: t("nav.support") },
-    { to: "/recrutement", label: t("nav.recruitment") },
-    { to: "/partenaires", label: t("nav.partners") },
   ];
 
-  // Liens secondaires regroupés dans un menu « Plus » pour ne pas saturer la barre.
-  const moreLinks = [
+  // Découvrir : médias, compétitions, stats, à propos, presse (D-05)
+  const discoverLinks = [
+    { to: "/medias", label: t("nav.media") },
     { to: "/competitions", label: t("nav.competitions") },
+    { to: "/statistiques", label: t("nav.stats") },
     { to: "/a-propos", label: t("nav.about") },
     { to: "/presse", label: t("nav.press") },
+  ];
+
+  // Liens secondaires conservés pour ne pas casser les parcours existants — regroupés dans Découvrir
+  const secondaryLinks = [
+    { to: "/support", label: t("nav.support") },
+    { to: "/partenaires", label: t("nav.partners") },
   ];
 
   const openSearch = (e) => {
@@ -78,23 +83,19 @@ export const Navbar = () => {
 
   useEffect(() => {
     if (!open) return;
-
     const handleKeyDown = (e) => {
       if (e.key === "Escape" || e.key === "Esc") {
         setOpen(false);
       }
     };
-
     const handleClickOutside = (e) => {
       if (headerRef.current && !headerRef.current.contains(e.target)) {
         setOpen(false);
       }
     };
-
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("mousedown", handleClickOutside);
@@ -109,21 +110,31 @@ export const Navbar = () => {
           <img src="/brand/logo-horizontal-white.png" alt="" aria-hidden="true" className="h-9 hidden sm:block" />
           <img src="/brand/logo-icon-gold.png" alt="" aria-hidden="true" className="h-9 sm:hidden" />
         </Link>
-        <nav className="hidden xl:flex items-center gap-5" aria-label="Navigation principale">
-          {links.map((l) => (
-            <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}
-              onClick={() => l.to === "/recrutement" && trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "navbar" })}>
+        {/* Desktop : visible dès lg (pas xl) pour éviter le saut mobile -> dense */}
+        <nav className="hidden lg:flex items-center gap-5" aria-label="Navigation principale">
+          {principalLinks.map((l) => (
+            <NavLink key={l.to} to={l.to} className={linkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
               {l.label}
             </NavLink>
           ))}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={`${linkCls({ isActive: false })} flex items-center gap-1 min-h-[44px]`} data-testid="nav-link-more">
-                {t("nav.more")} <ChevronDown size={12} aria-hidden="true" />
+                Découvrir <ChevronDown size={12} aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="bg-[#161616] border border-white/15 rounded-none p-1.5 text-[#f7f7f7]" data-testid="nav-more-menu">
-              {moreLinks.map((l) => (
+            <DropdownMenuContent align="start" className="bg-[#161616] border border-white/15 rounded-none p-1.5 text-[#f7f7f7] min-w-[220px]" data-testid="nav-more-menu">
+              <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] px-3 py-2">Découvrir</p>
+              {discoverLinks.map((l) => (
+                <DropdownMenuItem key={l.to} asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
+                  <NavLink to={l.to} className="text-xs uppercase tracking-[0.18em] px-3 py-2.5" data-testid={`nav-more-link-${l.to.slice(1)}`}>
+                    {l.label}
+                  </NavLink>
+                </DropdownMenuItem>
+              ))}
+              <div className="border-t border-white/10 my-1" />
+              <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] px-3 py-2">Communauté</p>
+              {secondaryLinks.map((l) => (
                 <DropdownMenuItem key={l.to} asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
                   <NavLink to={l.to} className="text-xs uppercase tracking-[0.18em] px-3 py-2.5" data-testid={`nav-more-link-${l.to.slice(1)}`}>
                     {l.label}
@@ -143,34 +154,41 @@ export const Navbar = () => {
             </NavLink>
           )}
         </nav>
-        <div className="flex items-center gap-3">
-          {/* Donation CTA */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* CTAs visibles : Rejoindre + Soutenir — D-05 */}
+          <Link
+            to="/recrutement"
+            data-testid="nav-cta-join"
+            onClick={() => trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "navbar" })}
+            className="hidden sm:inline-flex bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow min-h-[44px] items-center justify-center"
+          >
+            Rejoindre
+          </Link>
           <Link
             to="/soutenir"
             data-testid="nav-donate-btn"
             title={t("donate.cta")}
-            className="border border-[#D8CA82]/50 text-[#D8CA82] text-[11px] font-display font-bold uppercase tracking-widest px-3 py-2 hidden sm:flex items-center gap-1.5 hover:bg-[#D8CA82]/10 hover:border-[#D8CA82] transition-colors motion-reduce:transition-none min-h-[44px] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+            className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-3 py-2 hidden sm:flex items-center gap-1.5 hover:bg-[#D8CA82]/10 hover:border-[#D8CA82] transition-colors motion-reduce:transition-none min-h-[44px] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
           >
             <Heart size={13} aria-hidden="true" />
             <span className="hidden lg:inline">{t("nav.donate")}</span>
           </Link>
-          {/* Global Search Button */}
+          {/* Actions compactes : recherche / notif / langue / compte */}
           <button
             onClick={openSearch}
             data-testid="nav-search-btn"
             aria-label={`${t("search.title")} (${t("search.shortcut")})`}
-            className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors hidden sm:flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-xs min-h-[44px] motion-reduce:transition-none"
+            className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors hidden sm:flex items-center justify-center border border-white/10 w-11 h-11 min-h-[44px] min-w-[44px] motion-reduce:transition-none"
             title={`${t("search.title")} (${t("search.shortcut")})`}
           >
-            <Search size={14} aria-hidden="true" />
-            <span className="hidden md:inline text-[#c8c8c8] text-[10px] tracking-wider">{t("search.shortcut")}</span>
+            <Search size={16} aria-hidden="true" />
           </button>
           {user && <NotificationsBell />}
           <button
             onClick={toggle}
             data-testid="lang-toggle-btn"
             aria-label={lang === "fr" ? "Switch to English" : "Passer en français"}
-            className="text-xs font-display tracking-widest border border-white/20 px-2.5 py-1.5 text-[#c8c8c8] hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center motion-reduce:transition-none"
+            className="text-xs font-display tracking-widest border border-white/20 w-11 h-11 text-[#c8c8c8] hover:border-[#D8CA82]/60 hover:text-[#D8CA82] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center motion-reduce:transition-none"
           >
             <span aria-hidden="true">{lang === "fr" ? "EN" : "FR"}</span>
           </button>
@@ -188,14 +206,14 @@ export const Navbar = () => {
                   <span className="hidden sm:inline text-xs font-semibold text-[#f7f7f7] max-w-[110px] truncate">
                     {displayName}
                   </span>
-                  <ChevronDown size={12} className="text-[#f7f7f7]/50" aria-hidden="true" />
+                  <ChevronDown size={12} className="text-[#c8c8c8]" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-[#161616] border border-white/15 rounded-none p-2 text-[#f7f7f7] min-w-[220px]" data-testid="nav-user-dropdown">
                 <div className="px-3 py-2 border-b border-white/10 mb-1">
                   <p className="text-xs font-display font-bold text-[#D8CA82] truncate">{displayName}</p>
-                  {user.email && <p className="text-[11px] text-[#f7f7f7]/50 truncate">{user.email}</p>}
-                  <span className="mt-1 inline-block text-[9px] uppercase tracking-widest px-1.5 py-0.5 border border-[#D8CA82]/30 text-[#D8CA82]/80">
+                  {user.email && <p className="text-xs text-[#c8c8c8] truncate">{user.email}</p>}
+                  <span className="mt-1 inline-block text-xs uppercase tracking-widest px-1.5 py-0.5 border border-[#D8CA82]/30 text-[#D8CA82]/80">
                     {isOfficial ? "Officiel" : t(`admin.role.${role}`)}
                   </span>
                 </div>
@@ -242,7 +260,7 @@ export const Navbar = () => {
             aria-expanded={open}
             aria-controls="nav-mobile-menu"
             aria-label={open ? t("nav.menu.close") : t("nav.menu.open")}
-            className="xl:hidden text-[#f7f7f7] min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="lg:hidden text-[#f7f7f7] min-w-[44px] min-h-[44px] flex items-center justify-center"
             onClick={() => setOpen(!open)}
             data-testid="nav-mobile-toggle"
           >
@@ -254,11 +272,11 @@ export const Navbar = () => {
         <nav
           id="nav-mobile-menu"
           aria-label={t("nav.menu.open")}
-          className="xl:hidden border-t border-white/10 px-6 py-4 flex flex-col bg-[#111111]"
+          className="lg:hidden fixed inset-0 top-16 z-40 bg-[#111111] overflow-y-auto border-t border-white/10 px-6 py-6 flex flex-col"
           data-testid="nav-mobile-menu"
         >
           {user && (
-            <div className="flex items-center gap-3 pb-4 mb-3 border-b border-white/10">
+            <div className="flex items-center gap-3 pb-4 mb-4 border-b border-white/10">
               <UserAvatar src={photoUrl} name={displayName} className="h-10 w-10" />
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[#f7f7f7] truncate">{displayName}</p>
@@ -266,49 +284,72 @@ export const Navbar = () => {
               </div>
             </div>
           )}
-          {links.map((l) => (
-            <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => { setOpen(false); if (l.to === "/recrutement") trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "mobile_navbar" }); }}>
-              {l.label}
-            </NavLink>
-          ))}
-          <NavLink to="/soutenir" className={mobileLinkCls} onClick={() => setOpen(false)} data-testid="nav-mobile-donate-link">
-            <span className="inline-flex items-center gap-1.5"><Heart size={14} aria-hidden="true" />{t("nav.donate")}</span>
-          </NavLink>
-          <button
-            onClick={(e) => { setOpen(false); openSearch(e); }}
-            className="text-xs uppercase tracking-[0.18em] text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-2 min-h-[44px]"
-          >
-            <Search size={14} aria-hidden="true" /> {t("search.title")}
-          </button>
-          {user && (
-            <NavLink to="/profil" className={mobileLinkCls} onClick={() => setOpen(false)} data-testid="nav-mobile-profile">
-              <span className="inline-flex items-center gap-1.5"><User size={14} aria-hidden="true" />{t("nav.profile")}</span>
-            </NavLink>
-          )}
-          {hasPlayerAccess && (
-            <NavLink to="/espace-joueur" className={mobileLinkCls} onClick={() => setOpen(false)}>
-              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
-            </NavLink>
-          )}
-          {isOfficial && (
-            <NavLink to="/admin" className={mobileLinkCls} onClick={() => setOpen(false)}>
-              <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
-            </NavLink>
-          )}
-          {user && (
-            <button
-              onClick={() => { setOpen(false); logout(); navigate("/"); }}
-              className="text-xs uppercase tracking-[0.18em] text-red-300/80 hover:text-red-300 flex items-center gap-2 min-h-[44px]"
-            >
-              <LogOut size={14} aria-hidden="true" /> {t("nav.logout")}
-            </button>
-          )}
-          <div className="border-t border-white/10 my-2 pt-2">
-            {moreLinks.map((l) => (
-              <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)} data-testid={`nav-mobile-link-${l.to.slice(1)}`}>
-                {l.label}
-              </NavLink>
-            ))}
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Principal</p>
+              <div className="flex flex-col">
+                {principalLinks.map((l) => (
+                  <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)} data-testid={`nav-mobile-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
+                    {l.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Découvrir</p>
+              <div className="flex flex-col">
+                {discoverLinks.map((l) => (
+                  <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)} data-testid={`nav-mobile-link-${l.to.slice(1)}`}>
+                    {l.label}
+                  </NavLink>
+                ))}
+                {secondaryLinks.map((l) => (
+                  <NavLink key={l.to} to={l.to} className={mobileLinkCls} onClick={() => setOpen(false)} data-testid={`nav-mobile-link-${l.to.slice(1)}`}>
+                    {l.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Communauté & Actions</p>
+              <div className="flex flex-col">
+                <NavLink to="/recrutement" className={mobileLinkCls} onClick={() => { setOpen(false); trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "mobile_navbar" }); }} data-testid="nav-mobile-link-recrutement">
+                  Rejoindre
+                </NavLink>
+                <NavLink to="/soutenir" className={mobileLinkCls} onClick={() => setOpen(false)} data-testid="nav-mobile-donate-link">
+                  <span className="inline-flex items-center gap-1.5"><Heart size={14} aria-hidden="true" />{t("nav.donate")}</span>
+                </NavLink>
+                <button
+                  onClick={(e) => { setOpen(false); openSearch(e); }}
+                  className="text-xs uppercase tracking-[0.18em] text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-2 min-h-[44px]"
+                >
+                  <Search size={14} aria-hidden="true" /> {t("search.title")}
+                </button>
+                {user && (
+                  <NavLink to="/profil" className={mobileLinkCls} onClick={() => setOpen(false)} data-testid="nav-mobile-profile">
+                    <span className="inline-flex items-center gap-1.5"><User size={14} aria-hidden="true" />{t("nav.profile")}</span>
+                  </NavLink>
+                )}
+                {hasPlayerAccess && (
+                  <NavLink to="/espace-joueur" className={mobileLinkCls} onClick={() => setOpen(false)}>
+                    <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
+                  </NavLink>
+                )}
+                {isOfficial && (
+                  <NavLink to="/admin" className={mobileLinkCls} onClick={() => setOpen(false)}>
+                    <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
+                  </NavLink>
+                )}
+                {user && (
+                  <button
+                    onClick={() => { setOpen(false); logout(); navigate("/"); }}
+                    className="text-xs uppercase tracking-[0.18em] text-red-300/80 hover:text-red-300 flex items-center gap-2 min-h-[44px]"
+                  >
+                    <LogOut size={14} aria-hidden="true" /> {t("nav.logout")}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </nav>
       )}

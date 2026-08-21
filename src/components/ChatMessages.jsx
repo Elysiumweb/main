@@ -62,7 +62,7 @@ const renderText = (text, members) => {
 
 export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = null }) => {
   const { user, displayName, role, game, roster, isOfficial } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [messages, setMessages] = useState([]);
   const [members, setMembers] = useState([]);
   const [text, setText] = useState("");
@@ -232,14 +232,14 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
   };
 
   const fmtDate = (ts) => ts?.toDate
-    ? ts.toDate().toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    ? ts.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     : "";
 
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0" data-testid={`${testId}-messages`}>
         {messages.length === 0 && (
-          <p className="text-sm text-[#f7f7f7]/40 tracking-wide" data-testid={`${testId}-empty`}>{t("chat.empty")}</p>
+          <p className="text-sm text-[#c8c8c8] tracking-wide" data-testid={`${testId}-empty`}>{t("chat.empty")}</p>
         )}
         {messages.map((m) => {
           const mine = m.uid === user?.uid;
@@ -250,13 +250,13 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
               <div className={`max-w-[75%] px-3 py-2 border relative ${mine ? "bg-[#D8CA82]/10 border-[#D8CA82]/40" : "bg-[#1A1A1A] border-white/10"}`}>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-display font-bold text-[#D8CA82]">{m.name}</span>
-                  {m.createdAt && <span className="text-[10px] text-[#f7f7f7]/30">{fmtDate(m.createdAt)}</span>}
-                  {m.editedAt && <span className="text-[9px] italic text-[#f7f7f7]/30">({t("chat.edited")})</span>}
+                  {m.createdAt && <span className="text-xs text-[#c8c8c8]">{fmtDate(m.createdAt)}</span>}
+                  {m.editedAt && <span className="text-xs italic text-[#c8c8c8]">({t("chat.edited")})</span>}
                   {/* Actions : édition personnelle + suppression personnelle/modération */}
                   {canDeleteMessage && !isEditing && (
                     <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`msg-actions-${m.id}`}>
-                      {mine && <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-[#f7f7f7]/40 hover:text-[#D8CA82]"><Pencil size={11} /></button>}
-                      <button onClick={() => setMessageToDelete(m)} title={mine ? t("chat.delete") : "Modérer"} data-testid={`msg-delete-${m.id}`} className="text-[#f7f7f7]/40 hover:text-red-400"><Trash2 size={11} /></button>
+                      {mine && <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-[#c8c8c8] hover:text-[#D8CA82]"><Pencil size={11} /></button>}
+                      <button onClick={() => setMessageToDelete(m)} title={mine ? t("chat.delete") : "Modérer"} data-testid={`msg-delete-${m.id}`} className="text-[#c8c8c8] hover:text-red-400"><Trash2 size={11} /></button>
                     </span>
                   )}
                 </div>
@@ -265,8 +265,8 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
                     <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} autoFocus
                       className="w-full bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] resize-none" />
                     <div className="flex justify-end gap-2 mt-1.5">
-                      <button onClick={cancelEdit} className="text-[10px] uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#f7f7f7] px-2 py-1">{t("chat.cancel")}</button>
-                      <button onClick={() => saveEdit(m.id)} className="text-[10px] uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2 py-1 font-bold flex items-center gap-1"><Check size={11} /> {t("chat.save")}</button>
+                      <button onClick={cancelEdit} className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#f7f7f7] px-2 py-1">{t("chat.cancel")}</button>
+                      <button onClick={() => saveEdit(m.id)} className="text-xs uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2 py-1 font-bold flex items-center gap-1"><Check size={11} /> {t("chat.save")}</button>
                     </div>
                   </div>
                 ) : (
@@ -315,7 +315,7 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
         </button>
         <input ref={inputRef} value={text} onChange={onTextChange} onKeyDown={onTextKeyDown} placeholder={t("chat.placeholder")}
           data-testid={`${testId}-input`}
-          className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] placeholder:text-[#f7f7f7]/30 focus:outline-none focus:border-[#D8CA82]" />
+          className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] placeholder:text-[#c8c8c8] focus:outline-none focus:border-[#D8CA82]" />
         <button type="submit" disabled={uploading} data-testid={`${testId}-send-btn`}
           className="bg-[#D8CA82] text-[#111111] px-4 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50">
           <Send size={16} />
