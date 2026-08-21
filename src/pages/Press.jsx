@@ -258,9 +258,6 @@ export default function Press() {
             {t("press.contact.text")}{" "}
             <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline" data-testid="press-contact-email">{CONTACT_EMAIL}</a>
           </p>
-          <p className="text-xs text-[#c8c8c8] mt-3">
-            Presse : <a href={`mailto:presse@elysium-esport.fr`} className="text-[#D8CA82] hover:underline">presse@elysium-esport.fr</a> — réponse sous 24 h ouvrées
-          </p>
           <p className="text-xs text-[#c8c8c8]/60 mt-4">
             {SITE_URL}/presse · Kit daté du 20 août 2026
           </p>
