@@ -6,6 +6,8 @@ const args = new Set(process.argv.slice(2));
 const mode = [...args].find((arg) => arg.startsWith("--mode="))?.split("=")[1] || "build";
 const skip = process.env.SKIP_ENV_VALIDATION === "true";
 
+const DEFAULT_SITE_URL = "https://elysium-esport.fr";
+
 const REQUIRED_CLIENT = [
   "REACT_APP_SITE_URL",
   "REACT_APP_FIREBASE_API_KEY",
@@ -44,7 +46,16 @@ const readExampleKeys = () => {
 
 const exampleKeys = readExampleKeys();
 const get = (key) => process.env[key]?.trim();
-const configured = (key) => Boolean(get(key) && !/^(__|changeme|todo|your_|xxx)/i.test(get(key)));
+const isPlaceholder = (value = "") => /^(__|changeme|todo|your_|xxx)/i.test(value);
+const effectiveValue = (key) => {
+  const explicit = get(key);
+  if (key === "REACT_APP_SITE_URL" && !explicit) return DEFAULT_SITE_URL;
+  return explicit;
+};
+const configured = (key) => {
+  const value = effectiveValue(key);
+  return Boolean(value && !isPlaceholder(value));
+};
 
 const rows = OPTIONAL_FEATURES.map(([label, key]) => ({
   feature: label,
@@ -72,9 +83,13 @@ if (mode !== "example" && !skip) {
   }
 }
 
-if (get("REACT_APP_SITE_URL")) {
+const siteUrl = effectiveValue("REACT_APP_SITE_URL");
+if (!get("REACT_APP_SITE_URL") && mode !== "example") {
+  console.warn(`[env] REACT_APP_SITE_URL absent — fallback canonique ${DEFAULT_SITE_URL} utilisé.`);
+}
+if (siteUrl) {
   try {
-    const url = new URL(get("REACT_APP_SITE_URL"));
+    const url = new URL(siteUrl);
     if (url.protocol !== "https:" && process.env.NODE_ENV === "production") {
       failures.push("REACT_APP_SITE_URL doit être en HTTPS en production");
     }
