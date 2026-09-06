@@ -1,13 +1,18 @@
 const { test, expect } = require('@playwright/test');
 
-test('le planning expose clairement la déclaration d’absence', async ({ page }) => {
+async function openPlanningOrLogin(page) {
   await page.goto('/espace-joueur/planning');
+  const loginInput = page.locator('input[type="email"]').first();
+  const planningPage = page.getByTestId('planning-page');
+  await expect(loginInput.or(planningPage)).toBeVisible({ timeout: 15000 });
+  return { isAnonymousRedirect: await loginInput.isVisible().catch(() => false) };
+}
+
+test('le planning expose clairement la déclaration d’absence', async ({ page }) => {
+  const { isAnonymousRedirect } = await openPlanningOrLogin(page);
   // Anonyme : l'espace privé renvoie vers connexion. Le sélecteur reste un garde-fou
   // pour les environnements E2E authentifiés via storageState.
-  if (page.url().includes('/connexion')) {
-    await expect(page.locator('input[type="email"]').first()).toBeVisible();
-    return;
-  }
+  if (isAnonymousRedirect) return;
 
   await expect(page.getByTestId('planning-page')).toBeVisible();
   await expect(page.getByTestId('planning-absence-shortcut')).toBeVisible();
@@ -16,11 +21,8 @@ test('le planning expose clairement la déclaration d’absence', async ({ page 
 });
 
 test('le planning propose l’export agenda (.ics) et la réponse présent/absent', async ({ page }) => {
-  await page.goto('/espace-joueur/planning');
-  if (page.url().includes('/connexion')) {
-    await expect(page.locator('input[type="email"]').first()).toBeVisible();
-    return;
-  }
+  const { isAnonymousRedirect } = await openPlanningOrLogin(page);
+  if (isAnonymousRedirect) return;
 
   await expect(page.getByTestId('planning-page')).toBeVisible();
   // Bouton d'export agenda de la semaine (toujours visible).

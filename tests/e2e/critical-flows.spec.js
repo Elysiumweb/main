@@ -6,10 +6,16 @@ test.describe('parcours critiques publics', () => {
     await expect(page.getByTestId('home-hero')).toBeVisible();
 
     if (isMobile) {
-      const menu = page.getByRole('button', { name: /menu|ouvrir/i });
-      if (await menu.count()) await menu.first().click();
+      const menu = page.getByTestId('nav-mobile-toggle');
+      if (await menu.count()) {
+        await menu.first().click();
+        await expect(page.getByTestId('nav-mobile-menu')).toBeVisible();
+        await menu.first().click();
+        await expect(page.getByTestId('nav-mobile-menu')).toBeHidden();
+      }
     }
 
+    await page.getByTestId('home-cta-results').scrollIntoViewIfNeeded();
     await page.getByTestId('home-cta-results').click();
     await expect(page.getByTestId('results-title')).toBeVisible();
     await page.goto('/support');
