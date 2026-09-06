@@ -2,7 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
     "allowJs": true,
     "checkJs": true,
@@ -10,8 +12,14 @@
     "module": "esnext",
     "moduleResolution": "node",
     "target": "es2020",
-    "lib": ["dom", "dom.iterable", "es2020"],
-    "types": ["node"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2020"
+    ],
+    "types": [
+      "node"
+    ],
     "noEmit": true,
     "skipLibCheck": true,
     "maxNodeModuleJsDepth": 0,
@@ -28,7 +36,16 @@
     "scripts/validate-env.mjs",
     "scripts/verify-seo-feeds.mjs",
     "scripts/verify-assets.mjs",
-    "scripts/check-bundle-budget.mjs"
+    "scripts/check-bundle-budget.mjs",
+    "scripts/prerender-public.mjs",
+    "scripts/generate-sitemap.mjs",
+    "scripts/serve-build.mjs"
   ],
-  "exclude": ["node_modules", "build", "functions", "src/**/*.test.js", "src/**/*.test.jsx"]
+  "exclude": [
+    "node_modules",
+    "build",
+    "functions",
+    "src/**/*.test.js",
+    "src/**/*.test.jsx"
+  ]
 }

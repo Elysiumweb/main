@@ -72,11 +72,14 @@ jobs:
       - name: Vérification sitemap, RSS, ICS et assets
         run: npm run verify:seo && npm run verify:assets && test -s public/matches.ics
 
-      - name: Playwright Chromium mobile/desktop
+      - name: Installer Chromium Playwright
         run: |
           npx playwright install --with-deps chromium
-          echo "CHROME_PATH=$(node -e \"console.log(require('playwright').chromium.executablePath())\")" >> "$GITHUB_ENV"
-          npm run test:e2e -- --project=chromium-desktop --project=mobile-chrome
+          CHROME_PATH="$(node -p 'require("playwright").chromium.executablePath()')"
+          echo "CHROME_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+
+      - name: Playwright Chromium mobile/desktop
+        run: npm run test:e2e -- --project=chromium-desktop --project=mobile-chrome
 
       - name: Lighthouse budgets
         run: npx --yes @lhci/cli@0.14.0 autorun

@@ -13,7 +13,7 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: process.env.E2E_BASE_URL ? undefined : {
-    command: 'npm start',
+    command: process.env.CI ? 'node scripts/serve-build.mjs' : 'npm start',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
