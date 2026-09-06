@@ -18,7 +18,7 @@ const {
   uploadBytes,
 } = require("firebase/storage");
 
-const PROJECT_ID = "elysium-rules-test";
+const PROJECT_ID = "demo-elysium-rules-test";
 const OFFICIAL_UID = "9IzGlpp6DHhrN9GW72haeb869Om1";
 
 const splitHostPort = (value, fallbackHost, fallbackPort) => {
