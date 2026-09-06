@@ -75,6 +75,7 @@ jobs:
       - name: Playwright Chromium mobile/desktop
         run: |
           npx playwright install --with-deps chromium
+          echo "CHROME_PATH=$(node -e \"console.log(require('playwright').chromium.executablePath())\")" >> "$GITHUB_ENV"
           npm run test:e2e -- --project=chromium-desktop --project=mobile-chrome
 
       - name: Lighthouse budgets

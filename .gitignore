@@ -29,3 +29,7 @@ yarn-error.log*
 
 # functions
 functions/node_modules
+
+# lighthouse
+lhci-results
+.lighthouseci
