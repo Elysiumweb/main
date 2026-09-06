@@ -70,7 +70,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.checkjs.json",
     "test:unit": "craco test --watchAll=false",
     "test:rules:unit": "node tests/firebase/firestore-rules.test.cjs",
-    "test:rules": "npx --yes firebase-tools@13.35.1 emulators:exec --only firestore,storage \"npm run test:rules:unit\"",
+    "test:rules": "npx --yes firebase-tools@13.35.1 emulators:exec --project demo-elysium-rules-test --only firestore,storage \"npm run test:rules:unit\"",
     "verify:seo": "node scripts/verify-seo-feeds.mjs",
     "verify:assets": "node scripts/verify-assets.mjs",
     "bundle:budget": "node scripts/check-bundle-budget.mjs",
