@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { doc, onSnapshot } from "firebase/firestore";
 import { ArrowLeft } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreDocument } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { useArticleSEO, SITE_URL } from "../lib/useSEO";
-import { LoadingState } from "../components/States";
+import { ErrorState, LoadingState } from "../components/States";
 import { ArticleCover } from "./News";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Markdown } from "../lib/markdown";
@@ -14,17 +12,14 @@ import { ShareButtons } from "../components/ShareButtons";
 export default function ArticleDetail() {
   const { id } = useParams();
   const { t, lang } = useLang();
-  const [article, setArticle] = useState(undefined);
-
-  useEffect(() => {
-    return onSnapshot(doc(db, "articles", id),
-      (s) => setArticle(s.exists() ? { id: s.id, ...s.data() } : null),
-      (e) => { console.error(e); setArticle(null); });
-  }, [id]);
+  const { data: article, isLoading, isError, refetch } = useFirestoreDocument(["article", id], "articles", id, {
+    staleTime: 5 * 60 * 1000,
+  });
 
   useArticleSEO(article && article.id ? article : null);
 
-  if (article === undefined) return <LoadingState testId="article-loading" />;
+  if (isLoading) return <LoadingState testId="article-loading" />;
+  if (isError) return <ErrorState onRetry={refetch} testId="article-error" />;
   if (article === null || article.status === "deleted") return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6">
       <p className="text-[#f7f7f7]/50" data-testid="article-not-found">{t("news.notFound")}</p>

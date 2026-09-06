@@ -32,7 +32,7 @@ export const loadPayPalSdk = () => {
   if (sdkPromise) return sdkPromise;
 
   sdkPromise = new Promise((resolve, reject) => {
-    const existing = document.getElementById(SDK_SCRIPT_ID);
+    const existing = /** @type {HTMLScriptElement | null} */ (document.getElementById(SDK_SCRIPT_ID));
     const script = existing || document.createElement("script");
     let timer = null;
 

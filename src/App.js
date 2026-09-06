@@ -1,12 +1,12 @@
 import "@/App.css";
-import { lazy } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { GlobalSearch } from "@/components/GlobalSearch";
+
 import { PushConsent } from "@/components/PushConsent";
 import { registerSW } from "@/lib/pwa";
 import { RouteChunkBoundary } from "@/components/RouteChunkBoundary";
@@ -41,6 +41,13 @@ const About = lazy(() => import("@/pages/About"));
 const Press = lazy(() => import("@/pages/Press"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Offline = lazy(() => import("@/pages/Offline"));
+
+// Chargée uniquement après Ctrl/Cmd+K ou clic sur le bouton de recherche :
+// le chunk cmdk/Radix et les lectures Firestore associées ne pénalisent plus
+// le chargement initial de l'accueil.
+const GlobalSearch = lazy(() =>
+  import("@/components/GlobalSearch").then((m) => ({ default: m.GlobalSearch }))
+);
 
 // Composants exportés nommément : React.lazy attend un export default.
 const NewsletterSignup = lazy(() =>
@@ -91,6 +98,37 @@ const LazyPlayerLayout = () => {
   );
 };
 
+const SearchController = () => {
+  const [mounted, setMounted] = useState(false);
+  const [openSignal, setOpenSignal] = useState(0);
+
+  useEffect(() => {
+    const requestOpen = (event) => {
+      if (event.type === "keydown") {
+        const isShortcut = event.key?.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+        if (!isShortcut) return;
+        event.preventDefault();
+      }
+      setMounted(true);
+      setOpenSignal((value) => value + 1);
+    };
+
+    document.addEventListener("keydown", requestOpen);
+    document.addEventListener("elysium:open-search", requestOpen);
+    return () => {
+      document.removeEventListener("keydown", requestOpen);
+      document.removeEventListener("elysium:open-search", requestOpen);
+    };
+  }, []);
+
+  if (!mounted) return null;
+  return (
+    <Suspense fallback={null}>
+      <GlobalSearch openSignal={openSignal} />
+    </Suspense>
+  );
+};
+
 function App() {
   return (
     <LanguageProvider>
@@ -100,7 +138,7 @@ function App() {
           <SkipLink />
           <Navbar />
           <VerifyEmailBanner />
-          <GlobalSearch />
+          <SearchController />
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />

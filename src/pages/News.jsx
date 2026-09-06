@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { limit, orderBy, where } from "firebase/firestore";
 import { Newspaper, ChevronDown, Star } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
@@ -25,21 +25,25 @@ export const ArticleCover = ({ src, className }) => {
 
 export default function News() {
   const { t, lang } = useLang();
-  const [articles, setArticles] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [cat, setCat] = useState("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-  useEffect(() => {
-    setError(false); setArticles(null);
-    const q = query(collection(db, "articles"), where("status", "==", "published"));
-    return onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.publishedAt?.seconds || b.createdAt?.seconds || 0) - (a.publishedAt?.seconds || a.createdAt?.seconds || 0));
-      setArticles(list);
-    }, (e) => { console.error(e); setError(true); });
-  }, [retryKey]);
+  const articleConstraints = useMemo(() => [
+    where("status", "==", "published"),
+    ...(cat === "all" ? [] : [where("category", "==", cat)]),
+    orderBy("publishedAt", "desc"),
+    limit(60),
+  ], [cat]);
+  const {
+    data: articles,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["articles", "published", cat],
+    "articles",
+    articleConstraints,
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [cat]);
 
@@ -73,9 +77,9 @@ export default function News() {
             </button>
           ))}
         </div>
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="news-error" />
-        ) : articles === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="news-error" />
+        ) : isLoading ? (
           <LoadingState testId="news-loading" />
         ) : filtered.length === 0 ? (
           <EmptyState icon={Newspaper} text={t("news.empty")} testId="news-empty" />

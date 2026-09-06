@@ -9,7 +9,7 @@ import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { type: "photo", title: "", url: "", thumbnail: "", game: "EVA", playerTag: "", event: "" };
+const EMPTY = { type: "photo", title: "", url: "", storagePath: "", thumbnail: "", thumbnailStoragePath: "", game: "EVA", playerTag: "", event: "" };
 const isUrl = (s) => /^https?:\/\/.+/.test(s);
 
 export const AdminMedia = () => {
@@ -46,7 +46,7 @@ export const AdminMedia = () => {
       <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-media-form">
         <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.media.add")}</p>
         <div className="grid grid-cols-2 gap-4">
-          <select value={form.type} onChange={set("type")} className={inputCls} data-testid="admin-media-type">
+          <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value, url: "", storagePath: "" }))} className={inputCls} data-testid="admin-media-type">
             <option value="photo">{t("media.type.photo")}</option>
             <option value="video">{t("media.type.video")}</option>
           </select>
@@ -58,7 +58,7 @@ export const AdminMedia = () => {
         {form.type === "photo" ? (
           <div>
             <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.media.photoUpload")}</label>
-            <ImageUpload value={form.url} onChange={(url) => setForm((f) => ({ ...f, url }))} folder="media" maxWidth={2000} testId="admin-media-upload" />
+            <ImageUpload value={form.url} onChange={(url, meta = {}) => setForm((f) => ({ ...f, url, storagePath: meta.storagePath ?? f.storagePath }))} folder="media" maxWidth={2000} testId="admin-media-upload" />
           </div>
         ) : (
           <>

@@ -8,7 +8,7 @@ import { GAMES, ROSTERS } from "../../lib/constants";
 import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "" };
+const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", photoStoragePath: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "" };
 
 export const AdminRoster = () => {
   const { t } = useLang();
@@ -37,7 +37,7 @@ export const AdminRoster = () => {
     setEditId(m.id);
     setForm({
       pseudo: m.pseudo || "", game: m.game || "EVA", roster: m.roster || "", ingameRole: m.ingameRole || "", status: m.status || "player",
-      photo: m.photo || "", bio: m.bio || "", rank: m.rank || "", mmr: m.mmr || "", palmares: m.palmares || "", equipment: m.equipment || "",
+      photo: m.photo || "", photoStoragePath: m.photoStoragePath || "", bio: m.bio || "", rank: m.rank || "", mmr: m.mmr || "", palmares: m.palmares || "", equipment: m.equipment || "",
       arrivalDate: m.arrivalDate || "", previousTeams: m.previousTeams || "", x: m.socials?.x || "", twitch: m.socials?.twitch || "",
       instagram: m.socials?.instagram || "", youtube: m.socials?.youtube || "", tiktok: m.socials?.tiktok || "",
     });
@@ -74,7 +74,7 @@ export const AdminRoster = () => {
         </div>
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.roster.photoLabel")}</label>
-          <ImageUpload value={form.photo} onChange={(url) => setForm((f) => ({ ...f, photo: url }))} folder="players" maxWidth={1200} testId="admin-roster-photo-upload" />
+          <ImageUpload value={form.photo} onChange={(url, meta = {}) => setForm((f) => ({ ...f, photo: url, photoStoragePath: meta.storagePath ?? f.photoStoragePath }))} folder="players" maxWidth={1200} testId="admin-roster-photo-upload" />
         </div>
         <textarea value={form.bio} onChange={set("bio")} placeholder={t("admin.roster.bioPlaceholder")} rows={3} className={inputCls} data-testid="admin-roster-bio" />
         <div className="grid grid-cols-3 gap-4">

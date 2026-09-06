@@ -488,11 +488,14 @@ exports.purgeDeletedAccount = functionsV1.auth.user().onDelete(async (user) => {
 // - rsvp.js      : RSVP transactionnel du calendrier communautaire.
 // - gdpr.js      : export RGPD complet côté serveur.
 // - retention.js : purges planifiées (corbeille Notes 30 j, threads 24 mois…).
+// - storageCleanup.js : suppression contrôlée des fichiers Storage référencés
+//   par un document supprimé (média, article, joueur, message).
 Object.assign(
   exports,
   require("./forms"),
   require("./rsvp"),
   require("./gdpr"),
   require("./retention"),
+  require("./storageCleanup"),
 );
 

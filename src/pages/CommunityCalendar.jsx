@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 /* eslint-disable react-hooks/exhaustive-deps */
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy } from "firebase/firestore";
 import { toast } from "sonner";
 import {
   CalendarDays, Download, ExternalLink, Trophy, Dumbbell, Radio, PartyPopper,
   List, Grid3X3, ChevronLeft, ChevronRight, Check, UserPlus, UserCheck, Link2,
 } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { useLang } from "../lib/i18n";
 import { useAuth } from "../context/AuthContext";
@@ -270,27 +270,28 @@ const EventRow = ({ ev, dim, user, displayName }) => {
 export default function CommunityCalendar() {
   const { t, lang } = useLang();
   const { user, displayName } = useAuth();
-  const [events, setEvents] = useState(null);
-  const [matches, setMatches] = useState([]);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [typeFilter, setTypeFilter] = useState("all");
   const [view, setView] = useState("list");
   const [selectedDay, setSelectedDay] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setError(false); setEvents(null);
-    const u1 = onSnapshot(collection(db, "communityEvents"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-      setEvents(list);
-    }, (e) => { console.error(e); setError(true); });
-    const u2 = onSnapshot(collection(db, "matches"), (snap) => {
-      setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    }, console.error);
-    return () => { u1(); u2(); };
-  }, [retryKey]);
+  const {
+    data: events,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["community-events", "calendar"],
+    "communityEvents",
+    [orderBy("date", "asc"), limit(120)],
+    { staleTime: 2 * 60 * 1000 }
+  );
+  const { data: matches = [] } = useFirestoreCollection(
+    ["matches", "calendar"],
+    "matches",
+    [orderBy("date", "desc"), limit(120)],
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   const filtered = useMemo(() => {
     let list = events || [];
@@ -409,9 +410,9 @@ export default function CommunityCalendar() {
           </div>
         </div>
 
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="cal-error" />
-        ) : events === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="cal-error" />
+        ) : isLoading ? (
           <LoadingState testId="cal-loading" />
         ) : view === "month" ? (
           <div className="space-y-6">

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { doc, onSnapshot, collection } from "firebase/firestore";
+import { limit, orderBy, where } from "firebase/firestore";
 import { toast } from "sonner";
 import { ArrowLeft, Share2, BarChart3, History, Trophy } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection, useFirestoreDocument } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { usePlayerSEO } from "../lib/useSEO";
 import { LoadingState, ErrorState } from "../components/States";
@@ -22,22 +21,18 @@ const parseStats = (txt) =>
 export default function PlayerDetail() {
   const { id } = useParams();
   const { t, lang } = useLang();
-  const [player, setPlayer] = useState(undefined);
-  const [matches, setMatches] = useState([]);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
-
-  useEffect(() => {
-    setError(false); setPlayer(undefined);
-    const u1 = onSnapshot(doc(db, "roster", id), (s) => setPlayer(s.exists() ? { id: s.id, ...s.data() } : null),
-      (e) => { console.error(e); setError(true); });
-    const u2 = onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming");
-      list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      setMatches(list);
-    }, console.error);
-    return () => { u1(); u2(); };
-  }, [id, retryKey]);
+  const {
+    data: player,
+    isLoading: playerLoading,
+    isError: playerError,
+    refetch: refetchPlayer,
+  } = useFirestoreDocument(["player", id], "roster", id, { staleTime: 5 * 60 * 1000 });
+  const { data: matches = [] } = useFirestoreCollection(
+    ["matches", "player-detail", "finished"],
+    "matches",
+    [where("status", "==", "finished"), orderBy("date", "desc"), limit(80)],
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   const share = async () => {
     try { await navigator.clipboard.writeText(window.location.href); toast.success(t("playerpage.copied")); }
@@ -46,8 +41,8 @@ export default function PlayerDetail() {
 
   usePlayerSEO(player && player.id ? player : null);
 
-  if (error) return <div className="max-w-4xl mx-auto px-4 py-20"><ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="player-error" /></div>;
-  if (player === undefined) return <LoadingState testId="player-loading" />;
+  if (playerError) return <div className="max-w-4xl mx-auto px-4 py-20"><ErrorState onRetry={refetchPlayer} testId="player-error" /></div>;
+  if (playerLoading) return <LoadingState testId="player-loading" />;
   if (player === null) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6">
       <p className="text-[#f7f7f7]/50" data-testid="player-not-found">{t("playerpage.notFound")}</p>

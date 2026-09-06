@@ -1,0 +1,90 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOfficial() {
+      return isAuth() && request.auth.uid == '9IzGlpp6DHhrN9GW72haeb869Om1';
+    }
+
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return userDoc().data.role;
+    }
+
+    function hasPlayerAccess() {
+      return isAuth() && (isOfficial() || userRole() in ['player', 'manager', 'bureau']);
+    }
+
+    function isBureau() {
+      return isAuth() && (isOfficial() || userRole() == 'bureau');
+    }
+
+    function isImageUpload(maxBytes) {
+      return request.resource != null
+        && request.resource.size <= maxBytes
+        && request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)');
+    }
+
+    // Images publiques administrées depuis le back-office.
+    match /articles/{fileName} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageUpload(5 * 1024 * 1024);
+      allow delete: if isBureau();
+    }
+
+    match /media/{fileName} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageUpload(8 * 1024 * 1024);
+      allow delete: if isBureau();
+    }
+
+    match /players/{fileName} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageUpload(3 * 1024 * 1024);
+      allow delete: if isBureau();
+    }
+
+    // Dossier générique conservé pour compatibilité : réservé au bureau.
+    match /uploads/{fileName} {
+      allow read: if true;
+      allow create, update: if isBureau() && isImageUpload(5 * 1024 * 1024);
+      allow delete: if isBureau();
+    }
+
+    // Avatars : les nouveaux uploads sont cloisonnés par UID.
+    match /avatars/{uid}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAuth()
+        && request.auth.uid == uid
+        && isImageUpload(2 * 1024 * 1024);
+      allow delete: if isAuth() && (request.auth.uid == uid || isBureau());
+    }
+
+    // Ancien format plat /avatars/<file> : lecture seulement pour ne pas casser
+    // les URLs existantes ; les nouvelles écritures doivent utiliser /avatars/{uid}/.
+    match /avatars/{fileName} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Images du chat privé : l'upload est cloisonné par UID, la lecture reste
+    // limitée aux membres connectés de l'espace joueur/staff.
+    match /chat/{uid}/{fileName} {
+      allow read: if hasPlayerAccess();
+      allow create, update: if hasPlayerAccess()
+        && request.auth.uid == uid
+        && isImageUpload(3 * 1024 * 1024);
+      allow delete: if isAuth() && (request.auth.uid == uid || isBureau());
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

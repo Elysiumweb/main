@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { useState } from "react";
+import { limit } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { Trophy, ExternalLink, Medal, CalendarRange } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
@@ -17,19 +17,21 @@ const STATUS_CLS = {
 
 export default function Competitions() {
   const { t } = useLang();
-  const [items, setItems] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    setError(false); setItems(null);
-    return onSnapshot(collection(db, "competitions"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9) || (b.season || "").localeCompare(a.season || ""));
-      setItems(list);
-    }, (e) => { console.error(e); setError(true); });
-  }, [retryKey]);
+  const {
+    data: items,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["competitions", "public"],
+    "competitions",
+    [limit(60)],
+    {
+      staleTime: 10 * 60 * 1000,
+      select: (docs) => [...docs].sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9) || (b.season || "").localeCompare(a.season || "")),
+    }
+  );
 
   useSEO({
     title: `${t("competitions.title")} — ELYSIUM Esport`,
@@ -61,9 +63,9 @@ export default function Competitions() {
             </button>
           ))}
         </div>
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="competitions-error" />
-        ) : items === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="competitions-error" />
+        ) : isLoading ? (
           <LoadingState testId="competitions-loading" />
         ) : filtered.length === 0 ? (
           <EmptyState icon={Trophy} text={t("competitions.empty")} testId="competitions-empty" />

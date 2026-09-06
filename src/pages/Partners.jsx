@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { useState, useRef } from "react";
+import { limit, orderBy } from "firebase/firestore";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
@@ -45,20 +45,18 @@ const PartnerLogo = ({ src, name, className }) => {
 
 export default function Partners() {
   const { t } = useLang();
-  const [partners, setPartners] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
+  const {
+    data: partners,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["partners", "public"],
+    "partners",
+    [orderBy("order", "asc"), limit(40)],
+    { staleTime: 10 * 60 * 1000 }
+  );
   const formRef = useRef(null);
-
-  useEffect(() => {
-    setError(false); setPartners(null);
-    const u = onSnapshot(collection(db, "partners"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-      setPartners(list);
-    }, (e) => { console.error(e); setError(true); });
-    return () => u();
-  }, [retryKey]);
 
   const grouped = partners ? tiers.map((tier) => ({
     tier,
@@ -135,9 +133,9 @@ export default function Partners() {
       {/* PARTNER LOGOS */}
       <section className="border-t border-white/10 bg-[#0c0c0c]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-logos">
-          {error ? (
-            <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="partners-error" />
-          ) : partners === null ? (
+          {isError ? (
+            <ErrorState onRetry={refetch} testId="partners-error" />
+          ) : isLoading ? (
             <LoadingState testId="partners-loading" />
           ) : grouped.length === 0 ? (
             <EmptyState icon={Handshake} text={t("partners.empty")} testId="partners-empty" />

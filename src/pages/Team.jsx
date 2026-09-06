@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy } from "firebase/firestore";
 import { Users, Search, ArrowUpDown } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
@@ -35,23 +35,26 @@ export const PlayerPhoto = ({ src, alt, className }) => {
 
 export default function Team() {
   const { t } = useLang();
-  const [members, setMembers] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const gameFilter = searchParams.get("game") || "all";
   const rosterFilter = searchParams.get("roster") || "all";
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("pseudo"); // pseudo | role | status
 
-  useEffect(() => {
-    setError(false); setMembers(null);
-    return onSnapshot(collection(db, "roster"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || (a.pseudo || "").localeCompare(b.pseudo || ""));
-      setMembers(list);
-    }, (e) => { console.error(e); setError(true); });
-  }, [retryKey]);
+  const {
+    data: members,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["roster", "team"],
+    "roster",
+    [orderBy("pseudo", "asc"), limit(120)],
+    {
+      staleTime: 10 * 60 * 1000,
+      select: (items) => [...items].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || (a.pseudo || "").localeCompare(b.pseudo || "")),
+    }
+  );
 
   const filtered = useMemo(()=>{
     if(!members) return [];
@@ -178,7 +181,7 @@ export default function Team() {
                 return (
                   <div key={g} className="border border-white/10 bg-[#141414] p-4 flex flex-col" data-testid={`team-roster-${g}`}>
                     <div className="h-40 bg-[#111111] border border-white/5 flex items-center justify-center overflow-hidden">
-                      <img src={count>0 ? `/brand/logo-icon-${g==="EVA"?"gold":"white"}.png` : "/brand/pattern.png"} alt="" className="w-20 opacity-20 object-contain" />
+                      <img src={count>0 ? `/brand/logo-icon-${g==="EVA"?"gold":"white"}.png` : "/brand/pattern.svg"} alt="" className="w-20 opacity-20 object-contain" />
                     </div>
                     <p className="font-display font-bold text-[#f7f7f7] mt-3 flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{backgroundColor:getGameColor(g)}} /> {g} · {count} joueurs</p>
                     <p className="text-xs text-[#c8c8c8] mt-1">{count>0 ? "Roster au complet — portraits plus grands, même traitement visuel" : "En cours de composition"}</p>
@@ -208,9 +211,9 @@ export default function Team() {
         )}
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="team-error" />
-        ) : members === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="team-error" />
+        ) : isLoading ? (
           <LoadingState testId="team-loading" />
         ) : filtered.length === 0 ? (
           <EmptyState icon={Users} text={t("team.empty")} testId="team-empty" />

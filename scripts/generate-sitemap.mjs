@@ -17,7 +17,7 @@
  * un sitemap légèrement daté qu'un sitemap amputé.
  */
 
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -126,6 +126,34 @@ const buildSitemap = (entries) => {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 };
 
+const parseExistingSitemapEntries = () => {
+  if (!existsSync(SITEMAP_OUT)) return [];
+  const xml = readFileSync(SITEMAP_OUT, "utf8");
+  const entries = [];
+  const urlBlocks = xml.match(/<url>[\s\S]*?<\/url>/g) || [];
+  for (const block of urlBlocks) {
+    const locText = block.match(/<loc>([^<]+)<\/loc>/)?.[1] || "";
+    if (!locText.startsWith(SITE_URL)) continue;
+    entries.push({
+      loc: locText.slice(SITE_URL.length) || "/",
+      lastmod: block.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1],
+      changefreq: block.match(/<changefreq>([^<]+)<\/changefreq>/)?.[1],
+      priority: block.match(/<priority>([^<]+)<\/priority>/)?.[1],
+    });
+  }
+  return entries;
+};
+
+const mergeStaticWithExisting = (staticEntries) => {
+  const byLoc = new Map(parseExistingSitemapEntries().map((entry) => [entry.loc, entry]));
+  for (const entry of staticEntries) byLoc.set(entry.loc, entry);
+  return [...byLoc.values()].sort((a, b) => {
+    const aStatic = STATIC_ROUTES.some((route) => route.path === a.loc) ? 0 : 1;
+    const bStatic = STATIC_ROUTES.some((route) => route.path === b.loc) ? 0 : 1;
+    return aStatic - bStatic || a.loc.localeCompare(b.loc);
+  });
+};
+
 const buildRss = (articles) => {
   const items = articles
     .slice(0, 30)
@@ -174,17 +202,15 @@ async function main() {
   }));
 
   if (!projectId || !apiKey) {
-    // Sans identifiants on ne peut produire que les pages statiques : écraser
-    // le fichier existant retirerait articles et joueurs déjà indexés.
-    if (existsSync(SITEMAP_OUT)) {
-      console.warn(
-        "[sitemap] Identifiants Firebase absents — sitemap.xml existant conservé (aucune régression d'indexation)."
-      );
-      return;
-    }
+    // Sans identifiants on ne lit pas Firestore, mais on réconcilie tout de
+    // même les pages statiques avec le sitemap existant. Cela évite qu'une
+    // route publique ajoutée à App.js reste absente indéfiniment, tout en
+    // conservant les URLs dynamiques déjà publiées (articles/joueurs).
+    const entries = existsSync(SITEMAP_OUT) ? mergeStaticWithExisting(staticEntries) : staticEntries;
     mkdirSync(PUBLIC_DIR, { recursive: true });
-    writeFileSync(SITEMAP_OUT, buildSitemap(staticEntries), "utf8");
-    console.warn(`[sitemap] Identifiants Firebase absents — ${staticEntries.length} pages statiques seulement.`);
+    writeFileSync(SITEMAP_OUT, buildSitemap(entries), "utf8");
+    if (!existsSync(RSS_OUT)) writeFileSync(RSS_OUT, buildRss([]), "utf8");
+    console.warn(`[sitemap] Identifiants Firebase absents — ${staticEntries.length} pages statiques synchronisées, URLs dynamiques existantes conservées.`);
     return;
   }
 
@@ -194,7 +220,9 @@ async function main() {
     [articles, roster] = await Promise.all([fetchCollection("articles"), fetchCollection("roster")]);
   } catch (err) {
     if (existsSync(SITEMAP_OUT)) {
-      console.warn(`[sitemap] ${err.message} — sitemap.xml existant conservé.`);
+      const entries = mergeStaticWithExisting(staticEntries);
+      writeFileSync(SITEMAP_OUT, buildSitemap(entries), "utf8");
+      console.warn(`[sitemap] ${err.message} — pages statiques synchronisées, URLs dynamiques existantes conservées.`);
       return;
     }
     throw err;

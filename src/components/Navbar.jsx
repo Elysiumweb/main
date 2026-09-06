@@ -78,7 +78,7 @@ export const Navbar = () => {
 
   const openSearch = (e) => {
     e.preventDefault();
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
+    document.dispatchEvent(new CustomEvent("elysium:open-search"));
   };
 
   useEffect(() => {

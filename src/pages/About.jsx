@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy, where } from "firebase/firestore";
 import { ScrollText, ShieldCheck, Users, Landmark, Trophy, ArrowRight } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { LoadingState } from "../components/States";
 import { PlayerPhoto } from "./Team";
@@ -18,15 +17,12 @@ const VALUES = [
 
 export default function About() {
   const { t } = useLang();
-  const [bureau, setBureau] = useState(null);
-
-  useEffect(() => {
-    return onSnapshot(collection(db, "roster"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status === "staff");
-      list.sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
-      setBureau(list);
-    }, () => setBureau([]));
-  }, []);
+  const { data: bureau, isLoading } = useFirestoreCollection(
+    ["roster", "staff"],
+    "roster",
+    [where("status", "==", "staff"), orderBy("pseudo", "asc"), limit(16)],
+    { staleTime: 10 * 60 * 1000 }
+  );
 
   useSEO({
     title: `${t("about.title")} — ELYSIUM Esport`,
@@ -64,7 +60,7 @@ export default function About() {
           <div className="lg:col-span-5">
             <div className="border border-white/10 bg-[#141414] p-4" data-testid="about-real-images">
               <div className="h-64 bg-[#0d0d0d] border border-white/5 flex items-center justify-center overflow-hidden">
-                <img src="/brand/pattern.png" alt="" className="w-full h-full object-cover opacity-20 contrast-125 saturate-[0.85]" />
+                <img src="/brand/pattern.svg" alt="" className="w-full h-full object-cover opacity-20 contrast-125 saturate-[0.85]" />
                 <span className="absolute text-xs uppercase tracking-widest text-[#c8c8c8]">Photos réelles — entraînements, LAN, coulisses</span>
               </div>
               <p className="text-xs text-[#c8c8c8] mt-3 leading-relaxed">Bibliothèque visuelle : portraits cohérents, matchs EVA/LAN, captures RL/Valorant aux droits maîtrisés — traitement contraste fort, légère désaturation, grain.</p>
@@ -108,9 +104,9 @@ export default function About() {
       <section className="border-t border-white/10 bg-[#0c0c0c]" data-testid="about-bureau">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
           <h2 className="font-display text-base tracking-[0.35em] uppercase text-[#f7f7f7] mb-8">{t("about.bureau.title")}</h2>
-          {bureau === null ? (
+          {isLoading ? (
             <LoadingState testId="about-bureau-loading" />
-          ) : bureau.length === 0 ? (
+          ) : !bureau || bureau.length === 0 ? (
             <p className="text-[#c8c8c8]" data-testid="about-bureau-empty">{t("about.bureau.empty")}</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="about-bureau-grid">

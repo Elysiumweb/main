@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { useMemo, useState } from "react";
+import { limit, orderBy, where } from "firebase/firestore";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { GAMES } from "../lib/constants";
@@ -30,20 +30,20 @@ const getPeriodStart = (period) => {
 
 export default function Stats() {
   const { t } = useLang();
-  const [matches, setMatches] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [game, setGame] = useState("all");
   const [period, setPeriod] = useState("all");
 
-  useEffect(() => {
-    setError(false); setMatches(null);
-    return onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && m.status !== "live");
-      list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      setMatches(list);
-    }, (e) => { console.error(e); setError(true); });
-  }, [retryKey]);
+  const {
+    data: matches,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["matches", "stats", "finished"],
+    "matches",
+    [where("status", "==", "finished"), orderBy("date", "desc"), limit(300)],
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   const filtered = useMemo(() => {
     if (!matches) return [];
@@ -145,9 +145,9 @@ export default function Stats() {
           </div>
         </div>
 
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="stats-error" />
-        ) : matches === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="stats-error" />
+        ) : isLoading ? (
           <LoadingState testId="stats-loading" />
         ) : stats === null ? (
           <EmptyState icon={Trophy} text={t("stats.empty")} testId="stats-empty" />

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy, where } from "firebase/firestore";
 import { Target, CheckCircle2 } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 
 /* ---------------------------------------------------------------------------
@@ -11,17 +10,15 @@ import { useLang } from "../lib/i18n";
 
 export const CampaignProgress = ({ compact = false, testId = "campaign-progress" }) => {
   const { t, lang } = useLang();
-  const [campaigns, setCampaigns] = useState([]);
-
-  useEffect(() => {
-    return onSnapshot(collection(db, "campaigns"), (snap) => {
-      const list = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((c) => c.active && Number(c.goalAmount) > 0)
-        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setCampaigns(list);
-    }, () => {});
-  }, []);
+  const { data: campaigns = [] } = useFirestoreCollection(
+    ["campaigns", "active"],
+    "campaigns",
+    [where("active", "==", true), orderBy("createdAt", "desc"), limit(3)],
+    {
+      staleTime: 5 * 60 * 1000,
+      select: (items) => items.filter((c) => Number(c.goalAmount) > 0),
+    }
+  );
 
   if (campaigns.length === 0) return null;
   const campaign = campaigns[0];

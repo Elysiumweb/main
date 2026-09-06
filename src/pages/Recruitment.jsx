@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy } from "firebase/firestore";
 import { toast } from "sonner";
 import { Briefcase, CalendarX } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
@@ -27,7 +27,15 @@ export default function Recruitment() {
   const { user, canSeeRecruit } = useAuth();
   const { t, lang } = useLang();
   const [searchParams] = useSearchParams();
-  const [positions, setPositions] = useState([]);
+  const { data: positions = [] } = useFirestoreCollection(
+    ["positions", "open"],
+    "positions",
+    [orderBy("deadline", "asc"), limit(50)],
+    {
+      staleTime: 10 * 60 * 1000,
+      select: (items) => items.filter((p) => p.open !== false),
+    }
+  );
   const [form, setForm] = useState(EMPTY_FORM);
   const [parent, setParent] = useState(EMPTY_PARENT);
   const [consent, setConsent] = useState(false);
@@ -47,14 +55,6 @@ export default function Recruitment() {
     setForm((f) => ({ ...f, [k]: e.target.value }));
   };
   const setParentField = (k) => (e) => setParent((p) => ({ ...p, [k]: e.target.value }));
-
-  useEffect(() => {
-    return onSnapshot(collection(db, "positions"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => p.open !== false);
-      list.sort((a, b) => (a.deadline || "9999").localeCompare(b.deadline || "9999"));
-      setPositions(list);
-    }, console.error);
-  }, []);
 
   const applyTo = (p) => {
     trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "position_card", positionId: p.id, game: p.game });

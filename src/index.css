@@ -38,7 +38,7 @@ body {
 .pattern-overlay {
     position: absolute;
     inset: 0;
-    background-image: url("../public/brand/pattern.png");
+    background-image: url("../public/brand/pattern.svg");
     background-size: 480px;
     opacity: 0.06;
     mix-blend-mode: soft-light;

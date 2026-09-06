@@ -13,7 +13,7 @@ import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
+const EMPTY = { title: "", category: "announcement", coverUrl: "", coverStoragePath: "", excerpt: "", content: "", featured: false };
 
 export const AdminArticles = () => {
   const { t } = useLang();
@@ -85,7 +85,7 @@ export const AdminArticles = () => {
   const edit = (a) => {
     setEditId(a.id);
     setEditorTab("write");
-    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured });
+    setForm({ title: a.title || "", category: a.category || "announcement", coverUrl: a.coverUrl || "", coverStoragePath: a.coverStoragePath || "", excerpt: a.excerpt || "", content: a.content || "", featured: !!a.featured });
   };
 
   const STATUS_BADGE = {
@@ -114,7 +114,7 @@ export const AdminArticles = () => {
         </div>
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.cover")}</label>
-          <ImageUpload value={form.coverUrl} onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))} folder="articles" maxWidth={1600} testId="admin-article-cover-upload" />
+          <ImageUpload value={form.coverUrl} onChange={(url, meta = {}) => setForm((f) => ({ ...f, coverUrl: url, coverStoragePath: meta.storagePath ?? f.coverStoragePath }))} folder="articles" maxWidth={1600} testId="admin-article-cover-upload" />
         </div>
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.excerpt")}</label>

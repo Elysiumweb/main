@@ -28,7 +28,7 @@ const ASSETS = [
     items: [
       { name: "Accent — lame dorée", file: "accent-blade.png", w: 787, h: 658, ratio: "787×658 · 1,20:1" },
       { name: "Accent — chevrons", file: "accent-brackets-gold.png", w: 600, h: 754, ratio: "600×754 · 0,80:1" },
-      { name: "Motif / texture", file: "pattern.png", w: 756, h: 992, ratio: "756×992 · 0,76:1" },
+      { name: "Motif / texture", file: "pattern.svg", w: 240, h: 240, ratio: "vectoriel · motif répétable" },
     ],
   },
 ];

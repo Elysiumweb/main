@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy, where } from "firebase/firestore";
 import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
@@ -34,36 +34,87 @@ const OpponentMark = ({ src, name }) => {
   return <img src={src} alt={`Logo de l'équipe adverse : ${safeName}`} onError={() => setErr(true)} loading="lazy" className="h-16 w-16 sm:h-20 sm:w-20 object-contain" />;
 };
 
-export default function Home() {
-  const { t, lang } = useLang();
-  const [matches, setMatches] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [videos, setVideos] = useState([]);
-  const [discord, setDiscord] = useState(null);
+const LazyTwitchEmbed = ({ t }) => {
+  const wrapperRef = useRef(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
-    const u = onSnapshot(collection(db, "media"), (snap) => {
-      const vids = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.type === "video");
-      vids.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setVideos(vids.slice(0, 2));
-    }, () => {});
+    const node = wrapperRef.current;
+    if (!node || shouldLoad) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setShouldLoad(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setShouldLoad(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "160px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shouldLoad]);
+
+  const parent = typeof window !== "undefined" ? window.location.hostname : "elysium-esport.fr";
+  const src = shouldLoad ? `https://player.twitch.tv/?channel=elysiumxeva&parent=${parent}&muted=true` : undefined;
+
+  return (
+    <div ref={wrapperRef} className="border border-white/10 bg-[#0d0d0d]">
+      {src ? (
+        <iframe
+          title="Twitch Elysium"
+          data-testid="home-twitch-embed"
+          src={src}
+          className="w-full aspect-video"
+          loading="lazy"
+          allowFullScreen
+        />
+      ) : (
+        <div className="w-full aspect-video flex flex-col items-center justify-center gap-4 bg-[#141414] px-6 text-center" data-testid="home-twitch-placeholder">
+          <PlayCircle size={40} className="text-[#D8CA82]" aria-hidden="true" />
+          <p className="text-sm text-[#c8c8c8] max-w-sm">
+            Le lecteur Twitch est chargé uniquement lorsque cette section devient visible afin d'alléger l'accueil.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShouldLoad(true)}
+            className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-4 py-2 hover:bg-[#D8CA82]/10"
+          >
+            {t("home.live.watch")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function Home() {
+  const { t, lang } = useLang();
+  const [discord, setDiscord] = useState(null);
+  const { data: matches = [] } = useFirestoreCollection(
+    ["home", "matches"],
+    "matches",
+    [orderBy("date", "desc"), limit(80)],
+    { staleTime: 2 * 60 * 1000 }
+  );
+  const { data: members = [] } = useFirestoreCollection(
+    ["home", "roster"],
+    "roster",
+    [orderBy("pseudo", "asc"), limit(80)],
+    { staleTime: 10 * 60 * 1000 }
+  );
+  const { data: videos = [] } = useFirestoreCollection(
+    ["home", "videos"],
+    "media",
+    [where("type", "==", "video"), orderBy("createdAt", "desc"), limit(2)],
+    { staleTime: 10 * 60 * 1000 }
+  );
+
+  useEffect(() => {
     fetch("https://discord.com/api/v9/invites/RH3ZZkMJsw?with_counts=true")
       .then((r) => r.json())
       .then((d) => setDiscord({ online: d.approximate_presence_count, members: d.approximate_member_count }))
       .catch(() => {});
-    return u;
-  }, []);
-
-  useEffect(() => {
-    return onSnapshot(collection(db, "matches"), (snap) => {
-      setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    }, (e) => console.error(e));
-  }, []);
-
-  useEffect(() => {
-    return onSnapshot(collection(db, "roster"), (snap) => {
-      setMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    }, (e) => console.error(e));
   }, []);
 
   // ---- preuves : prochain match, palmarès, effectif ----
@@ -439,11 +490,7 @@ export default function Home() {
             </a>
           </div>
           <div className="grid lg:grid-cols-2 gap-8">
-            <div className="border border-white/10 bg-[#0d0d0d]">
-              <iframe title="Twitch Elysium" data-testid="home-twitch-embed"
-                src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=true`}
-                className="w-full aspect-video" allowFullScreen />
-            </div>
+            <LazyTwitchEmbed t={t} />
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4">{t("home.live.replays")}</p>
               {videos.length === 0 ? (
@@ -473,7 +520,7 @@ export default function Home() {
                         </DialogTrigger>
                         <DialogContent className="bg-[#111111] border border-[#D8CA82]/30 rounded-none max-w-3xl p-2" data-testid={`home-replay-lightbox-${v.id}`}>
                           {embed ? (
-                            <iframe src={embed} title={v.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
+                            <iframe src={embed} title={v.title} className="w-full aspect-video" loading="lazy" allowFullScreen allow="autoplay; fullscreen" />
                           ) : (
                             <a href={v.url} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] underline p-8 block text-center flex items-center justify-center gap-2">
                               <ExternalLink size={15} aria-hidden="true" /> {v.title}

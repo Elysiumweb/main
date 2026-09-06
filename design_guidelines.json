@@ -23,7 +23,7 @@
   "visual_enhancers": {
     "shadows": "Minimal. Use a subtle glow for Heritage Gold accents: drop-shadow-[0_0_8px_rgba(216,202,130,0.5)]. No soft generic gray shadows.",
     "borders": "Sharp 1px borders. Use border-white/10 for structural grids and border-[#D8CA82]/50 for interactive/focus states.",
-    "textures": "Use the local brand asset /brand/pattern.png overlaid with low opacity (10-20%) and blend-mode: soft-light over #111111 background.",
+    "textures": "Use the local brand asset /brand/pattern.svg overlaid with low opacity (10-20%) and blend-mode: soft-light over #111111 background.",
     "surfaces": "Solid Midnight Black backgrounds. For sticky headers, use heavy glassmorphism: bg-[#111111]/80 backdrop-blur-xl border-b border-white/10."
   },
   "grids": {
@@ -90,7 +90,7 @@
         "usage": "Framing for important images or quotes"
       },
       {
-        "path": "/brand/pattern.png",
+        "path": "/brand/pattern.svg",
         "usage": "Background texture, opacity 10%, soft-light blend mode"
       }
     ]

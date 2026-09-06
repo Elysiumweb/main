@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { useMemo, useState } from "react";
+import { limit, orderBy } from "firebase/firestore";
 import { Image as ImageIcon, PlayCircle } from "lucide-react";
-import { db } from "../lib/firebase";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { GAMES } from "../lib/constants";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
@@ -26,22 +26,22 @@ export const videoEmbedUrl = (url) => {
 
 export default function MediaGallery() {
   const { t } = useLang();
-  const [media, setMedia] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [type, setType] = useState("all");
   const [game, setGame] = useState("all");
   const [player, setPlayer] = useState("all");
   const [event, setEvent] = useState("all");
 
-  useEffect(() => {
-    setError(false); setMedia(null);
-    return onSnapshot(collection(db, "media"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      setMedia(list);
-    }, (e) => { console.error(e); setError(true); });
-  }, [retryKey]);
+  const {
+    data: media,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["media", "gallery"],
+    "media",
+    [orderBy("createdAt", "desc"), limit(120)],
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   const players = useMemo(() => [...new Set((media || []).map((m) => m.playerTag).filter(Boolean))], [media]);
   const events = useMemo(() => [...new Set((media || []).map((m) => m.event).filter(Boolean))], [media]);
@@ -87,9 +87,9 @@ export default function MediaGallery() {
             {events.map((ev) => <option key={ev} value={ev}>{ev}</option>)}
           </select>
         </div>
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="media-error" />
-        ) : media === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="media-error" />
+        ) : isLoading ? (
           <LoadingState testId="media-loading" />
         ) : filtered.length === 0 ? (
           <EmptyState icon={ImageIcon} text={t("media.empty")} testId="media-empty" />
@@ -132,7 +132,7 @@ export default function MediaGallery() {
                     {m.type === "photo" ? (
                       <ImageWithFallback src={m.url} alt={m.title} fallbackType="brand" className="w-full max-h-[75vh] object-contain" />
                     ) : embed ? (
-                      <iframe src={embed} title={m.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
+                      <iframe src={embed} title={m.title} className="w-full aspect-video" loading="lazy" allowFullScreen allow="autoplay; fullscreen" />
                     ) : (
                       <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] underline p-8 block text-center">{m.url}</a>
                     )}

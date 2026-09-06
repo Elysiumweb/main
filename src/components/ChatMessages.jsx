@@ -163,11 +163,11 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
       fetch(pendingImage)
         .then((r) => r.blob())
         .then((blob) => {
-          const path = `chat/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+          const path = `chat/${user.uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
           const task = uploadBytesResumable(ref(storage, path), blob, { contentType: "image/jpeg" });
           task.on("state_changed", null,
             (err) => { setUploading(false); reject(err); },
-            async () => { const url = await getDownloadURL(task.snapshot.ref); setUploading(false); resolve(url); });
+            async () => { const url = await getDownloadURL(task.snapshot.ref); setUploading(false); resolve({ url, storagePath: path }); });
         })
         .catch((err) => { setUploading(false); reject(err); });
     });
@@ -176,8 +176,8 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
     e?.preventDefault();
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
-    let imageUrl = null;
-    try { imageUrl = await uploadImage(); }
+    let imageUpload = null;
+    try { imageUpload = await uploadImage(); }
     catch (err) { console.error(err); toast.error(t("upload.error")); return; }
     setText("");
     setPendingImage(null);
@@ -194,7 +194,7 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
 
     await addDoc(collection(db, ...path.split("/")), {
       uid: user.uid, name: displayName, role, text: trimmed, createdAt: serverTimestamp(),
-      ...(imageUrl ? { image: imageUrl } : {}),
+      ...(imageUpload?.url ? { image: imageUpload.url, imageStoragePath: imageUpload.storagePath } : {}),
       ...(mentionedUids.length ? { mentions: mentionedUids } : {}),
     });
 

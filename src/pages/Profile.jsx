@@ -194,7 +194,7 @@ export default function Profile() {
           </div>
           <div>
             <label htmlFor="profile-photo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("profile.photo")}</label>
-            <ImageUpload value={photo} onChange={setPhoto} folder="avatars" maxWidth={800} testId="profile-photo-upload" />
+            <ImageUpload value={photo} onChange={setPhoto} folder={`avatars/${user.uid}`} maxWidth={800} testId="profile-photo-upload" />
             {photo && (
               <img src={photo} alt="" className="mt-3 h-20 w-20 object-cover border border-[#D8CA82]/40" data-testid="profile-photo-preview" />
             )}

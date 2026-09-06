@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { limit, orderBy, query, where, collection, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import {
@@ -12,6 +12,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "./ui/command";
+import { useQuery } from "@tanstack/react-query";
 import { Users, Newspaper, Trophy, FileText } from "lucide-react";
 import { getElysiumTeamName } from "../lib/constants";
 
@@ -33,41 +34,41 @@ const PAGE_LINKS = [
   { path: "/newsletter", key: "nav.newsletter" },
 ];
 
-export const GlobalSearch = () => {
+const mapDocs = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+const searchDataQuery = async () => {
+  const [playersSnap, matchesSnap, articlesSnap] = await Promise.all([
+    getDocs(query(collection(db, "roster"), orderBy("pseudo", "asc"), limit(50))),
+    getDocs(query(collection(db, "matches"), orderBy("date", "desc"), limit(30))),
+    getDocs(query(collection(db, "articles"), where("status", "==", "published"), orderBy("publishedAt", "desc"), limit(30))),
+  ]);
+  return {
+    players: mapDocs(playersSnap),
+    matches: mapDocs(matchesSnap),
+    articles: mapDocs(articlesSnap),
+  };
+};
+
+export const GlobalSearch = ({ openSignal = 0 }) => {
   const { t } = useLang();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [players, setPlayers] = useState([]);
-  const [matches, setMatches] = useState([]);
-  const [articles, setArticles] = useState([]);
 
-  // Load data
   useEffect(() => {
-    const unsubs = [
-      onSnapshot(collection(db, "roster"), (snap) => {
-        setPlayers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      }, () => {}),
-      onSnapshot(collection(db, "matches"), (snap) => {
-        setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      }, () => {}),
-      onSnapshot(collection(db, "articles"), (snap) => {
-        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => a.status !== "deleted"));
-      }, () => {}),
-    ];
-    return () => unsubs.forEach((u) => u());
-  }, []);
+    if (openSignal > 0) setOpen(true);
+  }, [openSignal]);
 
-  // Keyboard shortcut
-  useEffect(() => {
-    const down = (e) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
+  const { data } = useQuery({
+    queryKey: ["global-search"],
+    queryFn: searchDataQuery,
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+  const players = data?.players || [];
+  const matches = data?.matches || [];
+  const articles = data?.articles || [];
 
   const runCommand = useCallback((action) => {
     setOpen(false);

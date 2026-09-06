@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Link, useSearchParams } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { limit, orderBy } from "firebase/firestore";
+import { useFirestoreCollection } from "../lib/firestoreQuery";
 import { useLang } from "../lib/i18n";
 import { MatchCard } from "../components/MatchCard";
 import { MatchCountdown } from "../components/MatchCountdown";
@@ -18,9 +18,6 @@ const PAGE_SIZE = 9;
 
 export default function Results() {
   const { t } = useLang();
-  const [matches, setMatches] = useState(null);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "finished";
   const game = searchParams.get("game") || "all";
@@ -34,12 +31,17 @@ export default function Results() {
   const setTo = (v) => { const p = new URLSearchParams(searchParams); v ? p.set("to", v) : p.delete("to"); setSearchParams(p); };
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  useEffect(() => {
-    setError(false);
-    return onSnapshot(collection(db, "matches"), (snap) => {
-      setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    }, (e) => { console.error(e); setError(true); });
-  }, [retryKey]);
+  const {
+    data: matches,
+    isLoading,
+    isError,
+    refetch,
+  } = useFirestoreCollection(
+    ["matches", "results"],
+    "matches",
+    [orderBy("date", "desc"), limit(150)],
+    { staleTime: 2 * 60 * 1000 }
+  );
 
   const competitions = useMemo(() => [...new Set((matches || []).map((m) => m.competition).filter(Boolean))], [matches]);
 
@@ -215,9 +217,9 @@ export default function Results() {
           </button>
         </div>
 
-        {error ? (
-          <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="results-error" />
-        ) : matches === null ? (
+        {isError ? (
+          <ErrorState onRetry={refetch} testId="results-error" />
+        ) : isLoading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-loading">
             {[1,2,3,4,5,6].map((i)=> (
               <div key={i} className="border border-white/10 bg-[#1A1A1A] p-6 animate-pulse">

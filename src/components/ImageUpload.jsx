@@ -89,7 +89,7 @@ export const ImageUpload = ({
         },
         async () => {
           const url = await getDownloadURL(task.snapshot.ref);
-          onChange(url);
+          onChange(url, { storagePath: path, downloadURL: url });
           setBusy(false);
           toast.success(t("upload.success"));
         });
@@ -146,7 +146,7 @@ export const ImageUpload = ({
           <img src={value} alt={label || t("upload.preview")} className="h-28 object-cover w-full" />
           <button
             type="button"
-            onClick={() => onChange("")}
+            onClick={() => onChange("", { storagePath: "" })}
             aria-label={t("common.delete")}
             data-testid={`${testId}-clear`}
             className="absolute top-1 right-1 bg-[#111111]/90 border border-white/20 text-[#f7f7f7]/70 p-1 hover:text-red-300 hover:border-red-300/50"
@@ -162,7 +162,7 @@ export const ImageUpload = ({
         <input
           type="url"
           value={/^https?:/i.test(value || "") ? value : ""}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => onChange(e.target.value, { storagePath: "" })}
           placeholder="https://..."
           className="flex-1 bg-[#111111] border border-white/15 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
           data-testid={`${testId}-url`}
