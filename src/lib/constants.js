@@ -1,26 +1,21 @@
 export const OFFICIAL_UID = process.env.REACT_APP_OFFICIAL_UID;
-export const GAMES = ["EVA", "Rocket League", "Valorant"];
+export const GAMES = ["EVA", "Rocket League"];
 export const ROLES = ["visitor", "player", "manager", "bureau"];
 
-// Rosters per game — EVA has no rosters, RL has Junior / Espoir / Académique / Esport,
-// Valorant has Valeureux / Vaillant
-export const ROSTERS = {
-  "Rocket League": ["Junior", "Espoir", "Académique", "Esport"],
-  "Valorant": ["Valeureux", "Vaillant"],
-  "EVA": [],
-};
+// Les rosters ne sont plus prédéfinis en code : ils sont créés/supprimés par
+// le compte officiel depuis le panel admin (collection Firestore `rosters`)
+// et consommés via le hook `useRosters`. Les documents existants dont le jeu
+// figure ci-dessous sont masqués des vues publiques (données historiques
+// d'avant la suppression du pôle — l'admin peut les supprimer via les panels).
+export const LEGACY_REMOVED_GAMES = ["Valorant"];
 
-// Flat list of all rosters (for selects / validation)
-export const ALL_ROSTERS = Object.values(ROSTERS).flat();
+/** false pour les jeux supprimés du projet (ex. données Valorant historiques). */
+export const isRemovedGame = (game) => LEGACY_REMOVED_GAMES.includes(game);
 
-/** Le jeu possède-t-il des rosters ? */
-export const gameHasRosters = (game) => (ROSTERS[game] || []).length > 0;
-
-/** Couleur d'accent par jeu (EVA = or, RL = orange, Valorant = rouge) */
+/** Couleur d'accent par jeu (EVA = or, RL = orange) */
 export const GAME_COLORS = {
   "EVA": "#D8CA82",
   "Rocket League": "#F4511E",
-  "Valorant": "#FF4655",
 };
 export const getGameColor = (game) => GAME_COLORS[game] || "#D8CA82";
 
@@ -28,7 +23,6 @@ export const getGameColor = (game) => GAME_COLORS[game] || "#D8CA82";
 export const GAME_SHORT_LABELS = {
   "EVA": "EVA",
   "Rocket League": "RL",
-  "Valorant": "Valo",
 };
 export const getGameShortLabel = (game) => GAME_SHORT_LABELS[game] || game;
 

@@ -21,12 +21,8 @@ export const NewsletterSignup = ({ compact = false }) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     if (isHoneypotFilled(fd.get("website"))) return;
-    const limit = checkSessionRateLimit("newsletter_signup", { max: 3, windowMs: 10 * 60 * 1000 });
-    if (!limit.allowed) {
-      setMessage(rateLimitMessage(limit.retryAt));
-      setStatus("error");
-      return;
-    }
+    // Consentement + format AVANT le quota : un essai invalide ne doit pas
+    // consommer la limite anti-abus.
     if (!consent) {
       setMessage(t("newsletter.consentRequired"));
       setStatus("error");
@@ -34,6 +30,12 @@ export const NewsletterSignup = ({ compact = false }) => {
     }
     if (!isValidEmail(email)) {
       setMessage(t("newsletter.invalidEmail"));
+      setStatus("error");
+      return;
+    }
+    const limit = checkSessionRateLimit("newsletter_signup", { max: 3, windowMs: 10 * 60 * 1000 });
+    if (!limit.allowed) {
+      setMessage(rateLimitMessage(limit.retryAt));
       setStatus("error");
       return;
     }

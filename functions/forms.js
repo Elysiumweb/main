@@ -57,8 +57,10 @@ exports.submitPartnerRequest = onCall(
   { memory: "256MiB", timeoutSeconds: 30, secrets: ["RECAPTCHA_SECRET"] },
   async (request) => {
     rejectHoneypot(request.data?.website);
-    await enforceFormPolicy(request, { scope: "partner", soft: 2, max: 5, windowMs: 60 * 60 * 1000 });
 
+    // Les champs sont validés AVANT les quotas : une simple faute de frappe
+    // ne doit jamais consommer le quota IP/compte ni déclencher le CAPTCHA,
+    // sinon l'utilisateur légitime se retrouve bloqué après 2 essais.
     const payload = {
       name: cleanString(request.data?.name, { name: "nom", min: 2, max: 120 }),
       company: cleanString(request.data?.company, { name: "société", min: 2, max: 160 }),
@@ -68,6 +70,7 @@ exports.submitPartnerRequest = onCall(
       createdAt: now(),
       source: "function",
     };
+    await enforceFormPolicy(request, { scope: "partner", soft: 2, max: 5, windowMs: 60 * 60 * 1000 });
     await db().collection("partner_requests").add(payload);
     return { ok: true };
   }
@@ -80,7 +83,9 @@ exports.subscribeNewsletter = onCall(
   { memory: "256MiB", timeoutSeconds: 30, secrets: ["RECAPTCHA_SECRET"] },
   async (request) => {
     rejectHoneypot(request.data?.website);
-    await enforceFormPolicy(request, { scope: "newsletter", soft: 2, max: 6, windowMs: 60 * 60 * 1000 });
+
+    // Validation (et idempotence) avant quotas : les doublons et les fautes
+    // de frappe ne consomment pas le quota, sinon double-clic = blocage.
     requireTrue(request.data?.consent, "Le consentement est requis pour s'inscrire.");
 
     const email = cleanEmail(request.data?.email);
@@ -89,6 +94,8 @@ exports.subscribeNewsletter = onCall(
     // Idempotent et sans énumération : on répond toujours ok.
     const existing = await db().collection("newsletter").where("email", "==", email).limit(1).get();
     if (!existing.empty) return { ok: true };
+
+    await enforceFormPolicy(request, { scope: "newsletter", soft: 2, max: 6, windowMs: 60 * 60 * 1000 });
 
     await db().collection("newsletter").add({
       email,
@@ -128,16 +135,19 @@ exports.submitSupportTicket = onCall(
   async (request) => {
     if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Connexion requise.");
     rejectHoneypot(request.data?.website);
-    await enforceFormPolicy(request, {
-      scope: "support", soft: 3, max: 10, windowMs: 60 * 60 * 1000, perUid: 5,
-    });
 
+    // Champs validés AVANT les quotas : un ticket invalide ne doit pas
+    // consommer le quota ni armer le CAPTCHA adaptatif.
     const uid = request.auth.uid;
     const subject = cleanString(request.data?.subject, { name: "sujet", min: 3, max: 140 });
     const description = cleanString(request.data?.description, { name: "description", min: 10, max: 3500 });
     const category = cleanEnum(request.data?.category, SUPPORT_CATEGORIES, { name: "catégorie" });
     const priority = cleanEnum(request.data?.priority, SUPPORT_PRIORITIES, { name: "priorité" });
     const attachment = cleanUrl(request.data?.attachment, { name: "pièce jointe", required: false });
+
+    await enforceFormPolicy(request, {
+      scope: "support", soft: 3, max: 10, windowMs: 60 * 60 * 1000, perUid: 5,
+    });
 
     const userSnap = await db().collection("users").doc(uid).get();
     const name = userSnap.exists ? userSnap.data().displayName || "" : "";
@@ -192,9 +202,11 @@ exports.submitRecruitApplication = onCall(
   async (request) => {
     if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Connexion requise.");
     rejectHoneypot(request.data?.website);
-    await enforceFormPolicy(request, {
-      scope: "recruit", soft: 2, max: 6, windowMs: 60 * 60 * 1000, perUid: 3,
-    });
+
+    // Champs validés AVANT les quotas : une candidature invalide (faute de
+    // frappe, champ trop court…) ne doit pas consommer le quota IP/compte ni
+    // armer le CAPTCHA adaptatif, sinon le candidat légitime se retrouve
+    // bloqué (« Trop d'envois récents ») après seulement 2 essais.
     requireTrue(request.data?.consent, "Le consentement au traitement des données est requis.");
 
     const uid = request.auth.uid;
@@ -229,6 +241,10 @@ exports.submitRecruitApplication = onCall(
         requestedAt: now(),
       };
     }
+
+    await enforceFormPolicy(request, {
+      scope: "recruit", soft: 2, max: 6, windowMs: 60 * 60 * 1000, perUid: 3,
+    });
 
     const userSnap = await db().collection("users").doc(uid).get();
     const name = userSnap.exists ? userSnap.data().displayName || "" : "";

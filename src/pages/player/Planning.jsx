@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users,
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
-import { GAMES, ROSTERS, gameHasRosters, getGameColor, getGameShortLabel } from "../../lib/constants";
+import { GAMES, getGameColor, getGameShortLabel } from "../../lib/constants";
+import { useRosters } from "../../hooks/useRosters";
 import { createNotification, logActivity } from "../../lib/notify";
 import { downloadICS, gcalUrl } from "../../lib/calendar";
 import {
@@ -70,6 +71,7 @@ function normalizeEvent(ev){
 export default function Planning(){
   const { user, game, roster, isOfficial, canManage, displayName } = useAuth();
   const { t, lang } = useLang();
+  const { rostersForGame, allNames, gameHasRosters } = useRosters();
   const [eventsRaw, setEventsRaw] = useState([]);
   const [availDocs, setAvailDocs] = useState([]); // weekly exception docs (delta added/removed, legacy hours)
   const [recurrDocs, setRecurrDocs] = useState([]); // recurring weekly templates, one doc per uid
@@ -1199,7 +1201,7 @@ export default function Planning(){
               aria-label={t("planning.roster")}
               className="bg-[#141414] border border-white/15 text-[#f7f7f7] text-xs px-2.5 py-2 focus:outline-none focus:border-[#D8CA82]">
               <option value="all">{t("planning.roster.none")}</option>
-              {(gameFilter==="all" ? Object.values(ROSTERS).flat() : (ROSTERS[gameFilter]||[])).map(r=> <option key={r} value={r}>{t(`planning.roster.${r.toLowerCase()}`)}</option>)}
+              {(gameFilter==="all" ? allNames : rostersForGame(gameFilter)).map(r=> <option key={r} value={r}>{r}</option>)}
             </select>
           )}
 
@@ -1252,11 +1254,11 @@ export default function Planning(){
                     <input type="checkbox" checked={gameFilter==="all" || gameFilter==="global"} onChange={()=> { setGameFilter(gameFilter==="global"?"all":"global"); setRosterFilter("all"); }} className="accent-[#D8CA82]" />
                     <span className="w-2.5 h-2.5 rounded-full bg-[#4285F4]" /> Global
                   </label>
-                  {/* roster sub-filters (games with rosters : RL, Valorant) */}
+                  {/* roster sub-filters (rosters gérés depuis le panel admin) */}
                   {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
                     <div key={g} className="ml-4 mt-2 space-y-1.5 border-l border-white/10 pl-3">
                       <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] mb-1">Rosters {getGameShortLabel(g)}</p>
-                      {(ROSTERS[g]||[]).map(r=>(
+                      {rostersForGame(g).map(r=>(
                         <label key={r} className="flex items-center gap-2 text-xs text-[#f7f7f7]/60 cursor-pointer">
                           <input type="checkbox" checked={rosterFilter===r} onChange={()=> setRosterFilter(rosterFilter===r?"all":r)} style={{ accentColor: getGameColor(g) }} />
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `${getGameColor(g)}99` }} />
@@ -1527,7 +1529,7 @@ export default function Planning(){
                     <select value={form.roster||""} onChange={e=> setForm(f=>({...f,roster: e.target.value||null}))}
                       className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                       <option value="">— {t("planning.rosterRequired")} —</option>
-                      {(ROSTERS[form.game]||[]).map(r=> <option key={r} value={r}>{t(`planning.roster.${r.toLowerCase()}`)}</option>)}
+                      {rostersForGame(form.game).map(r=> <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 )}

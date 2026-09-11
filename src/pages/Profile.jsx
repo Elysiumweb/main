@@ -10,10 +10,10 @@ import { PASSWORD_MIN_LENGTH, passwordIssues } from "../lib/passwordPolicy";
 import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { gameHasRosters } from "../lib/constants";
+import { useRosters } from "../hooks/useRosters";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { ImageUpload } from "../components/ImageUpload";
-import { MfaTotpPanel } from "../components/MfaTotpPanel";
+import { PlayerCardEditor } from "../components/PlayerCardEditor";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -24,6 +24,7 @@ const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm
 export default function Profile() {
   const { user, profile, loading, role, game, roster, isOfficial } = useAuth();
   const { t, lang } = useLang();
+  const { gameHasRosters } = useRosters();
   const navigate = useNavigate();
   const location = useLocation();
   const [pseudo, setPseudo] = useState(profile?.displayName || user?.displayName || "");
@@ -205,7 +206,7 @@ export default function Profile() {
           </button>
         </form>
 
-        <MfaTotpPanel />
+        <PlayerCardEditor />
 
         <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-4" data-testid="profile-export-panel">
           <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Exporter mes données</p>

@@ -50,4 +50,18 @@ describe("Markdown", () => {
   test("markdownToText retire la syntaxe", () => {
     expect(markdownToText("# Titre\n\nDu **gras** et [un lien](https://x.com).")).toBe("Titre Du gras et un lien.");
   });
+
+  test("un saut de ligne simple produit un <br/>", () => {
+    const html = render("Ligne un\nLigne deux");
+    expect(html).toContain("<br");
+    expect(html).toContain("Ligne un");
+    expect(html).toContain("Ligne deux");
+  });
+
+  test("saut de ligne préservé avec mise en forme inline", () => {
+    const html = render("Du **gras**\npuis la suite");
+    expect(html).toContain("<strong>gras</strong>");
+    expect(html).toContain("<br");
+    expect(html).toContain("puis la suite");
+  });
 });

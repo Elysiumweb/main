@@ -5,10 +5,6 @@ async function loginAsAdmin(page) {
   await page.getByTestId('login-email-input').fill(process.env.E2E_ADMIN_EMAIL);
   await page.getByTestId('login-password-input').fill(process.env.E2E_ADMIN_PASSWORD);
   await page.getByTestId('login-submit-btn').click();
-  if (process.env.E2E_ADMIN_TOTP && await page.getByTestId('login-mfa-form').isVisible().catch(() => false)) {
-    await page.getByTestId('login-mfa-code-input').fill(process.env.E2E_ADMIN_TOTP);
-    await page.getByTestId('login-mfa-submit').click();
-  }
 }
 
 test.describe('parcours admin', () => {
@@ -17,12 +13,15 @@ test.describe('parcours admin', () => {
   test('créer un match depuis l’administration', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin');
-    if (await page.getByTestId('admin-mfa-required').isVisible().catch(() => false)) {
-      test.skip(!process.env.E2E_ADMIN_TOTP, 'Compte admin protégé par MFA : fournir E2E_ADMIN_TOTP pour ce run');
-    }
     await expect(page.getByTestId('admin-title')).toBeVisible();
     await page.getByTestId('admin-tab-matches').click();
     await page.getByTestId('admin-match-game').selectOption('Rocket League');
+    // Si des rosters existent pour ce jeu, la sélection est obligatoire : prendre le premier.
+    const rosterSelect = page.getByTestId('admin-match-roster');
+    if (await rosterSelect.count()) {
+      const opts = await rosterSelect.locator('option').all();
+      if (opts.length > 1) await rosterSelect.selectOption({ index: 1 });
+    }
     await page.getByTestId('admin-match-opponent').fill(`E2E Opponent ${Date.now()}`);
     await page.getByTestId('admin-match-date').fill('2030-01-15');
     await page.getByTestId('admin-match-status').selectOption('upcoming');
@@ -35,9 +34,6 @@ test.describe('parcours admin', () => {
   test('publier un article depuis l’administration', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin');
-    if (await page.getByTestId('admin-mfa-required').isVisible().catch(() => false)) {
-      test.skip(!process.env.E2E_ADMIN_TOTP, 'Compte admin protégé par MFA : fournir E2E_ADMIN_TOTP pour ce run');
-    }
     await expect(page.getByTestId('admin-title')).toBeVisible();
     await page.getByTestId('admin-tab-articles').click();
     await page.getByTestId('admin-article-title').fill(`Article E2E ${Date.now()}`);

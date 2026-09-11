@@ -39,10 +39,15 @@ export default function Support() {
     if (isHoneypotFilled(fd.get("website"))) return;
     // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
     // est appliquée côté serveur par la Cloud Function.
+    // Validation locale AVANT le quota (miroir des bornes serveur).
+    const sLen = subject.trim().length, dLen = description.trim().length;
+    if (sLen < 3) { toast.error(`${t("support.form.subject")} : 3 ${t("form.minChars")}`); return; }
+    if (sLen > 140) { toast.error(`${t("support.form.subject")} : 140 ${t("form.maxChars")}`); return; }
+    if (dLen < 10) { toast.error(`${t("support.form.desc")} : 10 ${t("form.minChars")}`); return; }
+    if (dLen > 3500) { toast.error(`${t("support.form.desc")} : 3500 ${t("form.maxChars")}`); return; }
+    if (attachment && !/^https?:\/\/.+/.test(attachment)) { toast.error(t("support.invalidAttachment")); return; }
     const limit = checkSessionRateLimit("support_ticket", { max: 3, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
-    if (!subject.trim() || !description.trim()) return;
-    if (attachment && !/^https?:\/\/.+/.test(attachment)) { toast.error(t("support.invalidAttachment")); return; }
     setSending(true);
     try {
       await callProtected("submitSupportTicket", {

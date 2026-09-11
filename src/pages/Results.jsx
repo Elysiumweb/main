@@ -9,7 +9,7 @@ import { MatchCountdown } from "../components/MatchCountdown";
 import { HeadToHeadPanel } from "../components/HeadToHead";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { Trophy, CalendarClock, ChevronDown, CalendarDays } from "lucide-react";
-import { GAMES, getElysiumTeamName } from "../lib/constants";
+import { GAMES, getElysiumTeamName, isRemovedGame } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
@@ -37,7 +37,8 @@ export default function Results() {
   useEffect(() => {
     setError(false);
     return onSnapshot(collection(db, "matches"), (snap) => {
-      setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      // Matchs des pôles supprimés (ex. Valorant) masqués du public.
+      setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => !isRemovedGame(m.game)));
     }, (e) => { console.error(e); setError(true); });
   }, [retryKey]);
 
@@ -93,7 +94,7 @@ export default function Results() {
 
   useSEO({
     title: "Résultats & matchs — ELYSIUM Esport",
-    description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA, Rocket League et Valorant.",
+    description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA et Rocket League.",
     url: "/resultats",
     jsonLd: sportsEventsJsonLd,
   });

@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signInWithPopup, updateProfile, sendPasswordResetEmail, sendEmailVerification,
-  TotpMultiFactorGenerator,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
@@ -11,7 +10,6 @@ import { auth, db, googleProvider } from "../lib/firebase";
 import { PASSWORD_MIN_LENGTH, passwordIssues } from "../lib/passwordPolicy";
 import { PasswordStrengthMeter } from "../components/PasswordStrengthMeter";
 import { useLang } from "../lib/i18n";
-import { mfaErrorMessage, resolverFromMfaError } from "../lib/mfa";
 
 const errMsg = (code) => {
   const lang = (()=>{ try { return localStorage.getItem("elysium_lang") || "fr"; } catch { return "fr"; }})();
@@ -47,8 +45,6 @@ export default function Login() {
   const [pseudo, setPseudo] = useState("");
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
-  const [mfaResolver, setMfaResolver] = useState(null);
-  const [mfaCode, setMfaCode] = useState("");
 
   const safeRedirect = () => {
     const fromState = location.state?.from;
@@ -87,13 +83,6 @@ export default function Login() {
       completeLogin();
     } catch (err) {
       console.error(err);
-      const resolver = resolverFromMfaError(err);
-      if (resolver) {
-        setMfaResolver(resolver);
-        setFormError(mfaErrorMessage(err));
-        setBusy(false);
-        return;
-      }
       const msg = errMsg(err.code);
       setFormError(msg);
       toast.error(msg);
@@ -108,42 +97,11 @@ export default function Login() {
       completeLogin();
     } catch (err) {
       console.error(err);
-      const resolver = resolverFromMfaError(err);
-      if (resolver) {
-        setMfaResolver(resolver);
-        setFormError(mfaErrorMessage(err));
-        setBusy(false);
-        return;
-      }
       if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
         const msg = errMsg(err.code);
         setFormError(msg);
         toast.error(msg);
       }
-    }
-    setBusy(false);
-  };
-
-  const verifyMfa = async (e) => {
-    e.preventDefault();
-    if (!mfaResolver) return;
-    const hint = mfaResolver.hints.find((h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID) || mfaResolver.hints[0];
-    if (!hint || hint.factorId !== TotpMultiFactorGenerator.FACTOR_ID) {
-      toast.error("Second facteur non supporté.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const assertion = TotpMultiFactorGenerator.assertionForSignIn(hint.uid, mfaCode.trim());
-      await mfaResolver.resolveSignIn(assertion);
-      setMfaResolver(null);
-      setMfaCode("");
-      completeLogin();
-    } catch (err) {
-      console.error(err);
-      const msg = mfaErrorMessage(err.code ? err : { code: "auth/invalid-verification-code" });
-      setFormError(msg);
-      toast.error(msg);
     }
     setBusy(false);
   };
@@ -197,34 +155,6 @@ export default function Login() {
           {formError || ""}
         </div>
 
-        {mfaResolver ? (
-          <form onSubmit={verifyMfa} className="space-y-5" data-testid="login-mfa-form">
-            <div>
-              <label htmlFor="login-mfa-code" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">
-                Code d'authentification à 6 chiffres
-              </label>
-              <input
-                id="login-mfa-code"
-                value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                required
-                minLength={6}
-                maxLength={6}
-                data-testid="login-mfa-code-input"
-                className={inputCls}
-              />
-            </div>
-            <button type="submit" disabled={busy || mfaCode.length < 6} data-testid="login-mfa-submit"
-              className="w-full bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
-              Valider la double authentification
-            </button>
-            <button type="button" onClick={() => { setMfaResolver(null); setMfaCode(""); }} className="w-full text-xs text-[#c8c8c8] hover:text-[#D8CA82] uppercase tracking-widest">
-              Retour
-            </button>
-          </form>
-        ) : (
         <form onSubmit={submit} className="space-y-5" noValidate={false}>
           {mode === "register" && (
             <div>
@@ -301,9 +231,6 @@ export default function Login() {
             {mode === "login" ? t("login.submit") : t("login.submitRegister")}
           </button>
         </form>
-        )}
-
-        {!mfaResolver && <>
         <div className="flex items-center gap-4 my-6" role="separator" aria-orientation="horizontal">
           <div className="flex-1 h-px bg-white/10" />
           <span className="text-xs uppercase tracking-widest text-[#c8c8c8]">{t("login.or")}</span>
@@ -344,7 +271,6 @@ export default function Login() {
             </button>
           )}
         </div>
-        </>}
       </div>
     </div>
   );

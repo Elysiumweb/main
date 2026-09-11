@@ -2,16 +2,16 @@ import { matchPath, useLocation } from "react-router-dom";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
 const routeSEO = [
-  { path: "/", title: "ELYSIUM Esport — Équipe EVA, Rocket League & Valorant", description: "Découvrez ELYSIUM Esport : équipe française EVA, Rocket League et Valorant, résultats, actualités, live, recrutement et communauté." },
-  { path: "/resultats", title: "Résultats & matchs — ELYSIUM Esport", description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA, Rocket League et Valorant.", jsonLd: { "@type": "CollectionPage", name: "Résultats Elysium", url: `${SITE_URL}/resultats` } },
-  { path: "/equipe", title: "Équipe & roster — ELYSIUM Esport", description: "Effectif Elysium : joueurs EVA, Rocket League, Valorant, rosters, rôles en jeu et staff." },
+  { path: "/", title: "ELYSIUM Esport — Équipe EVA & Rocket League", description: "Découvrez ELYSIUM Esport : équipe française EVA et Rocket League, résultats, actualités, live, recrutement et communauté." },
+  { path: "/resultats", title: "Résultats & matchs — ELYSIUM Esport", description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA et Rocket League.", jsonLd: { "@type": "CollectionPage", name: "Résultats Elysium", url: `${SITE_URL}/resultats` } },
+  { path: "/equipe", title: "Équipe & roster — ELYSIUM Esport", description: "Effectif Elysium : joueurs EVA et Rocket League, rosters, rôles en jeu et staff." },
   { path: "/equipe/:id", title: "Profil joueur — ELYSIUM Esport", description: "Profil d'un joueur Elysium : jeu, roster, rôle et informations publiques." },
   { path: "/actus", title: "Actualités — ELYSIUM Esport", description: "Actualités Elysium Esport : annonces, résultats, coulisses, médias et vie de l'équipe.", jsonLd: { "@type": "Blog", name: "Actualités Elysium", url: `${SITE_URL}/actus` } },
   { path: "/actus/:id", title: "Article — ELYSIUM Esport", description: "Article Elysium Esport : actualités, annonces et analyses de l'équipe." },
   { path: "/medias", title: "Médias — ELYSIUM Esport", description: "Galerie médias Elysium : vidéos, replays, photos et contenus communautaires." },
   { path: "/calendrier", title: "Calendrier communautaire — ELYSIUM Esport", description: "Événements publics Elysium, rendez-vous communautaires et ajouts Google Calendar/ICS.", jsonLd: { "@type": "CollectionPage", name: "Calendrier communautaire Elysium", url: `${SITE_URL}/calendrier` } },
-  { path: "/competitions", title: "Compétitions — ELYSIUM Esport", description: "Compétitions Elysium Esport : tournois EVA, Rocket League et Valorant, format, calendrier et classements.", jsonLd: { "@type": "CollectionPage", name: "Compétitions Elysium", url: `${SITE_URL}/competitions` } },
-  { path: "/a-propos", title: "À propos — ELYSIUM Esport", description: "L'histoire, les valeurs et le projet d'ELYSIUM Esport : structure française EVA, Rocket League et Valorant." },
+  { path: "/competitions", title: "Compétitions — ELYSIUM Esport", description: "Compétitions Elysium Esport : tournois EVA et Rocket League, format, calendrier et classements.", jsonLd: { "@type": "CollectionPage", name: "Compétitions Elysium", url: `${SITE_URL}/competitions` } },
+  { path: "/a-propos", title: "À propos — ELYSIUM Esport", description: "L'histoire, les valeurs et le projet d'ELYSIUM Esport : structure française EVA et Rocket League." },
   { path: "/presse", title: "Presse & médias — ELYSIUM Esport", description: "Espace presse ELYSIUM Esport : kit média, logos, contacts et informations pour les journalistes." },
   { path: "/support", title: "Support — ELYSIUM Esport", description: "Contactez le support Elysium pour toute demande, question ou assistance liée au site et à la communauté." },
   { path: "/recrutement", title: "Recrutement — ELYSIUM Esport", description: "Postulez chez Elysium Esport : postes ouverts, candidature joueur, staff et suivi de dossier." },

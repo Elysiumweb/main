@@ -3,7 +3,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { GAMES } from "../lib/constants";
+import { GAMES, isRemovedGame } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
 import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
@@ -39,7 +39,7 @@ export default function Stats() {
   useEffect(() => {
     setError(false); setMatches(null);
     return onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && m.status !== "live");
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && m.status !== "live" && !isRemovedGame(m.game));
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, (e) => { console.error(e); setError(true); });

@@ -59,8 +59,9 @@ export const AdminPositions = () => {
           </select>
         </div>
         <textarea value={form.prerequisites} onChange={set("prerequisites")} placeholder={t("recruit.prereq")} rows={2} className={inputCls} data-testid="admin-position-prereq" />
-        <input value={form.availability} onChange={set("availability")} placeholder={t("recruit.avail")} className={inputCls} data-testid="admin-position-avail" />
+        <textarea value={form.availability} onChange={set("availability")} placeholder={t("recruit.avail")} rows={2} className={inputCls} data-testid="admin-position-avail" />
         <textarea value={form.processText} onChange={set("processText")} placeholder={t("admin.positions.processPlaceholder")} rows={3} className={inputCls} data-testid="admin-position-process" />
+        <p className="text-xs text-[#c8c8c8]">{t("admin.positions.markdownHint")}</p>
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("recruit.deadline")}</label>
           <input type="date" value={form.deadline} onChange={set("deadline")} className={inputCls} data-testid="admin-position-deadline" />

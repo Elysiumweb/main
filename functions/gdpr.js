@@ -66,7 +66,7 @@ exports.exportMyData = onCall(
       availabilities, recurringAvailabilities, absences,
       notificationsTargeted, notificationsAuthored, pushTokens,
       activityLogs, adminAuditLogs, chatMessages, canvases,
-      newsletterSubscriptions, deletionRequests, mfaSecretDoc,
+      newsletterSubscriptions, deletionRequests, playerCards,
     ] = await Promise.all([
       safeQuery("auth", () => admin.auth().getUser(uid), errors),
       safeQuery("users", async () => {
@@ -112,11 +112,7 @@ exports.exportMyData = onCall(
         const s = await db().collection("accountDeletionRequests").doc(uid).get();
         return s.exists ? docJson(s) : null;
       }, errors),
-      safeQuery("mfaSecrets", async () => {
-        const s = await db().collection("mfaSecrets").doc(uid).get();
-        // Le secret TOTP n'est jamais exporté : seule son existence l'est.
-        return s.exists ? { totpConfigured: true } : { totpConfigured: false };
-      }, errors),
+      safeQuery("roster(fiche joueur)", () => collectByField("roster", "uid", uid), errors),
     ]);
 
     return {
@@ -131,10 +127,10 @@ exports.exportMyData = onCall(
         providers: (authUser.providerData || []).map((p) => p.providerId),
         createdAt: authUser.metadata?.creationTime || null,
         lastSignInAt: authUser.metadata?.lastSignInTime || null,
-        mfaEnrolled: (authUser.multiFactor?.enrolledFactors || []).map((f) => f.factorId),
       } : null,
       profile: userDoc,
       playerDirectoryProfile: profileDoc,
+      playerCards,
       notes,
       supportTickets,
       applications,
@@ -152,7 +148,6 @@ exports.exportMyData = onCall(
       canvases,
       newsletterSubscriptions,
       accountDeletionRequest: deletionRequests,
-      security: mfaSecretDoc,
       exportErrors: errors,
     };
   }

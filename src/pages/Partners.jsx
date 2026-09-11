@@ -69,17 +69,30 @@ export default function Partners() {
     e.preventDefault();
     const fd = new FormData(e.target);
     if (isHoneypotFilled(fd.get("website"))) return;
+    // Validation locale AVANT le quota (miroir des bornes serveur) : un message
+    // invalide ne doit pas consommer la limite anti-abus.
+    const pName = String(fd.get("name") || "").trim();
+    const pCompany = String(fd.get("company") || "").trim();
+    const pEmail = String(fd.get("email") || "").trim();
+    const pBudget = String(fd.get("budget") || "").trim();
+    const pMessage = String(fd.get("message") || "").trim();
+    if (pName.length < 2 || pName.length > 120) { toast.error(`${t("partners.contact.name")} : 2 ${t("form.minChars")}`); return; }
+    if (pCompany.length < 2 || pCompany.length > 160) { toast.error(`${t("partners.contact.company")} : 2 ${t("form.minChars")}`); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pEmail)) { toast.error(t("partners.contact.emailInvalid")); return; }
+    if (pBudget.length > 80) { toast.error(`${t("partners.contact.budget")} : 80 ${t("form.maxChars")}`); return; }
+    if (pMessage.length < 10) { toast.error(`${t("partners.contact.message")} : 10 ${t("form.minChars")}`); return; }
+    if (pMessage.length > 3000) { toast.error(`${t("partners.contact.message")} : 3000 ${t("form.maxChars")}`); return; }
     const limit = checkSessionRateLimit("partner_request", { max: 2, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     try {
       // Traitement côté serveur : App Check, quota par IP, CAPTCHA adaptatif
       // et validation des champs dans la Cloud Function.
       await callProtected("submitPartnerRequest", {
-        name: fd.get("name"),
-        company: fd.get("company"),
-        email: fd.get("email"),
-        budget: fd.get("budget"),
-        message: fd.get("message"),
+        name: pName,
+        company: pCompany,
+        email: pEmail,
+        budget: pBudget,
+        message: pMessage,
       });
       toast.success(t("partners.contact.success"));
       e.target.reset();

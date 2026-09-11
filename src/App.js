@@ -12,7 +12,6 @@ import { registerSW } from "@/lib/pwa";
 import { RouteChunkBoundary } from "@/components/RouteChunkBoundary";
 import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
-import { MfaChallenge } from "@/components/MfaChallenge";
 import { SEOManager } from "@/components/SEOManager";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
 // La page d'accueil reste en import statique : c'est la cible la plus
@@ -143,7 +142,6 @@ function App() {
             </Route>
           </Routes>
           <UpdatePrompt />
-          <MfaChallenge />
           <PushConsent />
           <CookieConsent />
           <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", color: "#f7f7f7", borderRadius: 0 } }} />

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, deleteField, serverTimestamp } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, deleteField, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { FileUp, Search, Shield, Trophy, Users } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { GAMES, ROLES, ROSTERS, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
+import { GAMES, ROLES, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
+import { useRosters } from "../hooks/useRosters";
 import { MatchCard } from "../components/MatchCard";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { AdminRosters } from "../components/admin/AdminRosters";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
 import { AdminArticles } from "../components/admin/AdminArticles";
@@ -18,7 +20,6 @@ import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
-import { MfaTotpPanel } from "../components/MfaTotpPanel";
 import { logAdminAction } from "../lib/notify";
 import {
   AlertDialog,
@@ -96,8 +97,9 @@ const normalizeImportedMatch = (raw) => ({
 });
 
 export default function Admin() {
-  const { user, displayName, isOfficial, role, loading, requiresMfa, mfaEnrolled } = useAuth();
+  const { user, displayName, isOfficial, role, loading } = useAuth();
   const { t } = useLang();
+  const { rostersForGame, gameHasRosters } = useRosters();
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -112,14 +114,14 @@ export default function Admin() {
   const [confirmMatch, setConfirmMatch] = useState(null);
   const importInputRef = useRef(null);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const matchRosters = ROSTERS[form.game] || [];
+  const matchRosters = rostersForGame(form.game);
   const onMatchGameChange = (e) => {
     const game = e.target.value;
     setSelectedRosterPlayer("");
     setForm((f) => ({
       ...f,
       game,
-      roster: (ROSTERS[game] || []).includes(f.roster) ? f.roster : "",
+      roster: rostersForGame(game).includes(f.roster) ? f.roster : "",
       players: [],
     }));
   };
@@ -131,12 +133,12 @@ export default function Admin() {
   const isBureau = isOfficial || role === "bureau";
   const isStaff = isBureau || role === "manager";
   const allowed = {
-    users: isOfficial, matches: isOfficial, roster: isBureau,
+    users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
     competitions: isBureau, campaigns: isBureau, partners: isBureau,
     newsletter: isBureau, audit: isBureau,
   };
-  const tabs = ["users", "matches", "roster", "articles", "media", "positions", "events", "competitions", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -180,12 +182,12 @@ export default function Admin() {
       .filter((m) => !selectedIds.has(m.id))
       .filter((m) => !form.game || !m.game || m.game === form.game)
       .filter((m) => {
-        const rosters = ROSTERS[form.game] || [];
+        const rosters = rostersForGame(form.game);
         if (!rosters.length || !form.roster) return true;
         return (m.roster || "") === form.roster;
       })
       .sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
-  }, [rosterMembers, form.players, form.game, form.roster]);
+  }, [rosterMembers, form.players, form.game, form.roster, rostersForGame]);
 
   useEffect(() => { setUserPage(1); }, [userQuery]);
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
@@ -196,33 +198,56 @@ export default function Admin() {
       <p className="text-[#f7f7f7]/50" data-testid="admin-denied">{t("player.noAccess")}</p>
     </div>
   );
-  if (requiresMfa && !mfaEnrolled) return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-lg space-y-6" data-testid="admin-mfa-required">
-        <div className="border border-orange-300/40 bg-orange-300/5 p-8 text-center">
-          <Shield className="text-orange-200 mx-auto mb-4" size={32} aria-hidden="true" />
-          <h1 className="font-display text-xl uppercase tracking-[0.25em] text-orange-100 mb-3">Double authentification requise</h1>
-          <p className="text-sm text-[#c8c8c8]">Les rôles sensibles (officiel/bureau) doivent activer un second facteur TOTP avant d'accéder à l'administration. Configurez-la ci-dessous — pas besoin de quitter cette page.</p>
-        </div>
-        <MfaTotpPanel />
-      </div>
-    </div>
-  );
-
   const auditActor = { uid: user?.uid, name: displayName, email: user?.email };
+
+  // Purge les données planning d'un compte (disponibilités, semaine type,
+  // absences + annuaire privé) quand il perd son rôle ou son affectation.
+  // Un trigger serveur (`onUserDemoted`) fait de même en filet de sécurité.
+  const purgePlanningData = async (uid) => {
+    let count = 0;
+    try {
+      for (const col of ["availabilities", "recurringAvailabilities", "absences"]) {
+        const snap = await getDocs(query(collection(db, col), where("uid", "==", uid)));
+        await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+        count += snap.size;
+      }
+      try { await deleteDoc(doc(db, "profiles", uid)); } catch { /* absent ou déjà purgé */ }
+    } catch (e) { console.error("purge planning", e); }
+    return count;
+  };
+
+  const purgeAndAudit = async (uid, reason) => {
+    const target = users.find((u) => u.id === uid);
+    const purged = await purgePlanningData(uid);
+    await logAdminAction({
+      action: "user_planning_purged",
+      label: `${target?.displayName || target?.email || uid} (${reason}) — ${purged} doc(s)`,
+      actor: auditActor,
+      target: { collection: "users", id: uid },
+      details: { reason, purged },
+    });
+    toast.success(t("admin.users.planningPurged"));
+  };
 
   const setRole = async (uid, nextRole) => {
     const target = users.find((u) => u.id === uid);
+    const previousRole = target?.role || "visitor";
     try {
       await updateDoc(doc(db, "users", uid), { role: nextRole });
       await logAdminAction({
         action: "user_role_changed",
-        label: `${target?.displayName || target?.email || uid}: ${target?.role || "visitor"} → ${nextRole}`,
+        label: `${target?.displayName || target?.email || uid}: ${previousRole} → ${nextRole}`,
         actor: auditActor,
         target: { collection: "users", id: uid },
-        details: { previousRole: target?.role || "visitor", role: nextRole },
+        details: { previousRole, role: nextRole },
       });
-      toast.success(t("common.saved"));
+      // Le compte n'a plus accès à l'espace joueur : on supprime ses
+      // disponibilités, sa semaine type et ses absences du planning.
+      if (previousRole !== "visitor" && nextRole === "visitor") {
+        await purgeAndAudit(uid, `role ${previousRole} → visitor`);
+      } else {
+        toast.success(t("common.saved"));
+      }
     }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
@@ -236,7 +261,12 @@ export default function Admin() {
         actor: auditActor,
         target: { collection: "users", id: uid },
       });
-      toast.success(t("common.saved"));
+      // Pôle retiré : le joueur n'est plus dans l'équipe, purge du planning.
+      if (target?.game && nextGame === "none") {
+        await purgeAndAudit(uid, `pôle ${target.game} retiré`);
+      } else {
+        toast.success(t("common.saved"));
+      }
     }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
@@ -250,7 +280,12 @@ export default function Admin() {
         actor: auditActor,
         target: { collection: "users", id: uid },
       });
-      toast.success(t("common.saved"));
+      // Roster retiré : purge des disponibilités du planning.
+      if (target?.roster && nextRoster === "none") {
+        await purgeAndAudit(uid, `roster ${target.roster} retiré`);
+      } else {
+        toast.success(t("common.saved"));
+      }
     }
     catch (e) { console.error(e); toast.error(t("common.error")); }
   };
@@ -279,7 +314,7 @@ export default function Admin() {
 
   const addMatch = async (e) => {
     e.preventDefault();
-    const rosterOptions = ROSTERS[form.game] || [];
+    const rosterOptions = rostersForGame(form.game);
     const roster = rosterOptions.includes(form.roster) ? form.roster : "";
     if (rosterOptions.length > 0 && !roster) {
       toast.error(t("admin.match.rosterRequired"));
@@ -499,12 +534,12 @@ export default function Admin() {
                       </select>
                     </td>
                     <td className="px-4 py-3">
-                      {(ROSTERS[u.game] || []).length > 0 ? (
+                      {gameHasRosters(u.game) ? (
                         <select value={u.roster || "none"} onChange={(e) => setRoster(u.id, e.target.value)}
                           data-testid={`admin-roster-select-${u.id}`}
                           className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                           <option value="none">{t("admin.roster.none")}</option>
-                          {(ROSTERS[u.game] || []).map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
+                          {rostersForGame(u.game).map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
                       ) : (
                         <span className="text-xs text-[#c8c8c8]">—</span>
@@ -566,7 +601,7 @@ export default function Admin() {
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.roster")}</label>
                   <select value={form.roster || ""} onChange={onMatchRosterChange} required className={inputCls} data-testid="admin-match-roster">
                     <option value="">{t("admin.roster.none")}</option>
-                    {matchRosters.map((r) => <option key={r} value={r}>{t(`admin.roster.${r.toLowerCase()}`)}</option>)}
+                    {matchRosters.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                   <p className="text-xs text-[#c8c8c8] mt-2" data-testid="admin-match-roster-preview">
                     {t("admin.match.rosterPreview")} <span className="text-[#D8CA82]">{getElysiumTeamName(form.roster)}</span>
@@ -735,6 +770,7 @@ export default function Admin() {
         </div>
         )}
 
+        {tab === "rosters" && <AdminRosters />}
         {tab === "roster" && <AdminRoster />}
         {tab === "positions" && <AdminPositions />}
         {tab === "articles" && <AdminArticles />}

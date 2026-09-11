@@ -58,7 +58,6 @@ export default function About() {
             <div className="mt-10 border-l border-[#D8CA82]/30 pl-6 space-y-6" data-testid="about-timeline">
               <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Juillet 2026 — Fondation</p><p className="text-sm text-[#c8c8c8]">Création de l’association, premier roster EVA, slogan “Not given. Earned.”</p></div>
               <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82]/60 rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Juillet 2026 — Expansion RL</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Rocket League.</p></div>
-              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#FF4655] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Août 2026 — Valorant</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Valorant.</p></div>
             </div>
           </div>
           <div className="lg:col-span-5">
@@ -67,11 +66,11 @@ export default function About() {
                 <img src="/brand/pattern.png" alt="" className="w-full h-full object-cover opacity-20 contrast-125 saturate-[0.85]" />
                 <span className="absolute text-xs uppercase tracking-widest text-[#c8c8c8]">Photos réelles — entraînements, LAN, coulisses</span>
               </div>
-              <p className="text-xs text-[#c8c8c8] mt-3 leading-relaxed">Bibliothèque visuelle : portraits cohérents, matchs EVA/LAN, captures RL/Valorant aux droits maîtrisés — traitement contraste fort, légère désaturation, grain.</p>
+              <p className="text-xs text-[#c8c8c8] mt-3 leading-relaxed">Bibliothèque visuelle : portraits cohérents, matchs EVA/LAN, captures RL aux droits maîtrisés — traitement contraste fort, légère désaturation, grain.</p>
             </div>
             {/* Chiffres-clés */}
             <div className="grid grid-cols-3 gap-3 mt-6" data-testid="about-key-figures">
-              <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-4 text-center"><p className="font-display font-black text-2xl text-[#D8CA82]">3</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Pôles</p></div>
+              <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-4 text-center"><p className="font-display font-black text-2xl text-[#D8CA82]">2</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Pôles</p></div>
               <div className="border border-white/10 bg-[#141414] p-4 text-center"><p className="font-display font-black text-2xl text-[#f7f7f7]">2026</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Fondation</p></div>
               <div className="border border-white/10 bg-[#141414] p-4 text-center"><p className="font-display font-black text-2xl text-[#f7f7f7]">100%</p><p className="text-xs uppercase tracking-widest text-[#c8c8c8]">Bénévole</p></div>
             </div>
