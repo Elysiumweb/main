@@ -5,9 +5,9 @@ import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users,
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
-import { GAMES, getGameColor, getGameShortLabel } from "../../lib/constants";
+import { GAMES, OFFICIAL_UID, getGameColor, getGameShortLabel } from "../../lib/constants";
 import { useRosters } from "../../hooks/useRosters";
-import { createNotification, logActivity } from "../../lib/notify";
+import { createNotification, logActivity, logAdminAction } from "../../lib/notify";
 import { downloadICS, gcalUrl } from "../../lib/calendar";
 import {
   AlertDialog,
@@ -77,6 +77,7 @@ export default function Planning(){
   const [recurrDocs, setRecurrDocs] = useState([]); // recurring weekly templates, one doc per uid
   const [absenceDocs, setAbsenceDocs] = useState([]); // declared absences
   const [usersList, setUsersList] = useState([]); // roster/game mapping for the manager team view
+  const [usersLoaded, setUsersLoaded] = useState(false); // users connues => filtre des comptes retirés actif
   const [view, setView] = useState("week"); // month | week | day
   const [tab, setTab] = useState("calendar"); // calendar | availability
   const [availMode, setAvailMode] = useState("week"); // week | recurring
@@ -176,13 +177,16 @@ export default function Planning(){
   }, []);
 
   useEffect(()=>{
-    // manager team view needs the roster/game of each player (users collection)
-    if(!canManage || tab!=="availability") { setUsersList([]); return; }
+    // manager views need the role/game/roster of each account (users collection),
+    // on every tab: planning docs of removed accounts are hidden from the
+    // calendar too, not just the availability view.
+    if(!canManage) { setUsersList([]); setUsersLoaded(false); return; }
     const unsub = onSnapshot(collection(db,"users"), (snap)=>{
       setUsersList(snap.docs.map(d=>({id:d.id, ...d.data()})));
+      setUsersLoaded(true);
     }, console.error);
     return unsub;
-  }, [canManage, tab]);
+  }, [canManage]);
 
   // ---- availability computed ----
   const usersByUid = useMemo(()=>{
@@ -217,8 +221,21 @@ export default function Planning(){
   // Manager filter fix — resolves each player's CURRENT game/roster from the
   // users collection (falls back to what the availability doc was saved with),
   // then keeps only players matching the active game / roster filters.
+  // Accès équipe actuel d'un compte (rôle joueur/staff). Sert à masquer des
+  // vues managers les docs planning des comptes retirés, et au nettoyage.
+  // usersList n'est chargée que pour les managers : sans elle, pas de filtre.
+  const hasTeamAccess = useMemo(()=>{
+    const ok = new Set();
+    usersList.forEach(u=>{ if(["player","manager","bureau"].includes(u.role)) ok.add(u.id); });
+    if(OFFICIAL_UID) ok.add(OFFICIAL_UID);
+    return (uid) => !uid || ok.has(uid);
+  }, [usersList]);
+
   const matchesTeamFilter = useMemo(()=>{
     return (uid, docGame, docRoster) => {
+      // Masque les anciennes données des comptes qui ne font plus partie de
+      // l'équipe (rôle retiré ou compte supprimé avant la purge automatique).
+      if(canManage && usersLoaded && !hasTeamAccess(uid)) return false;
       const meta = usersByUid[uid];
       const g = meta?.game ?? docGame ?? null;
       const r = meta?.roster ?? docRoster ?? null;
@@ -227,7 +244,7 @@ export default function Planning(){
       if(rosterFilter!=="all" && r!==rosterFilter) return false;
       return true;
     };
-  }, [usersByUid, gameFilter, rosterFilter]);
+  }, [usersByUid, gameFilter, rosterFilter, canManage, usersLoaded, hasTeamAccess]);
 
   // effective slots for a player on a date = (semaine type ∪ exceptions ajoutées) − exceptions retirées
   const effectiveFor = (uid, dateKey) => {
@@ -288,6 +305,52 @@ export default function Planning(){
     });
     return map;
   }, [absenceDocs, weekKeys, usersByUid, matchesTeamFilter]);
+
+  // Scan des docs planning orphelins (compte supprimé ou sans rôle d'équipe) :
+  // rattrapage des retraits effectués avant la purge automatique.
+  const orphanScan = useMemo(()=>{
+    if(!canManage || !usersLoaded) return { uids: [], docs: 0, names: [] };
+    const planningDocs = [...availDocs, ...recurrDocs, ...absenceDocs];
+    const uids = new Set();
+    planningDocs.forEach(d=>{ if(d.uid && !hasTeamAccess(d.uid)) uids.add(d.uid); });
+    profileDocs.forEach(p=>{ if(p.id && !hasTeamAccess(p.id)) uids.add(p.id); });
+    const nameByUid = {};
+    planningDocs.forEach(d=>{ if(d.uid && d.displayName && !nameByUid[d.uid]) nameByUid[d.uid] = d.displayName; });
+    const names = [...uids].map(uid => usersByUid[uid]?.displayName || nameByUid[uid] || `${String(uid).slice(0,6)}…`);
+    const docs = planningDocs.filter(d=> uids.has(d.uid)).length + profileDocs.filter(p=> uids.has(p.id)).length;
+    return { uids: [...uids], docs, names };
+  }, [canManage, usersLoaded, availDocs, recurrDocs, absenceDocs, profileDocs, usersByUid, hasTeamAccess]);
+
+  const cleanupOrphans = async () => {
+    const set = new Set(orphanScan.uids);
+    if(set.size===0) return;
+    try{
+      const dels = [];
+      availDocs.forEach(d=>{ if(set.has(d.uid)) dels.push(deleteDoc(doc(db,"availabilities",d.id))); });
+      recurrDocs.forEach(d=>{ if(set.has(d.uid)) dels.push(deleteDoc(doc(db,"recurringAvailabilities",d.id))); });
+      absenceDocs.forEach(d=>{ if(set.has(d.uid)) dels.push(deleteDoc(doc(db,"absences",d.id))); });
+      profileDocs.forEach(p=>{ if(set.has(p.id)) dels.push(deleteDoc(doc(db,"profiles",p.id)).catch(()=>{})); });
+      await Promise.all(dels);
+      await logAdminAction({
+        action: "planning_orphans_purged",
+        label: `${set.size} compte(s) — ${dels.length} doc(s)`,
+        actor: { uid: user?.uid, name: displayName, email: user?.email },
+        details: { uids: [...set], deleted: dels.length },
+      });
+      toast.success(t("planning.cleanup.done"));
+    }catch(e){ console.error(e); toast.error(t("common.error")); }
+  };
+
+  const askCleanupOrphans = () => {
+    const shown = orphanScan.names.slice(0, 8).join(", ");
+    const more = orphanScan.names.length > 8 ? ` (+${orphanScan.names.length - 8})` : "";
+    setConfirmDialog({
+      title: t("planning.cleanup.title"),
+      description: `${t("planning.cleanup.desc")} (${shown}${more} — ${orphanScan.docs} doc${orphanScan.docs>1?"s":""})`,
+      confirmLabel: t("planning.cleanup.action"),
+      onConfirm: cleanupOrphans,
+    });
+  };
 
   // My effective slots for the visible week (drives the weekly grid)
   const myAvailForWeek = useMemo(()=>{
@@ -1413,6 +1476,17 @@ export default function Planning(){
                       </div>
                     )}
                   </div>
+                  {orphanScan.uids.length>0 && (
+                    <div className="mt-4 pt-3 border-t border-white/10" data-testid="planning-cleanup">
+                      <p className="text-xs text-[#c8c8c8] leading-relaxed">
+                        {t("planning.cleanup.hint")} ({orphanScan.uids.length} · {orphanScan.docs} doc{orphanScan.docs>1?"s":""})
+                      </p>
+                      <button onClick={askCleanupOrphans} data-testid="planning-cleanup-btn"
+                        className="mt-2 flex items-center gap-2 text-xs uppercase tracking-widest border border-red-400/40 text-red-200/90 px-3 py-2 hover:bg-red-500/10 u-micro">
+                        <Trash2 size={12} aria-hidden="true" /> {t("planning.cleanup.action")}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
