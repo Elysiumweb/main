@@ -44,12 +44,6 @@ service cloud.firestore {
     }
 
     // ===== Utilisateurs =====
-    // Secrets TOTP applicatifs (plan Spark : pas d'Identity Platform).
-    // Lecture/écriture uniquement par le propriétaire — jamais par le staff.
-    match /mfaSecrets/{uid} {
-      allow read, write: if isAuth() && request.auth.uid == uid;
-    }
-
     match /users/{uid} {
       // Un joueur lit uniquement son propre profil privé. Managers/bureau lisent
       // la collection pour le planning d'équipe et l'administration des rôles.
@@ -64,7 +58,7 @@ service cloud.firestore {
       // ni changer leur pôle/roster : séparation stricte joueur/staff côté serveur.
       allow update: if (isOfficial()
           && isValidRole(request.resource.data.role)
-          && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League', 'Valorant'])
+          && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League'])
           && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null || request.resource.data.roster is string))
         || (request.auth.uid == uid
             && request.resource.data.role == resource.data.role
@@ -86,13 +80,29 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['photoURL'])
             || request.resource.data.photoURL is string
             || request.resource.data.photoURL == null);
-      allow delete: if isAuth() && request.auth.uid == uid;
+      allow delete: if isAuth() && (request.auth.uid == uid || isManagerPlus());
     }
 
-    // ===== Roster public =====
+    // ===== Définitions des rosters (gérées par le compte officiel) =====
+    // Documents `{ name, game }` créés/supprimés depuis le panel admin.
+    // Lecture publique (filtres /equipe, formulaires). Aucun roster codé en dur.
+    match /rosters/{id} {
+      allow read: if true;
+      allow create, update, delete: if isOfficial();
+    }
+
+    // ===== Roster public (fiches joueurs) =====
+    // Chaque fiche est reliée au compte du joueur (`uid`). L'admin (bureau)
+    // crée et supprime les fiches ; le joueur modifie le contenu de la
+    // sienne depuis son profil. La liaison `uid` est immuable pour le joueur.
     match /roster/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau();
+      allow create, delete: if isBureau();
+      allow update: if isBureau()
+        || (isAuth()
+            && resource.data.uid is string
+            && resource.data.uid == request.auth.uid
+            && request.resource.data.uid == resource.data.uid);
     }
 
     // ===== Postes =====
@@ -108,8 +118,8 @@ service cloud.firestore {
     }
 
     // ===== Chats (game + roster + global) =====
-    // Channels: game_EVA, game_Rocket League, game_Valorant, roster_Espoir, roster_Académique,
-    // roster_Esport, roster_Junior, roster_Valeureux, roster_Vaillant, global
+    // Canaux dynamiques : `game_<Jeu>`, `roster_<Nom>` (rosters gérés en admin),
+    // `global`. Les noms de rosters ne sont plus codés en dur.
     match /chats/{channel}/messages/{id} {
       allow read: if hasPlayerAccess();
       allow create: if hasPlayerAccess()

@@ -6,18 +6,18 @@ import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { SocialIcon } from "../components/SocialIcon";
-import { GAMES, ROSTERS, gameHasRosters, getGameColor, getGameShortLabel } from "../lib/constants";
+import { GAMES, getGameColor, getGameShortLabel, isRemovedGame } from "../lib/constants";
+import { useRosters } from "../hooks/useRosters";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Badge } from "../components/ui/badge";
 
 const GAME_FILTER_KEYS = {
   "EVA": "team.filter.eva",
   "Rocket League": "team.filter.rl",
-  "Valorant": "team.filter.valorant",
 };
 
 const gameBadgeVariant = (game) =>
-  game === "Rocket League" ? "rl" : game === "Valorant" ? "valo" : "eva";
+  game === "Rocket League" ? "rl" : "eva";
 
 const ORDER = ["player", "sub", "staff"];
 
@@ -35,6 +35,7 @@ export const PlayerPhoto = ({ src, alt, className }) => {
 
 export default function Team() {
   const { t } = useLang();
+  const { rostersForGame, gameHasRosters } = useRosters();
   const [members, setMembers] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -47,7 +48,8 @@ export default function Team() {
   useEffect(() => {
     setError(false); setMembers(null);
     return onSnapshot(collection(db, "roster"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // Les fiches des pôles supprimés (ex. Valorant) sont masquées du public.
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => !isRemovedGame(m.game));
       list.sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || (a.pseudo || "").localeCompare(b.pseudo || ""));
       setMembers(list);
     }, (e) => { console.error(e); setError(true); });
@@ -101,11 +103,11 @@ export default function Team() {
                   </button>
                 ))}
               </div>
-              {/* Roster sub-filters (jeux avec rosters : Rocket League, Valorant) */}
+              {/* Sous-filtres par roster (rosters gérés depuis le panel admin) */}
               {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
                 <div key={g} className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] mr-1">{getGameShortLabel(g)}</span>
-                  {(ROSTERS[g]||[]).map(r=>{
+                  {rostersForGame(g).map(r=>{
                     const count = members?.filter(m=> m.roster===r).length||0;
                     const active = rosterFilter===r;
                     const color = getGameColor(g);
@@ -145,8 +147,8 @@ export default function Team() {
             </div>
           </div>
 
-          {/* EVA, RL & Valorant highlight */}
-          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
+          {/* EVA & RL highlight */}
+          <div className="mt-10 grid sm:grid-cols-2 gap-4 max-w-4xl">
             <div className={`border p-4 flex items-center gap-4 ${gameFilter==="EVA"||gameFilter==="all" ? "border-[#D8CA82]/50 bg-[#D8CA82]/5" : "border-white/10 bg-[#141414]/50"}`}>
               <p className="font-display font-black text-2xl text-[#D8CA82]">EVA</p>
               <p className="text-xs text-[#f7f7f7]/60">{t("team.evaSub")}</p>
@@ -156,13 +158,6 @@ export default function Team() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-[#F4511E]">{t("team.newPole")}</p>
                 <p className="text-xs text-[#f7f7f7]/60">{t("team.rlSub")}</p>
-              </div>
-            </div>
-            <div className={`border p-4 flex items-center gap-4 ${gameFilter==="Valorant"||gameFilter==="all" ? "border-[#FF4655]/50 bg-[#FF4655]/5" : "border-white/10 bg-[#141414]/50"}`}>
-              <p className="font-display font-black text-2xl text-[#f7f7f7]">VALO</p>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#FF4655]">{t("team.newPole")}</p>
-                <p className="text-xs text-[#f7f7f7]/60">{t("team.valoSub")}</p>
               </div>
             </div>
           </div>
@@ -237,7 +232,7 @@ export default function Team() {
                           </div>
                         </div>
                         {m.ingameRole && <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/60 mt-1">{m.ingameRole}</p>}
-                        {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2">{m.bio}</p>}
+                        {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2 whitespace-pre-wrap">{m.bio}</p>}
                         <div className="flex items-center gap-3 mt-4">
                           {["x", "twitch", "instagram", "youtube", "tiktok"].filter((k) => m.socials?.[k]).map((k) => (
                             <span key={k} className="text-[#c8c8c8]"><SocialIcon name={k} size={14} /></span>

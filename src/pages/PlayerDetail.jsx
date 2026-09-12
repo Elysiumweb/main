@@ -11,7 +11,8 @@ import { SocialIcon } from "../components/SocialIcon";
 import { MatchCard } from "../components/MatchCard";
 import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
-import { isPlayerInMatch, gameHasRosters } from "../lib/constants";
+import { isPlayerInMatch, isRemovedGame } from "../lib/constants";
+import { useRosters } from "../hooks/useRosters";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -22,6 +23,7 @@ const parseStats = (txt) =>
 export default function PlayerDetail() {
   const { id } = useParams();
   const { t, lang } = useLang();
+  const { gameHasRosters } = useRosters();
   const [player, setPlayer] = useState(undefined);
   const [matches, setMatches] = useState([]);
   const [error, setError] = useState(false);
@@ -32,7 +34,7 @@ export default function PlayerDetail() {
     const u1 = onSnapshot(doc(db, "roster", id), (s) => setPlayer(s.exists() ? { id: s.id, ...s.data() } : null),
       (e) => { console.error(e); setError(true); });
     const u2 = onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming");
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && !isRemovedGame(m.game));
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, console.error);
@@ -48,7 +50,8 @@ export default function PlayerDetail() {
 
   if (error) return <div className="max-w-4xl mx-auto px-4 py-20"><ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="player-error" /></div>;
   if (player === undefined) return <LoadingState testId="player-loading" />;
-  if (player === null) return (
+  // Les fiches des pôles supprimés (ex. Valorant) ne sont plus publiques.
+  if (player === null || isRemovedGame(player?.game)) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6">
       <p className="text-[#f7f7f7]/50" data-testid="player-not-found">{t("playerpage.notFound")}</p>
       <Link to="/equipe" className="text-[#D8CA82] text-sm uppercase tracking-widest hover:underline">← {t("team.title")}</Link>
@@ -109,7 +112,7 @@ export default function PlayerDetail() {
                   )}
                 </div>
               )}
-              {player.bio && <p className="text-[#f7f7f7]/60 mt-5 max-w-2xl leading-relaxed" data-testid="player-bio">{player.bio}</p>}
+              {player.bio && <p className="text-[#f7f7f7]/60 mt-5 max-w-2xl leading-relaxed whitespace-pre-wrap" data-testid="player-bio">{player.bio}</p>}
               <div className="flex items-center gap-4 mt-6">
                 {["x", "twitch", "instagram", "youtube", "tiktok"].filter((k) => player.socials?.[k]).map((k) => (
                   <a key={k} href={player.socials[k]} target="_blank" rel="noopener noreferrer" data-testid={`player-social-${k}`}

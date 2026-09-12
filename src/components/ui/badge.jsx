@@ -27,8 +27,6 @@ const badgeVariants = cva(
           "border-[#D8CA82]/30 text-[#D8CA82]/80 bg-[#D8CA82]/5",
         rl:
           "border-[#F4511E]/50 text-[#F4511E] bg-[#F4511E]/10",
-        valo:
-          "border-[#FF4655]/50 text-[#FF4655] bg-[#FF4655]/10",
       },
       size: {
         default: "px-2 py-0.5 text-xs",

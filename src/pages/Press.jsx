@@ -101,7 +101,7 @@ export default function Press() {
             <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82]">Chiffres-clés — au 20 août 2026</p>
             <ul className="mt-3 space-y-1.5 text-xs text-[#c8c8c8] leading-relaxed">
               <li>• Fondée 2026 · Association loi 1901 · RNA W772011943</li>
-              <li>• 3 pôles : EVA · Rocket League · Valorant (Valeureux/Vaillant)</li>
+              <li>• 2 pôles : EVA · Rocket League</li>
               <li>• Communauté Discord active · <a href="https://discord.gg/RH3ZZkMJsw" className="text-[#D8CA82] underline">discord.gg/RH3ZZkMJsw</a></li>
               <li>• Slogan : “Not given. Earned.”</li>
             </ul>
@@ -113,13 +113,13 @@ export default function Press() {
         <div className="grid md:grid-cols-2 gap-5 mb-12" data-testid="press-presentations">
           <div className="border border-white/10 bg-[#141414] p-6">
             <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Présentation courte — 280 caractères</p>
-            <p className="text-sm text-[#c8c8c8] leading-relaxed">Elysium Esport est une équipe esport française (EVA, Rocket League, Valorant) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.</p>
-            <button onClick={() => navigator.clipboard?.writeText("Elysium Esport est une équipe esport française (EVA, Rocket League, Valorant) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.")} className="mt-3 text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Copier</button>
+            <p className="text-sm text-[#c8c8c8] leading-relaxed">Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.</p>
+            <button onClick={() => navigator.clipboard?.writeText("Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.")} className="mt-3 text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Copier</button>
           </div>
           <div className="border border-white/10 bg-[#141414] p-6">
             <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Présentation longue — 600 caractères</p>
-            <p className="text-sm text-[#c8c8c8] leading-relaxed">Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Trois pôles compétitifs — EVA (Esports Virtual Arenas), Rocket League et Valorant (Valeureux & Vaillant) — partagent le même ADN et le mêmeécusson. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et aux dons, avec comptes présentés chaque année en assemblée générale.</p>
-            <button onClick={() => navigator.clipboard?.writeText("Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Trois pôles compétitifs — EVA, Rocket League et Valorant (Valeureux & Vaillant) — partagent le même ADN. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et dons.")} className="mt-3 text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Copier</button>
+            <p className="text-sm text-[#c8c8c8] leading-relaxed">Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA (Esports Virtual Arenas) et Rocket League — partagent le même ADN et le mêmeécusson. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et aux dons, avec comptes présentés chaque année en assemblée générale.</p>
+            <button onClick={() => navigator.clipboard?.writeText("Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA et Rocket League — partagent le même ADN. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et dons.")} className="mt-3 text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Copier</button>
           </div>
         </div>
 

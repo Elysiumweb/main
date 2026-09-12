@@ -14,7 +14,7 @@ export const OG_VARIANTS = {
 };
 export const ogImageFor = (kind) => `${SITE_URL}${OG_VARIANTS[kind] || OG_VARIANTS.default}`;
 export const DEFAULT_TITLE = "ELYSIUM Esport — Not given. Earned.";
-export const DEFAULT_DESCRIPTION = "Équipe esport française sur EVA, Rocket League et Valorant : résultats, actualités, effectif, recrutement et communauté.";
+export const DEFAULT_DESCRIPTION = "Équipe esport française sur EVA et Rocket League : résultats, actualités, effectif, recrutement et communauté.";
 export const DEFAULT_IMAGE = `${SITE_URL}/brand/og-default.jpg`;
 
 const defaultOrganizationJsonLd = () => ({
@@ -27,7 +27,7 @@ const defaultOrganizationJsonLd = () => ({
   logo: DEFAULT_IMAGE,
   foundingDate: "2026",
   slogan: "Not given. Earned.",
-  sport: ["Esport", "EVA", "Rocket League", "Valorant"],
+  sport: ["Esport", "EVA", "Rocket League"],
   sameAs: [
     "https://discord.gg/RH3ZZkMJsw",
     "https://www.twitch.tv/elysiumxeva",

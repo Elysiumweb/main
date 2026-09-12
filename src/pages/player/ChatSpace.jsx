@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
-import { GAMES, ROSTERS, gameHasRosters } from "../../lib/constants";
+import { GAMES } from "../../lib/constants";
+import { useRosters } from "../../hooks/useRosters";
 import { ChatMessages } from "../../components/ChatMessages";
 import { Globe, Gamepad2, Users } from "lucide-react";
 
 export default function ChatSpace() {
   const { game, roster, isOfficial } = useAuth();
   const { t } = useLang();
+  const { allNames, gameHasRosters } = useRosters();
 
   const channels = [];
 
@@ -15,14 +17,14 @@ export default function ChatSpace() {
   if (isOfficial) GAMES.forEach((g) => channels.push({ id: `game_${g}`, label: g, icon: Gamepad2 }));
   else if (game) channels.push({ id: `game_${game}`, label: game, icon: Gamepad2 });
 
-  // Roster channels — for every game that has rosters (Rocket League, Valorant)
+  // Canaux des rosters (gérés depuis le panel admin)
   if (isOfficial) {
-    // Official sees all roster channels
-    Object.values(ROSTERS).flat().forEach((r) =>
+    // L'officiel voit tous les canaux de roster
+    allNames.forEach((r) =>
       channels.push({ id: `roster_${r}`, label: r, icon: Users })
     );
   } else if (gameHasRosters(game) && roster) {
-    // A rostered player only sees their own roster channel
+    // Un joueur avec roster ne voit que son propre canal de roster
     channels.push({ id: `roster_${roster}`, label: roster, icon: Users });
   }
 

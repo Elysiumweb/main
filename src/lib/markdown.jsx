@@ -177,7 +177,7 @@ export const Markdown = ({ source, className = "" }) => {
         para.push(lines[i]);
         i++;
       }
-      blocks.push({ type: "paragraph", text: para.join(" ") });
+      blocks.push({ type: "paragraph", text: para.join("\n") });
       continue;
     }
 
@@ -201,8 +201,21 @@ export const Markdown = ({ source, className = "" }) => {
               </Tag>
             );
           }
-          case "paragraph":
-            return <p key={key} className="my-4">{renderInline(block.text, key)}</p>;
+          case "paragraph": {
+            // Saut de ligne simple = <br/> (comportement intuitif type
+            // messagerie) au lieu du Markdown strict qui l'ignore.
+            const paraLines = block.text.split("\n");
+            return (
+              <p key={key} className="my-4">
+                {paraLines.map((l, li) => (
+                  <React.Fragment key={li}>
+                    {li > 0 && <br />}
+                    {renderInline(l, `${key}-${li}`)}
+                  </React.Fragment>
+                ))}
+              </p>
+            );
+          }
           case "quote":
             return (
               <blockquote key={key} className="border-l-4 border-[#D8CA82]/60 bg-white/5 px-5 py-3 my-4 text-[#c8c8c8] italic">

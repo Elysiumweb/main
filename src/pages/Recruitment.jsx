@@ -13,6 +13,8 @@ import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMes
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
+import { isRemovedGame } from "../lib/constants";
+import { Markdown } from "../lib/markdown";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 /* La tranche « -15 » matérialise le seuil légal français de consentement
@@ -50,7 +52,8 @@ export default function Recruitment() {
 
   useEffect(() => {
     return onSnapshot(collection(db, "positions"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => p.open !== false);
+      // Offres des pôles supprimés (ex. Valorant) masquées du public.
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => p.open !== false && !isRemovedGame(p.game));
       list.sort((a, b) => (a.deadline || "9999").localeCompare(b.deadline || "9999"));
       setPositions(list);
     }, console.error);
@@ -67,14 +70,34 @@ export default function Recruitment() {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     if (isHoneypotFilled(fd.get("website"))) return;
-    // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
-    // est appliquée côté serveur par la Cloud Function.
-    const limit = checkSessionRateLimit("recruit_application", { max: 2, windowMs: 10 * 60 * 1000 });
-    if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
+    // Validation locale AVANT le quota : chaque appel au limiteur consomme un
+    // essai, donc un formulaire invalide ne doit jamais l'atteindre — sinon deux
+    // erreurs verrouillent tout envoi pendant 10 minutes.
+    const lenErr = (label, v, min, max) => {
+      const n = (v || "").trim().length;
+      if (n < min) return `${label} : ${min} ${t("form.minChars")}`;
+      if (n > max) return `${label} : ${max} ${t("form.maxChars")}`;
+      return null;
+    };
+    const fieldErr = [
+      lenErr(t("recruit.form.pseudo"), form.pseudo, 2, 60),
+      lenErr(t("recruit.form.position"), form.position, 2, 140),
+      lenErr(t("recruit.form.country"), form.country, 2, 120),
+      lenErr(t("recruit.form.experience"), form.experience, 10, 2000),
+      form.videos.trim() ? lenErr(t("recruit.form.videos"), form.videos, 0, 1000) : null,
+      lenErr(t("recruit.form.availability"), form.availability, 3, 1000),
+      lenErr(t("recruit.form.discord"), form.discord, 2, 80),
+    ].find(Boolean);
+    if (fieldErr) { toast.error(fieldErr); return; }
+    if (!form.ageRange) { toast.error(t("recruit.form.age")); return; }
     if (!consent) { toast.error(t("recruit.consentRequired")); return; }
     if (isMinor) {
       if (!parent.parentName.trim() || !parent.parentEmail.trim()) {
         toast.error("Renseignez le nom et l'email du titulaire de l'autorité parentale.");
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parent.parentEmail.trim())) {
+        toast.error("L'email du parent / tuteur est invalide.");
         return;
       }
       if (!parentConsent) {
@@ -82,6 +105,10 @@ export default function Recruitment() {
         return;
       }
     }
+    // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
+    // est appliquée côté serveur par la Cloud Function.
+    const limit = checkSessionRateLimit("recruit_application", { max: 3, windowMs: 10 * 60 * 1000 });
+    if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     setSending(true);
     try {
       const result = await callProtected("submitRecruitApplication", {
@@ -113,14 +140,15 @@ export default function Recruitment() {
     setSending(false);
   };
 
+  // min/max : miroir exact des bornes serveur (submitRecruitApplication).
   const fields = [
-    { key: "pseudo", label: t("recruit.form.pseudo"), type: "text", required: true },
-    { key: "position", label: t("recruit.form.position"), type: "text", required: true },
-    { key: "country", label: t("recruit.form.country"), type: "text", required: true, placeholder: "France / UTC+1" },
-    { key: "experience", label: t("recruit.form.experience"), type: "textarea", required: true },
-    { key: "videos", label: t("recruit.form.videos"), type: "textarea", required: false, placeholder: "https://..." },
-    { key: "availability", label: t("recruit.form.availability"), type: "textarea", required: true },
-    { key: "discord", label: t("recruit.form.discord"), type: "text", required: true, placeholder: "pseudo#0000" },
+    { key: "pseudo", label: t("recruit.form.pseudo"), type: "text", required: true, min: 2, max: 60 },
+    { key: "position", label: t("recruit.form.position"), type: "text", required: true, min: 2, max: 140 },
+    { key: "country", label: t("recruit.form.country"), type: "text", required: true, placeholder: "France / UTC+1", min: 2, max: 120 },
+    { key: "experience", label: t("recruit.form.experience"), type: "textarea", required: true, min: 10, max: 2000 },
+    { key: "videos", label: t("recruit.form.videos"), type: "textarea", required: false, placeholder: "https://...", max: 1000 },
+    { key: "availability", label: t("recruit.form.availability"), type: "textarea", required: true, min: 3, max: 1000 },
+    { key: "discord", label: t("recruit.form.discord"), type: "text", required: true, placeholder: "pseudo#0000", min: 2, max: 80 },
   ];
 
   return (
@@ -151,8 +179,18 @@ export default function Recruitment() {
                   <p className="font-display font-bold text-[#f7f7f7]">{p.title}</p>
                   <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5 shrink-0">{p.game}</span>
                 </div>
-                {p.prerequisites && <p className="text-sm text-[#f7f7f7]/60"><span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.prereq")} :</span> {p.prerequisites}</p>}
-                {p.availability && <p className="text-sm text-[#f7f7f7]/60"><span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.avail")} :</span> {p.availability}</p>}
+                {p.prerequisites && (
+                  <div className="text-sm text-[#f7f7f7]/60">
+                    <span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.prereq")} :</span>
+                    <Markdown source={p.prerequisites} className="text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h1]:mt-3 [&_h1]:mb-1 [&_h1]:text-xl [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-lg [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base" />
+                  </div>
+                )}
+                {p.availability && (
+                  <div className="text-sm text-[#f7f7f7]/60">
+                    <span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.avail")} :</span>
+                    <Markdown source={p.availability} className="text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h1]:mt-3 [&_h1]:mb-1 [&_h1]:text-xl [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-lg [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base" />
+                  </div>
+                )}
                 {p.processText && (
                   <div>
                     <p className="text-xs uppercase tracking-wider text-[#D8CA82]/80 mb-1.5">{t("recruit.process")}</p>
@@ -196,7 +234,7 @@ export default function Recruitment() {
               {fields.slice(0, 2).map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
-                  <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+                  <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} minLength={f.min} maxLength={f.max} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                 </div>
               ))}
               <div>
@@ -236,9 +274,9 @@ export default function Recruitment() {
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
                   {f.type === "textarea" ? (
-                    <textarea id={`recruit-${f.key}`} value={form[f.key]} onChange={set(f.key)} required={f.required} rows={3} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+                    <textarea id={`recruit-${f.key}`} value={form[f.key]} onChange={set(f.key)} required={f.required} rows={3} placeholder={f.placeholder} minLength={f.min} maxLength={f.max} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                   ) : (
-                    <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+                    <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} minLength={f.min} maxLength={f.max} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                   )}
                 </div>
               ))}
