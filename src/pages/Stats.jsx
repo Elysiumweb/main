@@ -5,7 +5,7 @@ import { useLang } from "../lib/i18n";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
 import { GAMES, isRemovedGame } from "../lib/constants";
 import { MatchCard } from "../components/MatchCard";
-import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull } from "lucide-react";
+import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull, Map as MapIcon, Award, Users } from "lucide-react";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
@@ -25,7 +25,49 @@ const getPeriodStart = (period) => {
   if (period === "year") {
     return `${now.getFullYear()}-01-01`;
   }
+  if (period === "season2026") {
+    return "2026-01-01";
+  }
+  if (period === "last30") {
+    const d = new Date(now); d.setDate(d.getDate()-30);
+    return d.toISOString().slice(0,10);
+  }
+  if (period === "last90") {
+    const d = new Date(now); d.setDate(d.getDate()-90);
+    return d.toISOString().slice(0,10);
+  }
   return "";
+};
+
+const getPeriodEnd = (period) => {
+  if (period==="season2026") return "2026-12-31";
+  return "";
+};
+
+const normalizeMaps = (maps) => {
+  if (!maps) return [];
+  if (typeof maps === "string" && maps.trim()) {
+    return maps.split("\n").filter(Boolean).map(line=>{
+      const parts = line.split("|").map(s=>s.trim());
+      if (parts.length>=2) {
+        const [a,b]=parts[1].split("-").map(s=>s.trim());
+        return { name: parts[0]||line, scoreUs: a||"", scoreThem: b||"" };
+      }
+      return { name: line, scoreUs:"", scoreThem:"" };
+    });
+  }
+  if (!Array.isArray(maps)) return [];
+  return maps.map(m=>{
+    if (typeof m==="string") {
+      const parts = m.split("|").map(s=>s.trim());
+      if (parts.length>=2) {
+        const [a,b]=parts[1].split("-").map(s=>s.trim());
+        return { name: parts[0]||m, scoreUs: a||"", scoreThem: b||"" };
+      }
+      return { name: m, scoreUs:"", scoreThem:"" };
+    }
+    return { name: m.map || m.name || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "" };
+  }).filter(m=> m.name || m.scoreUs || m.scoreThem);
 };
 
 export default function Stats() {
@@ -50,7 +92,9 @@ export default function Stats() {
     let list = matches;
     if (game !== "all") list = list.filter((m) => m.game === game);
     const periodStart = getPeriodStart(period);
+    const periodEnd = getPeriodEnd(period);
     if (periodStart) list = list.filter((m) => (m.date || "") >= periodStart);
+    if (periodEnd) list = list.filter((m) => (m.date || "") <= periodEnd);
     return list;
   }, [matches, game, period]);
 
@@ -71,11 +115,9 @@ export default function Stats() {
     const draws = total - wins - losses;
     const winRate = ((wins / total) * 100).toFixed(1);
 
-    // Avg score
     const avgUs = (filtered.reduce((sum, m) => sum + (Number(m.scoreUs) || 0), 0) / total).toFixed(1);
     const avgThem = (filtered.reduce((sum, m) => sum + (Number(m.scoreThem) || 0), 0) / total).toFixed(1);
 
-    // Current streak (from most recent)
     let currentStreak = 0;
     let currentType = "";
     for (const m of filtered) {
@@ -85,7 +127,6 @@ export default function Stats() {
       else break;
     }
 
-    // Best winning streak
     let bestStreak = 0;
     let streak = 0;
     for (let i = filtered.length - 1; i >= 0; i--) {
@@ -98,7 +139,6 @@ export default function Stats() {
       }
     }
 
-    // Per game breakdown
     const perGame = GAMES.map((g) => {
       const gm = filtered.filter((m) => m.game === g);
       const gw = gm.filter((m) => getResultCode(m) === "W").length;
@@ -107,7 +147,48 @@ export default function Stats() {
       return { game: g, total: gm.length, wins: gw, losses: gl, draws: gd, winRate: gm.length ? ((gw / gm.length) * 100).toFixed(1) : "0.0" };
     });
 
-    return { total, wins, losses, draws, winRate, avgUs, avgThem, currentStreak, currentType, bestStreak, perGame };
+    // Maps aggregation
+    const mapsAgg = new Map();
+    filtered.forEach(m=>{
+      normalizeMaps(m.maps).forEach(map=>{
+        const key = (map.name||"Unknown").trim();
+        const entry = mapsAgg.get(key) || { name: key, played:0, wins:0, losses:0 };
+        const us = Number(map.scoreUs); const them = Number(map.scoreThem);
+        if (!isNaN(us) && !isNaN(them)) {
+          entry.played++;
+          if (us>them) entry.wins++; else if (us<them) entry.losses++;
+        } else {
+          // If map scores missing, count as played without result
+          entry.played++;
+        }
+        mapsAgg.set(key, entry);
+      });
+    });
+    const perMap = [...mapsAgg.values()].map(m=>({
+      ...m,
+      winRate: m.played ? ((m.wins / m.played)*100).toFixed(1) : "0.0",
+    })).sort((a,b)=> b.played - a.played || b.winRate - a.winRate);
+
+    // Player leaderboard
+    const playerAgg = new Map();
+    filtered.forEach(m=>{
+      const result = getResultCode(m);
+      (m.players||[]).forEach(p=>{
+        const key = p.playerId || p.pseudo;
+        if (!key) return;
+        const entry = playerAgg.get(key) || { id: p.playerId, pseudo: p.pseudo, played:0, wins:0, mvp:0 };
+        entry.played++;
+        if (result==="W") entry.wins++;
+        if (m.mvp && (m.mvp===p.playerId || m.mvp===p.pseudo)) entry.mvp++;
+        playerAgg.set(key, entry);
+      });
+    });
+    const leaderboard = [...playerAgg.values()].map(p=>({
+      ...p,
+      winRate: p.played ? ((p.wins / p.played)*100).toFixed(1) : "0.0",
+    })).sort((a,b)=> b.mvp - a.mvp || b.winRate - a.winRate || b.played - a.played).slice(0,20);
+
+    return { total, wins, losses, draws, winRate, avgUs, avgThem, currentStreak, currentType, bestStreak, perGame, perMap, leaderboard };
   }, [filtered]);
 
   return (
@@ -126,7 +207,7 @@ export default function Stats() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         {/* Filters */}
-        <div className="flex flex-wrap items-end gap-4 mb-10" data-testid="stats-filters">
+        <div className="flex flex-wrap items-end gap-4 mb-4" data-testid="stats-filters">
           <div>
             <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("stats.filter.game")}</label>
             <select value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="stats-filter-game">
@@ -138,11 +219,27 @@ export default function Stats() {
             <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("stats.filter.period")}</label>
             <select value={period} onChange={(e) => setPeriod(e.target.value)} className={selectCls} data-testid="stats-filter-period">
               <option value="all">{t("stats.period.all")}</option>
+              <option value="season2026">Saison 2026</option>
+              <option value="last30">30 derniers jours</option>
+              <option value="last90">90 derniers jours</option>
               <option value="month">{t("stats.period.month")}</option>
               <option value="quarter">{t("stats.period.quarter")}</option>
               <option value="year">{t("stats.period.year")}</option>
             </select>
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-10" data-testid="stats-presets">
+          <span className="text-xs uppercase tracking-widest text-[#c8c8c8]/60 mr-2 py-1">Raccourcis :</span>
+          {[
+            ["season2026","Saison 2026"],
+            ["last30","30 derniers jours"],
+            ["last90","90 derniers jours"],
+            ["year","Année en cours"],
+          ].map(([key,label])=>(
+            <button key={key} onClick={()=> setPeriod(key)} data-testid={`stats-preset-${key}`}
+              className={`text-xs border px-3 py-1.5 uppercase tracking-widest ${period===key ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>{label}</button>
+          ))}
         </div>
 
         {error ? (
@@ -250,6 +347,63 @@ export default function Stats() {
                 ))}
               </div>
             </div>
+
+            {/* Per Map */}
+            {stats.perMap.length>0 && (
+              <div className="mb-12" data-testid="stats-per-map">
+                <div className="flex items-center gap-3 mb-6">
+                  <MapIcon className="text-[#D8CA82]" size={16} />
+                  <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">Win rate par map / manche</h3>
+                </div>
+                <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-[#c8c8c8] uppercase tracking-widest border-b border-white/10">
+                      <tr><th className="text-left py-2 px-4">Map</th><th className="text-center">Jouées</th><th className="text-center">V</th><th className="text-center">D</th><th className="text-right px-4">Win rate</th></tr>
+                    </thead>
+                    <tbody>
+                      {stats.perMap.map(m=>(
+                        <tr key={m.name} className="border-t border-white/5">
+                          <td className="py-2 px-4 text-[#f7f7f7]">{m.name}</td>
+                          <td className="text-center text-[#c8c8c8]">{m.played}</td>
+                          <td className="text-center text-emerald-300">{m.wins}</td>
+                          <td className="text-center text-red-300">{m.losses}</td>
+                          <td className="text-right px-4 font-bold text-[#D8CA82]">{m.winRate}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Leaderboard players */}
+            {stats.leaderboard.length>0 && (
+              <div className="mb-12" data-testid="stats-leaderboard">
+                <div className="flex items-center gap-3 mb-6">
+                  <Award className="text-[#D8CA82]" size={16} />
+                  <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.leaderboard")}</h3>
+                </div>
+                <p className="text-xs text-[#c8c8c8] mb-3">{t("stats.leaderboard.sub")}</p>
+                <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-[#c8c8c8] uppercase tracking-widest border-b border-white/10">
+                      <tr><th className="text-left py-2 px-4">Joueur</th><th className="text-center">Matchs</th><th className="text-center">V</th><th className="text-center">Win rate</th><th className="text-center">MVP</th></tr>
+                    </thead>
+                    <tbody>
+                      {stats.leaderboard.map((p,i)=>(
+                        <tr key={p.id||p.pseudo||i} className="border-t border-white/5">
+                          <td className="py-2 px-4 text-[#f7f7f7] flex items-center gap-2"><span className="text-[#c8c8c8]">{i+1}.</span> {p.pseudo}</td>
+                          <td className="text-center text-[#c8c8c8]">{p.played}</td>
+                          <td className="text-center text-emerald-300">{p.wins}</td>
+                          <td className="text-center font-bold text-[#D8CA82]">{p.winRate}%</td>
+                          <td className="text-center text-[#D8CA82]">{p.mvp>0 ? `${p.mvp}×` : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Match History */}
             <div data-testid="stats-history">

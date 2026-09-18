@@ -223,6 +223,26 @@ service cloud.firestore {
       allow create, update, delete: if isBureau();
     }
 
+    // ===== Adversaires enrichis (collection opponents) =====
+    // Lecture publique, écriture bureau uniquement. Les fiches de base sont
+    // générées depuis les matchs, cette collection ajoute logo/pays/liens.
+    match /opponents/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Alertes de match pour visiteurs non connectés =====
+    // Permet l'abonnement par email anonyme aux rappels de match.
+    // Écriture publique (avec validation côté Function si besoin), lecture bureau.
+    match /matchAlerts/{id} {
+      allow read: if isBureau();
+      allow create: if true
+        && request.resource.data.email is string
+        && request.resource.data.matchId is string
+        && request.resource.data.email.size() <= 120;
+      allow update, delete: if isBureau() || (isAuth() && resource.data.email == request.auth.token.email);
+    }
+
     // ===== Campagnes / objectifs de financement (barre de progression) =====
     // Données saisies manuellement en admin (comptabilité de l'association).
     match /campaigns/{id} {
@@ -237,13 +257,21 @@ service cloud.firestore {
     }
 
     // ===== Jetons push FCM Web =====
+    // Lecture/écriture classique pour les comptes connectés, plus création
+    // anonyme pour les alertes match (uid anon_*) — permet le push sans compte.
     match /pushTokens/{id} {
-      allow read: if isAuth() && resource.data.uid == request.auth.uid;
-      allow create, update: if isAuth()
+      allow read: if (isAuth() && resource.data.uid == request.auth.uid)
+        || (resource.data.uid is string && resource.data.uid.matches('^anon_.*'));
+      allow create, update: if (isAuth()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.enabled is bool
-        && isShortString(request.resource.data.token, 500);
-      allow delete: if isAuth() && resource.data.uid == request.auth.uid;
+        && isShortString(request.resource.data.token, 500))
+        || (request.resource.data.uid is string
+            && request.resource.data.uid.matches('^anon_.*')
+            && request.resource.data.enabled is bool
+            && isShortString(request.resource.data.token, 500));
+      allow delete: if (isAuth() && resource.data.uid == request.auth.uid)
+        || (resource.data.uid is string && resource.data.uid.matches('^anon_.*'));
     }
 
     // ===== Demandes de suppression RGPD =====

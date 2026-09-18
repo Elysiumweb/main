@@ -8,13 +8,31 @@ import { MatchCard } from "../components/MatchCard";
 import { MatchCountdown } from "../components/MatchCountdown";
 import { HeadToHeadPanel } from "../components/HeadToHead";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Trophy, CalendarClock, ChevronDown, CalendarDays } from "lucide-react";
+import { Trophy, CalendarClock, ChevronDown, CalendarDays, Download } from "lucide-react";
 import { GAMES, getElysiumTeamName, isRemovedGame } from "../lib/constants";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const PAGE_SIZE = 9;
+
+const getPeriodDates = (preset) => {
+  const now = new Date();
+  const fmt = (d)=> d.toISOString().slice(0,10);
+  if (preset==="season2026") return { from: "2026-01-01", to: "2026-12-31" };
+  if (preset==="last30") {
+    const d = new Date(now); d.setDate(d.getDate()-30);
+    return { from: fmt(d), to: fmt(now) };
+  }
+  if (preset==="last90") {
+    const d = new Date(now); d.setDate(d.getDate()-90);
+    return { from: fmt(d), to: fmt(now) };
+  }
+  if (preset==="year") {
+    return { from: `${now.getFullYear()}-01-01`, to: fmt(now) };
+  }
+  return { from:"", to:"" };
+};
 
 export default function Results() {
   const { t } = useLang();
@@ -27,27 +45,34 @@ export default function Results() {
   const competition = searchParams.get("competition") || "all";
   const from = searchParams.get("from") || "";
   const to = searchParams.get("to") || "";
+  const matchParam = searchParams.get("match") || "";
   const setTab = (v) => { const p = new URLSearchParams(searchParams); p.set("tab", v); setSearchParams(p); };
   const setGame = (v) => { const p = new URLSearchParams(searchParams); v==="all" ? p.delete("game") : p.set("game", v); setSearchParams(p); };
   const setCompetition = (v) => { const p = new URLSearchParams(searchParams); v==="all" ? p.delete("competition") : p.set("competition", v); setSearchParams(p); };
   const setFrom = (v) => { const p = new URLSearchParams(searchParams); v ? p.set("from", v) : p.delete("from"); setSearchParams(p); };
   const setTo = (v) => { const p = new URLSearchParams(searchParams); v ? p.set("to", v) : p.delete("to"); setSearchParams(p); };
+  const setPeriodPreset = (preset) => {
+    const { from: f, to: t2 } = getPeriodDates(preset);
+    const p = new URLSearchParams(searchParams);
+    if (f) p.set("from", f); else p.delete("from");
+    if (t2) p.set("to", t2); else p.delete("to");
+    if (preset) p.set("preset", preset); else p.delete("preset");
+    setSearchParams(p);
+  };
+  const preset = searchParams.get("preset") || "";
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     setError(false);
     return onSnapshot(collection(db, "matches"), (snap) => {
-      // Matchs des pôles supprimés (ex. Valorant) masqués du public.
       setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => !isRemovedGame(m.game)));
     }, (e) => { console.error(e); setError(true); });
   }, [retryKey]);
 
   const competitions = useMemo(() => [...new Set((matches || []).map((m) => m.competition).filter(Boolean))], [matches]);
 
-  // Matchs en direct — affichés en section dédiée, hors des onglets
   const liveMatches = useMemo(() => (matches || []).filter((m) => m.status === "live"), [matches]);
 
-  // Prochain match (pour le compte à rebours)
   const nextMatch = useMemo(() => {
     const upcoming = (matches || []).filter((m) => m.status === "upcoming").sort((a, b) => (a.date || "").localeCompare(b.date || ""));
     return upcoming[0] || null;
@@ -77,7 +102,7 @@ export default function Results() {
         position: index + 1,
         item: {
           "@type": "SportsEvent",
-          "@id": `${SITE_URL}/resultats#match-${m.id}`,
+          "@id": `${SITE_URL}/resultats/${m.id}#event`,
           name: `${teamName} vs ${m.opponentName || t("common.adversary")}`,
           startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
           eventStatus: m.status === "upcoming" || m.status === "live" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
@@ -86,7 +111,7 @@ export default function Results() {
             { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
             { "@type": "SportsTeam", name: m.opponentName || t("common.adversary"), logo: m.opponentLogo },
           ],
-          location: m.platform ? { "@type": "VirtualLocation", name: m.platform, url: m.watchUrl } : undefined,
+          location: m.platform ? { "@type": "VirtualLocation", name: m.platform, url: m.watchUrl || m.vodUrl } : undefined,
         },
       };
     }),
@@ -101,6 +126,17 @@ export default function Results() {
 
   const resetFilters = () => { setSearchParams(new URLSearchParams()); };
 
+  const exportCsv = () => {
+    const rows = filtered;
+    const header = ["date","game","roster","opponent","scoreUs","scoreThem","competition","status","vodUrl","mvp"];
+    const csv = [header.join(",")].concat(rows.map(m=>[
+      m.date||"", m.game||"", `"${(m.roster||"").replace(/"/g,'""')}"`, `"${(m.opponentName||"").replace(/"/g,'""')}"`, m.scoreUs??"", m.scoreThem??"", `"${(m.competition||"").replace(/"/g,'""')}"`, m.status||"", m.vodUrl||"", m.mvp||""
+    ].join(","))).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download=`elysium-resultats-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
@@ -112,10 +148,14 @@ export default function Results() {
           <Link to="/calendrier" className="mt-4 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="results-subscribe-link">
             <CalendarDays size={13} aria-hidden="true" /> {t("cal.subscribe.title")} →
           </Link>
+          {matchParam && matches?.find(m=>m.id===matchParam) && (
+            <div className="mt-4 border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-4 py-3 text-xs text-[#D8CA82]">
+              Lien partagé détecté — le match <span className="font-bold">{matches.find(m=>m.id===matchParam)?.opponentName}</span> est mis en avant ci-dessous. <Link to={`/resultats/${matchParam}`} className="underline ml-2">Voir la page dédiée →</Link>
+            </div>
+          )}
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        {/* Compte à rebours avant le prochain match + rappel */}
         {nextMatch && (
           <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-5 py-4 mb-8 flex items-center flex-wrap gap-4" data-testid="results-next-countdown">
             <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82]">
@@ -125,7 +165,6 @@ export default function Results() {
           </div>
         )}
 
-        {/* Matchs en direct */}
         {liveMatches.length > 0 && (
           <div className="border border-red-400/50 bg-red-500/10 px-6 py-5 mb-8" data-testid="results-live-section">
             <div className="flex items-center gap-2 mb-4">
@@ -136,15 +175,15 @@ export default function Results() {
               <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="results-live-grid">
-              {liveMatches.map((m) => <MatchCard key={m.id} match={m} />)}
+              {liveMatches.map((m) => <MatchCard key={m.id} match={m} initialOpen={m.id===matchParam} />)}
             </div>
           </div>
         )}
 
-        {/* Face-à-face par adversaire */}
         {matches && matches.length > 0 && (
           <div className="mb-8" data-testid="results-h2h">
             <HeadToHeadPanel matches={matches} testId="results-h2h-panel" />
+            <Link to="/adversaires" className="mt-3 inline-flex text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Toutes les fiches adversaires →</Link>
           </div>
         )}
 
@@ -154,7 +193,7 @@ export default function Results() {
           role="tablist"
           aria-label={t("results.title")}
         >
-          {[["finished", Trophy], ["upcoming", CalendarClock]].map(([k, Icon]) => (
+          {[[ "finished", Trophy], ["upcoming", CalendarClock]].map(([k, Icon]) => (
             <button
               key={k}
               onClick={() => setTab(k)}
@@ -168,14 +207,16 @@ export default function Results() {
           ))}
         </div>
 
-        {/* Compteur + badges actifs — D-08 : barre de filtres partagée */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4" data-testid="results-filter-bar">
           <p className="text-xs text-[#c8c8c8]" data-testid="results-count">
             {filtered.length} résultat{filtered.length !== 1 ? "s" : ""} {game!=="all" || competition!=="all" || from || to ? "· filtres actifs" : ""}
           </p>
-          {(game!=="all" || competition!=="all" || from || to) && (
-            <button onClick={resetFilters} data-testid="results-filter-reset-all" className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Tout réinitialiser</button>
-          )}
+          <div className="flex gap-2">
+            {(game!=="all" || competition!=="all" || from || to) && (
+              <button onClick={resetFilters} data-testid="results-filter-reset-all" className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Tout réinitialiser</button>
+            )}
+            <button onClick={exportCsv} data-testid="results-export-csv" className="text-xs uppercase tracking-widest border border-white/15 px-3 py-1 text-[#c8c8c8] hover:text-[#D8CA82] hover:border-[#D8CA82]/40 flex items-center gap-1"><Download size={12}/> CSV</button>
+          </div>
         </div>
         {(game!=="all" || competition!=="all" || from || to) && (
           <div className="flex flex-wrap gap-2 mb-4" data-testid="results-active-filters">
@@ -185,6 +226,21 @@ export default function Results() {
             {to && <button onClick={()=>setTo("")} data-testid="results-badge-to" className="border border-white/20 bg-[#1A1A1A] text-[#c8c8c8] text-xs px-3 py-1.5">Au: {to} ✕</button>}
           </div>
         )}
+
+        {/* Presets */}
+        <div className="flex flex-wrap gap-2 mb-6" data-testid="results-presets">
+          <span className="text-xs uppercase tracking-widest text-[#c8c8c8]/60 mr-2 py-1">Raccourcis :</span>
+          {[
+            ["season2026","Saison 2026"],
+            ["last30","30 derniers jours"],
+            ["last90","90 derniers jours"],
+            ["year","Année en cours"],
+          ].map(([key,label])=>(
+            <button key={key} onClick={()=> setPeriodPreset(key)} data-testid={`results-preset-${key}`}
+              className={`text-xs border px-3 py-1.5 uppercase tracking-widest ${preset===key ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>{label}</button>
+          ))}
+          {preset && <button onClick={()=> setPeriodPreset("")} className="text-xs text-[#D8CA82] hover:underline">Effacer preset ✕</button>}
+        </div>
 
         <div className="flex flex-wrap items-end gap-4 mb-10 overflow-x-auto pb-2 scrollbar-thin" data-testid="results-filters" style={{scrollbarWidth:"thin"}}>
           <span className="hidden sm:inline text-xs text-[#c8c8c8]/50 mr-2">← faire défiler →</span>
@@ -255,7 +311,7 @@ export default function Results() {
         ) : (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
-              {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} />)}
+              {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} initialOpen={m.id===matchParam} />)}
             </div>
             {filtered.length > visibleCount && (
               <div className="mt-10 flex flex-col items-center gap-3" data-testid="results-load-more">

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
-import { CalendarClock, ExternalLink, PlayCircle, Pencil, Trophy, Skull, Radio, Copy, RotateCcw } from "lucide-react";
+import { CalendarClock, ExternalLink, PlayCircle, Pencil, Trophy, Skull, Radio, Copy, RotateCcw, Film, Award, Map as MapIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ShareButtons } from "./ShareButtons";
 import { SITE_URL } from "../lib/useSEO";
@@ -9,12 +10,6 @@ import { OptimizedImage } from "./OptimizedImage";
 import { getElysiumTeamName } from "../lib/constants";
 import { fmtMatchDate } from "../lib/formatters";
 
-/* -----------------------------------------------------------------------
- * OpponentLogo
- * - Renders opponent logo with a DESCRIPTIVE alt (team name + role)
- * - On load error or missing src, falls back to a clean initials plate
- *   (neutral, NOT Elysium branding, to avoid implying a partnership)
- * --------------------------------------------------------------------- */
 const OpponentLogo = ({ src, name, className = "" }) => {
   const { t } = useLang();
   const [err, setErr] = useState(false);
@@ -51,10 +46,6 @@ const OpponentLogo = ({ src, name, className = "" }) => {
   );
 };
 
-/* -----------------------------------------------------------------------
- * ResultBadge
- * - Never rely on color alone: shows an icon + explicit text label
- * --------------------------------------------------------------------- */
 const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   if (live) {
     return (
@@ -114,8 +105,39 @@ const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
   );
 };
 
-export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming }) => {
+const normalizeMaps = (maps) => {
+  if (!maps) return [];
+  if (typeof maps === "string" && maps.trim()) {
+    return maps.split("\n").filter(Boolean).map(line=>{
+      const parts = line.split("|").map(s=>s.trim());
+      if (parts.length>=2) {
+        const [a,b]=parts[1].split("-").map(s=>s.trim());
+        return { name: parts[0]||line, scoreUs: a||"", scoreThem: b||"" };
+      }
+      return { name: line, scoreUs:"", scoreThem:"" };
+    });
+  }
+  if (!Array.isArray(maps)) return [];
+  return maps.map(m=>{
+    if (typeof m==="string") {
+      const parts = m.split("|").map(s=>s.trim());
+      if (parts.length>=2) {
+        const [a,b]=parts[1].split("-").map(s=>s.trim());
+        return { name: parts[0]||m, scoreUs: a||"", scoreThem: b||"" };
+      }
+      return { name: m, scoreUs:"", scoreThem:"" };
+    }
+    return { name: m.map || m.name || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "" };
+  }).filter(m=> m.name || m.scoreUs || m.scoreThem);
+};
+
+const slugify = (s) => String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80) || "adversaire";
+
+export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming, initialOpen = false }) => {
   const { t, lang } = useLang();
+  const [open, setOpen] = useState(!!initialOpen);
+  useEffect(()=>{ if (initialOpen) setOpen(true); }, [initialOpen]);
+
   const upcoming = match.status === "upcoming";
   const live = match.status === "live";
   const us = Number(match.scoreUs);
@@ -126,8 +148,10 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   const participants = Array.isArray(match.players)
     ? match.players.filter((p) => p && (p.pseudo || p.playerId))
     : [];
+  const maps = useMemo(()=> normalizeMaps(match.maps), [match.maps]);
+  const hasVod = !!match.vodUrl;
+  const mvp = match.mvp ? String(match.mvp) : "";
 
-  // Accessible description for the card
   const ariaDesc = live
     ? `Match en direct : ${teamName} contre ${match.opponentName || t("common.adversary")}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
     : upcoming
@@ -135,6 +159,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || t("common.adversary")}`;
 
   const formattedDate = fmtMatchDate(match, lang);
+  const canonicalUrl = `${SITE_URL}/resultats/${match.id}`;
 
   const card = (
     <div
@@ -162,6 +187,8 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               {roster}
             </span>
           )}
+          {maps.length>0 && <span className="text-xs border border-white/10 text-[#c8c8c8] px-1.5 py-0.5 flex items-center gap-1"><MapIcon size={10}/> {maps.length}</span>}
+          {mvp && <span className="text-xs border border-[#D8CA82]/20 text-[#D8CA82] px-1.5 py-0.5 flex items-center gap-1"><Award size={10}/> MVP</span>}
         </div>
         <ResultBadge result={result} t={t} upcoming={upcoming} live={live} />
       </div>
@@ -204,6 +231,11 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               {live ? t("results.watchLive") : t("results.watch")}
             </a>
           )}
+        </div>
+      )}
+      {hasVod && !upcoming && !live && (
+        <div className="mt-3">
+          <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" onClick={(e)=> e.stopPropagation()} data-testid={`match-vod-${match.id}`} className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-1.5"><Film size={12}/> {t("results.vod")}</a>
         </div>
       )}
       {(onEdit || onDelete || onDuplicate || onMarkUpcoming) && (
@@ -258,13 +290,12 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   );
 
   return (
-    <Dialog onOpenChange={(open) => {
-      if (open) {
-        trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
-      }
+    <Dialog open={open} onOpenChange={(o)=>{
+      setOpen(o);
+      if (o) trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
     }}>
       <DialogTrigger asChild>{card}</DialogTrigger>
-      <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg" data-testid={`match-detail-${match.id}`}>
+      <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg max-h-[90vh] overflow-y-auto" data-testid={`match-detail-${match.id}`}>
         <DialogHeader>
           <DialogTitle className="font-display uppercase tracking-widest text-[#D8CA82]">
             {teamName} vs {match.opponentName}
@@ -307,16 +338,37 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               </div>
             </div>
           )}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between gap-4 flex-wrap">
+          {maps.length>0 && (
+            <div data-testid={`match-maps-${match.id}`}>
+              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2 flex items-center gap-1"><MapIcon size={12}/> {t("results.maps")}</p>
+              <div className="border border-white/10 bg-[#141414] divide-y divide-white/5">
+                {maps.map((m,i)=>(
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-xs">
+                    <span className="text-[#f7f7f7]">{m.name || `Map ${i+1}`}</span>
+                    <span className="text-[#c8c8c8]">{m.scoreUs || "—"} — {m.scoreThem || "—"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {mvp && (
+            <div data-testid={`match-mvp-${match.id}`} className="border border-[#D8CA82]/20 bg-[#D8CA82]/5 px-3 py-2 flex items-center gap-2">
+              <Award size={12} className="text-[#D8CA82]"/>
+              <span className="text-xs uppercase tracking-widest text-[#D8CA82]">{t("results.mvp")} :</span>
+              <span className="text-xs text-[#f7f7f7]">{mvp}</span>
+            </div>
+          )}
+          <div className="pt-2 border-t border-white/10 flex flex-col gap-3">
             <ShareButtons
-              url={`${SITE_URL}/resultats?match=${match.id}`}
+              url={canonicalUrl}
               text={`${teamName} vs ${match.opponentName || t("common.adversary")}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
               title={`Partager le match ${teamName} vs ${match.opponentName}`}
               testId={`match-share-${match.id}`}
               compact
             />
+            <Link to={`/resultats/${match.id}`} onClick={()=> setOpen(false)} className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid={`match-detail-link-${match.id}`}>Voir la page dédiée →</Link>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             {(upcoming || live) && match.watchUrl && (
               <a href={match.watchUrl} target="_blank" rel="noopener noreferrer"
                 onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_detail", matchId: match.id, platform: match.platform || "watchUrl", status: match.status })}
@@ -327,6 +379,12 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
                 {live ? t("results.watchLive") : t("results.watch")}
               </a>
             )}
+            {hasVod && (
+              <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest flex items-center gap-1.5 text-[#f7f7f7]/80 hover:text-[#D8CA82] border border-white/10 px-3 py-2">
+                <Film size={13}/> {t("results.vod")}
+              </a>
+            )}
+            <Link to={`/adversaires/${slugify(match.opponentName)}`} className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">Fiche adversaire →</Link>
           </div>
         </div>
       </DialogContent>
