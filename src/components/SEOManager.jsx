@@ -4,6 +4,9 @@ import { SITE_URL, useSEO } from "../lib/useSEO";
 const routeSEO = [
   { path: "/", title: "ELYSIUM Esport — Équipe EVA & Rocket League", description: "Découvrez ELYSIUM Esport : équipe française EVA et Rocket League, résultats, actualités, live, recrutement et communauté." },
   { path: "/resultats", title: "Résultats & matchs — ELYSIUM Esport", description: "Calendrier des matchs Elysium, résultats, scores, VOD et liens live des compétitions EVA et Rocket League.", jsonLd: { "@type": "CollectionPage", name: "Résultats Elysium", url: `${SITE_URL}/resultats` } },
+  { path: "/resultats/:id", title: "Match — ELYSIUM Esport", description: "Détail du match Elysium : score, manches, MVP, VOD et historique face à l'adversaire.", jsonLd: { "@type": "SportsEvent", name: "Match Elysium", url: `${SITE_URL}/resultats` } },
+  { path: "/adversaires", title: "Adversaires — ELYSIUM Esport", description: "Historique des confrontations d'Elysium contre ses adversaires, bilans et fiches.", jsonLd: { "@type": "CollectionPage", name: "Adversaires Elysium", url: `${SITE_URL}/adversaires` } },
+  { path: "/adversaires/:slug", title: "Fiche adversaire — ELYSIUM Esport", description: "Bilan Elysium contre cet adversaire : victoires, défaites, score cumulé et liste des confrontations." },
   { path: "/equipe", title: "Équipe & roster — ELYSIUM Esport", description: "Effectif Elysium : joueurs EVA et Rocket League, rosters, rôles en jeu et staff." },
   { path: "/equipe/:id", title: "Profil joueur — ELYSIUM Esport", description: "Profil d'un joueur Elysium : jeu, roster, rôle et informations publiques." },
   { path: "/actus", title: "Actualités — ELYSIUM Esport", description: "Actualités Elysium Esport : annonces, résultats, coulisses, médias et vie de l'équipe.", jsonLd: { "@type": "Blog", name: "Actualités Elysium", url: `${SITE_URL}/actus` } },

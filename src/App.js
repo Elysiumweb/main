@@ -20,6 +20,9 @@ import { UpdatePrompt } from "@/components/UpdatePrompt";
 import Home from "@/pages/Home";
 
 const Results = lazy(() => import("@/pages/Results"));
+const MatchDetail = lazy(() => import("@/pages/MatchDetail"));
+const Opponents = lazy(() => import("@/pages/Opponents"));
+const OpponentDetail = lazy(() => import("@/pages/OpponentDetail"));
 const Support = lazy(() => import("@/pages/Support"));
 const Recruitment = lazy(() => import("@/pages/Recruitment"));
 const Login = lazy(() => import("@/pages/Login"));
@@ -104,6 +107,9 @@ function App() {
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/resultats" element={<Results />} />
+              <Route path="/resultats/:id" element={<MatchDetail />} />
+              <Route path="/adversaires" element={<Opponents />} />
+              <Route path="/adversaires/:slug" element={<OpponentDetail />} />
               <Route path="/equipe" element={<Team />} />
               <Route path="/equipe/:id" element={<PlayerDetail />} />
               <Route path="/actus" element={<News />} />

@@ -1,13 +1,13 @@
-import { Download, FileImage, Newspaper, Mail, Shield, Ruler, Palette, Ban, FileText, Package, Award, Users, Image as ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../lib/firebase";
+import { Download, FileImage, Newspaper, Mail, Shield, Ruler, Palette, Ban, FileText, Package, Award, Users, Image as ImageIcon, Table2, FileSpreadsheet } from "lucide-react";
 import { useLang } from "../lib/i18n";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { useSEO } from "../lib/useSEO";
 import { CONTACT_EMAIL } from "../lib/notify";
 import { SITE_URL } from "../lib/useSEO";
 
-// Dimensions RÉELLES mesurées via `identify` (8-bit sRGB) — ne jamais mentir sur le ratio source.
-// Ces métadonnées correspondent exactement aux fichiers PNG livrés dans /public/brand.
-// Tout usage avec width/height doit conserver ce ratio (object-contain + h-auto) — voir OptimizedImage.
 const ASSETS = [
   {
     group: "logo",
@@ -35,8 +35,6 @@ const ASSETS = [
 
 const GROUP_TITLES = { logo: "press.assets.logo", charte: "press.assets.charte" };
 
-// Exports dédiés par usage — ne JAMAIS écraser le ratio en CSS.
-// Chaque usage a son export natif à bon ratio, ou utilise object-contain + h-auto.
 const USAGE_EXPORTS = [
   { label: "Horizontal · header/nav · 963×304", file: "logo-horizontal-gold.png", use: "En-tête, barre de navigation, email signature — toujours width auto, height auto" },
   { label: "Icône · favicon / avatar · 808×798", file: "logo-icon-gold.png", use: "Icône carrée, favicon, réseaux — ratio 1:1, ne pas étirer en 512×512 si source 808×798" },
@@ -46,11 +44,68 @@ const USAGE_EXPORTS = [
 
 export default function Press() {
   const { t } = useLang();
+  const [matches, setMatches] = useState([]);
+  const [competitions, setCompetitions] = useState([]);
+
+  useEffect(()=>{
+    const unsub1 = onSnapshot(collection(db,"matches"), (snap)=> setMatches(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    const unsub2 = onSnapshot(collection(db,"competitions"), (snap)=> setCompetitions(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    return ()=>{ unsub1(); unsub2(); };
+  },[]);
+
   useSEO({
     title: `${t("press.title")} — ELYSIUM Esport`,
     description: t("press.sub"),
     url: "/presse",
   });
+
+  const exportCsv = () => {
+    const header = ["date","game","roster","opponent","scoreUs","scoreThem","competition","status","vodUrl","mvp","maps"];
+    const rows = matches.map(m=>{
+      const mapsStr = Array.isArray(m.maps) ? m.maps.map(mm=> `${mm.name||mm.map||""}:${mm.scoreUs||""}-${mm.scoreThem||""}`).join("|") : (m.maps||"");
+      return [
+        m.date||"", m.game||"", `"${(m.roster||"").replace(/"/g,'""')}"`, `"${(m.opponentName||"").replace(/"/g,'""')}"`, m.scoreUs??"", m.scoreThem??"", `"${(m.competition||"").replace(/"/g,'""')}"`, m.status||"", m.vodUrl||"", `"${(m.mvp||"").replace(/"/g,'""')}"`, `"${String(mapsStr).replace(/"/g,'""')}"`
+      ].join(",");
+    });
+    const csv = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download=`elysium-resultats-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const exportCompetitionsCsv = () => {
+    const header = ["name","season","status","position","officialUrl","standings"];
+    const rows = competitions.map(c=>{
+      const standingsStr = Array.isArray(c.standings) ? c.standings.map(s=> `${s.team}:${s.points}pts`).join("|") : "";
+      return [
+        `"${(c.name||"").replace(/"/g,'""')}"`, c.season||"", c.status||"", `"${(c.position||"").replace(/"/g,'""')}"`, c.officialUrl||"", `"${standingsStr.replace(/"/g,'""')}"`
+      ].join(",");
+    });
+    const csv = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href=url; a.download=`elysium-competitions-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const exportPdf = () => {
+    // Simple printable PDF via window.print of a generated HTML table
+    const win = window.open("", "_blank");
+    if (!win) return;
+    const html = `
+      <html><head><title>Elysium Résultats</title><style>
+        body{font-family:monospace;background:#111;color:#f7f7f7;padding:20px}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th,td{border:1px solid #333;padding:6px;text-align:left}
+        th{background:#D8CA82;color:#111}
+      </style></head><body>
+      <h1>ELYSIUM Esport — Résultats ${new Date().toISOString().slice(0,10)}</h1>
+      <table><thead><tr><th>Date</th><th>Jeu</th><th>Roster</th><th>Adversaire</th><th>Score</th><th>Compétition</th><th>Statut</th><th>VOD</th><th>MVP</th></tr></thead>
+      <tbody>${matches.map(m=>`<tr><td>${m.date||""}</td><td>${m.game||""}</td><td>${m.roster||""}</td><td>${m.opponentName||""}</td><td>${m.scoreUs??""}-${m.scoreThem??""}</td><td>${m.competition||""}</td><td>${m.status||""}</td><td>${m.vodUrl||""}</td><td>${m.mvp||""}</td></tr>`).join("")}</tbody></table>
+      <script>window.print();</script>
+      </body></html>`;
+    win.document.write(html);
+    win.document.close();
+  };
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
@@ -69,7 +124,18 @@ export default function Press() {
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         <p className="text-sm text-[#c8c8c8] leading-relaxed max-w-3xl mb-8" data-testid="press-intro">{t("press.intro")}</p>
 
-        {/* Note ratio source — D-01.1 */}
+        {/* Export des résultats (CSV / PDF) */}
+        <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 mb-12" data-testid="press-exports-sport">
+          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#D8CA82] mb-4 flex items-center gap-2"><FileSpreadsheet size={14}/> Export des résultats (CSV / PDF) — données sportives exportables</h2>
+          <p className="text-xs text-[#c8c8c8] mb-4">La presse a les logos mais aussi désormais les données sportives : résultats complets avec VOD, MVP, score par manche.</p>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={exportCsv} data-testid="press-export-results-csv" className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10"><Download size={12}/> Export Résultats CSV ({matches.length})</button>
+            <button onClick={exportCompetitionsCsv} data-testid="press-export-competitions-csv" className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]"><Table2 size={12}/> Export Compétitions CSV ({competitions.length})</button>
+            <button onClick={exportPdf} data-testid="press-export-results-pdf" className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]"><FileText size={12}/> Export PDF (impression)</button>
+          </div>
+          <p className="text-xs text-[#c8c8c8]/60 mt-3">Inclut : date, jeu, roster, adversaire, score, compétition, statut, VOD, MVP, maps. Format compatible presse.</p>
+        </div>
+
         <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-4 py-3 mb-10" data-testid="press-ratio-note">
           <p className="text-xs text-[#D8CA82] flex items-start gap-2 leading-relaxed">
             <Shield size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
@@ -80,7 +146,6 @@ export default function Press() {
           </p>
         </div>
 
-        {/* Kit complet + charte PDF — D-12 */}
         <div className="grid md:grid-cols-3 gap-5 mb-12" data-testid="press-kit-complete">
           <a href="/brand/elysium-press-kit.zip" download data-testid="press-download-zip"
             className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 flex flex-col hover:border-[#D8CA82]/60 transition-colors group">
@@ -109,7 +174,6 @@ export default function Press() {
           </div>
         </div>
 
-        {/* Présentations courte / longue — D-12 */}
         <div className="grid md:grid-cols-2 gap-5 mb-12" data-testid="press-presentations">
           <div className="border border-white/10 bg-[#141414] p-6">
             <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Présentation courte — 280 caractères</p>
@@ -123,7 +187,6 @@ export default function Press() {
           </div>
         </div>
 
-        {/* Guidelines — zone de protection, taille minimale, fonds, usages interdits — D-01.5 */}
         <div className="border border-white/10 bg-[#0c0c0c] p-6 sm:p-8 mb-12" data-testid="press-guidelines">
           <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#D8CA82] mb-6 flex items-center gap-2"><Ruler size={14} /> Charte d’usage — logos</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -133,7 +196,7 @@ export default function Press() {
             </div>
             <div>
               <p className="text-xs font-display uppercase tracking-widest text-[#f7f7f7] mb-2 flex items-center gap-2"><Ruler size={12} className="text-[#D8CA82]" /> Taille minimale</p>
-              <p className="text-xs text-[#c8c8c8] leading-relaxed">Horizontal : 120 px de large. Vertical : 80 px. Icône seule : 24 px. En dessous, utiliser l’icône seule.</p>
+              <p className="text-xs text-[#c8c8c8] leading-relaxed\">Horizontal : 120 px de large. Vertical : 80 px. Icône seule : 24 px. En dessous, utiliser l’icône seule.</p>
             </div>
             <div>
               <p className="text-xs font-display uppercase tracking-widest text-[#f7f7f7] mb-2 flex items-center gap-2"><Palette size={12} className="text-[#D8CA82]" /> Fonds autorisés</p>
@@ -152,7 +215,6 @@ export default function Press() {
           <p className="text-xs text-[#c8c8c8]/70 mt-6">Tous les exports ci-dessous respectent leur ratio source. Les variantes SVG/PDF sont vectorielles — privilégiez-les pour l’impression.</p>
         </div>
 
-        {/* Exports dédiés par usage — D-01.3 */}
         <div className="border border-white/10 bg-[#141414] p-6 mb-12" data-testid="press-exports">
           <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#f7f7f7] mb-4">Exports dédiés par usage</h2>
           <p className="text-xs text-[#c8c8c8] mb-4 leading-relaxed">Chaque contexte utilise son fichier natif, pas un PNG étiré en CSS.</p>
@@ -160,8 +222,8 @@ export default function Press() {
             {USAGE_EXPORTS.map((u) => (
               <div key={u.file} className="border border-white/5 bg-[#111111] p-3">
                 <p className="text-xs font-semibold text-[#f7f7f7]">{u.label}</p>
-                <p className="text-xs text-[#c8c8c8] mt-1">{u.use}</p>
-                <p className="text-xs text-[#D8CA82] mt-1 font-mono">{u.file}</p>
+                <p className="text-xs text-[#c8c8c8] mt-1\">{u.use}</p>
+                <p className="text-xs text-[#D8CA82] mt-1 font-mono\">{u.file}</p>
               </div>
             ))}
           </div>
@@ -226,7 +288,6 @@ export default function Press() {
           </div>
         ))}
 
-        {/* Photos officielles — D-12 */}
         <div className="border border-white/10 bg-[#141414] p-6 sm:p-8 mb-12" data-testid="press-photos">
           <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#D8CA82] mb-6 flex items-center gap-2"><ImageIcon size={14} /> Photos officielles — libre d’usage éditorial</h2>
           <div className="grid sm:grid-cols-3 gap-4">

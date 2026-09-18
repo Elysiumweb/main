@@ -16,6 +16,7 @@ import { AdminArticles } from "../components/admin/AdminArticles";
 import { AdminMedia } from "../components/admin/AdminMedia";
 import { AdminEvents } from "../components/admin/AdminEvents";
 import { AdminCompetitions } from "../components/admin/AdminCompetitions";
+import { AdminOpponents } from "../components/admin/AdminOpponents";
 import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
@@ -35,12 +36,14 @@ import {
 const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", players: [] };
+const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", vodUrl: "", mvp: "", maps: [], players: [] };
 const PAGE_SIZE = 12;
+
+const EMPTY_MAP = { name: "", scoreUs: "", scoreThem: "" };
 
 const sanitizeMatchForClone = (m) => {
   const { id, createdAt, updatedAt, ...rest } = m || {};
-  ["maps", "mvp", "vodUrl", "players"].forEach((key) => { delete rest[key]; });
+  // Keep maps, mvp, vodUrl, players for duplication but allow resetting status later
   return JSON.parse(JSON.stringify(rest));
 };
 const parseCsvLine = (line) => {
@@ -79,6 +82,34 @@ const sanitizeMatchPlayers = (players = []) => (Array.isArray(players) ? players
   }))
   .filter((p) => p.playerId || p.pseudo);
 
+const sanitizeMaps = (maps = []) => {
+  if (!Array.isArray(maps)) {
+    if (typeof maps === "string" && maps.trim()) {
+      // Legacy: lines "Nom | 13-7"
+      return maps.split("\n").filter(Boolean).map(line=>{
+        const parts = line.split("|").map(s=>s.trim());
+        if (parts.length>=2) {
+          const [a,b]=parts[1].split("-").map(s=>s.trim());
+          return { name: parts[0]||"", scoreUs: a||"", scoreThem: b||"" };
+        }
+        return { name: line, scoreUs:"", scoreThem:"" };
+      });
+    }
+    return [];
+  }
+  return maps.map(m=>{
+    if (typeof m==="string") {
+      const parts = m.split("|").map(s=>s.trim());
+      if (parts.length>=2) {
+        const [a,b]=parts[1].split("-").map(s=>s.trim());
+        return { name: parts[0]||"", scoreUs: a||"", scoreThem: b||"" };
+      }
+      return { name: m, scoreUs:"", scoreThem:"" };
+    }
+    return { name: m.map || m.name || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "" };
+  }).filter(m=> m.name || m.scoreUs || m.scoreThem);
+};
+
 const normalizeImportedMatch = (raw) => ({
   opponentName: raw.opponentName || raw.opponent || raw.adversaire || "",
   opponentLogo: raw.opponentLogo || raw.logo || "",
@@ -93,6 +124,9 @@ const normalizeImportedMatch = (raw) => ({
   timezone: raw.timezone || "Europe/Paris",
   platform: raw.platform || "",
   watchUrl: raw.watchUrl || raw.stream || "",
+  vodUrl: raw.vodUrl || raw.vod || "",
+  mvp: raw.mvp || "",
+  maps: sanitizeMaps(raw.maps || raw.mapDetails || []),
   players: sanitizeMatchPlayers(raw.players),
 });
 
@@ -106,6 +140,7 @@ export default function Admin() {
   const [form, setForm] = useState(EMPTY_MATCH);
   const [editMatchId, setEditMatchId] = useState(null);
   const [rosterMembers, setRosterMembers] = useState([]);
+  const [mediaList, setMediaList] = useState([]);
   const [selectedRosterPlayer, setSelectedRosterPlayer] = useState("");
   const [userQuery, setUserQuery] = useState("");
   const [userPage, setUserPage] = useState(1);
@@ -123,11 +158,12 @@ export default function Admin() {
       game,
       roster: rostersForGame(game).includes(f.roster) ? f.roster : "",
       players: [],
+      mvp: "",
     }));
   };
   const onMatchRosterChange = (e) => {
     setSelectedRosterPlayer("");
-    setForm((f) => ({ ...f, roster: e.target.value, players: [] }));
+    setForm((f) => ({ ...f, roster: e.target.value, players: [], mvp: "" }));
   };
 
   const isBureau = isOfficial || role === "bureau";
@@ -135,10 +171,10 @@ export default function Admin() {
   const allowed = {
     users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
-    competitions: isBureau, campaigns: isBureau, partners: isBureau,
+    competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
     newsletter: isBureau, audit: isBureau,
   };
-  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -153,7 +189,8 @@ export default function Admin() {
       setMatches(list);
     }, console.error);
     const u3 = onSnapshot(collection(db, "roster"), (s) => setRosterMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
-    return () => { u1(); u2(); u3(); };
+    const u4 = onSnapshot(collection(db, "media"), (s)=> setMediaList(s.docs.map(d=>({id:d.id,...d.data()}))), console.error);
+    return () => { u1(); u2(); u3(); u4(); };
   }, [isOfficial]);
 
   const filteredUsers = useMemo(() => {
@@ -200,9 +237,6 @@ export default function Admin() {
   );
   const auditActor = { uid: user?.uid, name: displayName, email: user?.email };
 
-  // Purge les données planning d'un compte (disponibilités, semaine type,
-  // absences + annuaire privé) quand il perd son rôle ou son affectation.
-  // Un trigger serveur (`onUserDemoted`) fait de même en filet de sécurité.
   const purgePlanningData = async (uid) => {
     let count = 0;
     try {
@@ -241,8 +275,6 @@ export default function Admin() {
         target: { collection: "users", id: uid },
         details: { previousRole, role: nextRole },
       });
-      // Le compte n'a plus accès à l'espace joueur : on supprime ses
-      // disponibilités, sa semaine type et ses absences du planning.
       if (previousRole !== "visitor" && nextRole === "visitor") {
         await purgeAndAudit(uid, `role ${previousRole} → visitor`);
       } else {
@@ -261,7 +293,6 @@ export default function Admin() {
         actor: auditActor,
         target: { collection: "users", id: uid },
       });
-      // Pôle retiré : le joueur n'est plus dans l'équipe, purge du planning.
       if (target?.game && nextGame === "none") {
         await purgeAndAudit(uid, `pôle ${target.game} retiré`);
       } else {
@@ -280,7 +311,6 @@ export default function Admin() {
         actor: auditActor,
         target: { collection: "users", id: uid },
       });
-      // Roster retiré : purge des disponibilités du planning.
       if (target?.roster && nextRoster === "none") {
         await purgeAndAudit(uid, `roster ${target.roster} retiré`);
       } else {
@@ -308,9 +338,20 @@ export default function Admin() {
     setForm((f) => {
       const next = [...(f.players || [])];
       next.splice(pIndex, 1);
-      return { ...f, players: next };
+      const removed = f.players?.[pIndex];
+      let nextMvp = f.mvp;
+      if (removed && (f.mvp===removed.playerId || f.mvp===removed.pseudo)) nextMvp = "";
+      return { ...f, players: next, mvp: nextMvp };
     });
   };
+
+  const addMapRow = () => setForm(f=>({ ...f, maps: [...(f.maps||[]), { ...EMPTY_MAP }] }));
+  const updateMapRow = (idx, key, value) => setForm(f=>{
+    const next = [...(f.maps||[])];
+    next[idx] = { ...next[idx], [key]: value };
+    return { ...f, maps: next };
+  });
+  const removeMapRow = (idx) => setForm(f=>({ ...f, maps: (f.maps||[]).filter((_,i)=>i!==idx) }));
 
   const addMatch = async (e) => {
     e.preventDefault();
@@ -320,7 +361,7 @@ export default function Admin() {
       toast.error(t("admin.match.rosterRequired"));
       return;
     }
-    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl)) {
+    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl) || !isUrl(form.vodUrl)) {
       toast.error("URL invalide (doit commencer par http:// ou https://)");
       return;
     }
@@ -329,13 +370,13 @@ export default function Admin() {
         ...form,
         roster: rosterOptions.length > 0 ? roster : null,
         players: sanitizeMatchPlayers(form.players),
+        maps: sanitizeMaps(form.maps),
+        mvp: form.mvp?.trim() || "",
+        vodUrl: form.vodUrl?.trim() || "",
       };
       if (editMatchId) {
         await updateDoc(doc(db, "matches", editMatchId), {
           ...matchData,
-          maps: deleteField(),
-          mvp: deleteField(),
-          vodUrl: deleteField(),
           updatedAt: serverTimestamp(),
         });
         await logAdminAction({
@@ -363,7 +404,9 @@ export default function Admin() {
     setForm({
       opponentName: m.opponentName || "", opponentLogo: m.opponentLogo || "", scoreUs: m.scoreUs ?? "", scoreThem: m.scoreThem ?? "",
       date: m.date || "", competition: m.competition || "", game: m.game || "EVA", roster: m.roster || "", status: m.status || "finished",
-      time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "",
+      time: m.time || "", timezone: m.timezone || "Europe/Paris", platform: m.platform || "", watchUrl: m.watchUrl || "", vodUrl: m.vodUrl || "",
+      mvp: m.mvp || "",
+      maps: sanitizeMaps(m.maps),
       players: sanitizeMatchPlayers(m.players),
     });
   };
@@ -420,10 +463,9 @@ export default function Admin() {
         status: "upcoming",
         scoreUs: "",
         scoreThem: "",
-        maps: deleteField(),
-        mvp: deleteField(),
-        vodUrl: deleteField(),
-        players: deleteField(),
+        maps: [],
+        mvp: "",
+        vodUrl: "",
         updatedAt: serverTimestamp(),
       });
       await logAdminAction({
@@ -676,6 +718,43 @@ export default function Admin() {
                   )}
                 </div>
               )}
+              {/* VOD - visible for finished (and also live/upcoming as fallback) */}
+              <div>
+                <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block mb-2">{t("admin.match.vod")} — visible pour match terminé</label>
+                <input value={form.vodUrl} onChange={set("vodUrl")} placeholder="https://youtube.com/... ou https://twitch.tv/videos/..." className={inputCls} data-testid="admin-match-vod" />
+                {mediaList.length>0 && (
+                  <div className="mt-2">
+                    <label className="text-xs text-[#c8c8c8] block mb-1">Ou choisir un média existant (replay)</label>
+                    <select onChange={(e)=>{ if(e.target.value) setForm(f=>({...f, vodUrl:e.target.value})); }} className={inputCls} data-testid="admin-match-vod-media-select">
+                      <option value="">— Sélectionner un replay —</option>
+                      {mediaList.filter(m=>m.type==="video").slice(0,50).map(m=>(
+                        <option key={m.id} value={m.url}>{m.title} — {m.url.slice(0,40)}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Maps */}
+              <div className="border-t border-white/10 pt-4 space-y-3" data-testid="admin-match-maps-section">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">{t("admin.match.maps")}</label>
+                  <button type="button" onClick={addMapRow} className="text-xs border border-[#D8CA82]/40 text-[#D8CA82] px-2 py-1 hover:bg-[#D8CA82]/10">+ Manche</button>
+                </div>
+                <p className="text-xs text-[#c8c8c8]">Saisie structurée : Nom de la map + score Elysium + score adverse. Utilisé pour l'affichage détaillé et les stats par map.</p>
+                <div className="space-y-2">
+                  {(form.maps||[]).map((m,i)=>(
+                    <div key={i} className="grid grid-cols-12 gap-1 items-center">
+                      <input value={m.name} onChange={e=>updateMapRow(i,"name",e.target.value)} placeholder="Map (ex: Haven, DFH Stadium)" className="col-span-5 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-map-name-${i}`} />
+                      <input value={m.scoreUs} onChange={e=>updateMapRow(i,"scoreUs",e.target.value)} placeholder="Us" type="number" className="col-span-2 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-map-scoreUs-${i}`} />
+                      <input value={m.scoreThem} onChange={e=>updateMapRow(i,"scoreThem",e.target.value)} placeholder="Them" type="number" className="col-span-2 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-map-scoreThem-${i}`} />
+                      <button type="button" onClick={()=>removeMapRow(i)} className="col-span-3 text-red-400 text-xs border border-red-400/20 px-2 py-1">Supprimer</button>
+                    </div>
+                  ))}
+                  {(form.maps||[]).length===0 && <p className="text-xs text-[#c8c8c8] italic">Aucune manche — cliquez sur + Manche</p>}
+                </div>
+              </div>
+
               <div className="border-t border-white/10 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">
@@ -732,6 +811,19 @@ export default function Admin() {
                 )}
               </div>
 
+              {/* MVP */}
+              <div className="border-t border-white/10 pt-4 space-y-2" data-testid="admin-match-mvp-section">
+                <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">{t("admin.match.mvp")} — relié au line-up</label>
+                <select value={form.mvp} onChange={set("mvp")} className={inputCls} data-testid="admin-match-mvp-select">
+                  <option value="">— Aucun MVP —</option>
+                  {(form.players||[]).map(p=>(
+                    <option key={p.playerId||p.pseudo} value={p.playerId||p.pseudo}>{p.pseudo}</option>
+                  ))}
+                </select>
+                <input value={form.mvp} onChange={set("mvp")} placeholder="Ou saisie libre (pseudo ou ID)" className={inputCls} data-testid="admin-match-mvp-input" />
+                <p className="text-xs text-[#c8c8c8]">Le MVP alimente les stats par joueur.</p>
+              </div>
+
               <button type="submit" data-testid="admin-match-submit"
                 className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
                 {t("admin.match.add")}
@@ -777,6 +869,7 @@ export default function Admin() {
         {tab === "media" && <AdminMedia />}
         {tab === "events" && <AdminEvents />}
         {tab === "competitions" && <AdminCompetitions />}
+        {tab === "opponents" && <AdminOpponents />}
         {tab === "campaigns" && <AdminCampaigns />}
         {tab === "partners" && <AdminPartnerRequests />}
         {tab === "newsletter" && <AdminNewsletter />}

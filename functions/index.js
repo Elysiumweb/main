@@ -389,6 +389,7 @@ exports.purgeDeletedAccount = functionsV1.auth.user().onDelete(async (user) => {
 // - gdpr.js      : export RGPD complet côté serveur.
 // - retention.js : purges planifiées (corbeille Notes 30 j, threads 24 mois…).
 // - users.js     : purge du planning quand un joueur perd son rôle/pôle/roster.
+// - live.js      : détection automatique du statut live via Twitch API + webhook
 Object.assign(
   exports,
   require("./forms"),
@@ -396,5 +397,6 @@ Object.assign(
   require("./gdpr"),
   require("./retention"),
   require("./users"),
+  require("./live"),
 );
 

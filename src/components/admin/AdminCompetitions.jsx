@@ -7,7 +7,9 @@ import { useLang } from "../../lib/i18n";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const STATUSES = ["upcoming", "ongoing", "finished"];
-const EMPTY = { name: "", officialUrl: "", season: "", status: "upcoming", position: "", notes: "" };
+const EMPTY = { name: "", officialUrl: "", season: "", status: "upcoming", position: "", notes: "", standings: [] };
+
+const EMPTY_STANDING = { team: "", played: "", wins: "", draws: "", losses: "", points: "", diff: "" };
 
 export const AdminCompetitions = () => {
   const { t } = useLang();
@@ -24,19 +26,39 @@ export const AdminCompetitions = () => {
     }, console.error);
   }, []);
 
+  const updateStanding = (idx, key, value) => {
+    setForm(f=>{
+      const next = [...(f.standings||[])];
+      next[idx] = { ...next[idx], [key]: value };
+      return { ...f, standings: next };
+    });
+  };
+  const addStanding = () => setForm(f=>({ ...f, standings: [...(f.standings||[]), { ...EMPTY_STANDING }] }));
+  const removeStanding = (idx) => setForm(f=>({ ...f, standings: (f.standings||[]).filter((_,i)=>i!==idx) }));
+
   const submit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error(t("common.error")); return; }
     if (form.officialUrl && !/^https?:\/\//.test(form.officialUrl)) { toast.error("URL invalide"); return; }
+    const cleanStandings = (form.standings||[]).filter(s=>s.team?.trim()).map(s=>({
+      team: s.team.trim(),
+      played: Number(s.played)||0,
+      wins: Number(s.wins)||0,
+      draws: Number(s.draws)||0,
+      losses: Number(s.losses)||0,
+      points: Number(s.points)||0,
+      diff: s.diff ? String(s.diff) : "",
+    })).sort((a,b)=> b.points - a.points || b.diff - a.diff);
     try {
-      if (editId) await updateDoc(doc(db, "competitions", editId), { ...form, name: form.name.trim() });
-      else await addDoc(collection(db, "competitions"), { ...form, name: form.name.trim(), createdAt: serverTimestamp() });
+      const payload = { ...form, name: form.name.trim(), standings: cleanStandings };
+      if (editId) await updateDoc(doc(db, "competitions", editId), payload);
+      else await addDoc(collection(db, "competitions"), { ...payload, createdAt: serverTimestamp() });
       setForm(EMPTY); setEditId(null);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
   };
 
-  const edit = (c) => { setEditId(c.id); setForm({ name: c.name || "", officialUrl: c.officialUrl || "", season: c.season || "", status: c.status || "upcoming", position: c.position || "", notes: c.notes || "" }); };
+  const edit = (c) => { setEditId(c.id); setForm({ name: c.name || "", officialUrl: c.officialUrl || "", season: c.season || "", status: c.status || "upcoming", position: c.position || "", notes: c.notes || "", standings: Array.isArray(c.standings) ? c.standings : [] }); };
   const del = async (id) => {
     try { await deleteDoc(doc(db, "competitions", id)); if (editId === id) { setEditId(null); setForm(EMPTY); } }
     catch { toast.error(t("common.error")); }
@@ -58,6 +80,29 @@ export const AdminCompetitions = () => {
         <input value={form.position} onChange={set("position")} placeholder={t("admin.competitions.position")} className={inputCls} data-testid="admin-competition-position" />
         <input value={form.officialUrl} onChange={set("officialUrl")} placeholder={t("admin.competitions.link")} type="url" className={inputCls} data-testid="admin-competition-link" />
         <input value={form.notes} onChange={set("notes")} placeholder={t("admin.competitions.notes")} className={inputCls} data-testid="admin-competition-notes" />
+
+        <div className="border-t border-white/10 pt-4 mt-2" data-testid="admin-competition-standings">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]">Classement détaillé (équipes, J, V, N, D, Pts, +/-)</p>
+            <button type="button" onClick={addStanding} className="text-xs border border-[#D8CA82]/40 text-[#D8CA82] px-3 py-1 hover:bg-[#D8CA82]/10">+ Équipe</button>
+          </div>
+          {(form.standings||[]).length===0 && <p className="text-xs text-[#c8c8c8] mb-2">Aucune ligne — ajoutez les équipes du classement. Si vide, l'ancien affichage “position Elysium” reste.</p>}
+          <div className="space-y-2 max-h-[320px] overflow-auto pr-1">
+            {(form.standings||[]).map((s,idx)=>(
+              <div key={idx} className="grid grid-cols-12 gap-1 items-center">
+                <input value={s.team} onChange={e=>updateStanding(idx,"team",e.target.value)} placeholder="Équipe" className="col-span-4 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" />
+                <input value={s.played} onChange={e=>updateStanding(idx,"played",e.target.value)} placeholder="J" type="number" className="col-span-1 bg-[#111111] border border-white/20 px-1 py-1.5 text-xs text-[#f7f7f7]" />
+                <input value={s.wins} onChange={e=>updateStanding(idx,"wins",e.target.value)} placeholder="V" type="number" className="col-span-1 bg-[#111111] border border-white/20 px-1 py-1.5 text-xs text-[#f7f7f7]" />
+                <input value={s.draws} onChange={e=>updateStanding(idx,"draws",e.target.value)} placeholder="N" type="number" className="col-span-1 bg-[#111111] border border-white/20 px-1 py-1.5 text-xs text-[#f7f7f7]" />
+                <input value={s.losses} onChange={e=>updateStanding(idx,"losses",e.target.value)} placeholder="D" type="number" className="col-span-1 bg-[#111111] border border-white/20 px-1 py-1.5 text-xs text-[#f7f7f7]" />
+                <input value={s.points} onChange={e=>updateStanding(idx,"points",e.target.value)} placeholder="Pts" type="number" className="col-span-2 bg-[#111111] border border-white/20 px-1 py-1.5 text-xs text-[#f7f7f7]" />
+                <input value={s.diff} onChange={e=>updateStanding(idx,"diff",e.target.value)} placeholder="+/-" className="col-span-1 bg-[#111111] border border-white/20 px-1 py-1.5 text-xs text-[#f7f7f7]" />
+                <button type="button" onClick={()=>removeStanding(idx)} className="col-span-1 text-red-400 text-xs">✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button type="submit" data-testid="admin-competition-submit"
           className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
           {t("notes.save")}

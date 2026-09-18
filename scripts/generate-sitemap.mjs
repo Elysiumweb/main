@@ -40,6 +40,7 @@ const STATIC_ROUTES = [
   { path: "/resultats", changefreq: "daily", priority: "0.9" },
   { path: "/actus", changefreq: "daily", priority: "0.8" },
   { path: "/equipe", changefreq: "weekly", priority: "0.8" },
+  { path: "/adversaires", changefreq: "weekly", priority: "0.7" },
   { path: "/recrutement", changefreq: "weekly", priority: "0.8" },
   { path: "/calendrier", changefreq: "daily", priority: "0.7" },
   { path: "/competitions", changefreq: "weekly", priority: "0.7" },
@@ -77,6 +78,9 @@ const unwrap = (f) => {
       Object.entries(f.mapValue.fields || {}).map(([k, v]) => [k, unwrap(v)])
     );
   }
+  if (f.arrayValue !== undefined) {
+    return (f.arrayValue.values || []).map(unwrap);
+  }
   return undefined;
 };
 
@@ -109,6 +113,8 @@ const isoDay = (value) => {
   const d = value?.seconds ? new Date(value.seconds * 1000) : new Date(value);
   return isNaN(d.getTime()) ? undefined : d.toISOString().slice(0, 10);
 };
+
+const slugify = (s) => String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80) || "adversaire";
 
 const buildSitemap = (entries) => {
   const urls = entries
@@ -174,8 +180,6 @@ async function main() {
   }));
 
   if (!projectId || !apiKey) {
-    // Sans identifiants on ne peut produire que les pages statiques : écraser
-    // le fichier existant retirerait articles et joueurs déjà indexés.
     if (existsSync(SITEMAP_OUT)) {
       console.warn(
         "[sitemap] Identifiants Firebase absents — sitemap.xml existant conservé (aucune régression d'indexation)."
@@ -190,8 +194,15 @@ async function main() {
 
   let articles = [];
   let roster = [];
+  let matches = [];
+  let opponents = [];
   try {
-    [articles, roster] = await Promise.all([fetchCollection("articles"), fetchCollection("roster")]);
+    [articles, roster, matches, opponents] = await Promise.all([
+      fetchCollection("articles"),
+      fetchCollection("roster"),
+      fetchCollection("matches").catch(()=>[]),
+      fetchCollection("opponents").catch(()=>[]),
+    ]);
   } catch (err) {
     if (existsSync(SITEMAP_OUT)) {
       console.warn(`[sitemap] ${err.message} — sitemap.xml existant conservé.`);
@@ -210,7 +221,6 @@ async function main() {
     }))
     .sort((a, b) => (b.lastmod || "").localeCompare(a.lastmod || ""));
 
-  // Le détail joueur n'existe que pour les membres visibles sur /equipe.
   const rosterEntries = roster
     .filter((m) => ["player", "sub", "staff"].includes(m.status))
     .map((m) => ({
@@ -221,7 +231,31 @@ async function main() {
     }))
     .sort((a, b) => a.loc.localeCompare(b.loc));
 
-  const entries = [...staticEntries, ...articleEntries, ...rosterEntries];
+  const matchEntries = matches
+    .map((m)=>({
+      loc: `/resultats/${m.id}`,
+      lastmod: isoDay(m.updatedAt || m.date),
+      changefreq: "daily",
+      priority: "0.8",
+    }))
+    .sort((a,b)=> (b.lastmod||"").localeCompare(a.lastmod||""));
+
+  // Opponents from collection + from matches (slugified)
+  const opponentSlugs = new Set();
+  opponents.forEach(o=>{
+    const slug = o.slug || slugify(o.name);
+    if (slug) opponentSlugs.add(slug);
+  });
+  matches.forEach(m=>{
+    if (m.opponentName) opponentSlugs.add(slugify(m.opponentName));
+  });
+  const opponentEntries = [...opponentSlugs].map(slug=>({
+    loc: `/adversaires/${slug}`,
+    changefreq: "weekly",
+    priority: "0.6",
+  })).sort((a,b)=> a.loc.localeCompare(b.loc));
+
+  const entries = [...staticEntries, ...articleEntries, ...rosterEntries, ...matchEntries, ...opponentEntries];
 
   mkdirSync(PUBLIC_DIR, { recursive: true });
   writeFileSync(SITEMAP_OUT, buildSitemap(entries), "utf8");
@@ -233,7 +267,7 @@ async function main() {
 
   console.log(
     `[sitemap] ${entries.length} URL(s) : ${staticEntries.length} statiques, ` +
-      `${articleEntries.length} article(s), ${rosterEntries.length} joueur(s).`
+      `${articleEntries.length} article(s), ${rosterEntries.length} joueur(s), ${matchEntries.length} match(s), ${opponentEntries.length} adversaire(s).`
   );
   console.log(`[sitemap] rss.xml : ${Math.min(published.length, 30)} article(s).`);
 }
