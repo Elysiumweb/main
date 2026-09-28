@@ -4,7 +4,7 @@ import { useLang } from "../lib/i18n";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const PRODUCT_URL = "https://eliminate.fr/elysium";
-const PRODUCT_IMAGE = "https://lmn8.s3.eu-west-3.amazonaws.com/wp-content/uploads/2026/08/11135852/elysium_2026.webp";
+const PRODUCT_IMAGE = "https://i.ibb.co/ZR8f8kCd/13.jpg";
 const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 
 export default function Shop() {

@@ -235,7 +235,7 @@ export default function Home() {
             <div className="relative min-h-[280px] sm:min-h-[360px] bg-[#ededeb] overflow-hidden">
               <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: "radial-gradient(#111 1px, transparent 1px)", backgroundSize: "22px 22px" }} aria-hidden="true" />
               <img
-                src="https://lmn8.s3.eu-west-3.amazonaws.com/wp-content/uploads/2026/08/11135852/elysium_2026.webp"
+                src="https://i.ibb.co/ZR8f8kCd/13.jpg"
                 alt={t("shop.imageAlt")}
                 width="1000"
                 height="1000"
