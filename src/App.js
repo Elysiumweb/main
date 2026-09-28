@@ -33,6 +33,7 @@ const Profile = lazy(() => import("@/pages/Profile"));
 const LegalPage = lazy(() => import("@/pages/LegalPage"));
 const Stats = lazy(() => import("@/pages/Stats"));
 const Partners = lazy(() => import("@/pages/Partners"));
+const Shop = lazy(() => import("@/pages/Shop"));
 const Donate = lazy(() => import("@/pages/Donate"));
 const News = lazy(() => import("@/pages/News"));
 const ArticleDetail = lazy(() => import("@/pages/ArticleDetail"));
@@ -123,6 +124,7 @@ function App() {
               <Route path="/recrutement" element={<Recruitment />} />
               <Route path="/statistiques" element={<Stats />} />
               <Route path="/partenaires" element={<Partners />} />
+              <Route path="/boutique" element={<Shop />} />
               <Route path="/soutenir" element={<Donate />} />
               <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />

@@ -68,6 +68,11 @@ export const Footer = () => {
               </Link>
             </li>
             <li>
+              <Link to="/boutique" className="text-[#D8CA82] hover:underline transition-colors motion-reduce:transition-none" data-testid="footer-nav-shop">
+                {t("nav.shop")}
+              </Link>
+            </li>
+            <li>
               <Link to="/calendrier" className="hover:text-[#D8CA82] transition-colors motion-reduce:transition-none" data-testid="footer-nav-calendar">
                 {t("nav.calendar")}
               </Link>

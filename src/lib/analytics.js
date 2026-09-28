@@ -87,4 +87,5 @@ export const ANALYTICS_EVENTS = {
   DISCORD_CLICK: "discord_click",
   LIVE_CLICK: "live_click",
   MATCH_VIEW: "match_view",
+  MERCH_CLICK: "merch_click",
 };

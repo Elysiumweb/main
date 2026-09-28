@@ -20,6 +20,7 @@ const routeSEO = [
   { path: "/recrutement", title: "Recrutement — ELYSIUM Esport", description: "Postulez chez Elysium Esport : postes ouverts, candidature joueur, staff et suivi de dossier." },
   { path: "/statistiques", title: "Statistiques — ELYSIUM Esport", description: "Statistiques compétitives Elysium : taux de victoire, scores moyens, tendances et derniers matchs." },
   { path: "/partenaires", title: "Partenaires — ELYSIUM Esport", description: "Partenaires Elysium Esport et formulaire de demande de partenariat." },
+  { path: "/boutique", title: "Maillot officiel Elysium 2026 — Boutique", description: "Découvrez et commandez le maillot officiel ELYSIUM Esport 2026, disponible du XS au 6XL à 49,90 €.", jsonLd: { "@type": "Product", name: "Maillot officiel Elysium 2026", image: "https://i.ibb.co/ZR8f8kCd/13.jpg", offers: { "@type": "Offer", price: "49.90", priceCurrency: "EUR", availability: "https://schema.org/InStock", url: "https://eliminate.fr/elysium" } } },
   { path: "/soutenir", title: "Soutenir Elysium — Dons & partenaires", description: "Soutenez ELYSIUM Esport via un don, un partenariat ou une prise de contact sponsor." },
   { path: "/dons", title: "Soutenir Elysium — Dons & partenaires", description: "Soutenez ELYSIUM Esport via un don, un partenariat ou une prise de contact sponsor.", url: "/soutenir" },
   { path: "/newsletter", title: "Newsletter — ELYSIUM Esport", description: "Inscrivez-vous à la newsletter Elysium pour recevoir les actualités, résultats et annonces importantes." },

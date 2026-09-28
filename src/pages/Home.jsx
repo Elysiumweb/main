@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink, Shirt } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel, isRemovedGame } from "../lib/constants";
@@ -224,6 +224,37 @@ export default function Home() {
             <p className="text-[#c8c8c8] text-xl sm:text-2xl leading-relaxed font-light">
               {t("home.manifesto.text")}
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* BOUTIQUE — lancement du maillot officiel */}
+      <section className="border-b border-white/10 bg-[#111111]" data-testid="home-shop" aria-labelledby="home-shop-title">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
+          <div className="grid md:grid-cols-2 border border-[#D8CA82]/30 bg-[#141414] overflow-hidden group">
+            <div className="relative aspect-square bg-[#0c0c0c] overflow-hidden">
+              <img
+                src="https://i.ibb.co/ZR8f8kCd/13.jpg"
+                alt={t("shop.imageAlt")}
+                width="1568"
+                height="1568"
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+            <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
+              <div className="flex items-center gap-3 text-[#D8CA82] mb-5">
+                <Shirt size={19} aria-hidden="true" />
+                <p className="text-xs font-display uppercase tracking-[0.35em]">Official merch • 2026</p>
+              </div>
+              <h2 id="home-shop-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-[#f7f7f7]">{t("shop.productName")}</h2>
+              <p className="font-display font-black text-2xl text-[#D8CA82] mt-4">49,90&nbsp;€</p>
+              <p className="text-[#c8c8c8] mt-5 leading-relaxed">{t("shop.sub")}</p>
+              <Link to="/boutique" className="mt-7 inline-flex items-center gap-2 text-xs font-display font-bold uppercase tracking-[0.25em] text-[#D8CA82] hover:underline self-start" data-testid="home-shop-link">
+                {t("nav.shop")} <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
