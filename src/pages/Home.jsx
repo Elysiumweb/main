@@ -232,7 +232,7 @@ export default function Home() {
       <section className="border-b border-white/10 bg-[#111111]" data-testid="home-shop" aria-labelledby="home-shop-title">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
           <div className="grid md:grid-cols-2 border border-[#D8CA82]/30 bg-[#141414] overflow-hidden group">
-            <div className="relative min-h-[360px] md:min-h-0 md:h-full bg-[#0c0c0c] overflow-hidden">
+            <div className="relative aspect-square bg-[#0c0c0c] overflow-hidden">
               <img
                 src="https://i.ibb.co/ZR8f8kCd/13.jpg"
                 alt={t("shop.imageAlt")}
@@ -240,7 +240,7 @@ export default function Home() {
                 height="1568"
                 loading="lazy"
                 decoding="async"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] u-micro"
+                className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
             <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
