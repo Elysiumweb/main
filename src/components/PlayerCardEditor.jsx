@@ -9,9 +9,11 @@ import { useLang } from "../lib/i18n";
 import { GAMES } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
 import { ImageUpload } from "./ImageUpload";
+import { normalizeCareer } from "../lib/playerStats";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", previousTeams: "", x: "", twitch: "", instagram: "", youtube: "", tiktok: "" };
+const EMPTY_CAREER = { club: "", role: "", period: "", achievements: "" };
+const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", career: [], availableForMatch: false, recruitmentStatus: "closed", x: "", twitch: "", instagram: "", youtube: "", tiktok: "" };
 
 /**
  * La fiche joueur publique (/equipe/:id) est reliée au compte (`roster.uid`).
@@ -26,6 +28,9 @@ export const PlayerCardEditor = () => {
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const updateCareer = (index, key, value) => setForm((f) => ({ ...f, career: f.career.map((item, i) => i === index ? { ...item, [key]: value } : item) }));
+  const addCareer = () => setForm((f) => ({ ...f, career: [...f.career, { ...EMPTY_CAREER }] }));
+  const removeCareer = (index) => setForm((f) => ({ ...f, career: f.career.filter((_, i) => i !== index) }));
 
   useEffect(() => {
     if (!user) { setCard(null); return; }
@@ -40,7 +45,8 @@ export const PlayerCardEditor = () => {
             ingameRole: found.ingameRole || "", status: found.status || "player",
             photo: found.photo || "", bio: found.bio || "", rank: found.rank || "", mmr: found.mmr || "",
             palmares: found.palmares || "", equipment: found.equipment || "",
-            arrivalDate: found.arrivalDate || "", previousTeams: found.previousTeams || "",
+            arrivalDate: found.arrivalDate || "", career: normalizeCareer(found.career, found.previousTeams),
+            availableForMatch: !!found.availableForMatch, recruitmentStatus: found.recruitmentStatus || "closed",
             x: found.socials?.x || "", twitch: found.socials?.twitch || "",
             instagram: found.socials?.instagram || "", youtube: found.socials?.youtube || "",
             tiktok: found.socials?.tiktok || "",
@@ -164,9 +170,37 @@ export const PlayerCardEditor = () => {
           <label htmlFor="pcc-equipment" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("playerpage.equipment")}</label>
           <textarea id="pcc-equipment" value={form.equipment} onChange={set("equipment")} placeholder={t("admin.roster.equipmentPlaceholder")} rows={3} className={inputCls} data-testid="profile-card-equipment" />
         </div>
-        <div>
-          <label htmlFor="pcc-previous" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("playerpage.career")}</label>
-          <textarea id="pcc-previous" value={form.previousTeams} onChange={set("previousTeams")} placeholder={t("admin.roster.previousTeamsPlaceholder")} rows={2} className={inputCls} data-testid="profile-card-previous" />
+        <div className="grid sm:grid-cols-2 gap-4 border border-[#D8CA82]/20 bg-[#D8CA82]/5 p-4">
+          <label className="flex items-center gap-3 text-sm text-[#f7f7f7]">
+            <input type="checkbox" checked={form.availableForMatch} onChange={(e) => setForm((f) => ({ ...f, availableForMatch: e.target.checked }))} className="accent-[#D8CA82]" data-testid="profile-card-available" />
+            Je suis disponible pour un match
+          </label>
+          <div>
+            <label htmlFor="pcc-recruitment" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Statut de recrutement</label>
+            <select id="pcc-recruitment" value={form.recruitmentStatus} onChange={set("recruitmentStatus")} className={inputCls} data-testid="profile-card-recruitment">
+              <option value="closed">Non disponible</option>
+              <option value="listening">À l'écoute</option>
+              <option value="open">Ouvert aux propositions</option>
+            </select>
+          </div>
+        </div>
+        <div data-testid="profile-card-career">
+          <div className="flex items-center justify-between gap-4 mb-2">
+            <label className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{t("playerpage.career")}</label>
+            <button type="button" onClick={addCareer} className="text-xs border border-[#D8CA82]/40 text-[#D8CA82] px-3 py-1.5 hover:bg-[#D8CA82]/10">+ Ajouter une étape</button>
+          </div>
+          <div className="space-y-3">
+            {form.career.map((item, index) => (
+              <div key={index} className="grid sm:grid-cols-2 gap-2 border border-white/10 bg-[#141414] p-3">
+                <input value={item.club} onChange={(e) => updateCareer(index, "club", e.target.value)} placeholder="Club" className={inputCls} />
+                <input value={item.role} onChange={(e) => updateCareer(index, "role", e.target.value)} placeholder="Rôle" className={inputCls} />
+                <input value={item.period} onChange={(e) => updateCareer(index, "period", e.target.value)} placeholder="Période (2024–2025)" className={inputCls} />
+                <input value={item.achievements} onChange={(e) => updateCareer(index, "achievements", e.target.value)} placeholder="Palmarès" className={inputCls} />
+                <button type="button" onClick={() => removeCareer(index)} className="sm:col-span-2 text-xs text-red-300 text-left">Supprimer cette étape</button>
+              </div>
+            ))}
+            {form.career.length === 0 && <p className="text-xs text-[#c8c8c8]">Aucune étape renseignée.</p>}
+          </div>
         </div>
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] mb-2">{t("profile.card.socials")}</p>

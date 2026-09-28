@@ -79,6 +79,9 @@ const sanitizeMatchPlayers = (players = []) => (Array.isArray(players) ? players
   .map((p) => ({
     playerId: p.playerId || p.id || "",
     pseudo: p.pseudo || p.name || "",
+    goals: p.goals ?? "",
+    assists: p.assists ?? "",
+    points: p.points ?? "",
   }))
   .filter((p) => p.playerId || p.pseudo);
 
@@ -332,6 +335,14 @@ export default function Admin() {
       ],
     }));
     setSelectedRosterPlayer("");
+  };
+
+  const updatePlayerStat = (pIndex, key, value) => {
+    setForm((f) => {
+      const next = [...(f.players || [])];
+      next[pIndex] = { ...next[pIndex], [key]: value };
+      return { ...f, players: next };
+    });
   };
 
   const removePlayerFromMatch = (pIndex) => {
@@ -789,23 +800,18 @@ export default function Admin() {
                   </button>
                 </div>
                 {(form.players || []).length > 0 && (
-                  <div className="flex flex-wrap gap-2" data-testid="admin-match-players-list">
+                  <div className="space-y-2" data-testid="admin-match-players-list">
+                    <div className="hidden sm:grid grid-cols-[1fr_80px_80px_90px_32px] gap-2 text-[10px] uppercase tracking-widest text-[#c8c8c8] px-2">
+                      <span>Joueur</span><span>Buts</span><span>Passes</span><span>Points</span><span />
+                    </div>
                     {(form.players || []).map((p, pIndex) => (
-                      <span
-                        key={p.playerId || `${p.pseudo}-${pIndex}`}
-                        className="inline-flex items-center gap-2 border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]"
-                        data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}
-                      >
-                        {p.pseudo || "Joueur"}
-                        <button
-                          type="button"
-                          onClick={() => removePlayerFromMatch(pIndex)}
-                          className="text-red-300/80 hover:text-red-300"
-                          aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}
-                        >
-                          ×
-                        </button>
-                      </span>
+                      <div key={p.playerId || `${p.pseudo}-${pIndex}`} className="grid grid-cols-2 sm:grid-cols-[1fr_80px_80px_90px_32px] gap-2 items-center border border-white/15 bg-[#141414] p-2 text-xs text-[#f7f7f7]" data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}>
+                        <span className="font-semibold col-span-2 sm:col-span-1">{p.pseudo || "Joueur"}</span>
+                        {["goals", "assists", "points"].map((key) => (
+                          <input key={key} type="number" min="0" value={p[key] ?? ""} onChange={(e) => updatePlayerStat(pIndex, key, e.target.value)} placeholder={key === "goals" ? "Buts" : key === "assists" ? "Passes" : "Points"} aria-label={`${p.pseudo} ${key}`} className="w-full bg-[#111111] border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-[#D8CA82]" />
+                        ))}
+                        <button type="button" onClick={() => removePlayerFromMatch(pIndex)} className="text-red-300/80 hover:text-red-300" aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}>×</button>
+                      </div>
                     ))}
                   </div>
                 )}

@@ -13,6 +13,7 @@ import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { isPlayerInMatch, isRemovedGame } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
+import { aggregatePlayer, normalizeCareer } from "../lib/playerStats";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -60,7 +61,8 @@ export default function PlayerDetail() {
 
   const palmares = parseStats(player.palmares);
   const equipment = parseStats(player.equipment);
-  const previousTeams = parseStats(player.previousTeams);
+  const career = normalizeCareer(player.career, player.previousTeams);
+  const playerStats = aggregatePlayer(matches, player);
   const hasRank = !!(player.rank || player.mmr);
   const fmtArrival = (d) => {
     if (!d) return "";
@@ -93,6 +95,10 @@ export default function PlayerDetail() {
               <span className="text-xs font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{t(`team.status.${player.status || "player"}`)}</span>
               <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase mt-4" data-testid="player-pseudo">{player.pseudo}</h1>
               <p className="text-[#D8CA82] uppercase tracking-[0.3em] text-sm mt-2">{player.game}{player.ingameRole ? ` — ${player.ingameRole}` : ""}</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {player.availableForMatch && <span className="text-xs uppercase tracking-widest border border-emerald-300/40 bg-emerald-300/10 text-emerald-200 px-3 py-1" data-testid="player-available">● Disponible pour un match</span>}
+                {player.recruitmentStatus && player.recruitmentStatus !== "closed" && <span className="text-xs uppercase tracking-widest border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] px-3 py-1" data-testid="player-recruitment">{player.recruitmentStatus === "open" ? "Ouvert aux propositions" : "À l'écoute"}</span>}
+              </div>
               {hasRank && (
                 <div className="flex items-center gap-2 mt-3 flex-wrap" data-testid="player-rank">
                   {player.rank && (
@@ -127,6 +133,30 @@ export default function PlayerDetail() {
           </div>
         </div>
       </section>
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16" data-testid="player-statistics">
+        <div className="flex items-center gap-3 mb-6">
+          <BarChart3 size={16} className="text-[#D8CA82]" />
+          <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.stats")}</h2>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {[
+            ["Matchs", playerStats.played], ["Victoires", playerStats.wins], ["Défaites", playerStats.losses],
+            ["Win rate", `${playerStats.winRate}%`], ["MVP", playerStats.mvp], ["Buts", playerStats.goals], ["Points", playerStats.points],
+          ].map(([label, value]) => (
+            <div key={label} className="border border-white/10 bg-[#1A1A1A] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8]">{label}</p>
+              <p className="font-display font-black text-2xl text-[#D8CA82] mt-1">{value}</p>
+            </div>
+          ))}
+        </div>
+        {playerStats.recent.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-2" data-testid="player-recent-form">
+            <span className="text-xs uppercase tracking-widest text-[#c8c8c8] py-2 mr-2">Dernières performances</span>
+            {playerStats.recent.map((performance) => <Link key={performance.id} to={`/resultats/${performance.id}`} title={`${performance.opponentName || "Adversaire"} · ${performance.points} pts · ${performance.goals} buts`} className={`w-9 h-9 flex items-center justify-center border font-display font-bold text-sm ${performance.result === "W" ? "border-emerald-300/40 text-emerald-300 bg-emerald-300/5" : performance.result === "L" ? "border-red-300/40 text-red-300 bg-red-300/5" : "border-white/20 text-[#c8c8c8]"}`}>{performance.result}</Link>)}
+          </div>
+        )}
+      </section>
+
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
         <div className="flex items-center gap-3 mb-6">
           <History size={16} className="text-[#D8CA82]" />
@@ -142,7 +172,7 @@ export default function PlayerDetail() {
       </section>
 
       {/* Palmarès personnel / Équipement / Carrière */}
-      {(palmares.length > 0 || equipment.length > 0 || previousTeams.length > 0 || player.arrivalDate) && (
+      {(palmares.length > 0 || equipment.length > 0 || career.length > 0 || player.arrivalDate) && (
         <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-16 grid lg:grid-cols-12 gap-12">
           {palmares.length > 0 && (
             <div className="lg:col-span-4">
@@ -176,7 +206,7 @@ export default function PlayerDetail() {
               </ul>
             </div>
           )}
-          {(previousTeams.length > 0 || player.arrivalDate) && (
+          {(career.length > 0 || player.arrivalDate) && (
             <div className="lg:col-span-4">
               <div className="flex items-center gap-3 mb-6">
                 <History size={16} className="text-[#D8CA82]" />
@@ -189,10 +219,10 @@ export default function PlayerDetail() {
                     <span className="text-sm text-[#f7f7f7]">{fmtArrival(player.arrivalDate)}</span>
                   </li>
                 )}
-                {previousTeams.map((p, i) => (
+                {career.map((p, i) => (
                   <li key={i} className="flex justify-between px-5 py-3 gap-4">
-                    <span className="text-sm text-[#f7f7f7]/80">{p.label}</span>
-                    {p.value && <span className="text-xs uppercase tracking-widest text-[#f7f7f7]/50">{p.value}</span>}
+                    <span className="text-sm text-[#f7f7f7]/80">{p.club}</span>
+                    <span className="text-right"><span className="block text-xs uppercase tracking-widest text-[#f7f7f7]/50">{p.period}</span>{p.role && <span className="block text-xs text-[#D8CA82] mt-1">{p.role}</span>}{p.achievements && <span className="block text-xs text-[#c8c8c8] mt-1">{p.achievements}</span>}</span>
                   </li>
                 ))}
               </ul>

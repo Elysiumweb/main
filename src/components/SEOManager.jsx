@@ -8,6 +8,7 @@ const routeSEO = [
   { path: "/adversaires", title: "Adversaires — ELYSIUM Esport", description: "Historique des confrontations d'Elysium contre ses adversaires, bilans et fiches.", jsonLd: { "@type": "CollectionPage", name: "Adversaires Elysium", url: `${SITE_URL}/adversaires` } },
   { path: "/adversaires/:slug", title: "Fiche adversaire — ELYSIUM Esport", description: "Bilan Elysium contre cet adversaire : victoires, défaites, score cumulé et liste des confrontations." },
   { path: "/equipe", title: "Équipe & roster — ELYSIUM Esport", description: "Effectif Elysium : joueurs EVA et Rocket League, rosters, rôles en jeu et staff." },
+  { path: "/staff", title: "Staff & encadrement — ELYSIUM Esport", description: "Découvrez les managers, coachs et membres du bureau qui encadrent les équipes Elysium." },
   { path: "/equipe/:id", title: "Profil joueur — ELYSIUM Esport", description: "Profil d'un joueur Elysium : jeu, roster, rôle et informations publiques." },
   { path: "/actus", title: "Actualités — ELYSIUM Esport", description: "Actualités Elysium Esport : annonces, résultats, coulisses, médias et vie de l'équipe.", jsonLd: { "@type": "Blog", name: "Actualités Elysium", url: `${SITE_URL}/actus` } },
   { path: "/actus/:id", title: "Article — ELYSIUM Esport", description: "Article Elysium Esport : actualités, annonces et analyses de l'équipe." },

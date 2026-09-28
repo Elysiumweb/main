@@ -28,6 +28,7 @@ const Recruitment = lazy(() => import("@/pages/Recruitment"));
 const Login = lazy(() => import("@/pages/Login"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const Team = lazy(() => import("@/pages/Team"));
+const Staff = lazy(() => import("@/pages/Staff"));
 const PlayerDetail = lazy(() => import("@/pages/PlayerDetail"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const LegalPage = lazy(() => import("@/pages/LegalPage"));
@@ -112,6 +113,7 @@ function App() {
               <Route path="/adversaires" element={<Opponents />} />
               <Route path="/adversaires/:slug" element={<OpponentDetail />} />
               <Route path="/equipe" element={<Team />} />
+              <Route path="/staff" element={<Staff />} />
               <Route path="/equipe/:id" element={<PlayerDetail />} />
               <Route path="/actus" element={<News />} />
               <Route path="/actus/:id" element={<ArticleDetail />} />

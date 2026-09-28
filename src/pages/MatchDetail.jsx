@@ -267,7 +267,7 @@ export default function MatchDetail() {
                   {(match.players||[]).map((p,idx)=>{
                     const found = rosterMembers.find(r=> r.id===p.playerId || r.pseudo===p.pseudo);
                     return found ? (
-                      <Link key={p.playerId||idx} to={`/equipe/${found.id}`} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]">{p.pseudo||found.pseudo}</Link>
+                      <Link key={p.playerId||idx} to={`/equipe/${found.id}`} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]">{p.pseudo||found.pseudo}{(p.goals || p.points) ? <span className="text-[#c8c8c8] ml-2">{p.goals ? `${p.goals} B` : ""}{p.goals && p.points ? " · " : ""}{p.points ? `${p.points} pts` : ""}</span> : null}</Link>
                     ) : (
                       <span key={p.playerId||idx} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80">{p.pseudo||"Joueur"}</span>
                     );
