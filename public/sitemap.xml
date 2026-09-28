@@ -9,6 +9,7 @@
   <url><loc>https://elysium-esport.fr/recrutement</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://elysium-esport.fr/statistiques</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://elysium-esport.fr/partenaires</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://elysium-esport.fr/boutique</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://elysium-esport.fr/soutenir</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://elysium-esport.fr/support</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://elysium-esport.fr/newsletter</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>

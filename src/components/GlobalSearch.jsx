@@ -21,6 +21,7 @@ const PAGE_LINKS = [
   { path: "/resultats", key: "nav.results" },
   { path: "/actus", key: "nav.news" },
   { path: "/medias", key: "nav.media" },
+  { path: "/boutique", key: "nav.shop" },
   { path: "/calendrier", key: "nav.calendar" },
   { path: "/support", key: "nav.support" },
   { path: "/recrutement", key: "nav.recruitment" },

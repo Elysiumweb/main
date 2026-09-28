@@ -49,6 +49,7 @@ const STATIC_ROUTES = [
   { path: "/presse", changefreq: "monthly", priority: "0.6" },
   { path: "/medias", changefreq: "weekly", priority: "0.6" },
   { path: "/partenaires", changefreq: "monthly", priority: "0.6" },
+  { path: "/boutique", changefreq: "weekly", priority: "0.8" },
   { path: "/soutenir", changefreq: "monthly", priority: "0.6" },
   { path: "/support", changefreq: "monthly", priority: "0.5" },
   { path: "/newsletter", changefreq: "monthly", priority: "0.5" },

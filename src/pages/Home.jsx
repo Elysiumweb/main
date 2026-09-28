@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink, Shirt } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel, isRemovedGame } from "../lib/constants";
@@ -224,6 +224,38 @@ export default function Home() {
             <p className="text-[#c8c8c8] text-xl sm:text-2xl leading-relaxed font-light">
               {t("home.manifesto.text")}
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* BOUTIQUE — lancement du maillot officiel */}
+      <section className="border-b border-white/10 bg-[#111111]" data-testid="home-shop" aria-labelledby="home-shop-title">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
+          <div className="grid md:grid-cols-2 border border-[#D8CA82]/30 bg-[#141414] overflow-hidden group">
+            <div className="relative min-h-[280px] sm:min-h-[360px] bg-[#ededeb] overflow-hidden">
+              <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: "radial-gradient(#111 1px, transparent 1px)", backgroundSize: "22px 22px" }} aria-hidden="true" />
+              <img
+                src="https://lmn8.s3.eu-west-3.amazonaws.com/wp-content/uploads/2026/08/11135852/elysium_2026.webp"
+                alt={t("shop.imageAlt")}
+                width="1000"
+                height="1000"
+                loading="lazy"
+                decoding="async"
+                className="relative w-full h-full min-h-[280px] sm:min-h-[360px] object-contain p-4 group-hover:scale-[1.02] u-micro"
+              />
+            </div>
+            <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
+              <div className="flex items-center gap-3 text-[#D8CA82] mb-5">
+                <Shirt size={19} aria-hidden="true" />
+                <p className="text-xs font-display uppercase tracking-[0.35em]">Official merch • 2026</p>
+              </div>
+              <h2 id="home-shop-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-[#f7f7f7]">{t("shop.productName")}</h2>
+              <p className="font-display font-black text-2xl text-[#D8CA82] mt-4">49,90&nbsp;€</p>
+              <p className="text-[#c8c8c8] mt-5 leading-relaxed">{t("shop.sub")}</p>
+              <Link to="/boutique" className="mt-7 inline-flex items-center gap-2 text-xs font-display font-bold uppercase tracking-[0.25em] text-[#D8CA82] hover:underline self-start" data-testid="home-shop-link">
+                {t("nav.shop")} <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>

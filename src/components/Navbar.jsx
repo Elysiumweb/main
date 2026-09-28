@@ -61,9 +61,10 @@ export const Navbar = () => {
     { to: "/calendrier", label: t("nav.calendar") },
   ];
 
-  // Découvrir : médias, compétitions, stats, à propos, presse (D-05)
+  // Découvrir : médias, boutique, compétitions, stats, à propos, presse (D-05)
   const discoverLinks = [
     { to: "/medias", label: t("nav.media") },
+    { to: "/boutique", label: t("nav.shop") },
     { to: "/competitions", label: t("nav.competitions") },
     { to: "/statistiques", label: t("nav.stats") },
     { to: "/a-propos", label: t("nav.about") },
