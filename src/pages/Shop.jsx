@@ -33,16 +33,15 @@ export default function Shop() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12 lg:py-20" aria-labelledby="jersey-title">
         <article className="grid lg:grid-cols-12 border border-white/10 bg-[#141414] overflow-hidden" data-testid="shop-jersey-2026">
-          <div className="lg:col-span-7 relative min-h-[420px] sm:min-h-[620px] bg-[#ededeb] overflow-hidden flex items-center justify-center">
-            <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: "radial-gradient(#111 1px, transparent 1px)", backgroundSize: "24px 24px" }} aria-hidden="true" />
+          <div className="lg:col-span-7 relative min-h-[420px] sm:min-h-[620px] bg-[#0c0c0c] overflow-hidden">
             <img
               src={PRODUCT_IMAGE}
               alt={t("shop.imageAlt")}
-              width="1000"
-              height="1000"
+              width="1568"
+              height="1568"
               loading="eager"
               decoding="async"
-              className="relative w-full h-full min-h-[420px] sm:min-h-[620px] object-contain p-4 sm:p-8"
+              className="absolute inset-0 w-full h-full object-cover"
             />
             <span className="absolute top-5 left-5 bg-[#111111] text-[#D8CA82] px-3 py-2 text-xs font-display font-bold uppercase tracking-[0.25em]">
               {t("shop.official")}

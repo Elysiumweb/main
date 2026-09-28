@@ -232,16 +232,15 @@ export default function Home() {
       <section className="border-b border-white/10 bg-[#111111]" data-testid="home-shop" aria-labelledby="home-shop-title">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
           <div className="grid md:grid-cols-2 border border-[#D8CA82]/30 bg-[#141414] overflow-hidden group">
-            <div className="relative min-h-[280px] sm:min-h-[360px] bg-[#ededeb] overflow-hidden">
-              <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: "radial-gradient(#111 1px, transparent 1px)", backgroundSize: "22px 22px" }} aria-hidden="true" />
+            <div className="relative min-h-[360px] md:min-h-0 md:h-full bg-[#0c0c0c] overflow-hidden">
               <img
                 src="https://i.ibb.co/ZR8f8kCd/13.jpg"
                 alt={t("shop.imageAlt")}
-                width="1000"
-                height="1000"
+                width="1568"
+                height="1568"
                 loading="lazy"
                 decoding="async"
-                className="relative w-full h-full min-h-[280px] sm:min-h-[360px] object-contain p-4 group-hover:scale-[1.02] u-micro"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.02] u-micro"
               />
             </div>
             <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
