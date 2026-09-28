@@ -88,6 +88,7 @@ export default function Team() {
             <div>
               <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="team-title">{t("team.title")}</h1>
               <p className="text-[#f7f7f7]/50 mt-4 tracking-wide max-w-xl">{t("team.sub")}</p>
+              <Link to="/staff" className="inline-flex mt-5 border border-[#D8CA82]/40 text-[#D8CA82] px-4 py-2 text-xs uppercase tracking-widest hover:bg-[#D8CA82]/10">Découvrir le staff & l'encadrement →</Link>
             </div>
             <div className="flex flex-col items-end gap-2 self-end">
               <div className="flex items-center gap-2 border border-white/10 bg-[#141414] p-1">
@@ -232,6 +233,7 @@ export default function Team() {
                           </div>
                         </div>
                         {m.ingameRole && <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]/60 mt-1">{m.ingameRole}</p>}
+                        <div className="flex flex-wrap gap-1.5 mt-2">{m.availableForMatch && <span className="text-[10px] uppercase tracking-widest text-emerald-200 border border-emerald-300/30 bg-emerald-300/5 px-2 py-1">● Dispo match</span>}{m.recruitmentStatus && m.recruitmentStatus !== "closed" && <span className="text-[10px] uppercase tracking-widest text-[#D8CA82] border border-[#D8CA82]/30 px-2 py-1">Recrutement</span>}</div>
                         {m.bio && <p className="text-sm text-[#f7f7f7]/50 mt-3 line-clamp-2 whitespace-pre-wrap">{m.bio}</p>}
                         <div className="flex items-center gap-3 mt-4">
                           {["x", "twitch", "instagram", "youtube", "tiktok"].filter((k) => m.socials?.[k]).map((k) => (

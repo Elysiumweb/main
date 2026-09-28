@@ -18,6 +18,7 @@ import { getElysiumTeamName } from "../lib/constants";
 const PAGE_LINKS = [
   { path: "/", key: "nav.home" },
   { path: "/equipe", key: "nav.team" },
+  { path: "/staff", key: "team.status.staff" },
   { path: "/resultats", key: "nav.results" },
   { path: "/actus", key: "nav.news" },
   { path: "/medias", key: "nav.media" },
