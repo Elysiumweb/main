@@ -68,6 +68,11 @@ const TEMPLATES = {
     title: "Vous avez été mentionné sur le chat",
     intro: (n) => `${n.extra || "Un coéquipier"} vous a mentionné.`,
   },
+  comment_new: {
+    subject: (n) => `[Modération] Nouvelle réaction — ${n.extra || ""}`,
+    title: "Nouvelle réaction à modérer",
+    intro: (n) => `Une réaction vient d'être déposée sur « ${n.extra || "un article"} ». Approuvez-la ou refusez-la depuis l'espace admin.`,
+  },
   match_reminder: {
     subject: (n) => `[Match] Coup d'envoi imminent — ${n.extra || ""}`,
     title: "Match à venir",
@@ -317,6 +322,16 @@ exports.sendNewsletterDigest = onCall(
       actorUid: request.auth.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+    // Archive publique (SEO / nouveaux abonnés) : version assainie, sans
+    // données internes ni identité de l'expéditeur — lisible sur
+    // /newsletter/archives (collection en lecture publique dans les règles).
+    await db.collection("newsletterArchive").add({
+      subject,
+      body,
+      sent,
+      total: recipients.length,
+      sentAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
     results.filter((r) => r.status === "rejected").forEach((r) => logger.error("sendNewsletterDigest envoi échoué", r.reason));
     return { sent, failed, total: recipients.length };
   }
@@ -344,6 +359,7 @@ const purgeAccountData = async (uid, email = "") => {
     [db.collection("notes").where("ownerUid", "==", uid), true],
     [db.collection("supportThreads").where("uid", "==", uid), true],
     [db.collection("recruitThreads").where("uid", "==", uid), true],
+    [db.collection("articleComments").where("uid", "==", uid), false],
     [db.collectionGroup("messages").where("uid", "==", uid), false],
     [db.collectionGroup("rsvps").where("uid", "==", uid), false],
     [db.collection("roster").where("uid", "==", uid), false],

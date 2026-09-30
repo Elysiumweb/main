@@ -20,6 +20,7 @@ import { AdminOpponents } from "../components/admin/AdminOpponents";
 import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
+import { AdminComments } from "../components/admin/AdminComments";
 import { AdminAudit } from "../components/admin/AdminAudit";
 import { logAdminAction } from "../lib/notify";
 import {

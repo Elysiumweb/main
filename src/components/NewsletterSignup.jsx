@@ -217,6 +217,17 @@ export const NewsletterSignup = ({ compact = false }) => {
         <div className="mt-16 pt-8 border-t border-white/10">
           <UnsubscribeForm />
         </div>
+
+        {/* Archives publiques des digests envoyés */}
+        <div className="mt-8">
+          <Link
+            to="/newsletter/archives"
+            data-testid="newsletter-archives-link"
+            className="text-xs uppercase tracking-widest text-[#D8CA82]/80 hover:text-[#D8CA82] transition-colors"
+          >
+            {t("newsletter.archives.link")} →
+          </Link>
+        </div>
       </section>
     </div>
   );

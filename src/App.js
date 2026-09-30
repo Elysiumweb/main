@@ -130,6 +130,7 @@ function App() {
               <Route path="/soutenir" element={<Donate />} />
               <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />
+              <Route path="/newsletter/archives" element={<NewsletterArchives />} />
               <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
               <Route path="/connexion" element={<Login />} />
               <Route path="/profil" element={<Profile />} />

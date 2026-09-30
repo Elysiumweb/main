@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
@@ -9,7 +9,11 @@ import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY = { type: "photo", title: "", url: "", thumbnail: "", game: "EVA", playerTag: "", event: "" };
+const EMPTY = {
+  type: "photo", title: "", url: "", thumbnail: "", game: "EVA", playerTag: "", event: "",
+  // Album (LAN, shooting…), crédit photographe, légende et version HD.
+  album: "", credit: "", caption: "", hdUrl: "",
+};
 const isUrl = (s) => /^https?:\/\/.+/.test(s);
 
 export const AdminMedia = () => {
@@ -26,12 +30,28 @@ export const AdminMedia = () => {
     }, console.error);
   }, []);
 
+  // Suggestions d'albums existants (datalist) : cohérence des saisies.
+  const albumOptions = useMemo(
+    () => [...new Set(media.map((m) => m.album).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [media]
+  );
+
   const submit = async (e) => {
     e.preventDefault();
     if (!isUrl(form.url)) { toast.error(t("admin.match.invalidUrl")); return; }
     if (form.thumbnail && !isUrl(form.thumbnail)) { toast.error(t("admin.match.invalidUrl")); return; }
+    if (form.hdUrl && !isUrl(form.hdUrl)) { toast.error(t("admin.match.invalidUrl")); return; }
     try {
-      await addDoc(collection(db, "media"), { ...form, createdAt: serverTimestamp() });
+      const payload = {
+        ...form,
+        album: form.album.trim(),
+        credit: form.credit.trim(),
+        caption: form.caption.trim(),
+        // La version HD n'a de sens que pour une photo.
+        hdUrl: form.type === "photo" ? form.hdUrl.trim() : "",
+        createdAt: serverTimestamp(),
+      };
+      await addDoc(collection(db, "media"), payload);
       setForm(EMPTY);
       toast.success(t("common.saved"));
     } catch (err) { console.error(err); toast.error(t("common.error")); }
@@ -72,6 +92,37 @@ export const AdminMedia = () => {
           <input value={form.playerTag} onChange={set("playerTag")} placeholder={t("admin.media.playerPlaceholder")} className={inputCls} data-testid="admin-media-player" />
           <input value={form.event} onChange={set("event")} placeholder={t("admin.media.eventPlaceholder")} className={inputCls} data-testid="admin-media-event" />
         </div>
+
+        {/* Album : regroupement éditorial (LAN, shooting, événement…) */}
+        <div>
+          <input
+            list="admin-media-albums"
+            value={form.album}
+            onChange={set("album")}
+            placeholder={t("admin.media.albumPlaceholder")}
+            className={inputCls}
+            data-testid="admin-media-album"
+          />
+          <datalist id="admin-media-albums">
+            {albumOptions.map((a) => <option key={a} value={a} />)}
+          </datalist>
+        </div>
+
+        {/* Crédit photographe + légende */}
+        <input value={form.credit} onChange={set("credit")} placeholder={t("admin.media.creditPlaceholder")} className={inputCls} data-testid="admin-media-credit" />
+        <textarea
+          value={form.caption}
+          onChange={set("caption")}
+          placeholder={t("admin.media.captionPlaceholder")}
+          rows={2}
+          maxLength={300}
+          className={`${inputCls} resize-none`}
+          data-testid="admin-media-caption"
+        />
+        {form.type === "photo" && (
+          <input value={form.hdUrl} onChange={set("hdUrl")} placeholder={t("admin.media.hdPlaceholder")} className={inputCls} data-testid="admin-media-hd" />
+        )}
+
         <button type="submit" data-testid="admin-media-submit"
           className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
           {t("notes.save")}
@@ -84,7 +135,10 @@ export const AdminMedia = () => {
             <span className="text-xs uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-1.5 py-0.5">{t(`media.type.${m.type}`)}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
-              <p className="text-xs text-[#c8c8c8] truncate">{m.game}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}</p>
+              <p className="text-xs text-[#c8c8c8] truncate">
+                {m.game}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}{m.album ? ` · ${m.album}` : ""}
+                {m.credit ? ` · ${m.credit}` : ""}{m.hdUrl ? " · HD" : ""}
+              </p>
             </div>
             <ConfirmAction
               title={t("admin.media.deleteTitle")}

@@ -243,22 +243,38 @@ export const useMatchSEO = (match) => {
 };
 
 export const useArticleSEO = (article) => {
-  const title = article ? `${article.title} — Elysium Esport` : undefined;
-  const description = article?.excerpt || (article?.content ? article.content.replace(/\s+/g, " ").slice(0, 160) : undefined);
+  // Contenus localisés : en mode EN on sert la traduction si elle existe,
+  // sinon on retombe sur la version française (badge « non traduit » côté UI).
+  const { lang } = useLang() || {};
+  const hasEn = lang === "en" && Boolean(
+    String(article?.contentEn || "").trim() && String(article?.titleEn || "").trim()
+  );
+  const headline = article
+    ? (hasEn ? article.titleEn : article.title)
+    : undefined;
+  const rawDescription = article
+    ? ((hasEn && String(article.excerptEn || "").trim()) ? article.excerptEn : article.excerpt) ||
+      (hasEn ? article.contentEn : article.content) || ""
+    : "";
+  const title = headline ? `${headline} — Elysium Esport` : undefined;
+  const description = rawDescription ? rawDescription.replace(/\s+/g, " ").slice(0, 160) : undefined;
   const image = article?.coverUrl || undefined;
   const url = article ? `/actus/${article.id}` : undefined;
   const published = article?.publishedAt?.toDate?.()?.toISOString?.() || article?.createdAt?.toDate?.()?.toISOString?.() || article?.date;
   const modified = article?.updatedAt?.toDate?.()?.toISOString?.() || published;
+  const authorName = String(article?.author || "").trim();
   const jsonLd = article ? {
     "@context": "https://schema.org",
     "@type": "Article",
     "@id": `${SITE_URL}/actus/${article.id}#article`,
-    headline: article.title,
+    headline,
     description,
     image: absoluteUrl(image),
     datePublished: published,
     dateModified: modified,
-    author: { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: SITE_NAME },
+    author: authorName
+      ? { "@type": "Person", name: authorName, memberOf: { "@id": `${SITE_URL}/#organization` } }
+      : { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: SITE_NAME },
     publisher: { "@id": `${SITE_URL}/#organization` },
     mainEntityOfPage: `${SITE_URL}/actus/${article.id}`,
   } : undefined;
