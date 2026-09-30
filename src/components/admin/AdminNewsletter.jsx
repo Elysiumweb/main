@@ -148,6 +148,12 @@ export const AdminNewsletter = () => {
           className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
           {t("admin.newsletter.sendBtn")}
         </button>
+        <p className="text-xs text-[#f7f7f7]/40">
+          {t("admin.newsletter.archiveHint")}{" "}
+          <a href="/newsletter/archives" target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] hover:underline" data-testid="admin-newsletter-archives-link">
+            {t("newsletter.archives.link")} →
+          </a>
+        </p>
       </form>
 
       <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">

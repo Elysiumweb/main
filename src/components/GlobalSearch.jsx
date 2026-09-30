@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import {
@@ -52,8 +52,11 @@ export const GlobalSearch = () => {
       onSnapshot(collection(db, "matches"), (snap) => {
         setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {}),
-      onSnapshot(collection(db, "articles"), (snap) => {
-        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => a.status !== "deleted"));
+      // Requête filtrée sur `published` : la règle Firestore n'autorise la
+      // lecture que des articles publiés (les brouillons/planifiés feraient
+      // échouer toute la requête en liste non filtrée pour un visiteur).
+      onSnapshot(query(collection(db, "articles"), where("status", "==", "published")), (snap) => {
+        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {}),
     ];
     return () => unsubs.forEach((u) => u());
@@ -134,7 +137,9 @@ export const GlobalSearch = () => {
         {/* News */}
         <CommandGroup heading={t("search.news")}>
           {articles.map((a) => (
-            <CommandItem key={`article-${a.id}`} value={`${a.title || ""} ${a.content?.slice(0, 100) || ""}`}
+            <CommandItem
+              key={`article-${a.id}`}
+              value={`${a.title || ""} ${a.titleEn || ""} ${(Array.isArray(a.tags) ? a.tags : []).join(" ")} ${a.excerpt || ""} ${a.content?.slice(0, 100) || ""}`}
               onSelect={() => runCommand(() => navigate(`/actus/${a.id}`))}>
               <Newspaper size={14} className="mr-2 text-[#D8CA82]" />
               <span className="truncate">{a.title}</span>

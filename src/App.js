@@ -39,6 +39,7 @@ const Donate = lazy(() => import("@/pages/Donate"));
 const News = lazy(() => import("@/pages/News"));
 const ArticleDetail = lazy(() => import("@/pages/ArticleDetail"));
 const MediaGallery = lazy(() => import("@/pages/MediaGallery"));
+const NewsletterArchives = lazy(() => import("@/pages/NewsletterArchives"));
 const CommunityCalendar = lazy(() => import("@/pages/CommunityCalendar"));
 const Competitions = lazy(() => import("@/pages/Competitions"));
 const About = lazy(() => import("@/pages/About"));
@@ -130,6 +131,7 @@ function App() {
               <Route path="/soutenir" element={<Donate />} />
               <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />
+              <Route path="/newsletter/archives" element={<NewsletterArchives />} />
               <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
               <Route path="/connexion" element={<Login />} />
               <Route path="/profil" element={<Profile />} />

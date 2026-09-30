@@ -84,6 +84,59 @@ const isListBullet = (line) => /^\s*[-*+]\s+/.test(line);
 const isListOrdered = (line) => /^\s*\d+[.)]\s+/.test(line);
 const isHeading = (line) => /^#{1,6}\s+/.test(line);
 const isQuote = (line) => /^\s*>\s?/.test(line);
+const isFence = (line) => line.trim().startsWith("```");
+
+/* ---- ancres des titres (table des matières) ---- */
+/**
+ * Slug stable et lisible : minuscules, sans accents, séparateurs « - ».
+ * Ex : « Le bootcamp EVA — épisode 2 » → « le-bootcamp-eva-episode-2 ».
+ */
+export const slugify = (text) =>
+  String(text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/<[^>]*>/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "section";
+
+/**
+ * Extrait tous les titres d'une source Markdown, en respectant la même
+ * syntaxe que le rendu (les titres situés dans un bloc de code ou une
+ * citation sont ignorés). Les ids sont dédupliqués dans l'ordre du document
+ * pour correspondre exactement aux ancres posées par <Markdown/>.
+ *
+ * @param {string} source  contenu Markdown
+ * @param {object} options { minLevel = 2, maxLevel = 3 } niveaux du sommaire
+ * @returns {Array<{ level:number, text:string, id:string }>}
+ */
+export const extractHeadings = (source, { minLevel = 2, maxLevel = 3 } = {}) => {
+  const lines = String(source || "").split("\n");
+  const all = []; // tous les titres, pour une déduplication cohérente
+  let inFence = false;
+
+  lines.forEach((line) => {
+    if (isFence(line)) {
+      inFence = !inFence;
+      return;
+    }
+    if (inFence || isQuote(line) || !isHeading(line)) return;
+    const m = line.match(/^(#{1,6})\s+(.*)$/);
+    if (!m) return;
+    all.push({ level: m[1].length, text: m[2].trim() });
+  });
+
+  const used = new Map();
+  return all
+    .map((h) => {
+      const base = slugify(h.text);
+      const count = used.get(base) || 0;
+      used.set(base, count + 1);
+      return { ...h, id: count === 0 ? base : `${base}-${count + 1}` };
+    })
+    .filter((h) => h.level >= minLevel && h.level <= maxLevel);
+};
 
 const parseTable = (rows) => {
   const clean = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
@@ -96,6 +149,11 @@ const parseTable = (rows) => {
 
 export const Markdown = ({ source, className = "" }) => {
   const lines = String(source || "").split("\n");
+  // Ancres des titres : calculées une fois pour tout le document (déduplication
+  // dans l'ordre) puis consommées dans l'ordre de rendu — identiques aux ids
+  // renvoyés par extractHeadings() pour la table des matières.
+  const headingAnchors = extractHeadings(source, { minLevel: 1, maxLevel: 6 }).map((h) => h.id);
+  let headingIndex = 0;
   const blocks = [];
   let i = 0;
 
@@ -195,8 +253,9 @@ export const Markdown = ({ source, className = "" }) => {
               1: "text-2xl sm:text-3xl", 2: "text-xl sm:text-2xl", 3: "text-lg sm:text-xl",
               4: "text-base sm:text-lg", 5: "text-base", 6: "text-sm",
             };
+            const anchor = headingAnchors[headingIndex++];
             return (
-              <Tag key={key} className={`font-display font-bold text-[#f7f7f7] mt-8 mb-3 ${sizes[block.level] || "text-base"}`}>
+              <Tag key={key} id={anchor} className={`font-display font-bold text-[#f7f7f7] mt-8 mb-3 ${sizes[block.level] || "text-base"}`}>
                 {renderInline(block.text, key)}
               </Tag>
             );

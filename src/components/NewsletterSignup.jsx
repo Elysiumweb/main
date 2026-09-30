@@ -1,4 +1,5 @@
 import { useState, useId } from "react";
+import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
@@ -216,6 +217,17 @@ export const NewsletterSignup = ({ compact = false }) => {
         {/* Unsubscribe section */}
         <div className="mt-16 pt-8 border-t border-white/10">
           <UnsubscribeForm />
+        </div>
+
+        {/* Archives publiques des digests envoyés */}
+        <div className="mt-8">
+          <Link
+            to="/newsletter/archives"
+            data-testid="newsletter-archives-link"
+            className="text-xs uppercase tracking-widest text-[#D8CA82]/80 hover:text-[#D8CA82] transition-colors"
+          >
+            {t("newsletter.archives.link")} →
+          </Link>
         </div>
       </section>
     </div>

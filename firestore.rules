@@ -188,9 +188,26 @@ service cloud.firestore {
     }
 
     // ===== Actualités =====
+    // Les articles `scheduled` ne sont lisibles que par le bureau : le cron
+    // publishScheduledArticles (functions/articles.js) les bascule en
+    // `published` à la date `publishAt` prévue en admin.
     match /articles/{id} {
       allow read: if resource.data.status == 'published' || isBureau();
       allow create, update, delete: if isBureau();
+    }
+
+    // ===== Réactions / commentaires modérés sur les articles =====
+    // Écriture exclusivement via la callable submitArticleComment (validation
+    // serveur + quotas + CAPTCHA). Pré-modération : seuls les commentaires
+    // `approved` sont publics ; chacun voit les siens, le bureau voit tout et
+    // modère. Les requêtes clientes doivent filtrer sur status == 'approved'
+    // (ou uid == request.auth.uid) pour respecter les règles.
+    match /articleComments/{id} {
+      allow read: if resource.data.status == 'approved'
+        || isBureau()
+        || (isAuth() && resource.data.uid == request.auth.uid);
+      allow create: if false;
+      allow update, delete: if isBureau();
     }
 
     // ===== Médiathèque =====
