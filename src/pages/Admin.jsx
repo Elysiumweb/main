@@ -176,9 +176,9 @@ export default function Admin() {
     users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
     competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
-    newsletter: isBureau, audit: isBureau,
+    newsletter: isBureau, comments: isBureau, audit: isBureau,
   };
-  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "comments", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -880,6 +880,7 @@ export default function Admin() {
         {tab === "campaigns" && <AdminCampaigns />}
         {tab === "partners" && <AdminPartnerRequests />}
         {tab === "newsletter" && <AdminNewsletter />}
+        {tab === "comments" && <AdminComments />}
         {tab === "audit" && <AdminAudit />}
       </section>
 

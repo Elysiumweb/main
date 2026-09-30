@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Newspaper, ChevronDown, Star, Clock, Languages } from "lucide-react";
 import { db } from "../lib/firebase";

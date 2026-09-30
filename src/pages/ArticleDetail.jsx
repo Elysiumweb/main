@@ -186,7 +186,7 @@ export default function ArticleDetail() {
             {/* Réactions / commentaires modérés */}
             {article.status === "published" && (
               <div className="max-w-4xl mt-12">
-                <ArticleComments articleId={article.id} canModerate={isBureau} user={user} />
+                <ArticleComments articleId={article.id} canModerate={isBureau} />
               </div>
             )}
 

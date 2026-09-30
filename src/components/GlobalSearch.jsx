@@ -52,8 +52,11 @@ export const GlobalSearch = () => {
       onSnapshot(collection(db, "matches"), (snap) => {
         setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {}),
-      onSnapshot(collection(db, "articles"), (snap) => {
-        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => a.status !== "deleted"));
+      // Requête filtrée sur `published` : la règle Firestore n'autorise la
+      // lecture que des articles publiés (les brouillons/planifiés feraient
+      // échouer toute la requête en liste non filtrée pour un visiteur).
+      onSnapshot(query(collection(db, "articles"), where("status", "==", "published")), (snap) => {
+        setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {}),
     ];
     return () => unsubs.forEach((u) => u());

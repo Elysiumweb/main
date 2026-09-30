@@ -39,6 +39,7 @@ const Donate = lazy(() => import("@/pages/Donate"));
 const News = lazy(() => import("@/pages/News"));
 const ArticleDetail = lazy(() => import("@/pages/ArticleDetail"));
 const MediaGallery = lazy(() => import("@/pages/MediaGallery"));
+const NewsletterArchives = lazy(() => import("@/pages/NewsletterArchives"));
 const CommunityCalendar = lazy(() => import("@/pages/CommunityCalendar"));
 const Competitions = lazy(() => import("@/pages/Competitions"));
 const About = lazy(() => import("@/pages/About"));

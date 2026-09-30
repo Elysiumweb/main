@@ -1,4 +1,5 @@
 import { useState, useId } from "react";
+import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
