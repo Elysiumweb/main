@@ -275,7 +275,6 @@ export default function Partners() {
           <PageBreadcrumb items={[{ label: t("partners.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
-          <p className="text-sm text-[#c8c8c8]/70 mt-3 max-w-2xl">Offres de partenariat de l'association Elysium — Projet ElyWalk</p>
         </div>
       </section>
 
