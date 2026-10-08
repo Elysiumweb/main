@@ -43,7 +43,8 @@ const PartnerLogo = ({ src, name, className }) => {
   return <img src={src} alt={`Logo du partenaire : ${safeName}`} onError={() => setErr(true)} className={`${className} object-contain`} />;
 };
 
-// Données EXACTES issues de l'Annexe 3 pages 15-16 - Convention ElyWalk Révision 2
+// Données EXACTES issues de l'Annexe 3 pages 15-16 - Grille ElyWalk pour l'association Elysium
+// Textes confidentiels de la convention supprimés sur demande, on ne parle que des offres partenaire.
 const grille = {
   bronze: {
     label: "BRONZE",
@@ -130,7 +131,7 @@ const grille = {
     videosDetail: "sans limite de nombre, 60 s max, montage au Partenaire",
     futursProjets: true,
     futursDetail: "selon supports disponibles",
-    nombreAdmis: "Illimité, sous réserve de la restriction ou de la clôture de la catégorie (art. 12.3.3)",
+    nombreAdmis: "limité",
   },
 };
 
@@ -256,7 +257,6 @@ export default function Partners() {
       );
     }
     if (row.type === "boolDetailCustom") {
-      // Logo maillots : cas particulier Gold = texte
       if (tierKey === "gold") {
         return <span className="text-xs text-[#f7f7f7]/70 text-center">{g.maillotsDetail}</span>;
       }
@@ -275,6 +275,7 @@ export default function Partners() {
           <PageBreadcrumb items={[{ label: t("partners.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
+          <p className="text-sm text-[#c8c8c8]/70 mt-3 max-w-2xl">Offres de partenariat de l'association Elysium — Projet ElyWalk</p>
         </div>
       </section>
 
@@ -294,19 +295,10 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ANNEXE 3 - GRILLE COMMERCIALE ELYWALK - PAGE 15 */}
+      {/* OFFRES PARTENAIRE - GRILLE COMMERCIALE ELYWALK */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-offers">
-        <div className="border border-[#D8CA82]/20 bg-[#0c0c0c] p-4 mb-8">
-          <p className="text-[11px] font-display uppercase tracking-[0.3em] text-[#D8CA82]">CONVENTION DE PROJET · PROJET ELYWALK · GRILLE DE PARTENARIAT — RÉVISION 2 · CONFIDENTIEL</p>
-          <p className="text-[11px] text-[#a0a0a0] mt-1">ASSOCIATION ELYSIUM · RNA W772011943 — PAGE 15 / 16</p>
-          <h2 className="font-display font-black text-2xl uppercase text-[#f7f7f7] mt-4">ANNEXE 3 : GRILLE COMMERCIALE ET CONDITIONS DE VENTE</h2>
-          <p className="text-xs text-[#c8c8c8] mt-3 leading-relaxed max-w-4xl">
-            Ce document est destiné à être remis aux prospects. Il reprend la grille de l'article 5.2, l'article 5.3 et l'article 12. En cas de divergence avec la convention, la convention prévaut entre les Dirigeants ; le contrat signé avec le Partenaire prévaut entre l'association et le Partenaire.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4 mb-6">
-          <h3 className="font-display text-base tracking-[0.3em] uppercase text-[#D8CA82]">Grille tarifaire et prestations — Projet ElyWalk</h3>
+        <div className="flex items-center gap-4 mb-10">
+          <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t("partners.offers.title")}</h2>
           <div className="flex-1 h-px bg-white/10" />
         </div>
 
@@ -314,7 +306,7 @@ export default function Partners() {
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           {[
             { key: "bronze", color: "border-[#CD7F32]/30 bg-[#CD7F32]/5", text: "text-[#CD7F32]" },
-            { key: "argent", color: "border-[#C0C0C0]/30 bg-[#C0C0C0]/5", text: "text-[#C0C0C0]", popular: false },
+            { key: "argent", color: "border-[#C0C0C0]/30 bg-[#C0C0C0]/5", text: "text-[#C0C0C0]" },
             { key: "gold", color: "border-[#D8CA82]/50 bg-[#D8CA82]/5", text: "text-[#D8CA82]", popular: true },
           ].map(({ key, color, text, popular }) => {
             const g = grille[key];
@@ -339,10 +331,10 @@ export default function Partners() {
           })}
         </div>
 
-        {/* TABLEAU COMPLET - MODIFICATIONS DU CONTRAT */}
+        {/* TABLEAU DETAILLE */}
         <div className="border border-white/10 overflow-hidden">
           <div className="bg-[#1A1A1A] p-4 border-b border-white/10">
-            <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">MODIFICATIONS DU CONTRAT — Détail par palier</h4>
+            <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">Détail des offres par palier</h4>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -368,15 +360,9 @@ export default function Partners() {
           </div>
         </div>
 
-        {/* REGLE APPLICABLE */}
-        <div className="mt-8 border border-white/10 bg-[#1A1A1A] p-6">
-          <h4 className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-2">RÈGLE APPLICABLE</h4>
-          <p className="text-sm text-[#f7f7f7]/70">Avenant écrit signé des deux Dirigeants, sauf matières déléguées au Président.</p>
-        </div>
-
-        {/* CONDITIONS COMMUNES */}
+        {/* CONDITIONS COMMUNES - sans mention de convention confidentielle */}
         <div className="mt-8 border border-white/10 bg-[#0c0c0c] p-6" data-testid="partners-conditions">
-          <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7] mb-6">CONDITIONS COMMUNES APPLICABLES AUX TROIS PALIERS</h4>
+          <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7] mb-6">Conditions communes applicables aux trois paliers</h4>
           <ol className="space-y-4 text-sm text-[#c8c8c8] leading-relaxed list-decimal list-inside">
             <li>Tarifs mensuels hors taxes, sans garantie de volume d'impressions, de clics, de visiteurs ni de remplissage des offres.</li>
             <li>Règlement mensuel à terme à échoir ; option de règlement anticipé de la période d'engagement ou de douze (12) mois avec maintien du tarif souscrit jusqu'au terme.</li>
@@ -384,14 +370,12 @@ export default function Partners() {
             <li>Financement des offres : le Partenaire fixe la valeur unitaire de chaque tâche et la durée de son offre ; la répartition suit le niveau d'attractivité du palier (75/25, 50/50 ou 25/75) et la part Utilisateur est versée en ElyCoins au taux de 1 000 ElyCoins pour 1 €.</li>
             <li>Visuels, barèmes, contenus et vidéos fournis par le Partenaire, prêts à diffuser ; validation par Elysium, qui peut refuser sans motivation et décide seule des dates, fenêtres et durée de diffusion.</li>
             <li>Aucune exclusivité, sectorielle ni autre : l'association peut accueillir un nombre illimité de partenaires, y compris concurrents sur un même secteur. Une exclusivité ne peut résulter que d'un engagement écrit particulier.</li>
-            <li>Cartes cadeaux émises par un Partenaire : l'association lui reverse la valeur faciale de chaque carte retirée et n'exerce aucune activité de négoci ou de change ; les frais d'émission et de traitement restent à la charge du Partenaire (art. 12.6).</li>
+            <li>Cartes cadeaux émises par un Partenaire : l'association lui reverse la valeur faciale de chaque carte retirée et n'exerce aucune activité de négoci ou de change ; les frais d'émission et de traitement restent à la charge du Partenaire.</li>
             <li>Données des Utilisateurs : transmission uniquement avec le consentement explicite de l'Utilisateur ; aucune cession ni vente de fichier.</li>
             <li>Les offres, remises et paliers dérogatoires ne peuvent être consentis que par le Président ou son délégataire, par Écrit.</li>
             <li>La présence sur les futurs projets numériques est une opportunité de diffusion selon les supports et emplacements disponibles : elle n'est garantie ni sur un projet, ni sur un emplacement, ni sur un volume d'exposition.</li>
           </ol>
         </div>
-
-        <p className="text-[11px] text-[#a0a0a0] mt-6">CONVENTION DE PROJET · PROJET ELYWALK · GRILLE DE PARTENARIAT — RÉVISION 2 · CONFIDENTIEL — ASSOCIATION ELYSIUM · RNA W772011943 — PAGE 16 / 16</p>
       </section>
 
       {/* PARTNER LOGOS */}
