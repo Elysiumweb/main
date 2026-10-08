@@ -51,15 +51,21 @@ const isCaptchaRequired = (err) =>
 /**
  * Appelle une callable protégée ; rejoue automatiquement l'appel avec un jeton
  * reCAPTCHA si le serveur exige la vérification anti-robot adaptative.
+ * Nettoie le payload des valeurs undefined pour éviter les erreurs internes
+ * côté serveur (ex: candidature avec champ videos undefined).
  */
 export const callProtected = async (name, payload = {}) => {
+  const cleanPayload = {};
+  Object.entries(payload || {}).forEach(([k, v]) => {
+    if (v !== undefined) cleanPayload[k] = v;
+  });
   const callable = httpsCallable(functions, name);
   try {
-    return (await callable(payload)).data;
+    return (await callable(cleanPayload)).data;
   } catch (err) {
     if (isCaptchaRequired(err)) {
       const captchaToken = await getCaptchaToken(name);
-      if (captchaToken) return (await callable({ ...payload, captchaToken })).data;
+      if (captchaToken) return (await callable({ ...cleanPayload, captchaToken })).data;
     }
     throw err;
   }
@@ -80,5 +86,13 @@ export const protectedErrorMessage = (err, fallback = "Une erreur est survenue. 
   if (details.reason === "captcha-required") return lang === "en" ? "Anti-bot check failed. Try again later." : "Vérification anti-robot impossible. Réessayez plus tard.";
   if (code.endsWith("invalid-argument")) return err.message || fallback;
   if (code.endsWith("unauthenticated")) return lang === "en" ? "Sign-in required." : "Connexion requise.";
+  if (code.endsWith("permission-denied")) {
+    // Honeypot ou règle métier : ne pas exposer le détail, mais éviter le fallback générique
+    return err.message && !/rejetée/i.test(err.message) ? err.message : fallback;
+  }
+  if (code.endsWith("internal") || code.endsWith("unknown")) {
+    console.error("callProtected internal error", { code, message: err?.message, details });
+    return fallback;
+  }
   return fallback;
 };
