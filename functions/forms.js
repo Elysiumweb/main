@@ -150,8 +150,9 @@ exports.submitSupportTicket = onCall(
     });
 
     const userSnap = await db().collection("users").doc(uid).get();
-    const name = userSnap.exists ? userSnap.data().displayName || "" : "";
-    const email = request.auth.token?.email || (userSnap.exists ? userSnap.data().email || "" : "");
+    const userData = userSnap.exists ? (userSnap.data() || {}) : {};
+    const name = userData.displayName || "";
+    const email = request.auth.token?.email || userData.email || "";
 
     const meta = `[${CAT_LABELS[category]} · ${PRIO_LABELS[priority]}]\n${description}${attachment ? `\n📎 ${attachment}` : ""}`;
     const ref = await db().collection("supportThreads").add({
@@ -295,7 +296,12 @@ exports.submitRecruitApplication = onCall(
         logger.warn("submitRecruitApplication: aucun fournisseur email — consentement parental à vérifier manuellement.");
       }
     } else {
-      await notify({ targetRoles: ["manager", "bureau"], type: "recruit_new", extra: form.position, link: "/recrutement" });
+      try {
+        await notify({ targetRoles: ["manager", "bureau"], type: "recruit_new", extra: form.position, link: "/recrutement" });
+      } catch (notifyErr) {
+        const logger = require("firebase-functions/logger");
+        logger.error("submitRecruitApplication notify error", notifyErr);
+      }
     }
 
     return { ok: true, id: ref.id, parentalConsentRequired: isMinor, parentalEmailSent };

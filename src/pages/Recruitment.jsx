@@ -68,59 +68,72 @@ export default function Recruitment() {
 
   const submit = async (e) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    if (isHoneypotFilled(fd.get("website"))) return;
-    // Validation locale AVANT le quota : chaque appel au limiteur consomme un
-    // essai, donc un formulaire invalide ne doit jamais l'atteindre — sinon deux
-    // erreurs verrouillent tout envoi pendant 10 minutes.
-    const lenErr = (label, v, min, max) => {
-      const n = (v || "").trim().length;
-      if (n < min) return `${label} : ${min} ${t("form.minChars")}`;
-      if (n > max) return `${label} : ${max} ${t("form.maxChars")}`;
-      return null;
-    };
-    const fieldErr = [
-      lenErr(t("recruit.form.pseudo"), form.pseudo, 2, 60),
-      lenErr(t("recruit.form.position"), form.position, 2, 140),
-      lenErr(t("recruit.form.country"), form.country, 2, 120),
-      lenErr(t("recruit.form.experience"), form.experience, 10, 2000),
-      form.videos.trim() ? lenErr(t("recruit.form.videos"), form.videos, 0, 1000) : null,
-      lenErr(t("recruit.form.availability"), form.availability, 3, 1000),
-      lenErr(t("recruit.form.discord"), form.discord, 2, 80),
-    ].find(Boolean);
-    if (fieldErr) { toast.error(fieldErr); return; }
-    if (!form.ageRange) { toast.error(t("recruit.form.age")); return; }
-    if (!consent) { toast.error(t("recruit.consentRequired")); return; }
-    if (isMinor) {
-      if (!parent.parentName.trim() || !parent.parentEmail.trim()) {
-        toast.error("Renseignez le nom et l'email du titulaire de l'autorité parentale.");
-        return;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parent.parentEmail.trim())) {
-        toast.error("L'email du parent / tuteur est invalide.");
-        return;
-      }
-      if (!parentConsent) {
-        toast.error("L'accord explicite du titulaire de l'autorité parentale est requis.");
-        return;
-      }
-    }
-    // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
-    // est appliquée côté serveur par la Cloud Function.
-    const limit = checkSessionRateLimit("recruit_application", { max: 3, windowMs: 10 * 60 * 1000 });
-    if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
-    setSending(true);
     try {
-      const result = await callProtected("submitRecruitApplication", {
-        ...form,
+      const fd = new FormData(e.currentTarget);
+      if (isHoneypotFilled(fd.get("website"))) return;
+      // Validation locale AVANT le quota : chaque appel au limiteur consomme un
+      // essai, donc un formulaire invalide ne doit jamais l'atteindre — sinon deux
+      // erreurs verrouillent tout envoi pendant 10 minutes.
+      const lenErr = (label, v, min, max) => {
+        const n = (v || "").trim().length;
+        if (n < min) return `${label} : ${min} ${t("form.minChars")}`;
+        if (n > max) return `${label} : ${max} ${t("form.maxChars")}`;
+        return null;
+      };
+      const fieldErr = [
+        lenErr(t("recruit.form.pseudo"), form.pseudo, 2, 60),
+        lenErr(t("recruit.form.position"), form.position, 2, 140),
+        lenErr(t("recruit.form.country"), form.country, 2, 120),
+        lenErr(t("recruit.form.experience"), form.experience, 10, 2000),
+        (form.videos || "").trim() ? lenErr(t("recruit.form.videos"), form.videos, 0, 1000) : null,
+        lenErr(t("recruit.form.availability"), form.availability, 3, 1000),
+        lenErr(t("recruit.form.discord"), form.discord, 2, 80),
+      ].find(Boolean);
+      if (fieldErr) { toast.error(fieldErr); return; }
+      if (!form.ageRange) { toast.error(t("recruit.form.age")); return; }
+      if (!consent) { toast.error(t("recruit.consentRequired")); return; }
+      if (isMinor) {
+        const pName = (parent.parentName || "").trim();
+        const pEmail = (parent.parentEmail || "").trim();
+        if (!pName || !pEmail) {
+          toast.error("Renseignez le nom et l'email du titulaire de l'autorité parentale.");
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pEmail)) {
+          toast.error("L'email du parent / tuteur est invalide.");
+          return;
+        }
+        if (!parentConsent) {
+          toast.error("L'accord explicite du titulaire de l'autorité parentale est requis.");
+          return;
+        }
+      }
+      // Pré-filtre UX local ; la vraie limite (quota IP/compte + CAPTCHA adaptatif)
+      // est appliquée côté serveur par la Cloud Function.
+      const limit = checkSessionRateLimit("recruit_application", { max: 3, windowMs: 10 * 60 * 1000 });
+      if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
+      setSending(true);
+      // Payload explicite et trimmé pour éviter tout écart avec la validation serveur
+      // (évite l'envoi de champs vides non trimmés ou undefined qui causaient
+      // « Une erreur est survenue lors de l'envoi d'une candidature »).
+      const payload = {
+        pseudo: (form.pseudo || "").trim(),
+        position: (form.position || "").trim(),
+        ageRange: (form.ageRange || "").trim(),
+        country: (form.country || "").trim(),
+        experience: (form.experience || "").trim(),
+        videos: (form.videos || "").trim(),
+        availability: (form.availability || "").trim(),
+        discord: (form.discord || "").trim(),
         consent: true,
         ...(isMinor ? {
-          parentName: parent.parentName.trim(),
-          parentEmail: parent.parentEmail.trim(),
+          parentName: (parent.parentName || "").trim(),
+          parentEmail: (parent.parentEmail || "").trim(),
           parentConsent: true,
         } : {}),
-      });
-      trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMITTED, { position: form.position, ageRange: form.ageRange, country: form.country });
+      };
+      const result = await callProtected("submitRecruitApplication", payload);
+      trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMITTED, { position: payload.position, ageRange: payload.ageRange, country: payload.country });
       setForm(EMPTY_FORM); setConsent(false); setParent(EMPTY_PARENT); setParentConsent(false);
       applicationStartedRef.current = false;
       if (result?.parentalConsentRequired) {
@@ -134,10 +147,11 @@ export default function Recruitment() {
         toast.success(t("recruit.confirmation"));
       }
     } catch (err) {
-      console.error(err);
+      console.error("submitRecruitApplication error", err);
       toast.error(protectedErrorMessage(err, t("common.error")));
+    } finally {
+      setSending(false);
     }
-    setSending(false);
   };
 
   // min/max : miroir exact des bornes serveur (submitRecruitApplication).
@@ -298,7 +312,7 @@ export default function Recruitment() {
                 {canSeeRecruit ? t("recruit.allApps") : t("recruit.myApps")}
               </h2>
               <ThreadsPanel collectionName="recruitThreads" canSeeAll={canSeeRecruit} emptyKey="recruit.noApps" titleField="position" prefix="recruit"
-                statusOptions={["pending", "reviewing", "accepted", "rejected"]} canSetStatus={canSeeRecruit} />
+                statusOptions={["pending", "reviewing", "accepted", "rejected", "pending_parental_consent"]} canSetStatus={canSeeRecruit} />
             </>
           )}
         </div>

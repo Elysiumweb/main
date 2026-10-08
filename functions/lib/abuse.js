@@ -76,7 +76,8 @@ const recordHit = async ({ scope, key, windowMs, max }) => {
   const now = Date.now();
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
-    const hits = (snap.exists ? snap.data().hits || [] : []).filter(
+    const data = snap.exists ? (snap.data() || {}) : {};
+    const hits = (data.hits || []).filter(
       (ts) => Number.isFinite(ts) && now - ts < windowMs
     );
     if (hits.length >= max) {
@@ -104,7 +105,7 @@ const countRecentHits = async ({ scope, key, windowMs }) => {
   const snap = await ref.get();
   if (!snap.exists) return 0;
   const now = Date.now();
-  return (snap.data().hits || []).filter((ts) => Number.isFinite(ts) && now - ts < windowMs).length;
+  return ((snap.data() || {}).hits || []).filter((ts) => Number.isFinite(ts) && now - ts < windowMs).length;
 };
 
 /**
