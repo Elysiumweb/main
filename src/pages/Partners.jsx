@@ -6,11 +6,10 @@ import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMes
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart, Check, Star, Zap, Crown, Wrench, BarChart3, Megaphone } from "lucide-react";
+import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart, Check, X } from "lucide-react";
 import { DonateBlock } from "../components/DonateButton";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 
 const values = [
   { key: "compete", icon: Trophy },
@@ -44,12 +43,122 @@ const PartnerLogo = ({ src, name, className }) => {
   return <img src={src} alt={`Logo du partenaire : ${safeName}`} onError={() => setErr(true)} className={`${className} object-contain`} />;
 };
 
-const tierConfig = {
-  bronze: { icon: Star, color: "#CD7F32", bg: "bg-[#CD7F32]/5", border: "border-[#CD7F32]/30", text: "text-[#CD7F32]", badgeKey: "jersey", count: 5 },
-  silver: { icon: Zap, color: "#C0C0C0", bg: "bg-[#C0C0C0]/5", border: "border-[#C0C0C0]/30", text: "text-[#C0C0C0]", badgeKey: "stream", count: 6, popular: true },
-  gold: { icon: Crown, color: "#D8CA82", bg: "bg-[#D8CA82]/5", border: "border-[#D8CA82]/50", text: "text-[#D8CA82]", badgeKey: "jersey", count: 8 },
-  custom: { icon: Wrench, color: "#f7f7f7", bg: "bg-[#f7f7f7]/5", border: "border-white/20", text: "text-[#f7f7f7]", badgeKey: "event", count: 5 },
+// Données EXACTES issues de l'Annexe 3 pages 15-16 - Convention ElyWalk Révision 2
+const grille = {
+  bronze: {
+    label: "BRONZE",
+    tarifRef: "196 € HT",
+    tarif12: "196 € HT",
+    engagement: "Sans engagement",
+    renouvellement: "Mensuel",
+    resiliation: "1 mois avant l'échéance du mois",
+    offresActives: "1",
+    dureeOffre: "Au choix du Partenaire, sans maximum",
+    attractivite: "Faible",
+    part: "75 % / 25 %",
+    logoTwitch: false,
+    elyCoins: false,
+    affiches: false,
+    affichesDetail: "",
+    stand: false,
+    miseEnAvant: false,
+    invitations: false,
+    invitationsDetail: "",
+    maillots: false,
+    maillotsDetail: "—",
+    bandeElywalk: false,
+    bandeSite: false,
+    videos: false,
+    videosDetail: "—",
+    futursProjets: false,
+    futursDetail: "—",
+    nombreAdmis: "Illimité",
+  },
+  argent: {
+    label: "ARGENT",
+    tarifRef: "356 € HT",
+    tarif12: "356 € HT",
+    engagement: "3 mois minimum",
+    renouvellement: "Par périodes de 3 mois",
+    resiliation: "1 mois avant l'échéance de la période",
+    offresActives: "5",
+    dureeOffre: "Idem",
+    attractivite: "Normal",
+    part: "50 % / 50 %",
+    logoTwitch: true,
+    elyCoins: true,
+    affiches: true,
+    affichesDetail: "logo à chaque affiche",
+    stand: false,
+    miseEnAvant: false,
+    invitations: false,
+    invitationsDetail: "",
+    maillots: false,
+    maillotsDetail: "—",
+    bandeElywalk: false,
+    bandeSite: false,
+    videos: false,
+    videosDetail: "—",
+    futursProjets: false,
+    futursDetail: "—",
+    nombreAdmis: "Illimité",
+  },
+  gold: {
+    label: "GOLD",
+    tarifRef: "676 € HT",
+    tarif12: "676 € HT",
+    engagement: "6 mois minimum",
+    renouvellement: "Par périodes de 6 mois",
+    resiliation: "1 mois avant l'échéance de la période",
+    offresActives: "5",
+    dureeOffre: "Idem",
+    attractivite: "Élevé",
+    part: "25 % / 75 %",
+    logoTwitch: true,
+    elyCoins: true,
+    affiches: true,
+    affichesDetail: "logo à chaque affiche",
+    stand: true,
+    miseEnAvant: true,
+    invitations: true,
+    invitationsDetail: "sans limite de nombre",
+    maillots: false,
+    maillotsDetail: "Non prévues (accord gracieux possible)",
+    bandeElywalk: true,
+    bandeSite: true,
+    videos: true,
+    videosDetail: "sans limite de nombre, 60 s max, montage au Partenaire",
+    futursProjets: true,
+    futursDetail: "selon supports disponibles",
+    nombreAdmis: "Illimité, sous réserve de la restriction ou de la clôture de la catégorie (art. 12.3.3)",
+  },
 };
+
+const rows = [
+  { key: "ficheSite", label: "Fiche partenaire : site Elysium", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
+  { key: "ficheMap", label: "Fiche partenaire : map ElyWalk", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
+  { key: "offresActives", label: "Offres simultanément actives dans Elywalk", type: "text" },
+  { key: "dureeOffre", label: "Durée de chaque offre", type: "text" },
+  { key: "tarifRef", label: "Tarif mensuel de référence", type: "price" },
+  { key: "tarif12", label: "Tarif mensuel pour un engagement de 12 mois", type: "price" },
+  { key: "engagement", label: "Engagement", type: "text" },
+  { key: "renouvellement", label: "Renouvellement", type: "text" },
+  { key: "resiliation", label: "Résiliation", type: "text" },
+  { key: "attractivite", label: "Niveau d'attractivité des offres", type: "text" },
+  { key: "part", label: "Part d'Elysium / part de l'Utilisateur", type: "text" },
+  { key: "logoTwitch", label: "Logo sur les streams Twitch", type: "bool" },
+  { key: "elyCoins", label: "Retrait des ElyCoins en cartes cadeaux ou de réduction", type: "bool" },
+  { key: "affiches", label: "Présence sur les affiches de communication", type: "boolDetail" },
+  { key: "stand", label: "Stand autorisé à chaque évènement", type: "bool" },
+  { key: "miseEnAvant", label: "Mise en avant du partenaire en évènement", type: "bool" },
+  { key: "invitations", label: "Invitations ou places en évènement", type: "boolDetail" },
+  { key: "maillots", label: "Logo sur les maillots", type: "boolDetailCustom" },
+  { key: "bandeElywalk", label: "Bande publicitaire : Elywalk", type: "bool" },
+  { key: "bandeSite", label: "Bande publicitaire : site Elysium", type: "bool" },
+  { key: "videos", label: "Vidéos publicitaires dans Elywalk", type: "boolDetail" },
+  { key: "futursProjets", label: "Présence sur les futurs projets numériques", type: "boolDetail" },
+  { key: "nombreAdmis", label: "Nombre de partenaires admis", type: "textLong" },
+];
 
 export default function Partners() {
   const { t } = useLang();
@@ -76,17 +185,14 @@ export default function Partners() {
   })).filter((g) => g.list.length > 0) : [];
 
   const scrollToContact = (tierKey) => {
-    const tierLabel = t(`partners.tiers.${tierKey}`);
-    const price = t(`partners.offers.${tierKey}.price`);
+    const mapTier = { bronze: "bronze", argent: "argent", gold: "gold" };
+    const g = grille[mapTier[tierKey] || tierKey];
+    if (!g) return;
     setPrefilled({
-      budget: tierKey === "custom" ? "" : `${tierLabel} — ${price} ${t("partners.offers.period")}`,
-      message: tierKey === "custom"
-        ? `Bonjour Elysium,\n\nNous souhaitons discuter d'un partenariat sur-mesure (activation terrain, tournoi à notre nom, contenu).\nObjectifs : \nBudget envisagé : \n\nMerci !`
-        : `Bonjour Elysium,\n\nNous sommes intéressés par le pack ${tierLabel} (${price} ${t("partners.offers.period")}).\n\nPrésentation de notre entreprise : \nObjectifs du partenariat : \n\nÀ très vite,`,
+      budget: `${g.label} — ${g.tarifRef} / mois`,
+      message: `Bonjour Elysium,\n\nNous sommes intéressés par le palier ${g.label} (${g.tarifRef} / mois, engagement ${g.engagement}).\n\nPrésentation entreprise : \nObjectifs : \n\nMerci de nous transmettre le contrat type et la fiche partenaire.\n`,
     });
-    setTimeout(() => {
-      contactSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
+    setTimeout(() => contactSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const handleSubmit = async (e) => {
@@ -107,13 +213,7 @@ export default function Partners() {
     const limit = checkSessionRateLimit("partner_request", { max: 2, windowMs: 10 * 60 * 1000 });
     if (!limit.allowed) { toast.error(rateLimitMessage(limit.retryAt)); return; }
     try {
-      await callProtected("submitPartnerRequest", {
-        name: pName,
-        company: pCompany,
-        email: pEmail,
-        budget: pBudget,
-        message: pMessage,
-      });
+      await callProtected("submitPartnerRequest", { name: pName, company: pCompany, email: pEmail, budget: pBudget, message: pMessage });
       toast.success(t("partners.contact.success"));
       e.target.reset();
       setPrefilled({ budget: "", message: "" });
@@ -123,7 +223,48 @@ export default function Partners() {
     }
   };
 
-  const offerKeys = ["bronze", "silver", "gold", "custom"];
+  const renderCell = (tierKey, row) => {
+    const g = grille[tierKey];
+    if (row.type === "text" || row.type === "textLong" || row.type === "price") {
+      if (row.key === "offresActives") return g.offresActives;
+      if (row.key === "dureeOffre") return g.dureeOffre;
+      if (row.key === "tarifRef") return g.tarifRef;
+      if (row.key === "tarif12") return g.tarif12;
+      if (row.key === "engagement") return g.engagement;
+      if (row.key === "renouvellement") return g.renouvellement;
+      if (row.key === "resiliation") return g.resiliation;
+      if (row.key === "attractivite") return g.attractivite;
+      if (row.key === "part") return g.part;
+      if (row.key === "nombreAdmis") return g.nombreAdmis;
+      if (row.key === "ficheSite" || row.key === "ficheMap") return "✓";
+      return "—";
+    }
+    if (row.type === "bool") {
+      const val = g[row.key];
+      return val ? <Check size={16} className="text-emerald-400 mx-auto" /> : <X size={14} className="text-[#a0a0a0] mx-auto" />;
+    }
+    if (row.type === "boolDetail") {
+      const val = g[row.key];
+      const detailKey = row.key + "Detail";
+      const detail = g[detailKey];
+      if (!val) return <X size={14} className="text-[#a0a0a0] mx-auto" />;
+      return (
+        <span className="inline-flex flex-col items-center">
+          <Check size={16} className="text-emerald-400" />
+          {detail && <span className="text-[11px] text-[#c8c8c8] mt-1 text-center leading-tight">{detail}</span>}
+        </span>
+      );
+    }
+    if (row.type === "boolDetailCustom") {
+      // Logo maillots : cas particulier Gold = texte
+      if (tierKey === "gold") {
+        return <span className="text-xs text-[#f7f7f7]/70 text-center">{g.maillotsDetail}</span>;
+      }
+      const val = g[row.key];
+      return val ? <Check size={16} className="text-emerald-400 mx-auto" /> : <span className="text-[#a0a0a0]">—</span>;
+    }
+    return "—";
+  };
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
@@ -134,7 +275,6 @@ export default function Partners() {
           <PageBreadcrumb items={[{ label: t("partners.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
           <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
-          <p className="text-sm text-[#D8CA82]/80 mt-3 max-w-2xl">{t("partners.offers.sub")}</p>
         </div>
       </section>
 
@@ -154,153 +294,104 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* AUDIENCE / WHY */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 border-b border-white/10" data-testid="partners-audience">
-        <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-10">{t("partners.offers.audience.title")}</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="border border-white/10 bg-[#1A1A1A] p-6">
-            <BarChart3 className="text-[#D8CA82] mb-4" size={22} />
-            <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t("partners.offers.audience.reach")}</h3>
-            <p className="text-sm text-[#f7f7f7]/60 leading-relaxed">{t("partners.offers.audience.reach.desc")}</p>
-          </div>
-          <div className="border border-white/10 bg-[#1A1A1A] p-6">
-            <Megaphone className="text-[#D8CA82] mb-4" size={22} />
-            <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t("partners.offers.audience.engagement")}</h3>
-            <p className="text-sm text-[#f7f7f7]/60 leading-relaxed">{t("partners.offers.audience.engagement.desc")}</p>
-          </div>
-          <div className="border border-white/10 bg-[#1A1A1A] p-6">
-            <Shield className="text-[#D8CA82] mb-4" size={22} />
-            <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t("partners.offers.audience.values")}</h3>
-            <p className="text-sm text-[#f7f7f7]/60 leading-relaxed">{t("partners.offers.audience.values.desc")}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* OFFERS DETAILED - Annexe 3 p15-16 */}
+      {/* ANNEXE 3 - GRILLE COMMERCIALE ELYWALK - PAGE 15 */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-offers">
-        <div className="flex items-center gap-4 mb-4">
-          <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t("partners.offers.title")}</h2>
+        <div className="border border-[#D8CA82]/20 bg-[#0c0c0c] p-4 mb-8">
+          <p className="text-[11px] font-display uppercase tracking-[0.3em] text-[#D8CA82]">CONVENTION DE PROJET · PROJET ELYWALK · GRILLE DE PARTENARIAT — RÉVISION 2 · CONFIDENTIEL</p>
+          <p className="text-[11px] text-[#a0a0a0] mt-1">ASSOCIATION ELYSIUM · RNA W772011943 — PAGE 15 / 16</p>
+          <h2 className="font-display font-black text-2xl uppercase text-[#f7f7f7] mt-4">ANNEXE 3 : GRILLE COMMERCIALE ET CONDITIONS DE VENTE</h2>
+          <p className="text-xs text-[#c8c8c8] mt-3 leading-relaxed max-w-4xl">
+            Ce document est destiné à être remis aux prospects. Il reprend la grille de l'article 5.2, l'article 5.3 et l'article 12. En cas de divergence avec la convention, la convention prévaut entre les Dirigeants ; le contrat signé avec le Partenaire prévaut entre l'association et le Partenaire.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4 mb-6">
+          <h3 className="font-display text-base tracking-[0.3em] uppercase text-[#D8CA82]">Grille tarifaire et prestations — Projet ElyWalk</h3>
           <div className="flex-1 h-px bg-white/10" />
         </div>
-        <p className="text-sm text-[#c8c8c8] mb-10 max-w-3xl">{t("partners.offers.commitment")}</p>
 
-        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6">
-          {offerKeys.map((tier) => {
-            const cfg = tierConfig[tier];
-            const Icon = cfg.icon;
-            const isPopular = cfg.popular;
-            const benefitsCount = cfg.count;
-            const benefits = Array.from({ length: benefitsCount }, (_, i) => t(`partners.offers.benefits.${tier}.${i + 1}`));
+        {/* CARTES TARIFS */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          {[
+            { key: "bronze", color: "border-[#CD7F32]/30 bg-[#CD7F32]/5", text: "text-[#CD7F32]" },
+            { key: "argent", color: "border-[#C0C0C0]/30 bg-[#C0C0C0]/5", text: "text-[#C0C0C0]", popular: false },
+            { key: "gold", color: "border-[#D8CA82]/50 bg-[#D8CA82]/5", text: "text-[#D8CA82]", popular: true },
+          ].map(({ key, color, text, popular }) => {
+            const g = grille[key];
             return (
-              <div key={tier} className={`relative border ${cfg.border} ${cfg.bg} p-6 flex flex-col ${isPopular ? "ring-1 ring-[#D8CA82]/30" : ""}`} data-testid={`partners-offer-${tier}`}>
-                {isPopular && (
-                  <div className="absolute -top-3 left-6 bg-[#D8CA82] text-[#111111] text-[10px] font-display font-bold uppercase tracking-[0.2em] px-3 py-1">
-                    {t("partners.offers.popular")}
-                  </div>
-                )}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 border ${cfg.border} bg-[#0c0c0c] flex items-center justify-center`}>
-                    <Icon className={cfg.text} size={18} />
-                  </div>
-                  <div>
-                    <p className={`font-display font-black text-xl uppercase ${cfg.text}`}>{t(`partners.tiers.${tier}`)}</p>
-                    <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">{t(`partners.offers.badge.${cfg.badgeKey}`)}</p>
-                  </div>
+              <div key={key} className={`relative border ${color} p-6 flex flex-col`} data-testid={`partners-offer-${key}`}>
+                {popular && <div className="absolute -top-3 left-6 bg-[#D8CA82] text-[#111111] text-[10px] font-display font-bold uppercase tracking-[0.2em] px-3 py-1">Recommandé</div>}
+                <p className={`font-display font-black text-2xl uppercase mb-2 ${text}`}>{g.label}</p>
+                <div className="space-y-1 mb-4 text-sm">
+                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Référence :</span> <span className="font-bold">{g.tarifRef}</span> / mois</p>
+                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">12 mois :</span> <span className="font-bold">{g.tarif12}</span> / mois</p>
+                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Engagement :</span> {g.engagement}</p>
+                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Renouvellement :</span> {g.renouvellement}</p>
+                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Résiliation :</span> {g.resiliation}</p>
                 </div>
-
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display font-black text-3xl text-[#f7f7f7]">{t(`partners.offers.${tier}.price`)}</span>
-                    {tier !== "custom" && <span className="text-xs text-[#c8c8c8] uppercase tracking-widest">{t("partners.offers.period")}</span>}
-                  </div>
-                  <p className="text-sm text-[#f7f7f7]/60 mt-3 leading-relaxed min-h-[60px]">{t(`partners.offers.${tier}.long`)}</p>
+                <div className="border-t border-white/10 pt-4 mt-auto">
+                  <Button onClick={() => scrollToContact(key)} variant={key === "gold" ? "gold" : "outline"} size="md" className={`w-full ${key !== "gold" ? "border-white/20 text-[#f7f7f7] hover:border-[#D8CA82] hover:text-[#D8CA82]" : ""}`} data-testid={`partners-offer-cta-${key}`}>
+                    Choisir {g.label}
+                  </Button>
                 </div>
-
-                <div className="border-t border-white/10 pt-4 mb-6 flex-1">
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-3">{t("partners.offers.benefits")}</p>
-                  <ul className="space-y-2.5">
-                    {benefits.map((b, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5 text-sm text-[#f7f7f7]/80">
-                        <Check size={14} className={`${cfg.text} mt-0.5 shrink-0`} />
-                        <span className="leading-snug">{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <Button
-                  onClick={() => scrollToContact(tier)}
-                  variant={tier === "gold" ? "gold" : "outline"}
-                  size="md"
-                  className={`w-full mt-auto ${tier === "gold" ? "" : "border-white/20 text-[#f7f7f7] hover:border-[#D8CA82] hover:text-[#D8CA82]"}`}
-                  data-testid={`partners-offer-cta-${tier}`}
-                >
-                  {tier === "custom" ? t("partners.offers.cta.custom") : t("partners.offers.cta")}
-                </Button>
               </div>
             );
           })}
         </div>
 
-        <p className="text-xs text-[#a0a0a0] mt-8 border border-white/10 bg-[#0c0c0c] p-4">{t("partners.offers.legal")}</p>
-      </section>
-
-      {/* COMPARISON TABLE */}
-      <section className="border-t border-white/10 bg-[#0c0c0c]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-comparison">
-          <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-10">{t("partners.offers.comparison.title")}</h2>
-          <div className="overflow-x-auto border border-white/10">
+        {/* TABLEAU COMPLET - MODIFICATIONS DU CONTRAT */}
+        <div className="border border-white/10 overflow-hidden">
+          <div className="bg-[#1A1A1A] p-4 border-b border-white/10">
+            <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">MODIFICATIONS DU CONTRAT — Détail par palier</h4>
+          </div>
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#1A1A1A] border-b border-white/10">
-                  <th className="text-left p-4 font-display uppercase tracking-widest text-xs text-[#c8c8c8]">{t("partners.offers.comparison.col.feature")}</th>
-                  <th className="text-center p-4 font-display uppercase tracking-widest text-xs text-[#CD7F32]">{t("partners.tiers.bronze")}</th>
-                  <th className="text-center p-4 font-display uppercase tracking-widest text-xs text-[#C0C0C0]">{t("partners.tiers.silver")}</th>
-                  <th className="text-center p-4 font-display uppercase tracking-widest text-xs text-[#D8CA82]">{t("partners.tiers.gold")}</th>
-                  <th className="text-center p-4 font-display uppercase tracking-widest text-xs text-[#f7f7f7]">{t("partners.tiers.custom")}</th>
+                <tr className="bg-[#0c0c0c] border-b border-white/10">
+                  <th className="text-left p-3 font-display uppercase tracking-widest text-[11px] text-[#c8c8c8] min-w-[280px]">Prestation / Condition</th>
+                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#CD7F32] min-w-[160px]">BRONZE<br /><span className="text-[10px] normal-case tracking-normal text-[#a0a0a0]">196€ HT/mois</span></th>
+                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#C0C0C0] min-w-[160px]">ARGENT<br /><span className="text-[10px] normal-case tracking-normal text-[#a0a0a0]">356€ HT/mois</span></th>
+                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#D8CA82] min-w-[220px]">GOLD<br /><span className="text-[10px] normal-case tracking-normal text-[#a0a0a0]">676€ HT/mois</span></th>
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { key: "logoSite", bronze: true, silver: true, gold: true, custom: true },
-                  { key: "logoStream", bronze: false, silver: true, gold: true, custom: true },
-                  { key: "logoJersey", bronze: false, silver: false, gold: true, custom: false },
-                  { key: "socialPosts", bronze: "1", silver: "2", gold: "4", custom: "—" },
-                  { key: "newsletter", bronze: true, silver: true, gold: true, custom: false },
-                  { key: "eventAccess", bronze: false, silver: "2", gold: "2", custom: "sur mesure" },
-                  { key: "content", bronze: false, silver: false, gold: true, custom: true },
-                  { key: "report", bronze: false, silver: false, gold: true, custom: false },
-                  { key: "naming", bronze: false, silver: false, gold: true, custom: true },
-                ].map((row) => (
-                  <tr key={row.key} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="p-4 text-[#f7f7f7]/80">{t(`partners.offers.comparison.row.${row.key}`)}</td>
-                    <td className="p-4 text-center text-[#f7f7f7]/60">{typeof row.bronze === "boolean" ? (row.bronze ? <Check size={16} className="text-[#CD7F32] mx-auto" /> : <span className="text-[#a0a0a0]">—</span>) : row.bronze}</td>
-                    <td className="p-4 text-center text-[#f7f7f7]/60">{typeof row.silver === "boolean" ? (row.silver ? <Check size={16} className="text-[#C0C0C0] mx-auto" /> : <span className="text-[#a0a0a0]">—</span>) : row.silver}</td>
-                    <td className="p-4 text-center text-[#f7f7f7]/60">{typeof row.gold === "boolean" ? (row.gold ? <Check size={16} className="text-[#D8CA82] mx-auto" /> : <span className="text-[#a0a0a0]">—</span>) : row.gold}</td>
-                    <td className="p-4 text-center text-[#f7f7f7]/60">{typeof row.custom === "boolean" ? (row.custom ? <Check size={16} className="text-[#f7f7f7] mx-auto" /> : <span className="text-[#a0a0a0]">—</span>) : row.custom}</td>
+                {rows.map((row, idx) => (
+                  <tr key={row.key} className={`${idx % 2 === 0 ? "bg-[#111111]" : "bg-[#1A1A1A]/50"} border-b border-white/5`}>
+                    <td className="p-3 text-[#f7f7f7]/80 font-medium">{row.label}</td>
+                    <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("bronze", row)}</td>
+                    <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("argent", row)}</td>
+                    <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("gold", row)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      </section>
 
-      {/* FAQ */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-faq">
-        <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-10">{t("partners.offers.faq.title")}</h2>
-        <Accordion type="single" collapsible className="w-full">
-          {[1, 2, 3, 4].map((n) => (
-            <AccordionItem key={n} value={`faq-${n}`} className="border-white/10" data-testid={`partners-faq-${n}`}>
-              <AccordionTrigger className="text-left text-[#f7f7f7] hover:text-[#D8CA82] hover:no-underline">
-                {t(`partners.offers.faq.q${n}`)}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm text-[#c8c8c8] leading-relaxed">
-                {t(`partners.offers.faq.a${n}`)}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        {/* REGLE APPLICABLE */}
+        <div className="mt-8 border border-white/10 bg-[#1A1A1A] p-6">
+          <h4 className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-2">RÈGLE APPLICABLE</h4>
+          <p className="text-sm text-[#f7f7f7]/70">Avenant écrit signé des deux Dirigeants, sauf matières déléguées au Président.</p>
+        </div>
+
+        {/* CONDITIONS COMMUNES */}
+        <div className="mt-8 border border-white/10 bg-[#0c0c0c] p-6" data-testid="partners-conditions">
+          <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7] mb-6">CONDITIONS COMMUNES APPLICABLES AUX TROIS PALIERS</h4>
+          <ol className="space-y-4 text-sm text-[#c8c8c8] leading-relaxed list-decimal list-inside">
+            <li>Tarifs mensuels hors taxes, sans garantie de volume d'impressions, de clics, de visiteurs ni de remplissage des offres.</li>
+            <li>Règlement mensuel à terme à échoir ; option de règlement anticipé de la période d'engagement ou de douze (12) mois avec maintien du tarif souscrit jusqu'au terme.</li>
+            <li>Révision tarifaire à la reconduction selon la grille en vigueur, notifiée trois (3) mois avant le terme.</li>
+            <li>Financement des offres : le Partenaire fixe la valeur unitaire de chaque tâche et la durée de son offre ; la répartition suit le niveau d'attractivité du palier (75/25, 50/50 ou 25/75) et la part Utilisateur est versée en ElyCoins au taux de 1 000 ElyCoins pour 1 €.</li>
+            <li>Visuels, barèmes, contenus et vidéos fournis par le Partenaire, prêts à diffuser ; validation par Elysium, qui peut refuser sans motivation et décide seule des dates, fenêtres et durée de diffusion.</li>
+            <li>Aucune exclusivité, sectorielle ni autre : l'association peut accueillir un nombre illimité de partenaires, y compris concurrents sur un même secteur. Une exclusivité ne peut résulter que d'un engagement écrit particulier.</li>
+            <li>Cartes cadeaux émises par un Partenaire : l'association lui reverse la valeur faciale de chaque carte retirée et n'exerce aucune activité de négoci ou de change ; les frais d'émission et de traitement restent à la charge du Partenaire (art. 12.6).</li>
+            <li>Données des Utilisateurs : transmission uniquement avec le consentement explicite de l'Utilisateur ; aucune cession ni vente de fichier.</li>
+            <li>Les offres, remises et paliers dérogatoires ne peuvent être consentis que par le Président ou son délégataire, par Écrit.</li>
+            <li>La présence sur les futurs projets numériques est une opportunité de diffusion selon les supports et emplacements disponibles : elle n'est garantie ni sur un projet, ni sur un emplacement, ni sur un volume d'exposition.</li>
+          </ol>
+        </div>
+
+        <p className="text-[11px] text-[#a0a0a0] mt-6">CONVENTION DE PROJET · PROJET ELYWALK · GRILLE DE PARTENARIAT — RÉVISION 2 · CONFIDENTIEL — ASSOCIATION ELYSIUM · RNA W772011943 — PAGE 16 / 16</p>
       </section>
 
       {/* PARTNER LOGOS */}
@@ -339,7 +430,7 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* DON — PARTICULIERS */}
+      {/* DON */}
       <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="partners-donate-h2">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-donate">
           <div className="flex items-center gap-4 mb-10">
