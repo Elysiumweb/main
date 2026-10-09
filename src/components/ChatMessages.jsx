@@ -3,7 +3,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, limit, o
 import { Send, ImageIcon, Pencil, Trash2, X, Check, AtSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "../lib/firebase";
-import { compressImage, uploadBlob, uploadErrorKey } from "../lib/imageUpload";
+import { prepareImage, uploadBlob, uploadErrorKey } from "../lib/imageUpload";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { createNotification, logAdminAction } from "../lib/notify";
@@ -125,11 +125,16 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
     if (!file) return;
     if (!file.type.startsWith("image/")) { toast.error(t("upload.invalidType")); return; }
     try {
-      const blob = await compressImage(file);
+      // Même préparation que l'admin : l'image est recompressée tant qu'elle
+      // dépasse le budget Firestore, sinon l'envoi serait refusé.
+      const blob = await prepareImage(file, 1280);
       const reader = new FileReader();
       reader.onload = () => setPendingImage(reader.result);
       reader.readAsDataURL(blob);
-    } catch (err) { console.error(err); toast.error(t("upload.error")); }
+    } catch (err) {
+      console.error(err);
+      toast.error(t(uploadErrorKey(err)));
+    }
   };
 
   const uploadImage = async () => {
