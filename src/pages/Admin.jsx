@@ -12,6 +12,8 @@ import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRosters } from "../components/admin/AdminRosters";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
+import { AdminHelp } from "../components/admin/AdminHelp";
+import { AdminTryouts } from "../components/admin/AdminTryouts";
 import { AdminArticles } from "../components/admin/AdminArticles";
 import { AdminMedia } from "../components/admin/AdminMedia";
 import { AdminEvents } from "../components/admin/AdminEvents";
@@ -175,9 +177,9 @@ export default function Admin() {
     users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
     competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
-    newsletter: isBureau, audit: isBureau,
+    newsletter: isBureau, audit: isBureau, help: isBureau, tryouts: isStaff,
   };
-  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "tryouts", "help", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -871,6 +873,8 @@ export default function Admin() {
         {tab === "rosters" && <AdminRosters />}
         {tab === "roster" && <AdminRoster />}
         {tab === "positions" && <AdminPositions />}
+        {tab === "tryouts" && <AdminTryouts />}
+        {tab === "help" && <AdminHelp />}
         {tab === "articles" && <AdminArticles />}
         {tab === "media" && <AdminMedia />}
         {tab === "events" && <AdminEvents />}

@@ -15,8 +15,11 @@ appliquent la défense en profondeur côté serveur :
 | `submitPartnerRequest`          | Demande de partenariat              | non          |
 | `subscribeNewsletter`           | Inscription newsletter              | non          |
 | `requestNewsletterUnsubscribe`  | Désinscription newsletter           | non          |
-| `submitSupportTicket`           | Ticket support                      | oui          |
-| `submitRecruitApplication`      | Candidature (+ consentement parental) | oui        |
+| `submitSupportTicket`           | Ticket support (compte)             | oui          |
+| `submitSupportTicketGuest`      | Ticket support **sans compte**      | non          |
+| `getGuestSupportTicket`         | Suivi d'un ticket invité (jeton)   | non          |
+| `submitRecruitApplication`      | Candidature (poste ou spontanée) + consentement parental | oui |
+| `bookTryoutSlot`                | Réservation d'un créneau d'essai    | oui          |
 | `rsvpCommunityEvent`            | RSVP calendrier communautaire       | non          |
 
 Chaque callable applique (voir `lib/abuse.js` et `lib/validate.js`) :
@@ -41,6 +44,35 @@ par son uid, un visiteur anonyme reçoit un **jeton secret** (seul le hash est
 stocké dans `communityEvents/{id}/rsvps/{participantId}`). Chacun ne peut donc
 ajouter/retirer **que sa propre participation** — l'ancien remplacement complet
 du tableau `participants` par le client est fermé dans les règles.
+
+## Support sans compte (ticket invité)
+
+Un visiteur qui ne peut pas se connecter — cas le plus fréquent sur la page
+Support — peut désormais écrire sans compte via `submitSupportTicketGuest` :
+
+- quotas par IP plus serrés que le ticket connecté (3/h, captcha dès le 2ᵉ) ;
+- ticket créé avec `uid: null` (donc **invisible des règles Firestore** côté
+  client) et un `guestTokenHash` ;
+- email de confirmation contenant un **lien de suivi** (`/suivi-demande?token=…`),
+  également affiché sur le site si aucun fournisseur email n'est configuré ;
+- `getGuestSupportTicket` relit la conversation à partir du seul jeton secret et
+  ne renvoie **aucune donnée personnelle** (ni email, ni uid, ni jeton).
+
+## Candidature spontanée & tryouts
+
+`submitRecruitApplication` accepte `spontaneous: true` : le poste devient
+facultatif (remplacé par « Candidature spontanée »), un champ `game` optionnel
+permet de router le dossier vers le bon pôle. Aucune modification de règles.
+
+`bookTryoutSlot` réserve un créneau d'essai public (`tryoutSlots/{id}`) :
+
+- capacité vérifiée **et** décrémentée dans une transaction (impossible de
+  surcharger un créneau complet) ;
+- réservation écrite par le serveur dans `tryoutSlots/{id}/bookings/{uid}`
+  (écriture client fermée par les règles) ;
+- la candidature la plus récente du candidat est rattachée : statut
+  `interviewing` (« Essai / Entretien ») + message système dans le fil, ce qui
+  rend l'essai visible dans son suivi.
 
 ## Consentement parental (moins de 15 ans)
 

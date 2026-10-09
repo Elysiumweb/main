@@ -18,6 +18,7 @@ const routeSEO = [
   { path: "/a-propos", title: "À propos — ELYSIUM Esport", description: "L'histoire, les valeurs et le projet d'ELYSIUM Esport : structure française EVA et Rocket League." },
   { path: "/presse", title: "Presse & médias — ELYSIUM Esport", description: "Espace presse ELYSIUM Esport : kit média, logos, contacts et informations pour les journalistes." },
   { path: "/support", title: "Support — ELYSIUM Esport", description: "Contactez le support Elysium pour toute demande, question ou assistance liée au site et à la communauté." },
+  { path: "/suivi-demande", title: "Suivi d'une demande — ELYSIUM Esport", description: "Suivez votre demande de support Elysium avec le lien reçu par email, sans avoir besoin de compte.", noIndex: true },
   { path: "/recrutement", title: "Recrutement — ELYSIUM Esport", description: "Postulez chez Elysium Esport : postes ouverts, candidature joueur, staff et suivi de dossier." },
   { path: "/statistiques", title: "Statistiques — ELYSIUM Esport", description: "Statistiques compétitives Elysium : taux de victoire, scores moyens, tendances et derniers matchs." },
   { path: "/partenaires", title: "Partenaires — ELYSIUM Esport", description: "Partenaires Elysium Esport et formulaire de demande de partenariat." },

@@ -58,6 +58,9 @@ export const SOCIALS = [
   { name: "Discord", url: "https://discord.gg/RH3ZZkMJsw", icon: "discord" },
 ];
 
+/** Invitation Discord — source unique pour le CTA « réponse la plus rapide ». */
+export const DISCORD_INVITE_URL = "https://discord.gg/RH3ZZkMJsw";
+
 export const isPlayerInMatch = (match, player) => {
   if (!match || !player) return false;
   if (match.players && Array.isArray(match.players) && match.players.length > 0) {

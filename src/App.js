@@ -24,6 +24,7 @@ const MatchDetail = lazy(() => import("@/pages/MatchDetail"));
 const Opponents = lazy(() => import("@/pages/Opponents"));
 const OpponentDetail = lazy(() => import("@/pages/OpponentDetail"));
 const Support = lazy(() => import("@/pages/Support"));
+const SupportTrack = lazy(() => import("@/pages/SupportTrack"));
 const Recruitment = lazy(() => import("@/pages/Recruitment"));
 const Login = lazy(() => import("@/pages/Login"));
 const Admin = lazy(() => import("@/pages/Admin"));
@@ -123,6 +124,7 @@ function App() {
               <Route path="/a-propos" element={<About />} />
               <Route path="/presse" element={<Press />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/suivi-demande" element={<SupportTrack />} />
               <Route path="/recrutement" element={<Recruitment />} />
               <Route path="/statistiques" element={<Stats />} />
               <Route path="/partenaires" element={<Partners />} />

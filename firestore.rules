@@ -111,6 +111,39 @@ service cloud.firestore {
       allow create, update, delete: if isManagerPlus();
     }
 
+    // ===== Base de connaissances (centre d'aide public) =====
+    // Remplace les 15 questions de FAQ qui étaient codées en dur dans i18n.js :
+    // le bureau les édite depuis l'admin, sans redéploiement. Les brouillons
+    // (`published: false`) restent invisibles du public.
+    match /helpArticles/{id} {
+      // Un article sans champ `published` est publié (même convention que
+      // `normalizeHelpArticle`), seuls les brouillons explicites sont masqués.
+      allow read: if resource.data.published == true
+        || !resource.data.keys().hasAny(['published'])
+        || isBureau();
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Tryouts (créneaux d'essai ouverts au public) =====
+    // Le créneau est public (liste sur /recrutement), mais les réservations
+    // passent exclusivement par la Cloud Function `bookTryoutSlot` (capacité
+    // vérifiée en transaction, quotas, rattachement au dossier de candidature).
+    match /tryoutSlots/{id} {
+      allow read: if true;
+      allow create, update, delete: if isManagerPlus();
+
+      match /bookings/{uid} {
+        allow read: if isAuth() && (request.auth.uid == uid || isManagerPlus());
+        allow write: if false;
+      }
+    }
+
+    // ===== Réglages publics (délais moyens du parcours de candidature…) =====
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isManagerPlus();
+    }
+
     // ===== Matchs =====
     match /matches/{id} {
       allow read: if true;

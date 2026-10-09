@@ -13,11 +13,18 @@ const STATUS_CLS = {
   closed: "text-[#c8c8c8] border-white/20",
   pending: "text-orange-300 border-orange-300/40",
   reviewing: "text-sky-300 border-sky-300/40",
+  interviewing: "text-violet-300 border-violet-300/40",
   accepted: "text-emerald-300 border-emerald-300/40",
   rejected: "text-red-400 border-red-400/40",
 };
 
-export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, prefix, statusOptions = null, canSetStatus = false }) => {
+/**
+ * Panneau de fils (support, candidatures).
+ * `renderThreadHeader(thread)` permet d'afficher un bloc contextuel au-dessus de
+ * la conversation — utilisé par le recrutement pour la frise d'étapes du
+ * parcours de candidature.
+ */
+export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, prefix, statusOptions = null, canSetStatus = false, renderThreadHeader = null }) => {
   const { user } = useAuth();
   const { t, lang } = useLang();
   const [threads, setThreads] = useState([]);
@@ -62,6 +69,11 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
       <div className={`md:col-span-8 flex flex-col min-h-0 ${selected ? "flex" : "hidden md:flex"}`} data-testid={`${prefix}-threads-detail`}>
         {current && (
           <>
+            {renderThreadHeader && (
+              <div className="px-4 py-3 border-b border-white/10 bg-[#141414] shrink-0" data-testid={`${prefix}-thread-header-extra`}>
+                {renderThreadHeader(current)}
+              </div>
+            )}
             <div className="px-4 py-3 border-b border-white/10 bg-[#1A1A1A] shrink-0 flex items-start gap-3">
               <button onClick={()=> setSelected(null)} className="md:hidden text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] mr-2">←</button>
               <div className="flex-1 min-w-0">

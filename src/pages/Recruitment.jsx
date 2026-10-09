@@ -1,20 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
-import { Briefcase, CalendarX } from "lucide-react";
+import { Briefcase, CalendarCheck, CalendarX, Route as RouteIcon, Sparkles } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
+import { ApplicationStepper } from "../components/ApplicationStepper";
+import { TryoutList } from "../components/TryoutList";
 import { EmptyState } from "../components/States";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
-import { isRemovedGame } from "../lib/constants";
+import { GAMES, isRemovedGame } from "../lib/constants";
 import { Markdown } from "../lib/markdown";
+import { useRecruitmentSettings } from "../hooks/useRecruitmentSettings";
+import { RECRUIT_STATUSES } from "../lib/recruitment";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 /* La tranche « -15 » matérialise le seuil légal français de consentement
@@ -22,14 +26,16 @@ const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm
    parcours de consentement parental vérifié par email est obligatoire. */
 const AGE_RANGES = ["-15", "15-17", "18-24", "25+"];
 const MINOR_RANGE = "-15";
-const EMPTY_FORM = { pseudo: "", position: "", ageRange: "", country: "", experience: "", videos: "", availability: "", discord: "" };
+const EMPTY_FORM = { pseudo: "", position: "", ageRange: "", country: "", experience: "", videos: "", availability: "", discord: "", game: "" };
 const EMPTY_PARENT = { parentName: "", parentEmail: "" };
 
 export default function Recruitment() {
   const { user, canSeeRecruit } = useAuth();
   const { t, lang } = useLang();
   const [searchParams] = useSearchParams();
+  const { delays } = useRecruitmentSettings();
   const [positions, setPositions] = useState([]);
+  const [mode, setMode] = useState("open"); // open | spontaneous (candidature libre)
   const [form, setForm] = useState(EMPTY_FORM);
   const [parent, setParent] = useState(EMPTY_PARENT);
   const [consent, setConsent] = useState(false);
@@ -38,6 +44,7 @@ export default function Recruitment() {
   const formRef = useRef(null);
   const applicationStartedRef = useRef(false);
   const isMinor = form.ageRange === MINOR_RANGE;
+  const isSpontaneous = mode === "spontaneous";
   const parentalStatus = searchParams.get("parental"); // confirmed | invalid (retour du lien email)
   const markApplicationStarted = (source = "form") => {
     if (applicationStartedRef.current) return;
@@ -62,7 +69,8 @@ export default function Recruitment() {
   const applyTo = (p) => {
     trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "position_card", positionId: p.id, game: p.game });
     markApplicationStarted("position_card");
-    setForm((f) => ({ ...f, position: p.title }));
+    setMode("open");
+    setForm((f) => ({ ...f, position: p.title, game: p.game || "" }));
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -80,9 +88,13 @@ export default function Recruitment() {
         if (n > max) return `${label} : ${max} ${t("form.maxChars")}`;
         return null;
       };
+      const positionLen = (form.position || "").trim().length;
       const fieldErr = [
         lenErr(t("recruit.form.pseudo"), form.pseudo, 2, 60),
-        lenErr(t("recruit.form.position"), form.position, 2, 140),
+        // Candidature spontanée : le poste est facultatif (candidature libre).
+        isSpontaneous
+          ? positionLen > 140 ? `${t("recruit.spontaneous.position")} : 140 ${t("form.maxChars")}` : null
+          : lenErr(t("recruit.form.position"), form.position, 2, 140),
         lenErr(t("recruit.form.country"), form.country, 2, 120),
         lenErr(t("recruit.form.experience"), form.experience, 10, 2000),
         (form.videos || "").trim() ? lenErr(t("recruit.form.videos"), form.videos, 0, 1000) : null,
@@ -126,6 +138,8 @@ export default function Recruitment() {
         availability: (form.availability || "").trim(),
         discord: (form.discord || "").trim(),
         consent: true,
+        spontaneous: isSpontaneous,
+        ...(isSpontaneous ? { game: (form.game || "").trim() } : {}),
         ...(isMinor ? {
           parentName: (parent.parentName || "").trim(),
           parentEmail: (parent.parentEmail || "").trim(),
@@ -133,7 +147,7 @@ export default function Recruitment() {
         } : {}),
       };
       const result = await callProtected("submitRecruitApplication", payload);
-      trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMITTED, { position: payload.position, ageRange: payload.ageRange, country: payload.country });
+      trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMITTED, { position: payload.position, ageRange: payload.ageRange, country: payload.country, spontaneous: isSpontaneous });
       setForm(EMPTY_FORM); setConsent(false); setParent(EMPTY_PARENT); setParentConsent(false);
       applicationStartedRef.current = false;
       if (result?.parentalConsentRequired) {
@@ -155,15 +169,27 @@ export default function Recruitment() {
   };
 
   // min/max : miroir exact des bornes serveur (submitRecruitApplication).
-  const fields = [
-    { key: "pseudo", label: t("recruit.form.pseudo"), type: "text", required: true, min: 2, max: 60 },
-    { key: "position", label: t("recruit.form.position"), type: "text", required: true, min: 2, max: 140 },
-    { key: "country", label: t("recruit.form.country"), type: "text", required: true, placeholder: "France / UTC+1", min: 2, max: 120 },
-    { key: "experience", label: t("recruit.form.experience"), type: "textarea", required: true, min: 10, max: 2000 },
-    { key: "videos", label: t("recruit.form.videos"), type: "textarea", required: false, placeholder: "https://...", max: 1000 },
-    { key: "availability", label: t("recruit.form.availability"), type: "textarea", required: true, min: 3, max: 1000 },
-    { key: "discord", label: t("recruit.form.discord"), type: "text", required: true, placeholder: "pseudo#0000", min: 2, max: 80 },
-  ];
+  const fields = useMemo(
+    () => [
+      { key: "pseudo", label: t("recruit.form.pseudo"), type: "text", required: true, min: 2, max: 60 },
+      { key: "country", label: t("recruit.form.country"), type: "text", required: true, placeholder: "France / UTC+1", min: 2, max: 120 },
+      { key: "experience", label: t("recruit.form.experience"), type: "textarea", required: true, min: 10, max: 2000 },
+      { key: "videos", label: t("recruit.form.videos"), type: "textarea", required: false, placeholder: "https://...", max: 1000 },
+      { key: "availability", label: t("recruit.form.availability"), type: "textarea", required: true, min: 3, max: 1000 },
+      { key: "discord", label: t("recruit.form.discord"), type: "text", required: true, placeholder: "pseudo#0000", min: 2, max: 80 },
+    ],
+    [t]
+  );
+
+  const renderThreadStepper = (thread) => (
+    <ApplicationStepper
+      variant="thread"
+      status={thread.status}
+      createdAt={thread.createdAt}
+      tryout={thread.tryout}
+      delays={delays}
+    />
+  );
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
@@ -226,6 +252,28 @@ export default function Recruitment() {
         )}
       </section>
 
+      {/* PARCOURS DE CANDIDATURE — frise d'étapes + délais moyens publics */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16" data-testid="recruit-process-section" aria-labelledby="recruit-process-h2">
+        <div className="flex items-center gap-4 mb-4">
+          <RouteIcon className="text-[#D8CA82]" size={18} aria-hidden="true" />
+          <h2 id="recruit-process-h2" className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("recruit.steps.title")}</h2>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+        <p className="text-sm text-[#c8c8c8] mb-8 max-w-3xl">{t("recruit.steps.sub")}</p>
+        <ApplicationStepper variant="public" delays={delays} />
+      </section>
+
+      {/* TRYOUTS — créneaux d'essai planifiés + réservation */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16" data-testid="recruit-tryout-section" aria-labelledby="recruit-tryout-h2">
+        <div className="flex items-center gap-4 mb-4">
+          <CalendarCheck className="text-[#D8CA82]" size={18} aria-hidden="true" />
+          <h2 id="recruit-tryout-h2" className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("recruit.tryout.title")}</h2>
+          <div className="flex-1 h-px bg-white/10" />
+        </div>
+        <p className="text-sm text-[#c8c8c8] mb-8 max-w-3xl">{t("recruit.tryout.sub")}</p>
+        <TryoutList />
+      </section>
+
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12" ref={formRef}>
         <div className="lg:col-span-5">
           <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6">{t("recruit.newApp")}</h2>
@@ -245,12 +293,62 @@ export default function Recruitment() {
             <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="recruit-form" noValidate>
               <label htmlFor="recruit-website" className="sr-only">Site web</label>
               <input id="recruit-website" type="text" {...getHoneypotProps("website")} data-testid="recruit-honeypot" />
-              {fields.slice(0, 2).map((f) => (
-                <div key={f.key}>
-                  <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
-                  <input id={`recruit-${f.key}`} type="text" value={form[f.key]} onChange={set(f.key)} required={f.required} placeholder={f.placeholder} minLength={f.min} maxLength={f.max} className={inputCls} data-testid={`recruit-${f.key}-input`} />
+
+              {/* Postes ouverts OU candidature spontanée (scouting / essai libre) */}
+              <fieldset className="border border-white/10 p-4" data-testid="recruit-mode-group">
+                <legend className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] px-1">{t("recruit.mode.title")}</legend>
+                <div className="grid grid-cols-2 gap-3 mt-1">
+                  {[
+                    { id: "open", label: t("recruit.mode.open"), hint: t("recruit.mode.open.hint") },
+                    { id: "spontaneous", label: t("recruit.mode.spontaneous"), hint: t("recruit.mode.spontaneous.hint") },
+                  ].map((opt) => (
+                    <label key={opt.id} htmlFor={`recruit-mode-${opt.id}`}
+                      className={`border p-3 cursor-pointer transition-colors ${mode === opt.id ? "border-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 hover:border-[#D8CA82]/40"}`}>
+                      <span className="flex items-center gap-2">
+                        <input id={`recruit-mode-${opt.id}`} type="radio" name="applicationMode" value={opt.id}
+                          checked={mode === opt.id} onChange={() => { setMode(opt.id); markApplicationStarted(`mode_${opt.id}`); }}
+                          data-testid={`recruit-mode-${opt.id}`} className="accent-[#D8CA82]" />
+                        <span className="text-xs font-display uppercase tracking-[0.15em] text-[#f7f7f7]">{opt.label}</span>
+                      </span>
+                      <span className="block text-[11px] text-[#c8c8c8]/70 mt-1.5 leading-snug">{opt.hint}</span>
+                    </label>
+                  ))}
                 </div>
-              ))}
+              </fieldset>
+
+              {isSpontaneous && (
+                <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 p-4 flex gap-3" data-testid="recruit-spontaneous-note">
+                  <Sparkles size={16} className="text-[#D8CA82] shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-xs text-[#c8c8c8] leading-relaxed">{t("recruit.spontaneous.note")}</p>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="recruit-pseudo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.pseudo")}</label>
+                <input id="recruit-pseudo" type="text" value={form.pseudo} onChange={set("pseudo")} required minLength={2} maxLength={60} className={inputCls} data-testid="recruit-pseudo-input" />
+              </div>
+
+              <div>
+                <label htmlFor="recruit-position" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">
+                  {isSpontaneous ? t("recruit.spontaneous.position") : t("recruit.form.position")}
+                  {isSpontaneous && <span className="text-[#c8c8c8]/50 normal-case tracking-normal"> ({t("recruit.spontaneous.optional")})</span>}
+                </label>
+                <input id="recruit-position" type="text" value={form.position} onChange={set("position")} required={!isSpontaneous}
+                  maxLength={140} className={inputCls} data-testid="recruit-position-input" />
+              </div>
+
+              {isSpontaneous && (
+                <div>
+                  <label htmlFor="recruit-game" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.spontaneous.game")}</label>
+                  <select id="recruit-game" value={form.game} onChange={set("game")} className={inputCls} data-testid="recruit-game-input"
+                    aria-describedby="recruit-game-hint">
+                    <option value="">—</option>
+                    {GAMES.filter((g) => !isRemovedGame(g)).map((g) => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                  <p id="recruit-game-hint" className="text-[11px] text-[#c8c8c8]/60 mt-1.5">{t("recruit.spontaneous.game.hint")}</p>
+                </div>
+              )}
+
               <div>
                 <label htmlFor="recruit-ageRange" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.age")}</label>
                 <select id="recruit-ageRange" value={form.ageRange} onChange={set("ageRange")} required className={inputCls} data-testid="recruit-ageRange-input">
@@ -284,7 +382,7 @@ export default function Recruitment() {
                   </label>
                 </div>
               )}
-              {fields.slice(2).map((f) => (
+              {fields.map((f) => (
                 <div key={f.key}>
                   <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
                   {f.type === "textarea" ? (
@@ -312,7 +410,7 @@ export default function Recruitment() {
                 {canSeeRecruit ? t("recruit.allApps") : t("recruit.myApps")}
               </h2>
               <ThreadsPanel collectionName="recruitThreads" canSeeAll={canSeeRecruit} emptyKey="recruit.noApps" titleField="position" prefix="recruit"
-                statusOptions={["pending", "reviewing", "accepted", "rejected", "pending_parental_consent"]} canSetStatus={canSeeRecruit} />
+                statusOptions={RECRUIT_STATUSES} canSetStatus={canSeeRecruit} renderThreadHeader={renderThreadStepper} />
             </>
           )}
         </div>
