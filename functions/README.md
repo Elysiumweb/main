@@ -172,3 +172,19 @@ firebase deploy --only functions
 > L'adresse `MAIL_FROM` doit être un domaine vérifié chez Resend/Brevo,
 > sinon l'envoi sera rejeté. Le domaine `elysium-esport.fr` doit donc être
 > ajouté dans la console du fournisseur (DNS SPF/DKIM).
+
+---
+
+## Règles de stockage
+
+Les images téléversées depuis l'admin passent par Firebase **Storage**, dont les
+règles vivent dans [`storage.rules`](../storage.rules) — un fichier distinct de
+`firestore.rules`, à publier séparément :
+
+```bash
+firebase deploy --only storage
+```
+
+Sans ce déploiement, l'admin ne peut téléverser aucune image (matchs,
+adversaires, médiathèque, fiches joueurs). La marche à suivre complète est dans
+[`docs/deploiement-firebase.md`](../docs/deploiement-firebase.md).
