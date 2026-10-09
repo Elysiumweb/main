@@ -90,6 +90,21 @@ describe("téléversement d'images", () => {
     expect([...new Set(envReads)]).toEqual(["IMGBB_KEY"]);
     expect(gateway).toContain("https://api.imgbb.com/1/upload");
     expect(gateway).toContain("4 * 1024 * 1024");
+    // Motif de panne renvoyé au client : sans lui, 503 et 502 se confondaient.
+    expect(gateway).toContain('reason: "no-key"');
+    expect(gateway).toContain('reason: "imgbb-refused"');
+    // Corps binaire : lu en tampon ou en flux selon le runtime.
+    expect(gateway).toContain("readBody");
+  });
+
+  it("ne laisse pas la réécriture SPA avaler /api", () => {
+    // `/(.*)` -> index.html renverrait index.html à la place de la fonction :
+    // le client recevrait du HTML et n'y trouverait aucune URL.
+    const rewrites = JSON.parse(read("vercel.json")).rewrites || [];
+    const spa = rewrites.find((r) => r.destination === "/index.html");
+    expect(spa).toBeDefined();
+    expect(spa.source).toContain("(?!api/)");
+    expect(rewrites.some((r) => r.source === "/(.*)")).toBe(false);
   });
 
   it("tente la passerelle avant l'envoi direct", () => {

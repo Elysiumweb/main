@@ -44,10 +44,22 @@ export const uploadError = (code, cause) => {
   return err;
 };
 
-/** Clé de traduction associée à une erreur de téléversement. */
+/**
+ * Clé de traduction associée à une erreur de téléversement.
+ *
+ * Les codes HTTP de la passerelle sont traduits un par un : sans cela, une clé
+ * absente et une image refusée par l'hébergeur affichaient le même message
+ * générique, impossible à diagnostiquer depuis l'interface.
+ */
 export const uploadErrorKey = (err) => {
   const code = String(err?.code || "");
+  const status = Number(err?.httpStatus || 0);
+
   if (code === "not-configured") return "upload.notConfigured";
+  if (status === 503) return "upload.notConfigured";
+  if (status === 413) return "upload.invalidImage";
+  if (status === 502 || status === 504) return "upload.hostRefused";
+  if (status === 400) return "upload.invalidImage";
   if (code === "stalled" || code === "aborted" || code === "network") return "upload.timeout";
   if (code === "too-large") return "upload.invalidImage";
   return "upload.error";
@@ -149,7 +161,11 @@ const post = ({ endpoint, blob, folder, onProgress, timeoutMs, readUrl }) =>
       // 404 = pas de fonction /api sur ce déploiement : le repli direct peut
       // prendre le relais si une clé publique est présente.
       if (xhr.status === 404) { settle(reject, uploadError("not-found")); return; }
-      settle(reject, uploadError("rejected", payload?.error));
+      // Le statut permet de dire *quoi* a échoué (clé absente, hébergeur
+      // muet, image refusée) au lieu d'un message unique.
+      const err = uploadError("rejected", payload?.error);
+      if (readUrl) err.httpStatus = xhr.status;
+      settle(reject, err);
     };
     xhr.onerror = () => abort("network");
     xhr.ontimeout = () => abort("stalled");

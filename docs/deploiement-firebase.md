@@ -25,7 +25,10 @@ imgbb. La clé y est lue **côté serveur**.
 2. Vercel → *Settings → Environment Variables* :
    - **Key** : `IMGBB_KEY` — sans préfixe `REACT_APP_`, donc la visibilité
      **Secret** est acceptée et la valeur n'arrive jamais dans le navigateur.
-   - **Environments** : *Production*.
+   - **Environments** : coche **les deux** — *Production* **et** *Preview*.
+     Une variable créée par Vercel ne s'applique qu'à la Production : sur un
+     déploiement de prévisualisation, la fonction tourne sans clé et répond
+     « Envoi d'images non configuré ».
 3. **Save**, puis **redeploy**. Vercel publie automatiquement le dossier `/api`,
    rien à déployer à la main.
 
@@ -105,6 +108,9 @@ Sans rapport avec les images : c'est ce qui protège les collections.
 | « Le service d'envoi d'images n'est pas configuré » | `IMGBB_KEY` (option A) ou `REACT_APP_IMBB_KEY` (option B) absente, ou build antérieur à l'ajout | Vérifier la variable, puis **redeploy** sur Vercel |
 | L'envoi part puis échoue | clé imgbb révoquée / régénérée | Reprendre une nouvelle clé sur api.imgbb.com et la remettre dans Vercel |
 | 404 sur `/api/upload` | Projet Vercel sans fonctions (option A impossible) | Passer en option B, ou vérifier que le dossier `/api` est bien déployé |
+| « L'hébergeur d'images a refusé l'envoi » | Clé imgbb invalide, révoquée ou mal collée | Reprendre la clé sur api.imgbb.com et **redéployer** (elle est figée dans la fonction) |
+| « Image vide. » | Le corps n'a pas atteint la fonction | Vérifier les logs Vercel de la fonction ; le tampon binaire n'est pas encore géré sur ce runtime |
+| Preview protégé par mot de passe | Vercel Authentication active sur les aperçus | Tester depuis une session Vercel authentifiée, ou merger en production |
 | L'écran reste sur « Envoi en cours » | Réseau instable ou imgbb injoignable | L'envoi abandonne seul après 45 s ; réessaie |
 | « Image invalide ou trop lourde » | Fichier > 5 Mo ou format non supporté | Recadrer, ou laisser la compression automatique agir |
 | `Error: Failed to authenticate` | Session Firebase CLI expirée | `firebase login` (uniquement pour les règles Firestore) |

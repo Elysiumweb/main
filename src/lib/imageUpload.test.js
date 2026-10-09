@@ -83,11 +83,30 @@ describe("uploadBlob — passerelle serveur (clé secrète)", () => {
 
   it("ne tente pas le repli si la passerelle existe mais n'a pas de clé", async () => {
     const settled = capture(uploadBlob(IMG, "matches"));
-    FakeXHR.last.respond(503, { error: "Envoi d'images non configuré (IMGBB_KEY manquante)." });
+    FakeXHR.last.respond(503, { error: "Envoi d'images non configuré (IMGBB_KEY manquante ou non déployée).", reason: "no-key" });
     const result = await settled;
-    expect(result.error).toMatchObject({ code: "rejected" });
+    expect(result.error).toMatchObject({ code: "rejected", httpStatus: 503 });
     expect(requests).toHaveLength(1);
-    expect(uploadErrorKey(result.error)).toBe("upload.error");
+    // 503 = clé absente : le message doit le dire, sinon impossible à dépanner.
+    expect(uploadErrorKey(result.error)).toBe("upload.notConfigured");
+  });
+
+  it("distingue un hébergeur muet d'une clé invalide", async () => {
+    const refused = capture(uploadBlob(IMG, "matches"));
+    FakeXHR.last.respond(502, { error: "L'hébergeur d'images a refusé l'envoi (clé API ?).", reason: "imgbb-refused" });
+    expect(uploadErrorKey((await refused).error)).toBe("upload.hostRefused");
+
+    const timedOut = capture(uploadBlob(IMG, "matches"));
+    FakeXHR.last.respond(504, { error: "Envoi d'image impossible.", reason: "imgbb-timeout" });
+    expect(uploadErrorKey((await timedOut).error)).toBe("upload.hostRefused");
+
+    const tooBig = capture(uploadBlob(IMG, "matches"));
+    FakeXHR.last.respond(413, { error: "Image trop lourde (4 Mo maximum).", reason: "too-large" });
+    expect(uploadErrorKey((await tooBig).error)).toBe("upload.invalidImage");
+
+    const empty = capture(uploadBlob(IMG, "matches"));
+    FakeXHR.last.respond(400, { error: "Image vide.", reason: "empty-body" });
+    expect(uploadErrorKey((await empty).error)).toBe("upload.invalidImage");
   });
 
   it("refuse de repartir en direct quand aucune clé n'est injectée", async () => {
