@@ -25,6 +25,7 @@ import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
 import { logAdminAction } from "../lib/notify";
+import { isImageValue, isOptionalHttpUrl } from "../lib/validation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,8 +36,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
-
-const isUrl = (s) => !s || /^https?:\/\/.+/.test(s);
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", vodUrl: "", mvp: "", maps: [], players: [] };
@@ -375,8 +374,9 @@ export default function Admin() {
       toast.error(t("admin.match.rosterRequired"));
       return;
     }
-    if (!isUrl(form.opponentLogo) || !isUrl(form.watchUrl) || !isUrl(form.vodUrl)) {
-      toast.error("URL invalide (doit commencer par http:// ou https://)");
+    // Le logo adversaire vient de ImageUpload : data URL base64 acceptée aussi.
+    if (!isImageValue(form.opponentLogo) || !isOptionalHttpUrl(form.watchUrl) || !isOptionalHttpUrl(form.vodUrl)) {
+      toast.error(t("admin.match.invalidUrl"));
       return;
     }
     try {

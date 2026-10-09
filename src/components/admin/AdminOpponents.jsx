@@ -5,6 +5,7 @@ import { Trash2, Pencil } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { ImageUpload } from "../ImageUpload";
+import { isHttpUrl, isImageValue } from "../../lib/validation";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { name: "", slug: "", logo: "", country: "", website: "", twitter: "" };
@@ -30,8 +31,9 @@ export const AdminOpponents = () => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error(t("common.error")); return; }
     const slug = form.slug.trim() ? slugify(form.slug) : slugify(form.name);
-    if (form.logo && !/^https?:\/\//.test(form.logo)) { toast.error("URL logo invalide"); return; }
-    if (form.website && !/^https?:\/\//.test(form.website)) { toast.error("URL site invalide"); return; }
+    // Le logo vient de ImageUpload : data URL base64 acceptée aussi.
+    if (!isImageValue(form.logo)) { toast.error("URL logo invalide"); return; }
+    if (form.website && !isHttpUrl(form.website)) { toast.error("URL site invalide"); return; }
     try {
       const payload = { ...form, name: form.name.trim(), slug, logo: form.logo.trim(), country: form.country.trim(), website: form.website.trim(), twitter: form.twitter.trim() };
       if (editId) await updateDoc(doc(db,"opponents",editId), payload);

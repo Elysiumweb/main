@@ -7,10 +7,10 @@ import { useLang } from "../../lib/i18n";
 import { GAMES } from "../../lib/constants";
 import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
+import { isHttpUrl, isImageValue } from "../../lib/validation";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { type: "photo", title: "", url: "", thumbnail: "", game: "EVA", playerTag: "", event: "" };
-const isUrl = (s) => /^https?:\/\/.+/.test(s);
 
 export const AdminMedia = () => {
   const { t } = useLang();
@@ -28,8 +28,10 @@ export const AdminMedia = () => {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!isUrl(form.url)) { toast.error(t("admin.match.invalidUrl")); return; }
-    if (form.thumbnail && !isUrl(form.thumbnail)) { toast.error(t("admin.match.invalidUrl")); return; }
+    // Photo : image téléversée (data URL base64) ou URL externe. Vidéo : URL externe obligatoire.
+    const urlOk = form.type === "photo" ? isImageValue(form.url) : isHttpUrl(form.url);
+    if (!urlOk) { toast.error(t("admin.match.invalidUrl")); return; }
+    if (form.thumbnail && !isImageValue(form.thumbnail)) { toast.error(t("admin.match.invalidUrl")); return; }
     try {
       await addDoc(collection(db, "media"), { ...form, createdAt: serverTimestamp() });
       setForm(EMPTY);
