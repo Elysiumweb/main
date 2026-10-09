@@ -1,4 +1,4 @@
-# Déploiement Firebase (règles, fonctions)
+# Déploiement Firebase (images, règles, fonctions)
 
 Tout se fait **depuis un terminal, sur ta machine**, dans un dossier contenant ce
 dépôt (`git clone` ou ta copie locale). Les commandes ci-dessous supposent que
@@ -9,66 +9,79 @@ tu es à la **racine du projet** — celle qui contient `firebase.json`.
 
 ---
 
-## Publier les règles de stockage (`storage.rules`)
+## Envoyer des images depuis l'admin
 
-Sans cette étape, **aucun téléversement d'image ne fonctionne** dans l'admin :
-le bucket refuse toute écriture. Firestore et Storage sont indépendants —
-publier les règles Firestore ne suffit pas.
-
-```bash
-# 1. Installer l'outil Firebase (une seule fois)
-npm install -g firebase-tools
-
-# 2. Se connecter (ouvre le navigateur)
-firebase login
-
-# 3. Relier ce dossier à ton projet Firebase (crée le fichier .firebaserc)
-firebase use --add          # choisis le projet Elysium dans la liste
-
-# 4. Publier les règles
-firebase deploy --only storage
-```
-
-Le déploiement affiche `✔ Deploy complete!` quand c'est bon.
-
-Vérification : console Firebase → **Storage** → onglet **Règles**. Tu dois voir
-le contenu de `storage.rules`. Côté application, ouvre *Admin → Résultats → un
-match* et dépose un fichier logo : l'aperçu doit apparaître.
-
-### Raccourci
+**Pourquoi cette procédure ?** Cloud Storage n'existe pas sur le plan gratuit :
+depuis le 3 février 2026, un bucket exige le plan Blaze. Les images sont donc
+hébergées chez **imgbb** — l'hébergeur de tes visuels `i.ibb.co` — et l'envoi
+passe par la Cloud Function `uploadImage`, qui garde la clé API en secret.
 
 ```bash
-npm run deploy:rules   # = firebase deploy --only storage,firestore
+# 1. Clé API imgbb (compte gratuit) : https://api.imgbb.com/
+#    La clé affichée se colle telle quelle à l'étape 2.
+
+# 2. La déposer en secret — elle ne sera jamais dans le dépôt
+firebase functions:secrets:set IMGBB_KEY
+
+# 3. Déployer la fonction
+firebase deploy --only functions:uploadImage
 ```
+
+Ou, une fois le secret en place : `npm run deploy:upload`.
+
+**Vérification :** Admin → Résultats → un match → choisis un logo → *Envoyer*.
+L'aperçu doit apparaître et le logo est enregistré dans Firestore avec son URL
+imgbb.
+
+> ⚠️ **Fais tourner ta clé.** Si tu l'as écrite dans un message, un canal ou un
+> fichier, passe sur https://api.imgbb.com/ pour en générer une nouvelle, puis
+> remplace le secret. Elle n'est jamais versionnée dans ce dépôt — un test
+> (`src/lib/imageUploadPath.test.js`) échoue d'ailleurs si une clé de 32
+> caractères apparaît dans le code.
+
+### Qui peut envoyer quoi
+
+| Dossier | Autorisé |
+|---|---|
+| `media`, `articles`, `matches`, `opponents`, `uploads` | bureau et manager |
+| `players/<uid>` | le joueur concerné, ou le staff |
+| `avatars/<uid>` | le joueur concerné |
+| `chat` | tout membre connecté |
+
+Même découpage que `firestore.rules`, contrôlé côté serveur : un compte sans
+le rôle n'obtient qu'un `permission-denied`, pas une image envoyée. Le quota est
+de 40 envois par heure et par compte.
+
+---
+
+## Règles Firestore
+
+```bash
+firebase deploy --only firestore:rules     # ou : npm run deploy:rules
+```
+
+Sans rapport avec les images : c'est ce qui protège les collections. Voir
+`firestore.rules` (en-tête commenté) pour le détail des rôles.
 
 ---
 
 ## Ce qu'il faut vérifier avant
 
-1. **Le stockage doit être activé** sur le projet.
-   Console Firebase → **Storage** → *Get started*. Si la rubrique n'existe pas ou
-   reste vide, le déploiement échoue : active-la d'abord. Un *bucket* est créé
-   au passage, il s'appelle `<project-id>.appspot.com` ou
-   `<project-id>.firebasestorage.app`.
-
-2. **Les variables d'environnement du build** doivent contenir le bucket, sinon
-   l'application affiche « Le stockage d'images n'est pas configuré sur ce site » :
+1. **Variables d'environnement du build.** L'envoi d'images passe par une
+   callable Firebase, donc il faut au minimum :
    ```
    REACT_APP_FIREBASE_API_KEY=...
-   REACT_APP_FIREBASE_AUTH_DOMAIN=...
    REACT_APP_FIREBASE_PROJECT_ID=...
-   REACT_APP_FIREBASE_STORAGE_BUCKET=<project-id>.firebasestorage.app
-   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=...
-   REACT_APP_FIREBASE_APP_ID=...
    ```
    Ces variables sont figées **au moment du build** (Create React App), pas au
-   démarrage du site. Un nouveau build est nécessaire après les avoir ajoutées.
-   Elles ne sont pas versionnées (`.env` est ignoré par Git).
+   démarrage du site : un nouveau build est nécessaire après les avoir
+   ajoutées. Elles ne sont pas versionnées (`.env` est ignoré par Git).
+   `REACT_APP_FIREBASE_STORAGE_BUCKET` n'est plus utilisé — supprime-le de ta
+   configuration.
 
-3. **Le compte qui téléverse** doit avoir le rôle `bureau` (ou être le compte
-   officiel) pour la médiathèque, les matchs, les adversaires et les articles.
-   Chaque joueur peut téléverser sa propre photo de fiche et son avatar ; les
-   images de discussion sont ouvertes à tout membre connecté.
+2. **La fonction doit être déployée** avant le premier envoi. Sans elle,
+   l'admin affiche « Le service d'envoi d'images n'est pas configuré sur ce
+   site » au lieu de bloquer.
 
 ---
 
@@ -76,11 +89,11 @@ npm run deploy:rules   # = firebase deploy --only storage,firestore
 
 | Message | Cause | Solution |
 |---|---|---|
-| `Error: Failed to authenticate, have you run firebase login?` | Session expirée | `firebase login` |
-| `Error: HTTP Error: 404 ... storage bucket` | Stockage non activé | Console → Storage → *Get started* |
-| `storage/unauthorized` | Règles non déployées, ou rôle insuffisant | `firebase deploy --only storage` |
-| « Le stockage d'images n'est pas configuré » | `REACT_APP_FIREBASE_STORAGE_BUCKET` absent du build | Ajouter la variable puis rebuild |
-| L'écran reste sur « Envoi en cours » | Ancien build sans le garde-fou de délai | Rebuild + redéploiement du site |
+| « Le service d'envoi d'images n'est pas configuré » | `IMGBB_KEY` absent, fonction non déployée, ou `REACT_APP_FIREBASE_PROJECT_ID` manquant | Étapes 2 et 3, puis rebuild du site |
+| « Tu n'as pas le droit d'envoyer une image ici » | Compte sans rôle bureau/manager sur un dossier admin | Vérifier le rôle dans `users/{uid}` |
+| « Trop d'images envoyées récemment » | Quota de 40 envois/heure atteint | Attendre, ou relever la limite dans `functions/upload.js` |
+| `storage/unauthorized` ou écran figé | Ancien build deployed | Rebuild + redéploiement du site |
+| `Error: Failed to authenticate, have you run firebase login?` | Session CLI expirée | `firebase login` |
 
 ---
 

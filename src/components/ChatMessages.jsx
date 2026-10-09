@@ -3,7 +3,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, limit, o
 import { Send, ImageIcon, Pencil, Trash2, X, Check, AtSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "../lib/firebase";
-import { compressImage, uploadBlob, uploadErrorKey, buildUploadPath } from "../lib/imageUpload";
+import { compressImage, uploadBlob, uploadErrorKey } from "../lib/imageUpload";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { createNotification, logAdminAction } from "../lib/notify";
@@ -137,7 +137,7 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
     setUploading(true);
     try {
       const blob = await fetch(pendingImage).then((r) => r.blob());
-      return await uploadBlob(blob, buildUploadPath("chat", { name: "image.jpg" }));
+      return await uploadBlob(blob, "chat");
     } finally {
       setUploading(false);
     }

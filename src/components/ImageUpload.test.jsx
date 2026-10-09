@@ -13,15 +13,13 @@ jest.mock("sonner", () => ({ toast: { error: (...a) => mockToast.error(...a), su
 const mockUpload = {
   compressImage: jest.fn(),
   uploadBlob: jest.fn(),
-  isStorageReady: jest.fn(),
-  buildUploadPath: jest.fn(),
+  isUploadReady: jest.fn(),
   uploadErrorKey: jest.fn(),
 };
 jest.mock("../lib/imageUpload", () => ({
   compressImage: (...a) => mockUpload.compressImage(...a),
   uploadBlob: (...a) => mockUpload.uploadBlob(...a),
-  isStorageReady: (...a) => mockUpload.isStorageReady(...a),
-  buildUploadPath: (...a) => mockUpload.buildUploadPath(...a),
+  isUploadReady: (...a) => mockUpload.isUploadReady(...a),
   uploadErrorKey: (...a) => mockUpload.uploadErrorKey(...a),
 }));
 
@@ -31,12 +29,13 @@ const { LanguageProvider } = require("../lib/i18n");
 let container;
 let root;
 let errorSpy;
+let onChange;
 
 const render = () =>
   act(() =>
     root.render(
       <LanguageProvider>
-        <ImageUpload value="" onChange={() => {}} testId="test-upload" />
+        <ImageUpload value="" onChange={onChange} folder="matches" testId="test-upload" />
       </LanguageProvider>
     )
   );
@@ -46,10 +45,10 @@ beforeEach(() => {
   document.body.appendChild(container);
   root = createRoot(container);
   errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-  mockUpload.isStorageReady.mockReturnValue(true);
+  onChange = jest.fn();
+  mockUpload.isUploadReady.mockReturnValue(true);
   mockUpload.compressImage.mockResolvedValue({ type: "image/jpeg", size: 12 });
-  mockUpload.buildUploadPath.mockReturnValue("media/a.jpg");
-  mockUpload.uploadBlob.mockResolvedValue("https://firebasestorage.googleapis.com/o/a.jpg");
+  mockUpload.uploadBlob.mockResolvedValue("https://i.ibb.co/abc/logo.jpg");
   mockUpload.uploadErrorKey.mockImplementation((err) => `key:${err?.code}`);
 });
 
@@ -84,7 +83,9 @@ describe("ImageUpload", () => {
     render();
     await pickFile();
     expect(q("test-upload-dropzone").textContent).not.toMatch(/Envoi en cours/);
-    expect(mockUpload.uploadBlob).toHaveBeenCalledTimes(1);
+    // Le dossier de l'appelant est transmis tel quel : c'est le serveur qui décide.
+    expect(mockUpload.uploadBlob).toHaveBeenCalledWith({ type: "image/jpeg", size: 12 }, "matches");
+    expect(onChange).toHaveBeenCalledWith("https://i.ibb.co/abc/logo.jpg");
     expect(mockToast.success).toHaveBeenCalled();
   });
 
@@ -97,13 +98,13 @@ describe("ImageUpload", () => {
     expect(mockToast.error).toHaveBeenCalledWith("key:stalled");
   });
 
-  it("signale le stockage non configuré au lieu de bloquer sur l'envoi", async () => {
-    mockUpload.isStorageReady.mockReturnValue(false);
+  it("signale le service indisponible au lieu de bloquer sur l'envoi", async () => {
+    mockUpload.isUploadReady.mockReturnValue(false);
     render();
     expect(q("test-upload-unavailable")).not.toBeNull();
     await pickFile();
     expect(mockUpload.uploadBlob).not.toHaveBeenCalled();
-    expect(mockToast.error).toHaveBeenCalledWith("Le stockage d'images n'est pas configuré sur ce site. Contactez l'administrateur.");
+    expect(mockToast.error).toHaveBeenCalledWith("Le service d'envoi d'images n'est pas configuré sur ce site. Contactez l'administrateur.");
   });
 
   it("refuse un fichier qui n'est pas une image", async () => {

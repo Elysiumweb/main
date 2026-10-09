@@ -175,16 +175,31 @@ firebase deploy --only functions
 
 ---
 
-## Règles de stockage
+## Envoi d'images (`uploadImage`)
 
-Les images téléversées depuis l'admin passent par Firebase **Storage**, dont les
-règles vivent dans [`storage.rules`](../storage.rules) — un fichier distinct de
-`firestore.rules`, à publier séparément :
+Cloud Storage est inaccessible sur le plan gratuit : un bucket exige le plan
+Blaze depuis le 3 février 2026. Les images téléversées depuis l'admin
+(logo de match, logo d'adversaire, médiathèque, vignette, fiche joueur, avatar,
+chat) sont donc hébergées chez **imgbb**, via la callable `uploadImage` définie
+dans `upload.js`.
+
+La clé API n'est jamais exposée au navigateur :
 
 ```bash
-firebase deploy --only storage
+firebase functions:secrets:set IMGBB_KEY     # clé depuis https://api.imgbb.com/
+firebase deploy --only functions:uploadImage
 ```
 
-Sans ce déploiement, l'admin ne peut téléverser aucune image (matchs,
-adversaires, médiathèque, fiches joueurs). La marche à suivre complète est dans
+| Secret | Obligatoire | Description |
+| --- | --- | --- |
+| `IMGBB_KEY` | oui | Clé API imgbb. Sans elle, `uploadImage` répond `failed-precondition` et l'admin affiche « Le service d'envoi d'images n'est pas configuré ». |
+
+La fonction valide la session, le rôle (bureau/manager pour les dossiers
+d'administration, `players/<uid>` et `avatars/<uid>` pour un joueur, `chat`
+pour tout membre connecté), le type et la taille (image, 5 Mo max), applique un
+quota de 40 envois par heure et par compte, puis relaie vers
+`https://api.imgbb.com/1/upload` avec un `AbortController` à 20 s — un hébergeur
+muet ne bloque jamais l'appel.
+
+La marche à suivre complète est dans
 [`docs/deploiement-firebase.md`](../docs/deploiement-firebase.md).

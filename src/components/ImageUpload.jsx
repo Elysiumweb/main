@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { UploadCloud, X, Loader2, ImageOff } from "lucide-react";
 import { useLang } from "../lib/i18n";
-import { compressImage, uploadBlob, uploadErrorKey, isStorageReady, buildUploadPath } from "../lib/imageUpload";
+import { compressImage, uploadBlob, uploadErrorKey, isUploadReady } from "../lib/imageUpload";
 
 /* ---------------------------------------------------------------------------
  * Envoi d'image vers Firebase Storage.
@@ -27,9 +27,9 @@ export const ImageUpload = ({
   const { t } = useLang();
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-  const configured = isStorageReady();
+  const configured = isUploadReady();
 
   const upload = useCallback(async (file) => {
     if (!file) return;
@@ -37,15 +37,15 @@ export const ImageUpload = ({
       toast.error(t("upload.invalidType"));
       return;
     }
-    if (!isStorageReady()) {
+    if (!isUploadReady()) {
       toast.error(t("upload.notConfigured"));
       return;
     }
     setBusy(true);
-    setProgress(0);
+    setProgress(null);
     try {
       const blob = await compressImage(file, maxWidth);
-      const url = await uploadBlob(blob, buildUploadPath(folder, file), { onProgress: setProgress });
+      const url = await uploadBlob(blob, folder);
       onChange(url);
       toast.success(t("upload.success"));
     } catch (err) {
@@ -103,9 +103,14 @@ export const ImageUpload = ({
         {busy ? (
           <span className="flex flex-col items-center gap-2 text-[#c8c8c8]">
             <Loader2 size={20} className="text-[#D8CA82] animate-spin motion-reduce:animate-none" aria-hidden="true" />
-            <span className="text-xs uppercase tracking-[0.2em]">{t("upload.uploading")} {progress}%</span>
+            <span className="text-xs uppercase tracking-[0.2em]">
+              {t("upload.uploading")}{progress === null ? "" : ` ${progress}%`}
+            </span>
             <span className="block h-1 w-40 bg-white/10 overflow-hidden">
-              <span className="block h-full bg-[#D8CA82] transition-all" style={{ width: `${progress}%` }} />
+              <span
+                className={`block h-full bg-[#D8CA82] ${progress === null ? "w-1/3 animate-pulse motion-reduce:animate-none" : "transition-all"}`}
+                style={progress === null ? undefined : { width: `${progress}%` }}
+              />
             </span>
           </span>
         ) : configured ? (

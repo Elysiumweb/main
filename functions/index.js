@@ -11,6 +11,7 @@
  *   firebase functions:secrets:set RESEND_API_KEY
  *   firebase functions:secrets:set BREVO_API_KEY
  *   firebase functions:secrets:set MAIL_FROM
+ *   firebase functions:secrets:set IMGBB_KEY       (téléversement d'images)
  *   firebase functions:config:set app.url="https://elysium-esport.fr" (ou APP_URL)
  */
 
@@ -291,6 +292,9 @@ const digestHtml = ({ subject, body, token }) => {
       <div style="padding:16px 28px;border-top:1px solid #222;font-size:11px;color:#777;">Vous recevez cet email car vous avez confirmé votre inscription. <a href="${escapeHtml(unsubscribe)}" style="color:#D8CA82;">Se désinscrire</a>.</div>
     </div>`;
 };
+
+// Téléversement d'images (relais imgbb — Cloud Storage exige le plan Blaze).
+Object.assign(exports, require("./upload"));
 
 exports.sendNewsletterDigest = onCall(
   { secrets: REGION_SECRETS, memory: "512MiB", timeoutSeconds: 120 },

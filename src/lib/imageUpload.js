@@ -1,28 +1,25 @@
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { storage } from "./firebase";
+import { callProtected } from "./secureForms";
 
 /* ------------------------------------------------------------------ *
  * Téléversement d'images — source de vérité unique du site.
  *
- * Deux pièges corrigés ici, qui laissaient tous les écrans d'upload
- * bloqués indéfiniment sur « Envoi en cours » :
+ * Cloud Storage n'existe pas sur le plan gratuit (bucket = Blaze depuis
+ * février 2026) : les images partent chez imgbb via la callable
+ * `uploadImage`, qui garde la clé API en secret de fonction. Le navigateur
+ * ne voit jamais la clé.
  *
- *  1. `uploadBytesResumable` ne signale RIEN quand la requête réseau
- *     reste en suspens (variables d'environnement Firebase absentes,
- *     domaine firebasestorage bloqué, hors ligne). Ni progression, ni
- *     erreur : la promesse ne se résout jamais. → minuterie de relance
- *     (`stallMs`) et durée maximale (`maxMs`), avec annulation du
- *     transfert dans les deux cas.
+ * Deux pièges corrigés ici, qui laissaient les écrans d'upload figés sur
+ * « Envoi en cours » :
+ *
+ *  1. L'appel pouvait ne jamais se terminer (réseau coupé, fonction
+ *     injoignable). → délai maximal + abandon, avec `settled` pour
+ *     qu'une réponse tardive ne remette pas l'interface en état occupé.
  *  2. La compression canvas pouvait ne jamais rendre la main si la
  *     décodification de l'image ne déclenchait aucun événement.
  *     → `COMPRESS_TIMEOUT_MS` + rejet explicite.
- *
- * Toute fonction exported ici se termine toujours : succès, erreur, ou
- * délai dépassé.
  * ------------------------------------------------------------------ */
 
-export const UPLOAD_STALL_MS = 20000; // sans octet reçu pendant 20 s → échec
-export const UPLOAD_MAX_MS = 120000; // plafond absolu d'un envoi
+export const UPLOAD_TIMEOUT_MS = 90000;
 export const COMPRESS_TIMEOUT_MS = 30000;
 
 export const uploadError = (code, cause) => {
@@ -34,19 +31,23 @@ export const uploadError = (code, cause) => {
 
 /** Clé de traduction associée à une erreur de téléversement. */
 export const uploadErrorKey = (err) => {
-  const code = err?.code;
-  if (code === "not-configured") return "upload.notConfigured";
-  if (code === "stalled" || code === "timeout") return "upload.timeout";
+  const code = String(err?.code || "");
+  if (code.endsWith("unavailable") || code === "stalled") return "upload.timeout";
+  if (code === "not-configured" || code.endsWith("failed-precondition") || code.endsWith("unauthenticated")) {
+    return "upload.notConfigured";
+  }
+  if (code.endsWith("resource-exhausted")) return "upload.rateLimited";
+  if (code.endsWith("permission-denied")) return "upload.forbidden";
+  if (code.endsWith("invalid-argument")) return "upload.invalidImage";
   return "upload.error";
 };
 
 /**
- * Le stockage n'est exploitable que si la configuration Firebase a été
- * figée au build (CRA). Sans elle, on refuse tout de suite plutôt que de
- * laisser tourner.
+ * L'envoi passe par une callable Firebase : il faut la configuration de
+ * l'application, mais surtout pas de bucket.
  */
-export const isStorageReady = () =>
-  Boolean(storage && process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_STORAGE_BUCKET);
+export const isUploadReady = () =>
+  Boolean(process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_PROJECT_ID);
 
 const withTimeout = (promise, ms, code) =>
   new Promise((resolve, reject) => {
@@ -62,10 +63,10 @@ export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
   withTimeout(
     new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onerror = () => reject(uploadError("read-error", new Error("read-error")));
+      reader.onerror = () => reject(uploadError("read-error"));
       reader.onload = () => {
         const img = new Image();
-        img.onerror = () => reject(uploadError("decode-error", new Error("decode-error")));
+        img.onerror = () => reject(uploadError("decode-error"));
         img.onload = () => {
           const scale = Math.min(1, maxWidth / img.width);
           const w = Math.max(1, Math.round(img.width * scale));
@@ -74,10 +75,10 @@ export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
           canvas.width = w;
           canvas.height = h;
           const ctx = canvas.getContext("2d");
-          if (!ctx) { reject(uploadError("canvas-error", new Error("canvas-error"))); return; }
+          if (!ctx) { reject(uploadError("canvas-error")); return; }
           ctx.drawImage(img, 0, 0, w, h);
           canvas.toBlob(
-            (blob) => (blob ? resolve(blob) : reject(uploadError("encode-error", new Error("encode-error")))),
+            (blob) => (blob ? resolve(blob) : reject(uploadError("encode-error"))),
             "image/jpeg",
             quality
           );
@@ -90,73 +91,45 @@ export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
     "compress-timeout"
   );
 
-const extensionFor = (file) => {
-  const name = (file?.name || "").toLowerCase();
-  if (/\.png$/.test(name)) return "png";
-  if (/\.webp$/.test(name)) return "webp";
-  if (/\.gif$/.test(name)) return "gif";
-  return "jpg";
-};
-
-/** Chemin unique et lisible dans le bucket : `dossier/1700000000_ab12cd.jpg`. */
-export const buildUploadPath = (folder, file) =>
-  `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extensionFor(file)}`;
+const blobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(uploadError("read-error"));
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
 
 /**
- * Envoie un blob vers Firebase Storage et renvoie son URL publique.
- * La promesse se résout toujours : le délai de relance et le plafond annulent
- * la tâche au lieu de laisser l'interface tourner indéfiniment.
+ * Envoie une image et renvoie son URL publique. La promesse se résout ou se
+ * rejette TOUJOURS : au-delà de `timeoutMs` elle abandonne, au lieu de laisser
+ * l'interface tourner indéfiniment.
  */
-export const uploadBlob = (blob, path, { onProgress, stallMs = UPLOAD_STALL_MS, maxMs = UPLOAD_MAX_MS } = {}) =>
+export const uploadBlob = (blob, folder, { timeoutMs = UPLOAD_TIMEOUT_MS } = {}) =>
   new Promise((resolve, reject) => {
-    if (!isStorageReady()) { reject(uploadError("not-configured")); return; }
-    if (!blob) { reject(uploadError("empty")); return; }
-
-    let task = null;
     let settled = false;
-    let stallTimer = null;
-    let maxTimer = null;
-
+    let timer = null;
     const settle = (fn, arg) => {
       if (settled) return;
       settled = true;
-      clearTimeout(stallTimer);
-      clearTimeout(maxTimer);
+      clearTimeout(timer);
       fn(arg);
     };
-    const abort = (code) => {
-      try { task?.cancel(); } catch { /* tâche déjà terminée */ }
-      settle(reject, uploadError(code));
-    };
 
-    maxTimer = setTimeout(() => abort("timeout"), maxMs);
+    const work = (async () => {
+      if (!isUploadReady()) throw uploadError("not-configured");
+      if (!blob) throw uploadError("empty");
+      if (!folder) throw uploadError("no-folder");
+      const image = await blobToDataUrl(blob);
+      const result = await callProtected("uploadImage", { image, folder });
+      if (!result?.url) throw uploadError("no-url");
+      return result.url;
+    })();
 
-    try {
-      task = uploadBytesResumable(ref(storage, path), blob, { contentType: blob.type || "image/jpeg" });
-    } catch (err) {
-      settle(reject, uploadError("failed", err));
-      return;
-    }
-    // La promesse interne du SDK rejette aussi à l'échec : on l'absorbe pour
-    // éviter un rejet non géré quand seul l'observateur nous intéresse.
-    if (task && typeof task.then === "function") task.then(undefined, () => {});
-
-    stallTimer = setTimeout(() => abort("stalled"), stallMs);
-
-    task.on(
-      "state_changed",
-      (snap) => {
-        clearTimeout(stallTimer);
-        stallTimer = setTimeout(() => abort("stalled"), stallMs);
-        if (snap.totalBytes) onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100));
-      },
-      (err) => settle(reject, uploadError("failed", err)),
-      async () => {
-        try {
-          settle(resolve, await getDownloadURL(task.snapshot.ref));
-        } catch (err) {
-          settle(reject, uploadError("failed", err));
-        }
-      }
+    // Le garde-fou : au-delà du délai on abandonne, et une réponse tardive ne
+    // peut plus rien réafficher (c'est ce qui figeait l'écran avant).
+    work.then(
+      (url) => settle(resolve, url),
+      (err) => settle(reject, err)
     );
+    timer = setTimeout(() => settle(reject, uploadError("stalled")), timeoutMs);
   });
