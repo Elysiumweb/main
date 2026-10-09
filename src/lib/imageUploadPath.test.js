@@ -89,7 +89,8 @@ describe("téléversement d'images", () => {
     expect(exists("functions/index.js")).not.toContain('require("./upload")');
     // Plus aucune dépendance d'hébergement d'images dans le manifeste.
     const deps = Object.keys(JSON.parse(read("package.json")).dependencies || {});
-    expect(deps.filter((d) => /imgbb|vercel|firebase-storage/.test(d))).toEqual([]);
+    // Note: @vercel/analytics est exclu car c'est un package d'analytics, pas d'hébergement d'images
+    expect(deps.filter((d) => /imgbb|firebase-storage/.test(d) || (d.includes('vercel') && !d.includes('analytics')))).toEqual([]);
   });
 
   it("documente la manipulation dans le guide de déploiement", () => {
