@@ -8,6 +8,7 @@ import { useLang } from "../lib/i18n";
 import { GAMES, ROLES, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
 import { MatchCard } from "../components/MatchCard";
+import { ImageUpload } from "../components/ImageUpload";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRosters } from "../components/admin/AdminRosters";
 import { AdminRoster } from "../components/admin/AdminRoster";
@@ -672,10 +673,9 @@ export default function Admin() {
               </div>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.logo")}</label>
-                <input value={form.opponentLogo} onChange={set("opponentLogo")} placeholder="https://..." className={inputCls} data-testid="admin-match-logo" />
-                {form.opponentLogo && /^https?:\/\//.test(form.opponentLogo) && (
-                  <img src={form.opponentLogo} alt="" className="h-10 mt-2 object-contain border border-white/10 p-1" onError={(e) => { e.target.style.display = "none"; }} data-testid="admin-match-logo-preview" />
-                )}
+                {/* Le logo se téléverse : plus de lien à coller. Choisir un adversaire
+                    connu dans la liste remplit automatiquement le logo. */}
+                <ImageUpload value={form.opponentLogo} onChange={set("opponentLogo")} folder="matches" maxWidth={800} testId="admin-match-logo-upload" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
