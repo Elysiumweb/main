@@ -9,7 +9,7 @@ const PRODUCT_IMAGE = "https://i.ibb.co/ZR8f8kCd/13.jpg";
 const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 
 const WARMERS_URL = "https://eliminate.fr/produit/elysium-manchette-2026/";
-const WARMERS_IMAGE = "/shop/manchettes-2026.jpg";
+const WARMERS_IMAGE = "https://i.ibb.co/tShCYSk/12.jpg";
 /* Les deux quantités sont proposées sur la même fiche eliminate.fr : le choix se
    fait chez le marchand, le site affiche donc les deux prix sans sélecteur. */
 const WARMERS_PRICES = [
