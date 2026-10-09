@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, orderBy, limit, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Send, ImageIcon, Pencil, Trash2, X, Check, AtSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { db, storage } from "../lib/firebase";
+import { db } from "../lib/firebase";
+import { compressImage, uploadBlob, uploadErrorKey, buildUploadPath } from "../lib/imageUpload";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { createNotification, logAdminAction } from "../lib/notify";
@@ -17,30 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-
-/* Petite compression d'image (JPEG) avant envoi — limite la taille du storage. */
-const compressImage = (file, maxWidth = 1280) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("read-error"));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("decode-error"));
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / img.width);
-        const w = Math.max(1, Math.round(img.width * scale));
-        const h = Math.max(1, Math.round(img.height * scale));
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { reject(new Error("canvas-error")); return; }
-        ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("encode-error"))), "image/jpeg", 0.82);
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
 
 /* Rendu d'un texte avec mentions @pseudo surlignées. */
 const renderText = (text, members) => {
@@ -156,21 +132,16 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
     } catch (err) { console.error(err); toast.error(t("upload.error")); }
   };
 
-  const uploadImage = () =>
-    new Promise((resolve, reject) => {
-      if (!pendingImage) { resolve(null); return; }
-      setUploading(true);
-      fetch(pendingImage)
-        .then((r) => r.blob())
-        .then((blob) => {
-          const path = `chat/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
-          const task = uploadBytesResumable(ref(storage, path), blob, { contentType: "image/jpeg" });
-          task.on("state_changed", null,
-            (err) => { setUploading(false); reject(err); },
-            async () => { const url = await getDownloadURL(task.snapshot.ref); setUploading(false); resolve(url); });
-        })
-        .catch((err) => { setUploading(false); reject(err); });
-    });
+  const uploadImage = async () => {
+    if (!pendingImage) return null;
+    setUploading(true);
+    try {
+      const blob = await fetch(pendingImage).then((r) => r.blob());
+      return await uploadBlob(blob, buildUploadPath("chat", { name: "image.jpg" }));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const send = async (e) => {
     e?.preventDefault();
@@ -178,7 +149,7 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
     if (!trimmed && !pendingImage) return;
     let imageUrl = null;
     try { imageUrl = await uploadImage(); }
-    catch (err) { console.error(err); toast.error(t("upload.error")); return; }
+    catch (err) { console.error(err); toast.error(t(uploadErrorKey(err))); return; }
     setText("");
     setPendingImage(null);
     setMentionQuery(null);

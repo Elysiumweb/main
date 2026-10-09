@@ -11,6 +11,7 @@ import { DonateBlock } from "../components/DonateButton";
 import { CampaignProgress } from "../components/CampaignProgress";
 import { MatchCountdown } from "../components/MatchCountdown";
 import { OptimizedImage } from "../components/OptimizedImage";
+import { ImageWithFallback } from "../components/ImageWithFallback";
 import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { videoEmbedUrl } from "./MediaGallery";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
@@ -234,13 +235,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
           <div className="grid md:grid-cols-2 border border-[#D8CA82]/30 bg-[#141414] overflow-hidden group">
             <div className="relative aspect-square bg-[#0c0c0c] overflow-hidden">
-              <img
-                src="https://i.ibb.co/ZR8f8kCd/13.jpg"
+              <ImageWithFallback
+                src="/shop/maillot-2026.jpg"
                 alt={t("shop.imageAlt")}
-                width="1568"
-                height="1568"
                 loading="lazy"
-                decoding="async"
                 className="absolute inset-0 w-full h-full object-contain"
               />
             </div>
@@ -322,9 +320,8 @@ export default function Home() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-8">
             {/* PROCHAIN MATCH — grande tuile */}
             <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative border border-white/10 bg-[#111111] overflow-hidden flex flex-col group hover:border-[#D8CA82]/50 u-micro" data-testid="home-proof-next-match">
-              <img src="https://images.pexels.com/photos/9072212/pexels-photo-9072212.jpeg?auto=compress&cs=tinysrgb&w=1200"
-                alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800"
-                className="absolute inset-0 w-full h-full object-cover opacity-25 saturate-[0.4] contrast-125 grayscale-[0.15]" />
+              {/* Texture décorative : le motif de la charte, en local — pas de photo distante. */}
+              <div className="pattern-overlay opacity-[0.05]" aria-hidden="true" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0c] via-[#0c0c0c]/80 to-[#0c0c0c]/40" aria-hidden="true" />
               <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{backgroundImage:"radial-gradient(rgba(216,202,130,0.3) 1px, transparent 1px)", backgroundSize:"3px 3px"}} aria-hidden="true" />
               <div className="relative p-8 lg:p-12 flex flex-col flex-1">

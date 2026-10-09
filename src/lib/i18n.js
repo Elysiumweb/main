@@ -896,8 +896,9 @@ const dict = {
     "upload.uploading": "Envoi en cours",
     "upload.success": "Image envoyée !",
     "upload.error": "Impossible d'envoyer l'image. Vérifiez les règles de stockage.",
+    "upload.timeout": "L'envoi n'avance pas — réseau ou stockage indisponible. Réessayez dans un instant.",
+    "upload.notConfigured": "Le stockage d'images n'est pas configuré sur ce site. Contactez l'administrateur.",
     "upload.invalidType": "Fichier image uniquement.",
-    "upload.orUrl": "ou coller une URL :",
     "upload.preview": "Aperçu de l'image",
     /* ---- Share ---- */
     "share.label": "Partager",
@@ -2140,8 +2141,9 @@ const dict = {
     "upload.uploading": "Uploading",
     "upload.success": "Image uploaded!",
     "upload.error": "Could not upload the image. Check storage rules.",
+    "upload.timeout": "The upload is not going through — network or storage unavailable. Try again shortly.",
+    "upload.notConfigured": "Image storage is not configured on this site. Please contact the administrator.",
     "upload.invalidType": "Image files only.",
-    "upload.orUrl": "or paste a URL:",
     "upload.preview": "Image preview",
     /* ---- Share ---- */
     "share.label": "Share",

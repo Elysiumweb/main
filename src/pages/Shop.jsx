@@ -5,11 +5,11 @@ import { useLang } from "../lib/i18n";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const PRODUCT_URL = "https://eliminate.fr/elysium";
-const PRODUCT_IMAGE = "https://i.ibb.co/ZR8f8kCd/13.jpg";
+const PRODUCT_IMAGE = "/shop/maillot-2026.jpg";
 const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"];
 
 const WARMERS_URL = "https://eliminate.fr/produit/elysium-manchette-2026/";
-const WARMERS_IMAGE = "https://i.ibb.co/tShCYSk/12.jpg";
+const WARMERS_IMAGE = "/shop/manchettes-2026.jpg";
 /* Les deux quantités sont proposées sur la même fiche eliminate.fr : le choix se
    fait chez le marchand, le site affiche donc les deux prix sans sélecteur. */
 const WARMERS_PRICES = [
@@ -21,16 +21,12 @@ const WARMERS_PRICES = [
 const ProductCard = ({ id, alt, badge, children }) => (
   <article className="grid lg:grid-cols-12 border border-white/10 bg-[#141414] overflow-hidden" data-testid={`shop-${id}`}>
     <div className="lg:col-span-7 relative min-h-[420px] sm:min-h-[620px] bg-[#0c0c0c] overflow-hidden">
-      {id === "jersey-2026" ? (
-        <img src={PRODUCT_IMAGE} alt={alt} loading="eager" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
-      ) : (
-        <ImageWithFallback
-          src={WARMERS_IMAGE}
-          alt={alt}
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      )}
+      <ImageWithFallback
+        src={id === "jersey-2026" ? PRODUCT_IMAGE : WARMERS_IMAGE}
+        alt={alt}
+        loading={id === "jersey-2026" ? "eager" : "lazy"}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
       <span className="absolute top-5 left-5 bg-[#111111] text-[#D8CA82] px-3 py-2 text-xs font-display font-bold uppercase tracking-[0.25em]">
         {badge}
       </span>
