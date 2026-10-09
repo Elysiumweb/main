@@ -5,10 +5,19 @@
  * depuis février 2026). Les images partent donc chez imgbb, l'hébergeur
  * des visuels i.ibb.co, directement depuis le navigateur.
  *
- * La clé vient de la variable d'environnement Vercel `REACT_APP_IMGBB_KEY`
- * (Create React App ne lit que les variables `REACT_APP_*`). Elle est
- * donc visible dans le bundle du site : à toi de la régénérer si elle
- * fuit, c'est le compromis assumé pour éviter une commande de déploiement.
+ * Deux transports, sans commande de déploiement dans aucun cas :
+ *
+ *  1. **Passerelle serveur** (recommandé) — `POST /api/upload`, une fonction
+ *     Vercel qui relaie l'envoi avec la variable `IMGBB_KEY`. Sans préfixe
+ *     `REACT_APP_`, elle n'est PAS publique : Vercel accepte de la marquer
+ *     « secret » et elle n'arrive jamais dans le navigateur.
+ *  2. **Envoi direct** — si `REACT_APP_IMGBB_KEY` est définie, le navigateur
+ *     poste lui-même chez imgbb. Cette variable-ci est forcément publique
+ *     (Create React App l'inline dans le JS), donc Vercel refuse de la
+ *     marquer secrète. C'est le repli quand le projet n'a pas de fonctions.
+ *
+ * Le repli est tenté seulement quand la passerelle n'existe pas, afin qu'un
+ * projet sans /api ne reste pas bloqué.
  *
  * Deux pièges corrigés ici, qui laissaient les écrans d'upload figés sur
  * « Envoi en cours » :
@@ -21,6 +30,7 @@
  * ------------------------------------------------------------------ */
 
 const IMGBB_ENDPOINT = "https://api.imgbb.com/1/upload";
+const SERVER_ENDPOINT = "/api/upload";
 export const UPLOAD_TIMEOUT_MS = 45000;
 export const COMPRESS_TIMEOUT_MS = 30000;
 
@@ -43,8 +53,12 @@ export const uploadErrorKey = (err) => {
   return "upload.error";
 };
 
-/** Sans clé injectée au build, l'envoi est refusé au lieu de partir à l'aveugle. */
-export const isUploadReady = () => Boolean(apiKey());
+/**
+ * On peut toujours tenter un envoi : soit via la clé injectée au build, soit
+ * via la passerelle serveur. La configuration manquante se signale alors sur
+ * l'appel lui-même, avec un message explicite.
+ */
+export const isUploadReady = () => Boolean(apiKey()) || typeof window !== "undefined";
 
 const withTimeout = (promise, ms, code) =>
   new Promise((resolve, reject) => {
@@ -92,8 +106,11 @@ const safeJson = (text) => {
   try { return JSON.parse(text); } catch { return null; }
 };
 
-/** POST vers imgbb avec progression réelle, et abandon si rien n'arrive. */
-const postToImgbb = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS } = {}) =>
+/**
+ * POST binaire avec progression réelle, et abandon si rien n'arrive.
+ * `endpoint` decide si l'on vise imgbb directement ou la passerelle.
+ */
+const post = ({ endpoint, blob, folder, onProgress, timeoutMs, readUrl }) =>
   new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let settled = false;
@@ -113,8 +130,9 @@ const postToImgbb = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS }
       try { xhr.abort(); } catch { /* déjà arrêté */ }
     };
 
-    xhr.open("POST", `${IMGBB_ENDPOINT}?key=${encodeURIComponent(apiKey())}`);
+    xhr.open("POST", endpoint);
     xhr.timeout = timeoutMs;
+    if (readUrl) xhr.responseType = "json";
     if (xhr.upload && onProgress) {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
@@ -122,22 +140,32 @@ const postToImgbb = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS }
     }
     xhr.onload = () => {
       const payload = xhr.response || safeJson(xhr.responseText);
-      if (xhr.status >= 200 && xhr.status < 300 && payload?.success && payload?.data?.url) {
-        settle(resolve, payload.data.url);
-        return;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const url = readUrl ? payload?.url : payload?.success && payload?.data?.url;
+        if (url) { settle(resolve, url); return; }
       }
-      console.error("[upload] imgbb", xhr.status, payload?.error);
-      settle(reject, uploadError("rejected", payload?.error?.message));
+      // 503 = la passerelle existe mais n'a pas de clé : on ne tente pas le repli.
+      console.error("[upload]", xhr.status, payload);
+      // 404 = pas de fonction /api sur ce déploiement : le repli direct peut
+      // prendre le relais si une clé publique est présente.
+      if (xhr.status === 404) { settle(reject, uploadError("not-found")); return; }
+      settle(reject, uploadError("rejected", payload?.error));
     };
     xhr.onerror = () => abort("network");
     xhr.ontimeout = () => abort("stalled");
     xhr.onabort = () => settle(reject, uploadError("aborted"));
 
-    const name = folder.replace(/[^a-zA-Z0-9-]/g, "-");
-    const form = new FormData();
-    form.append("image", blob, `${name}.jpg`);
-    form.append("name", name);
-    xhr.send(form);
+    if (readUrl) {
+      // Passerelle : le binaire brut, le dossier dans l'URL — pas de base64.
+      xhr.setRequestHeader("Content-Type", blob.type || "image/jpeg");
+      xhr.send(blob);
+    } else {
+      const name = folder.replace(/[^a-zA-Z0-9-]/g, "-");
+      const form = new FormData();
+      form.append("image", blob, `${name}.jpg`);
+      form.append("name", name);
+      xhr.send(form);
+    }
 
     // `xhr.timeout` suffit en théorie ; ce garde-fou couvre le cas où la
     // connexion reste ouverte sans émettre le timeout (réseau instable).
@@ -149,12 +177,34 @@ const postToImgbb = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS }
  * rejette TOUJOURS : au-delà du délai elle abandonne, au lieu de laisser
  * l'interface tourner indéfiniment.
  */
-export const uploadBlob = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS } = {}) => {
-  if (!isUploadReady()) return Promise.reject(uploadError("not-configured"));
-  if (!blob) return Promise.reject(uploadError("empty"));
-  if (!folder) return Promise.reject(uploadError("no-folder"));
-  // 5 Mo : la limite d'imgbb sur le plan gratuit est bien plus haute, on
-  // borne surtout pour ne pas figer un mobile sur une photo de 12 Mo.
-  if (blob.size > 5 * 1024 * 1024) return Promise.reject(uploadError("too-large"));
-  return postToImgbb(blob, folder, { onProgress, timeoutMs });
+export const uploadBlob = async (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS } = {}) => {
+  if (!blob) throw uploadError("empty");
+  if (!folder) throw uploadError("no-folder");
+  // 4 Mo : sous la limite de corps de requête de Vercel et au-delà de tout ce
+  // que la compression client produit pour une photo normale.
+  if (blob.size > 4 * 1024 * 1024) throw uploadError("too-large");
+
+  const key = apiKey();
+
+  // 1. Passerelle serveur (clé secrète) — le chemin par défaut.
+  try {
+    return await post({
+      endpoint: `${SERVER_ENDPOINT}?folder=${encodeURIComponent(folder)}`,
+      blob, folder, onProgress, timeoutMs, readUrl: true,
+    });
+  } catch (err) {
+    // Autre panne qu'une passerelle absente : remontée telle quelle.
+    if (err.code !== "not-found") throw err;
+    // 404 sans clé publique : aucune porte de sortie, et rien à corriger
+    // côté variable d'environnement.
+    if (!key) throw uploadError("not-configured");
+    console.warn("[upload] passerelle absente, envoi direct chez imgbb");
+  }
+
+  // 2. Repli direct : la clé est alors dans le bundle, assumé et documenté.
+  if (!key) throw uploadError("not-configured");
+  return post({
+    endpoint: `${IMGBB_ENDPOINT}?key=${encodeURIComponent(key)}`,
+    blob, folder, onProgress, timeoutMs, readUrl: false,
+  });
 };

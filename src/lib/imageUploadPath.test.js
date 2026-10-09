@@ -27,9 +27,11 @@ const collectSources = (dir) =>
 
 const appSources = collectSources(path.join(ROOT, "src"));
 const functionSources = collectSources(path.join(ROOT, "functions"));
+const apiSources = exists(path.join(ROOT, "api")) ? collectSources(path.join(ROOT, "api")) : [];
 const trackedFiles = [
   ...appSources,
   ...functionSources,
+  ...apiSources,
   ...["firebase.json", "package.json"].map((f) => ({ file: path.join(ROOT, f), content: read(f) })),
 ];
 
@@ -68,13 +70,32 @@ describe("téléversement d'images", () => {
     const client = read("src/lib/imageUpload.js");
     expect(client).toContain("xhr.timeout");
     expect(client).toContain("onprogress");
-    expect(client).toContain("5 * 1024 * 1024");
+    expect(client).toContain("4 * 1024 * 1024");
     expect(client).toMatch(/settled/);
   });
 
-  it("n'a laissé aucune fonction d'envoi orpheline", () => {
+  it("n'a laissé aucune fonction d'envoi orpheline côté Firebase", () => {
     expect(exists("functions/upload.js")).toBe(false);
     expect(read("functions/index.js")).not.toContain('require("./upload")');
+  });
+
+  it("garde la clé secrète dans la passerelle Vercel", () => {
+    const gateway = read("api/upload.js");
+    // Sans préfixe REACT_APP_ : Vercel autorise alors visibility: secret et ne
+    // l'injecte jamais dans le bundle du navigateur.
+    expect(gateway).toContain("process.env.IMGBB_KEY");
+    // Le mot apparaît dans un commentaire d'explication, jamais comme variable lue.
+    expect(gateway).not.toMatch(/process\.env\.REACT_APP_/);
+    const envReads = [...gateway.matchAll(/process\.env\.([A-Z_]+)/g)].map((m) => m[1]);
+    expect([...new Set(envReads)]).toEqual(["IMGBB_KEY"]);
+    expect(gateway).toContain("https://api.imgbb.com/1/upload");
+    expect(gateway).toContain("4 * 1024 * 1024");
+  });
+
+  it("tente la passerelle avant l'envoi direct", () => {
+    const client = read("src/lib/imageUpload.js");
+    expect(client).toContain('SERVER_ENDPOINT = "/api/upload"');
+    expect(client.indexOf("SERVER_ENDPOINT") < client.indexOf("}?key=")).toBe(true);
   });
 });
 

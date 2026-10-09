@@ -8,55 +8,60 @@ sur ta machine n'est nécessaire pour l'envoi d'images.
 
 ## 1. Envoyer des images depuis l'admin
 
-**Pourquoi cette procédure ?** Cloud Storage n'existe pas sur le plan gratuit
-Firebase : depuis le 3 février 2026, un bucket exige le plan Blaze. Les images
-sont donc hébergées chez **imgbb** — l'hébergeur de tes visuels `i.ibb.co` — et
-l'envoi se fait directement depuis le navigateur.
+**Pourquoi ?** Cloud Storage n'existe pas sur le plan gratuit Firebase : depuis
+le 3 février 2026, un bucket exige le plan Blaze. Les images sont donc hébergées
+chez **imgbb** — l'hébergeur de tes visuels `i.ibb.co`.
 
-### Marche à suivre (dans l'interface Vercel)
+Deux réglages possibles, **aucun ne demande de commande à taper**. Choisis celui
+qui te va (le premier garde la clé secrète).
 
-1. Régénère ta clé sur <https://api.imgbb.com/> — surtout si elle a déjà été
-   écrite dans un message ou un fichier.
-2. Dans Vercel : **ton projet → Settings → Environment Variables**
-   - **Key** : `REACT_APP_IMGBB_KEY`
-   - **Value** : la clé imgbb
-   - **Environments** : *Production* (coche aussi *Preview* si tu veux tester
-     les aperçus de déploiement).
-3. **Save**, puis **redeploy** le projet (Deployments → ⋮ → Redeploy sur le
-   dernier déploiement). Les variables sont figées **au build** : sans
-   redéploiement, rien ne change.
+### Option A — clé secrète, via la passerelle `/api/upload` (recommandé)
 
-### Vérification
+Le dépôt contient `api/upload.js`, une fonction Vercel qui relaie l'envoi vers
+imgbb. La clé y est lue **côté serveur**.
+
+1. Régénère ta clé sur <https://api.imgbb.com/> si elle a déjà été écrite dans
+   un message ou un fichier.
+2. Vercel → *Settings → Environment Variables* :
+   - **Key** : `IMGBB_KEY` — sans préfixe `REACT_APP_`, donc la visibilité
+     **Secret** est acceptée et la valeur n'arrive jamais dans le navigateur.
+   - **Environments** : *Production*.
+3. **Save**, puis **redeploy**. Vercel publie automatiquement le dossier `/api`,
+   rien à déployer à la main.
+
+### Option B — envoi direct depuis le navigateur
+
+Si ton projet n'a pas de fonctions serveur, le navigateur poste lui-même chez
+imgbb. La clé doit alors être publique :
+
+- **Key** : `REACT_APP_IMGBB_KEY` — le préfixe `REACT_APP_` est obligatoire,
+  Create React App n'injecte que les variables de cette famille dans le bundle.
+- **Visibilité** : `config` (Vercel refuse `secret` sur une variable publique,
+  et il a raison : la valeur finit dans le JavaScript du site).
+
+### Vérification (les deux options)
 
 Admin → Résultats → un match → choisis un logo → *Envoyer*. L'aperçu doit
 apparaître, et le logo est enregistré dans Firestore avec son URL imgbb.
 
-### Le compromis assumé
+Sans configuration, l'écran d'envoi affiche « Le service d'envoi d'images n'est
+pas configuré sur ce site » au lieu de rester bloqué.
 
-La clé est lue par le navigateur : elle est donc visible dans le code source du
-site, comme toute valeur `REACT_APP_*`. Avec une clé imgbb, un visiteur
-malveillant pourrait **ajouter** des images à ton compte (pas en lire d'autres,
-pas en supprimer : la suppression exige une URL propre à chaque image). Si ça
-t'inquiète, deux options :
+### Le compromis de l'option B
 
-- **Cloudinary** : même principe mais avec un *preset* d'envoi, concept fait
-  pour ça ;
-- **une Cloud Function** qui relaie l'envoi et garde la clé secrète
-  (`firebase functions:secrets:set IMGBB_KEY` + un déploiement).
-
-Dans les deux cas, seul `src/lib/imageUpload.js` est à modifier.
+La clé est visible dans le code source du site. Une clé imgbb permet d'**ajouter**
+des images à ton compte — pas d'en lire d'autres ni d'en supprimer, car chaque
+image possède sa propre URL de suppression. Si ça ne te va pas, passe à
+l'option A : c'est le seul endroit à changer, `src/lib/imageUpload.js` sert les
+deux transports et tente la passerelle en premier.
 
 ### Qui peut envoyer quoi
-
-Le contrôle est fait côté client, donc il protège des oublis, pas d'un attaquant :
 
 | Dossier | Utilisé par |
 |---|---|
 | `media`, `articles`, `matches`, `opponents`, `uploads` | formulaires d'administration (bureau) |
 | `players/<uid>`, `avatars/<uid>` | la fiche et l'avatar du joueur connecté |
 | `chat` | les images de discussion |
-
----
 
 ## 2. Autres variables Vercel (Firebase)
 
@@ -70,7 +75,8 @@ REACT_APP_FIREBASE_MESSAGING_SENDER_ID=...
 REACT_APP_FIREBASE_APP_ID=...
 REACT_APP_RECAPTCHA_SITE_KEY=...      (optionnel — anti-robot)
 REACT_APP_FIREBASE_APPCHECK_SITE_KEY=...  (optionnel)
-REACT_APP_IMGBB_KEY=...              (envoi d'images)
+IMGBB_KEY=...                        (option A — secret, côté serveur)
+REACT_APP_IMGBB_KEY=...              (option B — public, envoi direct)
 ```
 
 `REACT_APP_FIREBASE_STORAGE_BUCKET` n'est plus utilisé : supprime-le, il ne sert
@@ -96,8 +102,9 @@ Sans rapport avec les images : c'est ce qui protège les collections.
 
 | Message | Cause | Solution |
 |---|---|---|
-| « Le service d'envoi d'images n'est pas configuré » | `REACT_APP_IMGBB_KEY` absente, ou build fait avant l'ajout | Vérifier la variable, puis **redeploy** sur Vercel |
+| « Le service d'envoi d'images n'est pas configuré » | `IMGBB_KEY` (option A) ou `REACT_APP_IMBB_KEY` (option B) absente, ou build antérieur à l'ajout | Vérifier la variable, puis **redeploy** sur Vercel |
 | L'envoi part puis échoue | clé imgbb révoquée / régénérée | Reprendre une nouvelle clé sur api.imgbb.com et la remettre dans Vercel |
+| 404 sur `/api/upload` | Projet Vercel sans fonctions (option A impossible) | Passer en option B, ou vérifier que le dossier `/api` est bien déployé |
 | L'écran reste sur « Envoi en cours » | Réseau instable ou imgbb injoignable | L'envoi abandonne seul après 45 s ; réessaie |
 | « Image invalide ou trop lourde » | Fichier > 5 Mo ou format non supporté | Recadrer, ou laisser la compression automatique agir |
 | `Error: Failed to authenticate` | Session Firebase CLI expirée | `firebase login` (uniquement pour les règles Firestore) |

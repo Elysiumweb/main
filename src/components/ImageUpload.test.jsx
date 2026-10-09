@@ -102,12 +102,12 @@ describe("ImageUpload", () => {
     expect(mockToast.error).toHaveBeenCalledWith("key:stalled");
   });
 
-  it("signale le service indisponible au lieu de bloquer sur l'envoi", async () => {
-    mockUpload.isUploadReady.mockReturnValue(false);
+  it("signale un service non configuré au lieu de bloquer sur l'envoi", async () => {
+    mockUpload.uploadBlob.mockRejectedValue(Object.assign(new Error("not-configured"), { code: "not-configured" }));
+    mockUpload.uploadErrorKey.mockReturnValue("upload.notConfigured");
     render();
-    expect(q("test-upload-unavailable")).not.toBeNull();
     await pickFile();
-    expect(mockUpload.uploadBlob).not.toHaveBeenCalled();
+    expect(container.textContent).not.toMatch(/Envoi en cours/);
     expect(mockToast.error).toHaveBeenCalledWith("Le service d'envoi d'images n'est pas configuré sur ce site. Contactez l'administrateur.");
   });
 
