@@ -42,10 +42,10 @@ export const ImageUpload = ({
       return;
     }
     setBusy(true);
-    setProgress(null);
+    setProgress(0);
     try {
       const blob = await compressImage(file, maxWidth);
-      const url = await uploadBlob(blob, folder);
+      const url = await uploadBlob(blob, folder, { onProgress: setProgress });
       onChange(url);
       toast.success(t("upload.success"));
     } catch (err) {

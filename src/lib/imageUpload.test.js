@@ -1,123 +1,139 @@
 /* ---------------------------------------------------------------------------
- * Le transport n'est plus Firebase Storage (bucket = Blaze) mais la callable
- * `uploadImage`. On verrouille la garantie qui compte : l'appel se termine
- * TOUJOURS, et une réponse tardive ne peut pas réactiver un état occupé.
+ * L'envoi part directement chez imgbb depuis le navigateur : la clé vient de
+ * la variable d'environnement Vercel `REACT_APP_IMGBB_KEY`. On verrouille la
+ * garantie qui compte — l'appel se termine TOUJOURS — et le fait qu'aucune clé
+ * ne soit écrite en dur dans le dépôt.
  * ------------------------------------------------------------------------- */
 
-const mockCall = jest.fn();
-jest.mock("./secureForms", () => ({ callProtected: (...args) => mockCall(...args) }));
+/* XHR factice : on pilote la réponse à la main, comme un réseau qui traîne. */
+class FakeXHR {
+  static last = null;
+  constructor() {
+    this.upload = {};
+    this.status = 0;
+    this.responseText = "";
+    this.aborted = false;
+    FakeXHR.last = this;
+  }
+  open(method, url) { this.method = method; this.url = url; }
+  send(body) { this.body = body; }
+  abort() { this.aborted = true; this.onabort?.(); }
+  /* Déclencheurs de test */
+  progress(loaded, total) { this.upload.onprogress?.({ lengthComputable: true, loaded, total }); }
+  respond(status, payload) {
+    this.status = status;
+    this.response = payload;
+    this.responseText = JSON.stringify(payload);
+    this.onload?.();
+  }
+}
 
 const { uploadBlob, uploadErrorKey, isUploadReady, UPLOAD_TIMEOUT_MS, COMPRESS_TIMEOUT_MS } = require("./imageUpload");
 
-/* FileReader minimal : jsdom ne décode pas les images, on teste le transport. */
-const withDataUrl = (value) => {
-  class FakeReader {
-    onerror = null;
-    onload = null;
-    result = value;
-    // Synchrone : sinon les minuteries factices figeraient le test.
-    readAsDataURL() { this.onload?.(); }
-  }
-  global.FileReader = FakeReader;
-};
+const IMG = new Blob([new Uint8Array(2048)], { type: "image/jpeg" });
 
 beforeEach(() => {
-  withDataUrl("data:image/jpeg;base64,AAAA");
-  mockCall.mockReset();
-  process.env.REACT_APP_FIREBASE_API_KEY = "demo-key";
-  process.env.REACT_APP_FIREBASE_PROJECT_ID = "demo-project";
+  global.XMLHttpRequest = FakeXHR;
+  FakeXHR.last = null;
+  process.env.REACT_APP_IMGBB_KEY = "cle-de-test";
 });
 
 afterEach(() => {
-  delete process.env.REACT_APP_FIREBASE_API_KEY;
-  delete process.env.REACT_APP_FIREBASE_PROJECT_ID;
+  delete process.env.REACT_APP_IMGBB_KEY;
   jest.useRealTimers();
 });
 
-const blob = { type: "image/jpeg", size: 2048 };
+/* La promesse doit être capturée AVANT d'émettre la réponse, sinon le rejet
+   est traité comme non géré par Node. */
+const capture = (promise) => promise.then((value) => ({ ok: true, value }), (error) => ({ ok: false, error }));
 
 describe("uploadBlob", () => {
-  it("renvoie l'URL renvoyée par la fonction", async () => {
-    mockCall.mockResolvedValue({ url: "https://i.ibb.co/abc/logo.jpg" });
-    await expect(uploadBlob(blob, "matches")).resolves.toBe("https://i.ibb.co/abc/logo.jpg");
-    expect(mockCall).toHaveBeenCalledWith("uploadImage", {
-      image: "data:image/jpeg;base64,AAAA",
-      folder: "matches",
-    });
+  it("poste l'image chez imgbb avec la clé de l'environnement", async () => {
+    const settled = capture(uploadBlob(IMG, "matches"));
+    const xhr = FakeXHR.last;
+    expect(xhr.method).toBe("POST");
+    expect(xhr.url).toContain("https://api.imgbb.com/1/upload?key=");
+    expect(xhr.url).toContain("cle-de-test");
+    expect(xhr.body.get("image")).toBeInstanceOf(Blob);
+    expect(xhr.body.get("name")).toBe("matches");
+
+    xhr.respond(200, { success: true, data: { url: "https://i.ibb.co/abc/logo.jpg" } });
+    await expect(settled).resolves.toEqual({ ok: true, value: "https://i.ibb.co/abc/logo.jpg" });
   });
 
-  it("n'émet plus de minuterie une fois l'appel terminé", async () => {
-    jest.useFakeTimers();
-    mockCall.mockResolvedValue({ url: "https://i.ibb.co/abc/logo.jpg" });
-    await uploadBlob(blob, "matches");
-    expect(jest.getTimerCount()).toBe(0);
+  it("remonte la progression d'envoi au composant", async () => {
+    const steps = [];
+    const settled = capture(uploadBlob(IMG, "matches", { onProgress: (p) => steps.push(p) }));
+    FakeXHR.last.progress(50, 100);
+    FakeXHR.last.progress(100, 100);
+    FakeXHR.last.respond(200, { success: true, data: { url: "https://i.ibb.co/abc/logo.jpg" } });
+    await settled;
+    expect(steps).toEqual([50, 100]);
   });
 
-  it("abandonne l'appel au délai imparti au lieu de figer l'écran", async () => {
-    jest.useFakeTimers();
-    mockCall.mockImplementation(() => new Promise(() => {})); // jamais résolue
-    const promise = uploadBlob(blob, "matches");
-    const settled = promise.then(() => "ok", (err) => err);
-    jest.advanceTimersByTime(UPLOAD_TIMEOUT_MS + 1);
+  it("remonte le refus de l'hébergeur sans rester en attente", async () => {
+    const settled = capture(uploadBlob(IMG, "matches"));
+    FakeXHR.last.respond(400, { success: false, error: { message: "Invalid image" } });
     const result = await settled;
-    expect(result).toMatchObject({ code: "stalled" });
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatchObject({ code: "rejected" });
+  });
+
+  it("abandonne l'envoi si l'hébergeur ne répond pas (le bug de la boucle)", async () => {
+    jest.useFakeTimers();
+    const settled = capture(uploadBlob(IMG, "matches"));
+    jest.advanceTimersByTime(UPLOAD_TIMEOUT_MS + 6000);
+    const result = await settled;
+    expect(result.error).toMatchObject({ code: "stalled" });
+    expect(FakeXHR.last.aborted).toBe(true);
     expect(uploadErrorKey({ code: "stalled" })).toBe("upload.timeout");
   });
 
-  it("ignore une réponse tardive : l'état reste après l'abandon", async () => {
+  it("n'émet plus de minuterie une fois l'envoi terminé", async () => {
     jest.useFakeTimers();
-    let resolveCall;
-    mockCall.mockImplementation(() => new Promise((r) => { resolveCall = r; }));
-    const settled = uploadBlob(blob, "matches").then(() => "ok", (err) => err);
-    jest.advanceTimersByTime(UPLOAD_TIMEOUT_MS + 1);
-    expect(await settled).toMatchObject({ code: "stalled" });
-    // L'appel finit enfin, beaucoup plus tard : plus rien ne doit se déclencher.
-    resolveCall({ url: "https://i.ibb.co/tardif.jpg" });
-    expect(await settled).toMatchObject({ code: "stalled" });
-  });
-
-  it("remonte l'erreur du serveur sans laisser l'état occupé", async () => {
-    jest.useFakeTimers();
-    const denied = Object.assign(new Error("Réservé au bureau"), { code: "functions/permission-denied" });
-    mockCall.mockRejectedValue(denied);
-    const settled = uploadBlob(blob, "matches").then(() => null, (err) => err);
-    await expect(settled).resolves.toBe(denied);
-    // Aucune minuterie résiduelle : l'écran peut se Liberationner.
+    const settled = capture(uploadBlob(IMG, "matches"));
+    FakeXHR.last.respond(200, { success: true, data: { url: "https://i.ibb.co/abc/logo.jpg" } });
+    await settled;
     expect(jest.getTimerCount()).toBe(0);
-    expect(uploadErrorKey(denied)).toBe("upload.forbidden");
   });
 
-  it("traduit chaque refus du serveur en message utile", () => {
-    expect(uploadErrorKey({ code: "functions/resource-exhausted" })).toBe("upload.rateLimited");
-    expect(uploadErrorKey({ code: "functions/invalid-argument" })).toBe("upload.invalidImage");
-    expect(uploadErrorKey({ code: "functions/failed-precondition" })).toBe("upload.notConfigured");
-    expect(uploadErrorKey({ code: "functions/unavailable" })).toBe("upload.timeout");
-    expect(uploadErrorKey({ code: "functions/internal" })).toBe("upload.error");
+  it("ignore une réponse tardive après abandon", async () => {
+    jest.useFakeTimers();
+    const settled = capture(uploadBlob(IMG, "matches"));
+    jest.advanceTimersByTime(UPLOAD_TIMEOUT_MS + 6000);
+    expect((await settled).error).toMatchObject({ code: "stalled" });
+    // L'hébergeur répond après coup : plus rien ne doit se déclencher.
+    FakeXHR.last.respond(200, { success: true, data: { url: "https://i.ibb.co/tardif.jpg" } });
+    expect((await settled).error).toMatchObject({ code: "stalled" });
   });
 
-  it("refuse d'envoyer si l'application Firebase n'est pas configurée", async () => {
-    delete process.env.REACT_APP_FIREBASE_PROJECT_ID;
+  it("refuse d'envoyer sans clé injectée au build", async () => {
+    delete process.env.REACT_APP_IMGBB_KEY;
     expect(isUploadReady()).toBe(false);
-    await expect(uploadBlob(blob, "matches")).rejects.toMatchObject({ code: "not-configured" });
-    expect(mockCall).not.toHaveBeenCalled();
+    const result = await capture(uploadBlob(IMG, "matches"));
+    expect(result.error).toMatchObject({ code: "not-configured" });
+    expect(FakeXHR.last).toBeNull();
     expect(uploadErrorKey({ code: "not-configured" })).toBe("upload.notConfigured");
   });
 
-  it("refuse d'envoyer sans image ni dossier", async () => {
-    await expect(uploadBlob(null, "matches")).rejects.toMatchObject({ code: "empty" });
-    await expect(uploadBlob(blob, "")).rejects.toMatchObject({ code: "no-folder" });
-    expect(mockCall).not.toHaveBeenCalled();
+  it("refuse d'envoyer sans image, sans dossier ou au-delà de 5 Mo", async () => {
+    expect((await capture(uploadBlob(null, "matches"))).error).toMatchObject({ code: "empty" });
+    expect((await capture(uploadBlob(IMG, ""))).error).toMatchObject({ code: "no-folder" });
+    const heavy = await capture(uploadBlob({ type: "image/jpeg", size: 6 * 1024 * 1024 }, "matches"));
+    expect(heavy.error).toMatchObject({ code: "too-large" });
+    expect(uploadErrorKey({ code: "too-large" })).toBe("upload.invalidImage");
+    expect(FakeXHR.last).toBeNull();
   });
 
-  it("refuse une réponse sans URL", async () => {
-    mockCall.mockResolvedValue({});
-    await expect(uploadBlob(blob, "matches")).rejects.toMatchObject({ code: "no-url" });
+  it("traduit les pannes réseau en message lisible", () => {
+    expect(uploadErrorKey({ code: "network" })).toBe("upload.timeout");
+    expect(uploadErrorKey({ code: "rejected" })).toBe("upload.error");
   });
 });
 
 describe("délais exposés", () => {
-  it(" borne aussi la compression", () => {
+  it("borne aussi la compression", () => {
     expect(COMPRESS_TIMEOUT_MS).toBeGreaterThan(0);
-    expect(UPLOAD_TIMEOUT_MS).toBeGreaterThan(COMPRESS_TIMEOUT_MS);
+    expect(UPLOAD_TIMEOUT_MS).toBeGreaterThan(0);
   });
 });

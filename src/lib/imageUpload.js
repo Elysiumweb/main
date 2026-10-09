@@ -1,26 +1,31 @@
-import { callProtected } from "./secureForms";
-
 /* ------------------------------------------------------------------ *
  * Téléversement d'images — source de vérité unique du site.
  *
- * Cloud Storage n'existe pas sur le plan gratuit (bucket = Blaze depuis
- * février 2026) : les images partent chez imgbb via la callable
- * `uploadImage`, qui garde la clé API en secret de fonction. Le navigateur
- * ne voit jamais la clé.
+ * Le plan gratuit Firebase n'a pas de Storage (un bucket exige Blaze
+ * depuis février 2026). Les images partent donc chez imgbb, l'hébergeur
+ * des visuels i.ibb.co, directement depuis le navigateur.
+ *
+ * La clé vient de la variable d'environnement Vercel `REACT_APP_IMGBB_KEY`
+ * (Create React App ne lit que les variables `REACT_APP_*`). Elle est
+ * donc visible dans le bundle du site : à toi de la régénérer si elle
+ * fuit, c'est le compromis assumé pour éviter une commande de déploiement.
  *
  * Deux pièges corrigés ici, qui laissaient les écrans d'upload figés sur
  * « Envoi en cours » :
  *
- *  1. L'appel pouvait ne jamais se terminer (réseau coupé, fonction
- *     injoignable). → délai maximal + abandon, avec `settled` pour
- *     qu'une réponse tardive ne remette pas l'interface en état occupé.
+ *  1. Une requête restée suspendue ne déclenche ni progression ni
+ *     erreur. → `XHR.timeout` + minuterie d'abandon explicite.
  *  2. La compression canvas pouvait ne jamais rendre la main si la
  *     décodification de l'image ne déclenchait aucun événement.
  *     → `COMPRESS_TIMEOUT_MS` + rejet explicite.
  * ------------------------------------------------------------------ */
 
-export const UPLOAD_TIMEOUT_MS = 90000;
+const IMGBB_ENDPOINT = "https://api.imgbb.com/1/upload";
+export const UPLOAD_TIMEOUT_MS = 45000;
 export const COMPRESS_TIMEOUT_MS = 30000;
+
+/** Clé lue au moment de l'envoi : elle est figée par le build Vercel. */
+const apiKey = () => (process.env.REACT_APP_IMGBB_KEY || "").trim();
 
 export const uploadError = (code, cause) => {
   const err = new Error(code);
@@ -32,22 +37,14 @@ export const uploadError = (code, cause) => {
 /** Clé de traduction associée à une erreur de téléversement. */
 export const uploadErrorKey = (err) => {
   const code = String(err?.code || "");
-  if (code.endsWith("unavailable") || code === "stalled") return "upload.timeout";
-  if (code === "not-configured" || code.endsWith("failed-precondition") || code.endsWith("unauthenticated")) {
-    return "upload.notConfigured";
-  }
-  if (code.endsWith("resource-exhausted")) return "upload.rateLimited";
-  if (code.endsWith("permission-denied")) return "upload.forbidden";
-  if (code.endsWith("invalid-argument")) return "upload.invalidImage";
+  if (code === "not-configured") return "upload.notConfigured";
+  if (code === "stalled" || code === "aborted" || code === "network") return "upload.timeout";
+  if (code === "too-large") return "upload.invalidImage";
   return "upload.error";
 };
 
-/**
- * L'envoi passe par une callable Firebase : il faut la configuration de
- * l'application, mais surtout pas de bucket.
- */
-export const isUploadReady = () =>
-  Boolean(process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_PROJECT_ID);
+/** Sans clé injectée au build, l'envoi est refusé au lieu de partir à l'aveugle. */
+export const isUploadReady = () => Boolean(apiKey());
 
 const withTimeout = (promise, ms, code) =>
   new Promise((resolve, reject) => {
@@ -91,45 +88,73 @@ export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
     "compress-timeout"
   );
 
-const blobToDataUrl = (blob) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(uploadError("read-error"));
-    reader.onload = () => resolve(reader.result);
-    reader.readAsDataURL(blob);
-  });
+const safeJson = (text) => {
+  try { return JSON.parse(text); } catch { return null; }
+};
 
-/**
- * Envoie une image et renvoie son URL publique. La promesse se résout ou se
- * rejette TOUJOURS : au-delà de `timeoutMs` elle abandonne, au lieu de laisser
- * l'interface tourner indéfiniment.
- */
-export const uploadBlob = (blob, folder, { timeoutMs = UPLOAD_TIMEOUT_MS } = {}) =>
+/** POST vers imgbb avec progression réelle, et abandon si rien n'arrive. */
+const postToImgbb = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS } = {}) =>
   new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
     let settled = false;
     let timer = null;
+
     const settle = (fn, arg) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       fn(arg);
     };
+    const abort = (code) => {
+      // On tranche AVANT d'abandonner la requête : `xhr.abort()` peut déclencher
+      // onabort de façon synchrone selon l'implémentation, et le motif de l'échec
+      // (« délai dépassé ») doit primer sur le générique (« interrompu »).
+      settle(reject, uploadError(code));
+      try { xhr.abort(); } catch { /* déjà arrêté */ }
+    };
 
-    const work = (async () => {
-      if (!isUploadReady()) throw uploadError("not-configured");
-      if (!blob) throw uploadError("empty");
-      if (!folder) throw uploadError("no-folder");
-      const image = await blobToDataUrl(blob);
-      const result = await callProtected("uploadImage", { image, folder });
-      if (!result?.url) throw uploadError("no-url");
-      return result.url;
-    })();
+    xhr.open("POST", `${IMGBB_ENDPOINT}?key=${encodeURIComponent(apiKey())}`);
+    xhr.timeout = timeoutMs;
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
+      };
+    }
+    xhr.onload = () => {
+      const payload = xhr.response || safeJson(xhr.responseText);
+      if (xhr.status >= 200 && xhr.status < 300 && payload?.success && payload?.data?.url) {
+        settle(resolve, payload.data.url);
+        return;
+      }
+      console.error("[upload] imgbb", xhr.status, payload?.error);
+      settle(reject, uploadError("rejected", payload?.error?.message));
+    };
+    xhr.onerror = () => abort("network");
+    xhr.ontimeout = () => abort("stalled");
+    xhr.onabort = () => settle(reject, uploadError("aborted"));
 
-    // Le garde-fou : au-delà du délai on abandonne, et une réponse tardive ne
-    // peut plus rien réafficher (c'est ce qui figeait l'écran avant).
-    work.then(
-      (url) => settle(resolve, url),
-      (err) => settle(reject, err)
-    );
-    timer = setTimeout(() => settle(reject, uploadError("stalled")), timeoutMs);
+    const name = folder.replace(/[^a-zA-Z0-9-]/g, "-");
+    const form = new FormData();
+    form.append("image", blob, `${name}.jpg`);
+    form.append("name", name);
+    xhr.send(form);
+
+    // `xhr.timeout` suffit en théorie ; ce garde-fou couvre le cas où la
+    // connexion reste ouverte sans émettre le timeout (réseau instable).
+    timer = setTimeout(() => abort("stalled"), timeoutMs + 5000);
   });
+
+/**
+ * Envoie une image et renvoie son URL publique. La promesse se résout ou se
+ * rejette TOUJOURS : au-delà du délai elle abandonne, au lieu de laisser
+ * l'interface tourner indéfiniment.
+ */
+export const uploadBlob = (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS } = {}) => {
+  if (!isUploadReady()) return Promise.reject(uploadError("not-configured"));
+  if (!blob) return Promise.reject(uploadError("empty"));
+  if (!folder) return Promise.reject(uploadError("no-folder"));
+  // 5 Mo : la limite d'imgbb sur le plan gratuit est bien plus haute, on
+  // borne surtout pour ne pas figer un mobile sur une photo de 12 Mo.
+  if (blob.size > 5 * 1024 * 1024) return Promise.reject(uploadError("too-large"));
+  return postToImgbb(blob, folder, { onProgress, timeoutMs });
+};

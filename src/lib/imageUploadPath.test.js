@@ -3,12 +3,13 @@ const path = require("path");
 
 /* ---------------------------------------------------------------------------
  * Le site est sur le plan gratuit : Cloud Storage y est inaccessible (bucket
- * = Blaze depuis février 2026). Les images téléversées passent donc par la
- * callable `uploadImage`, qui relaie imgbb avec une clé gardée en secret.
+ * = Blaze depuis février 2026). Les images téléversées vont donc chez imgbb,
+ * avec la clé fournie par la variable d'environnement Vercel
+ * `REACT_APP_IMGBB_KEY`.
  *
- * Ces tests verrouillent trois choses qui casseraient l'envoi en silence :
+ * Ces tests verrouillent ce qui casserait l'envoi en silence :
  *  1. un retour du SDK Firebase Storage dans le code ;
- *  2. une clé imgbb versionnée dans le dépôt ;
+ *  2. une clé imgbb écrite en dur dans le dépôt au lieu de l'environnement ;
  *  3. un champ d'image de l'admin redevenu une saisie d'URL.
  * ------------------------------------------------------------------------- */
 
@@ -25,14 +26,14 @@ const collectSources = (dir) =>
   });
 
 const appSources = collectSources(path.join(ROOT, "src"));
-const functionFiles = collectSources(path.join(ROOT, "functions"));
+const functionSources = collectSources(path.join(ROOT, "functions"));
 const trackedFiles = [
   ...appSources,
-  ...functionFiles,
+  ...functionSources,
   ...["firebase.json", "package.json"].map((f) => ({ file: path.join(ROOT, f), content: read(f) })),
 ];
 
-/** Clés imgbb : 32 caractères hexadécimaux, souvent à côté du mot « key ». */
+/** Clé imgbb : 32 caractères hexadécimaux. */
 const IMGBB_KEY_RE = /\b[0-9a-f]{32}\b/;
 
 describe("téléversement d'images", () => {
@@ -48,37 +49,32 @@ describe("téléversement d'images", () => {
     expect(JSON.parse(read("firebase.json")).storage).toBeUndefined();
   });
 
-  it("passe par la callable uploadImage, clé en secret", () => {
-    const upload = read("functions/upload.js");
-    expect(read("functions/index.js")).toContain('require("./upload")');
-    expect(upload).toContain('secrets: ["IMGBB_KEY"]');
-    expect(upload).toContain("IMGBB_ENDPOINT");
-    // La clé ne doit être lue que depuis le secret injecté.
-    const envReads = [...upload.matchAll(/process\.env\.([A-Z_]+)/g)].map((m) => m[1]);
-    expect([...new Set(envReads)]).toEqual(["IMGBB_KEY"]);
-  });
-
-  it("ne versionne aucune clé imgbb", () => {
+  it("n'expose aucune clé imgbb dans le dépôt", () => {
     const leaks = trackedFiles
       .filter(({ content }) => IMGBB_KEY_RE.test(content))
       .map(({ file }) => path.relative(ROOT, file));
     expect(leaks).toEqual([]);
   });
 
-  it("contrôle qui peut envoyer une image, comme les règles Firestore", () => {
-    const upload = read("functions/upload.js");
-    expect(upload).toContain("permission-denied");
-    expect(upload).toContain('require("crypto")'); // quota par compte
-    expect(upload).toContain("rateLimits");
-    expect(upload).toContain("5 * 1024 * 1024");
-    expect(upload).toContain("data:(image\\/"); // data URL validée avant envoi
+  it("lit la clé dans l'environnement Vercel, jamais en dur", () => {
+    const client = read("src/lib/imageUpload.js");
+    expect(client).toContain("process.env.REACT_APP_IMGBB_KEY");
+    expect(client).toContain("https://api.imgbb.com/1/upload");
+    // Aucune clé en dur : le seul accès à la variable passe par apiKey().
+    expect(client).not.toMatch(/key=[a-f0-9]{8,}/i);
   });
 
-  it("garde un garde-fou de délai côté client", () => {
+  it("garde un garde-fou de délai et une limite de taille", () => {
     const client = read("src/lib/imageUpload.js");
-    expect(client).toContain("UPLOAD_TIMEOUT_MS");
-    expect(client).toContain('callProtected("uploadImage"');
-    expect(client).not.toContain("firebase/storage");
+    expect(client).toContain("xhr.timeout");
+    expect(client).toContain("onprogress");
+    expect(client).toContain("5 * 1024 * 1024");
+    expect(client).toMatch(/settled/);
+  });
+
+  it("n'a laissé aucune fonction d'envoi orpheline", () => {
+    expect(exists("functions/upload.js")).toBe(false);
+    expect(read("functions/index.js")).not.toContain('require("./upload")');
   });
 });
 

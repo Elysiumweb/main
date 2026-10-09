@@ -37,6 +37,7 @@ if (typeof window !== "undefined" && APPCHECK_SITE_KEY) {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 // Cloud Storage est inaccessible sur le plan gratuit (bucket = Blaze depuis
-// février 2026) : les images passent par la callable `uploadImage`.
+// février 2026) : les images sont envoyées directement chez imgbb par le
+// navigateur (voir src/lib/imageUpload.js).
 export const functions = getFunctions(app, process.env.REACT_APP_FIREBASE_FUNCTIONS_REGION || "us-central1");
 export const googleProvider = new GoogleAuthProvider();

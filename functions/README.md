@@ -175,31 +175,13 @@ firebase deploy --only functions
 
 ---
 
-## Envoi d'images (`uploadImage`)
+## Envoi d'images
 
-Cloud Storage est inaccessible sur le plan gratuit : un bucket exige le plan
-Blaze depuis le 3 février 2026. Les images téléversées depuis l'admin
-(logo de match, logo d'adversaire, médiathèque, vignette, fiche joueur, avatar,
-chat) sont donc hébergées chez **imgbb**, via la callable `uploadImage` définie
-dans `upload.js`.
+L'envoi d'images **ne passe pas par les Functions**. Cloud Storage est
+inaccessible sur le plan gratuit (bucket = Blaze depuis février 2026) : le
+navigateur envoie directement chez imgbb, avec la clé `REACT_APP_IMGBB_KEY`
+définie dans les variables d'environnement Vercel.
 
-La clé API n'est jamais exposée au navigateur :
-
-```bash
-firebase functions:secrets:set IMGBB_KEY     # clé depuis https://api.imgbb.com/
-firebase deploy --only functions:uploadImage
-```
-
-| Secret | Obligatoire | Description |
-| --- | --- | --- |
-| `IMGBB_KEY` | oui | Clé API imgbb. Sans elle, `uploadImage` répond `failed-precondition` et l'admin affiche « Le service d'envoi d'images n'est pas configuré ». |
-
-La fonction valide la session, le rôle (bureau/manager pour les dossiers
-d'administration, `players/<uid>` et `avatars/<uid>` pour un joueur, `chat`
-pour tout membre connecté), le type et la taille (image, 5 Mo max), applique un
-quota de 40 envois par heure et par compte, puis relaie vers
-`https://api.imgbb.com/1/upload` avec un `AbortController` à 20 s — un hébergeur
-muet ne bloque jamais l'appel.
-
-La marche à suivre complète est dans
-[`docs/deploiement-firebase.md`](../docs/deploiement-firebase.md).
+Aucune fonction n'est donc requise ici ; `src/lib/imageUpload.js` côté site fait
+le travail, garde-fous de délai et limite de taille compris. La marche à suivre
+est dans [`docs/deploiement-firebase.md`](../docs/deploiement-firebase.md).

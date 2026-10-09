@@ -83,8 +83,12 @@ describe("ImageUpload", () => {
     render();
     await pickFile();
     expect(q("test-upload-dropzone").textContent).not.toMatch(/Envoi en cours/);
-    // Le dossier de l'appelant est transmis tel quel : c'est le serveur qui décide.
-    expect(mockUpload.uploadBlob).toHaveBeenCalledWith({ type: "image/jpeg", size: 12 }, "matches");
+    // Le dossier de l'appelant est transmis tel quel, avec la progression.
+    expect(mockUpload.uploadBlob).toHaveBeenCalledWith(
+      { type: "image/jpeg", size: 12 },
+      "matches",
+      expect.objectContaining({ onProgress: expect.any(Function) })
+    );
     expect(onChange).toHaveBeenCalledWith("https://i.ibb.co/abc/logo.jpg");
     expect(mockToast.success).toHaveBeenCalled();
   });
