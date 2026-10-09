@@ -2,6 +2,7 @@ import "@/App.css";
 import { lazy } from "react";
 import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
@@ -155,6 +156,7 @@ function App() {
           <PushConsent />
           <CookieConsent />
           <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", color: "#f7f7f7", borderRadius: 0 } }} />
+          <Analytics />
         </BrowserRouter>
       </AuthProvider>
     </LanguageProvider>
