@@ -45,7 +45,12 @@ const PartnerLogo = ({ src, name, className }) => {
 
 // Données EXACTES issues de l'Annexe 3 pages 15-16 - Grille ElyWalk pour l'association Elysium
 // Textes confidentiels de la convention supprimés sur demande, on ne parle que des offres partenaire.
-const grille = {
+//
+// Trois points ont été arbitrés pour le palier GOLD, en dérogation à la grille :
+//   - logo sur maillot : inclus pour le Gold seul (non prévu Bronze / Argent) ;
+//   - offres simultanément actives : illimitées pour le Gold (1 Bronze / 5 Argent) ;
+//   - invitations / places en évènement : incluses mais limitées pour le Gold.
+export const grille = {
   bronze: {
     label: "BRONZE",
     tarifRef: "196 € HT",
@@ -111,7 +116,7 @@ const grille = {
     engagement: "6 mois minimum",
     renouvellement: "Par périodes de 6 mois",
     resiliation: "1 mois avant l'échéance de la période",
-    offresActives: "5",
+    offresActives: "Illimité",
     dureeOffre: "Idem",
     attractivite: "Élevé",
     part: "25 % / 75 %",
@@ -122,9 +127,9 @@ const grille = {
     stand: true,
     miseEnAvant: true,
     invitations: true,
-    invitationsDetail: "sans limite de nombre",
-    maillots: false,
-    maillotsDetail: "Non prévues (accord gracieux possible)",
+    invitationsDetail: "limité",
+    maillots: true,
+    maillotsDetail: "",
     bandeElywalk: true,
     bandeSite: true,
     videos: true,
@@ -135,7 +140,7 @@ const grille = {
   },
 };
 
-const rows = [
+export const rows = [
   { key: "ficheSite", label: "Fiche partenaire : site Elysium", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
   { key: "ficheMap", label: "Fiche partenaire : map ElyWalk", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
   { key: "offresActives", label: "Offres simultanément actives dans Elywalk", type: "text" },
@@ -257,11 +262,18 @@ export default function Partners() {
       );
     }
     if (row.type === "boolDetailCustom") {
-      if (tierKey === "gold") {
-        return <span className="text-xs text-[#f7f7f7]/70 text-center">{g.maillotsDetail}</span>;
-      }
+      // Cellule « prestation absente » : une croix verte quand la prestation est
+      // incluse (avec le détail éventuel), un simple tiret quand elle ne l'est
+      // pas — l'absence n'est pas un refus.
       const val = g[row.key];
-      return val ? <Check size={16} className="text-emerald-400 mx-auto" /> : <span className="text-[#a0a0a0]">—</span>;
+      const detail = g[row.key + "Detail"];
+      if (!val) return <span className="text-[#a0a0a0]">—</span>;
+      return (
+        <span className="inline-flex flex-col items-center">
+          <Check size={16} className="text-emerald-400" />
+          {detail && <span className="text-[11px] text-[#c8c8c8] mt-1 text-center leading-tight">{detail}</span>}
+        </span>
+      );
     }
     return "—";
   };

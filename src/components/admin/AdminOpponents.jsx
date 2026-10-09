@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Trash2, Pencil } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
+import { ImageUpload } from "../ImageUpload";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { name: "", slug: "", logo: "", country: "", website: "", twitter: "" };
@@ -49,8 +50,7 @@ export const AdminOpponents = () => {
         <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{editId ? "Modifier adversaire" : "Ajouter un adversaire"}</p>
         <input value={form.name} onChange={set("name")} placeholder="Nom équipe adverse" required className={inputCls} data-testid="admin-opponent-name" />
         <input value={form.slug} onChange={set("slug")} placeholder="Slug (auto si vide) ex: team-liquid" className={inputCls} data-testid="admin-opponent-slug" />
-        <input value={form.logo} onChange={set("logo")} placeholder="Logo URL https://..." className={inputCls} data-testid="admin-opponent-logo" />
-        {form.logo && /^https?:\/\//.test(form.logo) && <img src={form.logo} alt="" className="h-10 object-contain border border-white/10 p-1" onError={e=>e.target.style.display="none"} />}
+        <ImageUpload value={form.logo} onChange={(url) => setForm((f) => ({ ...f, logo: url }))} folder="opponents" maxWidth={800} testId="admin-opponent-logo-upload" />
         <div className="grid grid-cols-2 gap-4">
           <input value={form.country} onChange={set("country")} placeholder="Pays (FR, EU, US...)" className={inputCls} data-testid="admin-opponent-country" />
           <input value={form.website} onChange={set("website")} placeholder="Site officiel https://..." className={inputCls} data-testid="admin-opponent-website" />

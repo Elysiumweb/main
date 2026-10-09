@@ -1,0 +1,115 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { act } from "react";
+
+/* ---------------------------------------------------------------------------
+ * Le composant d'envoi ne doit plus pouvoir rester bloqué sur « Envoi en
+ * cours », et ne doit plus proposer de coller une URL d'image.
+ * ------------------------------------------------------------------------- */
+
+const mockToast = { error: jest.fn(), success: jest.fn() };
+jest.mock("sonner", () => ({ toast: { error: (...a) => mockToast.error(...a), success: (...a) => mockToast.success(...a) } }));
+
+const mockUpload = {
+  prepareImage: jest.fn(),
+  uploadBlob: jest.fn(),
+  isUploadReady: jest.fn(),
+  uploadErrorKey: jest.fn(),
+};
+jest.mock("../lib/imageUpload", () => ({
+  prepareImage: (...a) => mockUpload.prepareImage(...a),
+  uploadBlob: (...a) => mockUpload.uploadBlob(...a),
+  isUploadReady: (...a) => mockUpload.isUploadReady(...a),
+  uploadErrorKey: (...a) => mockUpload.uploadErrorKey(...a),
+}));
+
+const { ImageUpload } = require("./ImageUpload");
+const { LanguageProvider } = require("../lib/i18n");
+
+let container;
+let root;
+let errorSpy;
+let onChange;
+
+const render = () =>
+  act(() =>
+    root.render(
+      <LanguageProvider>
+        <ImageUpload value="" onChange={onChange} folder="matches" testId="test-upload" />
+      </LanguageProvider>
+    )
+  );
+
+beforeEach(() => {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+  errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  onChange = jest.fn();
+  mockUpload.isUploadReady.mockReturnValue(true);
+  mockUpload.prepareImage.mockResolvedValue({ type: "image/jpeg", size: 12 });
+  mockUpload.uploadBlob.mockResolvedValue("https://i.ibb.co/abc/logo.jpg");
+  mockUpload.uploadErrorKey.mockImplementation((err) => `key:${err?.code}`);
+});
+
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+  errorSpy.mockRestore();
+});
+
+const q = (id) => container.querySelector(`[data-testid="${id}"]`);
+
+/* jsdom n'autorise pas l'écriture directe sur .files : on le redéfinit. */
+const pickFile = async (name = "photo.jpg", type = "image/jpeg") => {
+  const input = q("test-upload-input");
+  const file = new File(["x"], name, { type });
+  Object.defineProperty(input, "files", { value: [file], configurable: true });
+  await act(async () => {
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+};
+
+describe("ImageUpload", () => {
+  it("ne propose plus de champ URL : uniquement un fichier", () => {
+    render();
+    expect(q("test-upload-input")).not.toBeNull();
+    expect(q("test-upload-url")).toBeNull();
+    expect(q("test-upload-url-toggle")).toBeNull();
+    expect(container.textContent).not.toMatch(/https:\/\/\.\.\./);
+  });
+
+  it("déverrouille l'état « Envoi en cours » et remonte l'URL quand l'envoi réussit", async () => {
+    render();
+    await pickFile();
+    expect(q("test-upload-dropzone").textContent).not.toMatch(/Envoi en cours/);
+    // Le dossier de l'appelant est transmis tel quel, avec la progression.
+    expect(mockUpload.uploadBlob).toHaveBeenCalledWith({ type: "image/jpeg", size: 12 }, "matches");
+    expect(onChange).toHaveBeenCalledWith("https://i.ibb.co/abc/logo.jpg");
+    expect(mockToast.success).toHaveBeenCalled();
+  });
+
+  it("sort de l'état occupé même quand l'envoi échoue (pas de boucle)", async () => {
+    mockUpload.uploadBlob.mockRejectedValue(Object.assign(new Error("stalled"), { code: "stalled" }));
+    render();
+    await pickFile();
+    expect(container.textContent).not.toMatch(/Envoi en cours/);
+    expect(q("test-upload-dropzone")).not.toBeNull();
+    expect(mockToast.error).toHaveBeenCalledWith("key:stalled");
+  });
+
+  it("signale un service non configuré au lieu de bloquer sur l'envoi", async () => {
+    mockUpload.uploadBlob.mockRejectedValue(Object.assign(new Error("not-configured"), { code: "not-configured" }));
+    mockUpload.uploadErrorKey.mockReturnValue("upload.notConfigured");
+    render();
+    await pickFile();
+    expect(container.textContent).not.toMatch(/Envoi en cours/);
+    expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining("n'est pas configur"));
+  });
+
+  it("refuse un fichier qui n'est pas une image", async () => {
+    render();
+    await pickFile("notes.pdf", "application/pdf");
+    expect(mockUpload.uploadBlob).not.toHaveBeenCalled();
+  });
+});

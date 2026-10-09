@@ -66,7 +66,10 @@ export const AdminMedia = () => {
           </>
         )}
         {form.type === "video" && (
-          <input value={form.thumbnail} onChange={set("thumbnail")} placeholder={t("admin.media.thumbnailPlaceholder")} className={inputCls} data-testid="admin-media-thumbnail" />
+          <div>
+            <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.media.thumbnailPlaceholder")}</label>
+            <ImageUpload value={form.thumbnail} onChange={(url) => setForm((f) => ({ ...f, thumbnail: url }))} folder="media" maxWidth={800} testId="admin-media-thumbnail-upload" />
+          </div>
         )}
         <div className="grid grid-cols-2 gap-4">
           <input value={form.playerTag} onChange={set("playerTag")} placeholder={t("admin.media.playerPlaceholder")} className={inputCls} data-testid="admin-media-player" />

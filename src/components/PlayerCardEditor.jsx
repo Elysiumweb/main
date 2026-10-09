@@ -146,7 +146,7 @@ export const PlayerCardEditor = () => {
         </div>
         <div>
           <label className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("profile.card.photo")}</label>
-          <ImageUpload value={form.photo} onChange={(url) => setForm((f) => ({ ...f, photo: url }))} folder="players" maxWidth={1200} testId="profile-card-photo-upload" />
+          <ImageUpload value={form.photo} onChange={(url) => setForm((f) => ({ ...f, photo: url }))} folder={`players/${user.uid}`} maxWidth={1200} testId="profile-card-photo-upload" />
         </div>
         <div>
           <label htmlFor="pcc-bio" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Bio</label>

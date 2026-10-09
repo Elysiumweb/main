@@ -8,10 +8,13 @@ import { useLang } from "../lib/i18n";
 import { GAMES, ROLES, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
 import { MatchCard } from "../components/MatchCard";
+import { ImageUpload } from "../components/ImageUpload";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { AdminRosters } from "../components/admin/AdminRosters";
 import { AdminRoster } from "../components/admin/AdminRoster";
 import { AdminPositions } from "../components/admin/AdminPositions";
+import { AdminHelp } from "../components/admin/AdminHelp";
+import { AdminTryouts } from "../components/admin/AdminTryouts";
 import { AdminArticles } from "../components/admin/AdminArticles";
 import { AdminMedia } from "../components/admin/AdminMedia";
 import { AdminEvents } from "../components/admin/AdminEvents";
@@ -175,9 +178,9 @@ export default function Admin() {
     users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
     competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
-    newsletter: isBureau, audit: isBureau,
+    newsletter: isBureau, audit: isBureau, help: isBureau, tryouts: isStaff,
   };
-  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "tryouts", "help", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -670,10 +673,9 @@ export default function Admin() {
               </div>
               <div>
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.logo")}</label>
-                <input value={form.opponentLogo} onChange={set("opponentLogo")} placeholder="https://..." className={inputCls} data-testid="admin-match-logo" />
-                {form.opponentLogo && /^https?:\/\//.test(form.opponentLogo) && (
-                  <img src={form.opponentLogo} alt="" className="h-10 mt-2 object-contain border border-white/10 p-1" onError={(e) => { e.target.style.display = "none"; }} data-testid="admin-match-logo-preview" />
-                )}
+                {/* Le logo se téléverse : plus de lien à coller. Choisir un adversaire
+                    connu dans la liste remplit automatiquement le logo. */}
+                <ImageUpload value={form.opponentLogo} onChange={(url) => setForm((f) => ({ ...f, opponentLogo: url }))} folder="matches" maxWidth={800} testId="admin-match-logo-upload" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -871,6 +873,8 @@ export default function Admin() {
         {tab === "rosters" && <AdminRosters />}
         {tab === "roster" && <AdminRoster />}
         {tab === "positions" && <AdminPositions />}
+        {tab === "tryouts" && <AdminTryouts />}
+        {tab === "help" && <AdminHelp />}
         {tab === "articles" && <AdminArticles />}
         {tab === "media" && <AdminMedia />}
         {tab === "events" && <AdminEvents />}

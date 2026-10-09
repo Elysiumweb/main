@@ -6,6 +6,7 @@ import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel, isRemovedGame } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
+import { RecruitHomeBlock } from "../components/RecruitHomeBlock";
 import { DonateBlock } from "../components/DonateButton";
 import { CampaignProgress } from "../components/CampaignProgress";
 import { MatchCountdown } from "../components/MatchCountdown";
@@ -305,6 +306,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* RECRUTEMENT — les postes ouverts sont dans Firestore, le CTA « Nous rejoindre » est le principal de la navbar : on les expose ici (masqué si aucun poste ouvert) */}
+      <RecruitHomeBlock />
 
       {/* PREUVES — bento asymétrique : prochain match / palmarès / effectif */}
       <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="home-proof-h2">
