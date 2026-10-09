@@ -8,55 +8,42 @@ sur ta machine n'est nécessaire pour l'envoi d'images.
 
 ## 1. Envoyer des images depuis l'admin
 
-**Pourquoi ?** Cloud Storage n'existe pas sur le plan gratuit Firebase : depuis
-le 3 février 2026, un bucket exige le plan Blaze. Les images sont donc hébergées
-chez **imgbb** — l'hébergeur de tes visuels `i.ibb.co`.
+**Pourquoi cette manip ?** Cloud Storage n'existe pas sur le plan gratuit
+Firebase : un bucket exige le plan Blaze. Les images téléversées sont donc
+**compressées dans le navigateur** puis rangées **en base64 dans Firestore**,
+dans la collection `images`. Aucun hébergeur tiers, aucune clé d'API, aucune
+fonction à déployer : Firestore est déjà en place pour le reste du site.
 
-Deux réglages possibles, **aucun ne demande de commande à taper**. Choisis celui
-qui te va (le premier garde la clé secrète).
+Le format stocké est une data URL (`data:image/jpeg;base64,…`), réutilisable
+directement dans tous les `<img src={…}>` existants, sans changement ailleurs
+dans le code.
 
-### Option A — clé secrète, via la passerelle `/api/upload` (recommandé)
+### Ce que tu dois faire (une seule fois)
 
-Le dépôt contient `api/upload.js`, une fonction Vercel qui relaie l'envoi vers
-imgbb. La clé y est lue **côté serveur**.
+1. Ouvre la [console Firebase](https://console.firebase.google.com/) et choisis
+   ton projet.
+2. Menu de gauche → **Firestore Database** → onglet **Rules**.
+3. Remplace le contenu affiché par celui du fichier `firestore.rules` de ce dépôt
+   (la partie `match /images/{id}` est celle qui compte ici), puis clique sur
+   **Publish**.
 
-1. Régénère ta clé sur <https://api.imgbb.com/> si elle a déjà été écrite dans
-   un message ou un fichier.
-2. Vercel → *Settings → Environment Variables* :
-   - **Key** : `IMGBB_KEY` — sans préfixe `REACT_APP_`, donc la visibilité
-     **Secret** est acceptée et la valeur n'arrive jamais dans le navigateur.
-   - **Environments** : coche **les deux** — *Production* **et** *Preview*.
-     Une variable créée par Vercel ne s'applique qu'à la Production : sur un
-     déploiement de prévisualisation, la fonction tourne sans clé et répond
-     « Envoi d'images non configuré ».
-3. **Save**, puis **redeploy**. Vercel publie automatiquement le dossier `/api`,
-   rien à déployer à la main.
+Rien d'autre : aucune variable d'environnement, aucun bucket, aucune commande.
 
-### Option B — envoi direct depuis le navigateur
+> Sans cette publication, Firestore refuse l'écriture et l'admin affiche « Tu
+> n'as pas le droit d'envoyer une image ici. »
 
-Si ton projet n'a pas de fonctions serveur, le navigateur poste lui-même chez
-imgbb. La clé doit alors être publique :
-
-- **Key** : `REACT_APP_IMGBB_KEY` — le préfixe `REACT_APP_` est obligatoire,
-  Create React App n'injecte que les variables de cette famille dans le bundle.
-- **Visibilité** : `config` (Vercel refuse `secret` sur une variable publique,
-  et il a raison : la valeur finit dans le JavaScript du site).
-
-### Vérification (les deux options)
+### Vérification
 
 Admin → Résultats → un match → choisis un logo → *Envoyer*. L'aperçu doit
-apparaître, et le logo est enregistré dans Firestore avec son URL imgbb.
+apparaître, et le document est enregistré dans Firestore → collection `images`.
 
-Sans configuration, l'écran d'envoi affiche « Le service d'envoi d'images n'est
-pas configuré sur ce site » au lieu de rester bloqué.
+### Taille des images
 
-### Le compromis de l'option B
-
-La clé est visible dans le code source du site. Une clé imgbb permet d'**ajouter**
-des images à ton compte — pas d'en lire d'autres ni d'en supprimer, car chaque
-image possède sa propre URL de suppression. Si ça ne te va pas, passe à
-l'option A : c'est le seul endroit à changer, `src/lib/imageUpload.js` sert les
-deux transports et tente la passerelle en premier.
+Un document Firestore plafonne à **1 Mio**. Le client comprime donc chaque image
+jusqu'à **600 Ko** (qualité 0,82 → 0,7 → 0,55) avant l'envoi, et refuse
+explicitement ce qui reste trop lourd plutôt que d'envoyer une image cassée.
+Pour un logo ou un visuel d'article, c'est largement suffisant ; pour de très
+grandes photos, recadre avant.
 
 ### Qui peut envoyer quoi
 
@@ -65,6 +52,11 @@ deux transports et tente la passerelle en premier.
 | `media`, `articles`, `matches`, `opponents`, `uploads` | formulaires d'administration (bureau) |
 | `players/<uid>`, `avatars/<uid>` | la fiche et l'avatar du joueur connecté |
 | `chat` | les images de discussion |
+
+Les règles `firestore.rules` laissent lire les images publiquement (c'est un
+`<img src>`, pas une donnée privée), mais réservent l'écriture au bureau — ou au
+membre qui a lui-même déposé l'image. Seuls les membres du bureau peuvent
+modifier ou supprimer une image.
 
 ## 2. Autres variables Vercel (Firebase)
 
@@ -78,8 +70,6 @@ REACT_APP_FIREBASE_MESSAGING_SENDER_ID=...
 REACT_APP_FIREBASE_APP_ID=...
 REACT_APP_RECAPTCHA_SITE_KEY=...      (optionnel — anti-robot)
 REACT_APP_FIREBASE_APPCHECK_SITE_KEY=...  (optionnel)
-IMGBB_KEY=...                        (option A — secret, côté serveur)
-REACT_APP_IMGBB_KEY=...              (option B — public, envoi direct)
 ```
 
 `REACT_APP_FIREBASE_STORAGE_BUCKET` n'est plus utilisé : supprime-le, il ne sert
@@ -89,13 +79,10 @@ plus à rien depuis que les images ne passent plus par Firebase.
 
 ## 3. Règles Firestore
 
-Si tu modifies `firestore.rules`, le déploiement se fait soit depuis la
-console Firebase (aperçu du projet → Firestore Database → Rules →
-*Publish*), soit en CLI pour ceux qui l'utilisent :
-
-```bash
-firebase deploy --only firestore:rules
-```
+Si tu modifies `firestore.rules`, le déploiement se fait depuis la console
+Firebase : aperçu du projet → **Firestore Database** → onglet **Rules** →
+coller le fichier → **Publish**. Aucune commande à taper n'est nécessaire, et
+c'est la seule méthode décrite ici volontairement.
 
 Sans rapport avec les images : c'est ce qui protège les collections.
 
@@ -105,19 +92,15 @@ Sans rapport avec les images : c'est ce qui protège les collections.
 
 | Message | Cause | Solution |
 |---|---|---|
-| « Le service d'envoi d'images n'est pas configuré » | `IMGBB_KEY` (option A) ou `REACT_APP_IMBB_KEY` (option B) absente, ou build antérieur à l'ajout | Vérifier la variable, puis **redeploy** sur Vercel |
-| L'envoi part puis échoue | clé imgbb révoquée / régénérée | Reprendre une nouvelle clé sur api.imgbb.com et la remettre dans Vercel |
-| 404 sur `/api/upload` | Projet Vercel sans fonctions (option A impossible) | Passer en option B, ou vérifier que le dossier `/api` est bien déployé |
-| « L'hébergeur d'images a refusé l'envoi » | Clé imgbb invalide, révoquée ou mal collée | Reprendre la clé sur api.imgbb.com et **redéployer** (elle est figée dans la fonction) |
-| « Image vide. » | Le corps n'a pas atteint la fonction | Vérifier les logs Vercel de la fonction ; le tampon binaire n'est pas encore géré sur ce runtime |
-| Preview protégé par mot de passe | Vercel Authentication active sur les aperçus | Tester depuis une session Vercel authentifiée, ou merger en production |
-| L'écran reste sur « Envoi en cours » | Réseau instable ou imgbb injoignable | L'envoi abandonne seul après 45 s ; réessaie |
+| « Tu n'as pas le droit d'envoyer une image ici. » | Règles Firestore non publiées, ou session expirée | Publier `firestore.rules` (section 1) puis recharger la page |
+| « L'envoi n'a pas abouti à temps. » | Onglets en arrière-plan ou réseau instable | L'envoi abandonne seul après 30 s ; réessaie, la compression sera plus légère |
+| « L'image est trop lourde après compression. » | Photo bien plus grande que 600 Ko une fois recompressée | Recadre l'image avant de l'envoyer |
 | « Image invalide ou trop lourde » | Fichier > 5 Mo ou format non supporté | Recadrer, ou laisser la compression automatique agir |
-| `Error: Failed to authenticate` | Session Firebase CLI expirée | `firebase login` (uniquement pour les règles Firestore) |
+| Preview protégé par mot de passe | Vercel Authentication active sur les aperçus | Tester depuis une session Vercel authentifiée, ou merger en production |
+| L'écran reste sur « Envoi en cours » | Onglet suspendu par le navigateur pendant la compression | Revenir sur l'onglet : l'envoi est abandonné après 30 s et l'écran se libère seul |
 
 ---
 
 ## Fonctions
 
 Le reste de la documentation des functions est dans
-[`functions/README.md`](../functions/README.md).

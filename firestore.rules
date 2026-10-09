@@ -226,6 +226,25 @@ service cloud.firestore {
       allow create, update, delete: if isBureau();
     }
 
+    // ===== Banque d'images (base64, téléversées depuis l'admin) =====
+    // Cloud Storage est indisponible sur le plan gratuit : les images sont
+    // compressées puis stockées ici en base64. Lecture publique (le site
+    // affiche les visuels), écriture bureau — ou le joueur pour ses propres
+    // images. Plafond à 600 Ko décodés, sous la limite de 1 Mio par document.
+    match /images/{id} {
+      allow read: if true;
+      allow create: if isAuth()
+        && (isBureau() || request.resource.data.ownerUid == request.auth.uid)
+        && request.resource.data.mime is string
+        && request.resource.data.mime.matches('image/.*')
+        && request.resource.data.bytes is int
+        && request.resource.data.bytes > 0
+        && request.resource.data.bytes <= 600000
+        && request.resource.data.data is string
+        && request.resource.data.data.size() <= 820000;
+      allow update, delete: if isBureau();
+    }
+
     // ===== Médiathèque =====
     match /media/{id} {
       allow read: if true;

@@ -2,13 +2,13 @@ import { useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { UploadCloud, X, Loader2, ImageOff } from "lucide-react";
 import { useLang } from "../lib/i18n";
-import { compressImage, uploadBlob, uploadErrorKey, isUploadReady } from "../lib/imageUpload";
+import { prepareImage, uploadBlob, uploadErrorKey, isUploadReady } from "../lib/imageUpload";
 
 /* ---------------------------------------------------------------------------
- * Envoi d'image vers Firebase Storage.
+ * Envoi d'image vers Firestore (base64), sans Cloud Storage ni service tiers.
  * - Glisser-déposer + sélecteur de fichier
  * - Compression client (canvas) : JPEG, largeur max configurable
- * - Progression, aperçu, retrait
+ * - Aperçu, retrait, état occupé qui se libère toujours
  *
  * Les images ne se saisissent plus en URL : tout passe par un vrai fichier,
  * et un envoi qui n'avance pas se termine tout seul au lieu de tourner
@@ -42,10 +42,10 @@ export const ImageUpload = ({
       return;
     }
     setBusy(true);
-    setProgress(0);
+    setProgress(null);
     try {
-      const blob = await compressImage(file, maxWidth);
-      const url = await uploadBlob(blob, folder, { onProgress: setProgress });
+      const blob = await prepareImage(file, maxWidth);
+      const url = await uploadBlob(blob, folder);
       onChange(url);
       toast.success(t("upload.success"));
     } catch (err) {

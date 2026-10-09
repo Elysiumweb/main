@@ -3,14 +3,15 @@ const path = require("path");
 
 /* ---------------------------------------------------------------------------
  * Le site est sur le plan gratuit : Cloud Storage y est inaccessible (bucket
- * = Blaze depuis février 2026). Les images téléversées vont donc chez imgbb,
- * avec la clé fournie par la variable d'environnement Vercel
- * `REACT_APP_IMGBB_KEY`.
+ * = Blaze depuis février 2026). Les images téléversées sont donc compressées
+ * côté navigateur puis stockées en base64 dans la collection Firestore
+ * `images`, ce qui ne demande ni clé, ni service tiers, ni fonction à déployer.
  *
  * Ces tests verrouillent ce qui casserait l'envoi en silence :
- *  1. un retour du SDK Firebase Storage dans le code ;
- *  2. une clé imgbb écrite en dur dans le dépôt au lieu de l'environnement ;
- *  3. un champ d'image de l'admin redevenu une saisie d'URL.
+ *  1. un retour du SDK Firebase Storage ou d'un hébergeur tiers dans le code ;
+ *  2. un document qui dépasserait le plafond de 1 Mio de Firestore ;
+ *  3. un champ d'image de l'admin redevenu une saisie d'URL ;
+ *  4. un <ImageUpload> branché sur un gestionnaire d'événement (plantage).
  * ------------------------------------------------------------------------- */
 
 const ROOT = path.join(__dirname, "..", "..");
@@ -26,16 +27,14 @@ const collectSources = (dir) =>
   });
 
 const appSources = collectSources(path.join(ROOT, "src"));
-const functionSources = collectSources(path.join(ROOT, "functions"));
-const apiSources = exists(path.join(ROOT, "api")) ? collectSources(path.join(ROOT, "api")) : [];
+const functionSources = exists(path.join(ROOT, "functions")) ? collectSources(path.join(ROOT, "functions")) : [];
 const trackedFiles = [
   ...appSources,
   ...functionSources,
-  ...apiSources,
-  ...["firebase.json", "package.json"].map((f) => ({ file: path.join(ROOT, f), content: read(f) })),
+  ...["firestore.rules", "firebase.json", "package.json"].map((f) => ({ file: path.join(ROOT, f), content: read(f) })),
 ];
 
-/** Clé imgbb : 32 caractères hexadécimaux. */
+/** Clé de service imgbb : 32 caractères hexadécimaux. */
 const IMGBB_KEY_RE = /\b[0-9a-f]{32}\b/;
 
 describe("téléversement d'images", () => {
@@ -51,66 +50,64 @@ describe("téléversement d'images", () => {
     expect(JSON.parse(read("firebase.json")).storage).toBeUndefined();
   });
 
-  it("n'expose aucune clé imgbb dans le dépôt", () => {
+  it("n'expose aucune clé de service dans le dépôt", () => {
     const leaks = trackedFiles
       .filter(({ content }) => IMGBB_KEY_RE.test(content))
       .map(({ file }) => path.relative(ROOT, file));
     expect(leaks).toEqual([]);
   });
 
-  it("lit la clé dans l'environnement Vercel, jamais en dur", () => {
+  it("stocke les images dans Firestore, sans service tiers", () => {
     const client = read("src/lib/imageUpload.js");
-    expect(client).toContain("process.env.REACT_APP_IMGBB_KEY");
-    expect(client).toContain("https://api.imgbb.com/1/upload");
-    // Aucune clé en dur : le seul accès à la variable passe par apiKey().
-    expect(client).not.toMatch(/key=[a-f0-9]{8,}/i);
+    expect(client).toContain('collection(db, "images")');
+    expect(client).toContain("addDoc");
+    // Ni imgbb, ni Cloud Storage, ni fonction Vercel : rien à configurer.
+    expect(client).not.toContain("imgbb");
+    expect(client).not.toContain("/api/upload");
+    expect(exists("api/upload.js")).toBe(false);
   });
 
-  it("garde un garde-fou de délai et une limite de taille", () => {
+  it("reste sous le plafond de 1 Mio par document Firestore", () => {
     const client = read("src/lib/imageUpload.js");
-    expect(client).toContain("xhr.timeout");
-    expect(client).toContain("onprogress");
-    expect(client).toContain("4 * 1024 * 1024");
+    expect(client).toContain("MAX_IMAGE_BYTES = 600 * 1024");
+    expect(client).toContain("prepareImage");
+    const rules = read("firestore.rules");
+    expect(rules).toContain("match /images/{id}");
+    expect(rules).toContain("request.resource.data.bytes <= 600000");
+    expect(rules).toContain("request.resource.data.data.size() <= 820000");
+  });
+
+  it("garde un garde-fou de délai côté client", () => {
+    const client = read("src/lib/imageUpload.js");
+    expect(client).toContain("UPLOAD_TIMEOUT_MS");
     expect(client).toMatch(/settled/);
   });
 
-  it("n'a laissé aucune fonction d'envoi orpheline côté Firebase", () => {
+  it("n'a laissé de fonction d'envoi ni côté Firebase ni côté Vercel", () => {
     expect(exists("functions/upload.js")).toBe(false);
-    expect(read("functions/index.js")).not.toContain('require("./upload")');
+    expect(exists("api")).toBe(false);
+    expect(exists("functions/index.js")).not.toContain('require("./upload")');
+    // Plus aucune dépendance d'hébergement d'images dans le manifeste.
+    const deps = Object.keys(JSON.parse(read("package.json")).dependencies || {});
+    expect(deps.filter((d) => /imgbb|vercel|firebase-storage/.test(d))).toEqual([]);
   });
 
-  it("garde la clé secrète dans la passerelle Vercel", () => {
-    const gateway = read("api/upload.js");
-    // Sans préfixe REACT_APP_ : Vercel autorise alors visibility: secret et ne
-    // l'injecte jamais dans le bundle du navigateur.
-    expect(gateway).toContain("process.env.IMGBB_KEY");
-    // Le mot apparaît dans un commentaire d'explication, jamais comme variable lue.
-    expect(gateway).not.toMatch(/process\.env\.REACT_APP_/);
-    const envReads = [...gateway.matchAll(/process\.env\.([A-Z_]+)/g)].map((m) => m[1]);
-    expect([...new Set(envReads)]).toEqual(["IMGBB_KEY"]);
-    expect(gateway).toContain("https://api.imgbb.com/1/upload");
-    expect(gateway).toContain("4 * 1024 * 1024");
-    // Motif de panne renvoyé au client : sans lui, 503 et 502 se confondaient.
-    expect(gateway).toContain('reason: "no-key"');
-    expect(gateway).toContain('reason: "imgbb-refused"');
-    // Corps binaire : lu en tampon ou en flux selon le runtime.
-    expect(gateway).toContain("readBody");
+  it("documente la manipulation dans le guide de déploiement", () => {
+    const doc = read("docs/deploiement-firebase.md");
+    expect(doc).toContain("images");
+    expect(doc).toContain("base64");
+    expect(doc).not.toContain("IMGBB_KEY");
+    expect(doc).not.toContain("/api/upload");
   });
 
-  it("ne laisse pas la réécriture SPA avaler /api", () => {
-    // `/(.*)` -> index.html renverrait index.html à la place de la fonction :
-    // le client recevrait du HTML et n'y trouverait aucune URL.
-    const rewrites = JSON.parse(read("vercel.json")).rewrites || [];
-    const spa = rewrites.find((r) => r.destination === "/index.html");
-    expect(spa).toBeDefined();
-    expect(spa.source).toContain("(?!api/)");
-    expect(rewrites.some((r) => r.source === "/(.*)")).toBe(false);
-  });
-
-  it("tente la passerelle avant l'envoi direct", () => {
-    const client = read("src/lib/imageUpload.js");
-    expect(client).toContain('SERVER_ENDPOINT = "/api/upload"');
-    expect(client.indexOf("SERVER_ENDPOINT") < client.indexOf("}?key=")).toBe(true);
+  it("ne branche aucun ImageUpload sur un gestionnaire d'événement", () => {
+    // ImageUpload appelle onChange(url) ; les helpers `set("champ")` de
+    // l'admin attendent un event et plantent sur e.target.value.
+    const offenders = appSources
+      .flatMap(({ file, content }) => [...content.matchAll(/<ImageUpload[\s\S]{0,400}?\/>/g)].map((m) => ({ file, snippet: m[0] })))
+      .filter(({ snippet }) => /onChange=\{set\(/.test(snippet))
+      .map(({ file }) => path.relative(ROOT, file));
+    expect(offenders).toEqual([]);
   });
 });
 

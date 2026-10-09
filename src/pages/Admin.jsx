@@ -675,7 +675,7 @@ export default function Admin() {
                 <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.logo")}</label>
                 {/* Le logo se téléverse : plus de lien à coller. Choisir un adversaire
                     connu dans la liste remplit automatiquement le logo. */}
-                <ImageUpload value={form.opponentLogo} onChange={set("opponentLogo")} folder="matches" maxWidth={800} testId="admin-match-logo-upload" />
+                <ImageUpload value={form.opponentLogo} onChange={(url) => setForm((f) => ({ ...f, opponentLogo: url }))} folder="matches" maxWidth={800} testId="admin-match-logo-upload" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

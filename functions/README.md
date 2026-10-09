@@ -179,9 +179,11 @@ firebase deploy --only functions
 
 L'envoi d'images **ne passe pas par les Functions**. Cloud Storage est
 inaccessible sur le plan gratuit (bucket = Blaze depuis février 2026) : le
-navigateur envoie directement chez imgbb, avec la clé `REACT_APP_IMGBB_KEY`
-définie dans les variables d'environnement Vercel.
+navigateur compresse l'image puis l'écrit en base64 dans la collection
+Firestore `images`.
 
 Aucune fonction n'est donc requise ici ; `src/lib/imageUpload.js` côté site fait
-le travail, garde-fous de délai et limite de taille compris. La marche à suivre
+le travail, garde-fous de délai et limite de taille compris. Les règles de la
+collection `images` sont dans `firestore.rules` et se publient depuis la console
+Firebase (onglet *Rules*), sans commande. La marche à suivre
 est dans [`docs/deploiement-firebase.md`](../docs/deploiement-firebase.md).

@@ -1,41 +1,40 @@
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "./firebase";
+
 /* ------------------------------------------------------------------ *
  * Téléversement d'images — source de vérité unique du site.
  *
- * Le plan gratuit Firebase n'a pas de Storage (un bucket exige Blaze
- * depuis février 2026). Les images partent donc chez imgbb, l'hébergeur
- * des visuels i.ibb.co, directement depuis le navigateur.
+ * Cloud Storage n'existe pas sur le plan gratuit Firebase (un bucket
+ * exige Blaze depuis février 2026) et les hôbergeurs d'images tiers
+ * n'acceptent pas les appels sortants de Vercel. Les images sont donc
+ * **compressées puis stockées dans Firestore**, en base64, dans une
+ * collection `images` dédiée.
  *
- * Deux transports, sans commande de déploiement dans aucun cas :
- *
- *  1. **Passerelle serveur** (recommandé) — `POST /api/upload`, une fonction
- *     Vercel qui relaie l'envoi avec la variable `IMGBB_KEY`. Sans préfixe
- *     `REACT_APP_`, elle n'est PAS publique : Vercel accepte de la marquer
- *     « secret » et elle n'arrive jamais dans le navigateur.
- *  2. **Envoi direct** — si `REACT_APP_IMGBB_KEY` est définie, le navigateur
- *     poste lui-même chez imgbb. Cette variable-ci est forcément publique
- *     (Create React App l'inline dans le JS), donc Vercel refuse de la
- *     marquer secrète. C'est le repli quand le projet n'a pas de fonctions.
- *
- * Le repli est tenté seulement quand la passerelle n'existe pas, afin qu'un
- * projet sans /api ne reste pas bloqué.
+ * Choix assumés :
+ *  - Firestore est déjà en place, gratuit, et lu par le site public ;
+ *  - la valeur stockée est une data URL : aucun changement dans les
+ *    composants qui font déjà `<img src={logo}>` ;
+ *  - Firestore plafonne un document à 1 Mio : l'image est donc
+ *    recompressée tant qu'elle dépasse le budget (600 Ko décodés).
  *
  * Deux pièges corrigés ici, qui laissaient les écrans d'upload figés sur
  * « Envoi en cours » :
  *
- *  1. Une requête restée suspendue ne déclenche ni progression ni
- *     erreur. → `XHR.timeout` + minuterie d'abandon explicite.
+ *  1. Une écriture restée suspendue ne produit ni succès ni erreur.
+ *     → délai maximal + abandon, avec `settled` pour qu'une réponse
+ *     tardive ne remette pas l'interface en état occupé.
  *  2. La compression canvas pouvait ne jamais rendre la main si la
  *     décodification de l'image ne déclenchait aucun événement.
  *     → `COMPRESS_TIMEOUT_MS` + rejet explicite.
  * ------------------------------------------------------------------ */
 
-const IMGBB_ENDPOINT = "https://api.imgbb.com/1/upload";
-const SERVER_ENDPOINT = "/api/upload";
-export const UPLOAD_TIMEOUT_MS = 45000;
+/** 600 Ko décodés ≈ 800 Ko de base64, sous le plafond de 1 Mio de Firestore. */
+export const MAX_IMAGE_BYTES = 600 * 1024;
+export const UPLOAD_TIMEOUT_MS = 30000;
 export const COMPRESS_TIMEOUT_MS = 30000;
 
-/** Clé lue au moment de l'envoi : elle est figée par le build Vercel. */
-const apiKey = () => (process.env.REACT_APP_IMGBB_KEY || "").trim();
+/** Paliers de compression : on descend tant que l'image dépasse le budget. */
+const QUALITY_STEPS = [0.82, 0.7, 0.55];
 
 export const uploadError = (code, cause) => {
   const err = new Error(code);
@@ -44,33 +43,28 @@ export const uploadError = (code, cause) => {
   return err;
 };
 
-/**
- * Clé de traduction associée à une erreur de téléversement.
- *
- * Les codes HTTP de la passerelle sont traduits un par un : sans cela, une clé
- * absente et une image refusée par l'hébergeur affichaient le même message
- * générique, impossible à diagnostiquer depuis l'interface.
- */
+/** Clé de traduction associée à une erreur de téléversement. */
 export const uploadErrorKey = (err) => {
   const code = String(err?.code || "");
-  const status = Number(err?.httpStatus || 0);
-
-  if (code === "not-configured") return "upload.notConfigured";
-  if (status === 503) return "upload.notConfigured";
-  if (status === 413) return "upload.invalidImage";
-  if (status === 502 || status === 504) return "upload.hostRefused";
-  if (status === 400) return "upload.invalidImage";
-  if (code === "stalled" || code === "aborted" || code === "network") return "upload.timeout";
-  if (code === "too-large") return "upload.invalidImage";
+  if (code.endsWith("unavailable") || code.endsWith("deadline-exceeded") || code === "stalled") {
+    return "upload.timeout";
+  }
+  if (code.endsWith("permission-denied")) return "upload.forbidden";
+  if (code.endsWith("resource-exhausted")) return "upload.rateLimited";
+  if (code === "too-large" || code === "not-configured") return "upload.invalidImage";
+  if (code.endsWith("failed-precondition")) return "upload.notConfigured";
   return "upload.error";
 };
 
+const isFirebaseReady = () =>
+  Boolean(db && process.env.REACT_APP_FIREBASE_API_KEY && process.env.REACT_APP_FIREBASE_PROJECT_ID);
+
 /**
- * On peut toujours tenter un envoi : soit via la clé injectée au build, soit
- * via la passerelle serveur. La configuration manquante se signale alors sur
- * l'appel lui-même, avec un message explicite.
+ * On peut tenter un envoi dès que Firebase est configuré : les images
+ * partent dans Firestore, aucun service tiers à installer. Une configuration
+ * absente se signale sur l'appel, avec un message explicite.
  */
-export const isUploadReady = () => Boolean(apiKey()) || typeof window !== "undefined";
+export const isUploadReady = () => isFirebaseReady();
 
 const withTimeout = (promise, ms, code) =>
   new Promise((resolve, reject) => {
@@ -81,7 +75,7 @@ const withTimeout = (promise, ms, code) =>
     );
   });
 
-/** Réduit et convertit une image en JPEG avant envoi. */
+/** Réduit et convertit une image en JPEG. */
 export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
   withTimeout(
     new Promise((resolve, reject) => {
@@ -101,7 +95,7 @@ export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
           if (!ctx) { reject(uploadError("canvas-error")); return; }
           ctx.drawImage(img, 0, 0, w, h);
           canvas.toBlob(
-            (blob) => (blob ? resolve(blob) : reject(uploadError("encode-error"))),
+            (b) => (b ? resolve(b) : reject(uploadError("encode-error"))),
             "image/jpeg",
             quality
           );
@@ -114,113 +108,64 @@ export const compressImage = (file, maxWidth = 1600, quality = 0.82) =>
     "compress-timeout"
   );
 
-const safeJson = (text) => {
-  try { return JSON.parse(text); } catch { return null; }
+/** Compression adaptative : on baisse la qualité jusqu'à tenir dans le budget. */
+export const prepareImage = async (file, maxWidth = 1600) => {
+  let blob = null;
+  for (const quality of QUALITY_STEPS) {
+    blob = await compressImage(file, maxWidth, quality);
+    if (blob.size <= MAX_IMAGE_BYTES) return blob;
+  }
+  throw uploadError("too-large");
 };
 
-/**
- * POST binaire avec progression réelle, et abandon si rien n'arrive.
- * `endpoint` decide si l'on vise imgbb directement ou la passerelle.
- */
-const post = ({ endpoint, blob, folder, onProgress, timeoutMs, readUrl }) =>
+const blobToDataUrl = (blob) =>
   new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    const reader = new FileReader();
+    reader.onerror = () => reject(uploadError("read-error"));
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+
+/**
+ * Enregistre l'image dans `images/{id}` et renvoie la data URL à utiliser
+ * partout où le site attendait une URL. La promesse se résout ou se rejette
+ * TOUJOURS : au-delà du délai elle abandonne, au lieu de laisser l'interface
+ * tourner indéfiniment.
+ */
+export const uploadBlob = (blob, folder, { timeoutMs = UPLOAD_TIMEOUT_MS } = {}) =>
+  new Promise((resolve, reject) => {
     let settled = false;
     let timer = null;
-
     const settle = (fn, arg) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       fn(arg);
     };
-    const abort = (code) => {
-      // On tranche AVANT d'abandonner la requête : `xhr.abort()` peut déclencher
-      // onabort de façon synchrone selon l'implémentation, et le motif de l'échec
-      // (« délai dépassé ») doit primer sur le générique (« interrompu »).
-      settle(reject, uploadError(code));
-      try { xhr.abort(); } catch { /* déjà arrêté */ }
-    };
 
-    xhr.open("POST", endpoint);
-    xhr.timeout = timeoutMs;
-    if (readUrl) xhr.responseType = "json";
-    if (xhr.upload && onProgress) {
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
-      };
-    }
-    xhr.onload = () => {
-      const payload = xhr.response || safeJson(xhr.responseText);
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const url = readUrl ? payload?.url : payload?.success && payload?.data?.url;
-        if (url) { settle(resolve, url); return; }
-      }
-      // 503 = la passerelle existe mais n'a pas de clé : on ne tente pas le repli.
-      console.error("[upload]", xhr.status, payload);
-      // 404 = pas de fonction /api sur ce déploiement : le repli direct peut
-      // prendre le relais si une clé publique est présente.
-      if (xhr.status === 404) { settle(reject, uploadError("not-found")); return; }
-      // Le statut permet de dire *quoi* a échoué (clé absente, hébergeur
-      // muet, image refusée) au lieu d'un message unique.
-      const err = uploadError("rejected", payload?.error);
-      if (readUrl) err.httpStatus = xhr.status;
-      settle(reject, err);
-    };
-    xhr.onerror = () => abort("network");
-    xhr.ontimeout = () => abort("stalled");
-    xhr.onabort = () => settle(reject, uploadError("aborted"));
+    const work = (async () => {
+      if (!isFirebaseReady()) throw uploadError("not-configured");
+      if (!blob) throw uploadError("empty");
+      if (!folder) throw uploadError("no-folder");
+      if (blob.size > MAX_IMAGE_BYTES) throw uploadError("too-large");
 
-    if (readUrl) {
-      // Passerelle : le binaire brut, le dossier dans l'URL — pas de base64.
-      xhr.setRequestHeader("Content-Type", blob.type || "image/jpeg");
-      xhr.send(blob);
-    } else {
-      const name = folder.replace(/[^a-zA-Z0-9-]/g, "-");
-      const form = new FormData();
-      form.append("image", blob, `${name}.jpg`);
-      form.append("name", name);
-      xhr.send(form);
-    }
+      const data = await blobToDataUrl(blob);
+      await addDoc(collection(db, "images"), {
+        data,
+        mime: blob.type || "image/jpeg",
+        bytes: blob.size,
+        folder: String(folder).slice(0, 40),
+        ownerUid: auth?.currentUser?.uid || null,
+        createdAt: serverTimestamp(),
+      });
+      return data;
+    })();
 
-    // `xhr.timeout` suffit en théorie ; ce garde-fou couvre le cas où la
-    // connexion reste ouverte sans émettre le timeout (réseau instable).
-    timer = setTimeout(() => abort("stalled"), timeoutMs + 5000);
+    // Le garde-fou : au-delà du délai on abandonne, et une réponse tardive ne
+    // peut plus rien réafficher (c'est ce qui figeait l'écran avant).
+    work.then(
+      (url) => settle(resolve, url),
+      (err) => settle(reject, err)
+    );
+    timer = setTimeout(() => settle(reject, uploadError("stalled")), timeoutMs);
   });
-
-/**
- * Envoie une image et renvoie son URL publique. La promesse se résout ou se
- * rejette TOUJOURS : au-delà du délai elle abandonne, au lieu de laisser
- * l'interface tourner indéfiniment.
- */
-export const uploadBlob = async (blob, folder, { onProgress, timeoutMs = UPLOAD_TIMEOUT_MS } = {}) => {
-  if (!blob) throw uploadError("empty");
-  if (!folder) throw uploadError("no-folder");
-  // 4 Mo : sous la limite de corps de requête de Vercel et au-delà de tout ce
-  // que la compression client produit pour une photo normale.
-  if (blob.size > 4 * 1024 * 1024) throw uploadError("too-large");
-
-  const key = apiKey();
-
-  // 1. Passerelle serveur (clé secrète) — le chemin par défaut.
-  try {
-    return await post({
-      endpoint: `${SERVER_ENDPOINT}?folder=${encodeURIComponent(folder)}`,
-      blob, folder, onProgress, timeoutMs, readUrl: true,
-    });
-  } catch (err) {
-    // Autre panne qu'une passerelle absente : remontée telle quelle.
-    if (err.code !== "not-found") throw err;
-    // 404 sans clé publique : aucune porte de sortie, et rien à corriger
-    // côté variable d'environnement.
-    if (!key) throw uploadError("not-configured");
-    console.warn("[upload] passerelle absente, envoi direct chez imgbb");
-  }
-
-  // 2. Repli direct : la clé est alors dans le bundle, assumé et documenté.
-  if (!key) throw uploadError("not-configured");
-  return post({
-    endpoint: `${IMGBB_ENDPOINT}?key=${encodeURIComponent(key)}`,
-    blob, folder, onProgress, timeoutMs, readUrl: false,
-  });
-};
