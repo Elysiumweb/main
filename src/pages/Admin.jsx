@@ -24,6 +24,8 @@ import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
+import { AdminReplayImport } from "../components/admin/AdminReplayImport";
+import { buildReplaySeries, RL_GAME } from "../lib/rocketLeagueReplay";
 import { logAdminAction } from "../lib/notify";
 import { isImageValue, isOptionalHttpUrl } from "../lib/validation";
 import {
@@ -38,7 +40,7 @@ import {
 } from "../components/ui/alert-dialog";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", vodUrl: "", mvp: "", maps: [], players: [] };
+const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", vodUrl: "", mvp: "", maps: [], players: [], replays: [], replaySide: "" };
 const PAGE_SIZE = 12;
 
 const EMPTY_MAP = { name: "", scoreUs: "", scoreThem: "" };
@@ -164,6 +166,8 @@ export default function Admin() {
       roster: rostersForGame(game).includes(f.roster) ? f.roster : "",
       players: [],
       mvp: "",
+      replays: [],
+      replaySide: "",
     }));
   };
   const onMatchRosterChange = (e) => {
@@ -230,6 +234,13 @@ export default function Admin() {
       })
       .sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
   }, [rosterMembers, form.players, form.game, form.roster, rostersForGame]);
+
+  const replayMembers = useMemo(() => rosterMembers
+    .filter((m) => m.status !== "staff" && m.pseudo)
+    .filter((m) => !m.game || m.game === RL_GAME)
+    .filter((m) => !matchRosters.length || !form.roster || (m.roster || "") === form.roster)
+    .map((m) => ({ id: m.id, pseudo: m.pseudo }))
+    .sort((a, b) => a.pseudo.localeCompare(b.pseudo)), [rosterMembers, matchRosters.length, form.roster]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setUserPage(1); }, [userQuery]);
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
@@ -358,6 +369,23 @@ export default function Admin() {
     });
   };
 
+  const applyReplayChange = (nextGames, nextSide) => {
+    setForm((f) => {
+      const base = { ...f, replays: nextGames, replaySide: nextSide || "" };
+      const series = buildReplaySeries(nextGames, nextSide);
+      if (!series.ready) return base;
+      return {
+        ...base,
+        status: "finished",
+        scoreUs: series.scoreUs,
+        scoreThem: series.scoreThem,
+        maps: series.maps,
+        players: series.players,
+        date: f.date || series.date,
+      };
+    });
+  };
+
   const addMapRow = () => setForm(f=>({ ...f, maps: [...(f.maps||[]), { ...EMPTY_MAP }] }));
   const updateMapRow = (idx, key, value) => setForm(f=>{
     const next = [...(f.maps||[])];
@@ -422,6 +450,8 @@ export default function Admin() {
       mvp: m.mvp || "",
       maps: sanitizeMaps(m.maps),
       players: sanitizeMatchPlayers(m.players),
+      replays: Array.isArray(m.replays) ? m.replays : [],
+      replaySide: m.replaySide || "",
     });
   };
 
@@ -480,6 +510,8 @@ export default function Admin() {
         maps: [],
         mvp: "",
         vodUrl: "",
+        replays: [],
+        replaySide: "",
         updatedAt: serverTimestamp(),
       });
       await logAdminAction({
@@ -677,6 +709,16 @@ export default function Admin() {
                     connu dans la liste remplit automatiquement le logo. */}
                 <ImageUpload value={form.opponentLogo} onChange={(url) => setForm((f) => ({ ...f, opponentLogo: url }))} folder="matches" maxWidth={800} testId="admin-match-logo-upload" />
               </div>
+              {form.game === RL_GAME && (
+                <div className="border border-[#D8CA82]/20 bg-[#141414] p-4" data-testid="admin-match-replays-section">
+                  <AdminReplayImport
+                    games={form.replays || []}
+                    side={form.replaySide || ""}
+                    members={replayMembers}
+                    onChange={applyReplayChange}
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreUs")}</label>
