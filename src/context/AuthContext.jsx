@@ -10,7 +10,7 @@ import { OFFICIAL_UID } from "../lib/constants";
  * On ne synchronise QUE les joueurs ayant accès à l'espace privé, et on évite
  * toute écriture inutile si rien n'a changé.
  */
-const publishProfileDirectory = ({ uid, displayName, game, roster, photoURL, hasPlayerAccess }) => {
+const publishProfileDirectory = ({ uid, displayName, game, roster, photoURL, hasPlayerAccess, discordId }) => {
   if (!uid || !hasPlayerAccess) return;
   const payload = {
     uid,
@@ -18,6 +18,7 @@ const publishProfileDirectory = ({ uid, displayName, game, roster, photoURL, has
     game: game || null,
     roster: roster || null,
     photoURL: photoURL || null,
+    discordId: discordId || null,
     updatedAt: serverTimestamp(),
   };
   setDoc(doc(db, "profiles", uid), payload, { merge: true }).catch((e) => console.error("profiles sync", e));
@@ -69,6 +70,7 @@ export const AuthProvider = ({ children }) => {
             game: data?.game || null,
             roster: data?.roster || null,
             photoURL: u.photoURL || data?.photoURL || null,
+            discordId: data?.discordId || null,
             hasPlayerAccess: hasAccess,
           });
         },
