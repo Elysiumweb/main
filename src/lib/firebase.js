@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
@@ -41,3 +41,4 @@ export const db = getFirestore(app);
 // collection Firestore `images` (voir src/lib/imageUpload.js).
 export const functions = getFunctions(app, process.env.REACT_APP_FIREBASE_FUNCTIONS_REGION || "us-central1");
 export const googleProvider = new GoogleAuthProvider();
+export const discordProvider = new OAuthProvider('oidc.discord');

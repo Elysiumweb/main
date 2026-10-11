@@ -40,7 +40,9 @@ export const PAYPAL_CLIENT_ID =
 export const PAYPAL_HOSTED_BUTTON_ID =
   process.env.REACT_APP_PAYPAL_HOSTED_BUTTON_ID || "8R9PKMBPRB45N";
 /** Bouton hébergé PayPal pour le don récurrent / adhésion (montant libre, mensuel).
-    À remplacer par l'identifiant du bouton d'abonnement PayPal créé dans le dashboard. */
+    À remplacer par l'identifiant du bouton d'abonnement PayPal créé dans le dashboard
+    (PayPal Merchant Dashboard → Pay & Get Paid → PayPal Buttons → Create button → Subscriptions).
+    Variable : REACT_APP_PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID */
 export const PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID =
   process.env.REACT_APP_PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID || "";
 export const PAYPAL_CURRENCY = "EUR";
