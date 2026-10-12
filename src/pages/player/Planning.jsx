@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { Fragment, useEffect, useState, useMemo, useRef } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, deleteField } from "firebase/firestore";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX, UserCheck, UserX, Download, ExternalLink } from "lucide-react";
@@ -52,7 +52,10 @@ const COLORS = [
   { id: "#616161", name: "Grey", bg: "bg-[#616161]", text: "text-white" },
 ];
 
-const HOURS = Array.from({length: 17}, (_,i)=> i+6); // 6h -> 22h
+const HOURS = Array.from({length: 18}, (_,i)=> i+6); // 6h -> 00h (dernière case : 23h-00h)
+const MOBILE_QUERY = "(max-width: 767px)";
+// Hauteur d'une ligne horaire de la grille de disponibilités (tactile : cible plus grande)
+const AVAIL_ROW = "h-12 md:h-[42px]";
 const WEEKDAY_KEYS = [1,2,3,4,5,6,7]; // lun -> dim
 
 function normalizeEvent(ev){
@@ -67,6 +70,24 @@ function normalizeEvent(ev){
   }
   return ev;
 }
+
+function useIsMobile(){
+  const [isMobile, setIsMobile] = useState(()=> typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches);
+  useEffect(()=>{
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = ()=> setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return ()=> mq.removeEventListener("change", onChange);
+  }, []);
+  return isMobile;
+}
+
+// Forme canonique d'une semaine type pour comparer deux états (ordre des heures ignoré)
+const normalizeDays = (days) => JSON.stringify(
+  WEEKDAY_KEYS.map(wk => [...(days?.[String(wk)] || [])].sort((a,b)=>a-b))
+);
+const sortedNums = (arr) => [...(arr || [])].sort((a,b)=>a-b);
 
 export default function Planning(){
   const { user, game, roster, isOfficial, canManage, displayName } = useAuth();
@@ -87,11 +108,21 @@ export default function Planning(){
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title:"", description:"", color:"#D8CA82", game: game || "EVA", roster: null, start:"", end:"", allDay:false });
-  const [isDraggingAvail, setIsDraggingAvail] = useState(false);
   const [absenceModal, setAbsenceModal] = useState(null); // dateKey | null
   const [absenceReason, setAbsenceReason] = useState("");
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const isMobile = useIsMobile();
+  // Mobile : jour affiché dans la grille « semaine type » (un seul jour de la semaine à la fois)
+  const [recurringDay, setRecurringDay] = useState(()=> weekdayKey(toDateKey(new Date())));
+  // Glisser-déposer souris : valeur à appliquer + état du bouton enfoncé
   const dragValueRef = useRef(true);
+  const draggingRef = useRef(false);
+  const pointerTypeRef = useRef("mouse");
+  // Écritures effectuées par ce client mais pas encore confirmées par Firestore.
+  // Sans elles, deux cases cochées à la suite (glisser) se basent sur un état
+  // périmé et s'écrasent mutuellement.
+  const pendingAvailRef = useRef({}); // `${uid}_${date}` -> { added, removed }
+  const pendingRecRef = useRef(null); // days de la semaine type
 
   const events = useMemo(()=> eventsRaw.map(normalizeEvent), [eventsRaw]);
 
@@ -147,18 +178,32 @@ export default function Planning(){
   useEffect(()=>{
     // weekly availability exceptions — small dataset, filtered client-side
     const unsub = onSnapshot(collection(db,"availabilities"), (snap)=>{
-      setAvailDocs(snap.docs.map(d=>({id:d.id, ...d.data()})));
+      const list = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      list.forEach(d=>{
+        const p = pendingAvailRef.current[`${d.uid}_${d.date}`];
+        if(p && JSON.stringify(sortedNums(d.added))===JSON.stringify(sortedNums(p.added))
+          && JSON.stringify(sortedNums(d.removed))===JSON.stringify(sortedNums(p.removed))){
+          delete pendingAvailRef.current[`${d.uid}_${d.date}`];
+        }
+      });
+      setAvailDocs(list);
     }, console.error);
     return unsub;
   }, []);
 
+  const myUid = user?.uid || null;
   useEffect(()=>{
     // recurring weekly templates ("semaine type"), one doc per player
     const unsub = onSnapshot(collection(db,"recurringAvailabilities"), (snap)=>{
-      setRecurrDocs(snap.docs.map(d=>({id:d.id, ...d.data()})));
+      const list = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      const mine = myUid ? list.find(d=> d.uid===myUid) : null;
+      if(mine && pendingRecRef.current && normalizeDays(mine.days)===normalizeDays(pendingRecRef.current)){
+        pendingRecRef.current = null;
+      }
+      setRecurrDocs(list);
     }, console.error);
     return unsub;
-  }, []);
+  }, [myUid]);
 
   useEffect(()=>{
     // declared absences
@@ -513,7 +558,7 @@ export default function Planning(){
   };
 
   // Bloc « présent / absent » affiché dans la modale d'événement.
-  const AttendanceBlock = () => {
+  const renderAttendanceBlock = () => {
     if(!user || !selectedEvent) return null;
     const att = selectedEvent.attendance || {};
     const mine = att[user.uid] || null;
@@ -567,13 +612,42 @@ export default function Planning(){
   };
 
   // ---- weekly availability toggle (delta vs semaine type) ----
+  // Base de calcul : la dernière écriture locale si elle n'est pas encore
+  // confirmée, sinon l'état Firestore. Évite de perdre des cases cochées en glissant.
+  const writeAvailability = async (dateKey, added, removed)=>{
+    const key = `${user.uid}_${dateKey}`;
+    const next = { added: sortedNums(added), removed: sortedNums(removed) };
+    pendingAvailRef.current[key] = next;
+    try{
+      await setDoc(doc(db,"availabilities", key), {
+        uid: user.uid,
+        displayName: displayName,
+        game: game || "EVA",
+        roster: roster || null,
+        date: dateKey,
+        added: next.added,
+        removed: next.removed,
+        hours: deleteField(), // legacy field, superseded by added/removed
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }catch(err){
+      delete pendingAvailRef.current[key];
+      console.error(err); toast.error(t("common.error"));
+    }
+  };
+
   const toggleAvailability = async (dateKey, hour, forceValue=null)=>{
     if(!user) return;
     if(isAbsent(user.uid, dateKey)) return; // jour d'absence : non éditable
     const rec = new Set(myRecurring?.days?.[String(weekdayKey(dateKey))] || []);
-    const existing = availIndex[`${user.uid}_${dateKey}`] || {};
-    const added = new Set([ ...(existing.added || []), ...(existing.hours || []) ]);
-    const removed = new Set(existing.removed || []);
+    const key = `${user.uid}_${dateKey}`;
+    const existing = availIndex[key] || {};
+    const base = pendingAvailRef.current[key] || {
+      added: [ ...(existing.added || []), ...(existing.hours || []) ], // hours = schéma legacy
+      removed: existing.removed || [],
+    };
+    const added = new Set(base.added);
+    const removed = new Set(base.removed);
     const eff = new Set([...rec, ...added]);
     removed.forEach(h=> eff.delete(h));
     const shouldAdd = forceValue!==null ? forceValue : !eff.has(hour);
@@ -584,31 +658,18 @@ export default function Planning(){
       if(rec.has(hour)) removed.add(hour); // retire un créneau récurrent cette semaine seulement
       else added.delete(hour);
     }
-    const docRef = doc(db,"availabilities", `${user.uid}_${dateKey}`);
-    try{
-      await setDoc(docRef, {
-        uid: user.uid,
-        displayName: displayName,
-        game: game || "EVA",
-        roster: roster || null,
-        date: dateKey,
-        added: Array.from(added).sort((a,b)=>a-b),
-        removed: Array.from(removed).sort((a,b)=>a-b),
-        hours: deleteField(), // legacy field, superseded by added/removed
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-      // no toast each click to avoid spam
-    }catch(err){ console.error(err); toast.error(t("common.error")); }
+    await writeAvailability(dateKey, Array.from(added), Array.from(removed));
   };
 
   // ---- recurring template toggle ("semaine type", appliquée chaque semaine) ----
   const toggleRecurring = async (wk, hour, forceValue=null)=>{
     if(!user) return;
-    const days = { ...(myRecurring?.days || {}) };
+    const days = { ...(pendingRecRef.current || myRecurring?.days || {}) };
     const cur = new Set(days[String(wk)] || []);
     const shouldAdd = forceValue!==null ? forceValue : !cur.has(hour);
     if(shouldAdd) cur.add(hour); else cur.delete(hour);
     days[String(wk)] = Array.from(cur).sort((a,b)=>a-b);
+    pendingRecRef.current = days;
     try{
       await setDoc(doc(db,"recurringAvailabilities", user.uid), {
         uid: user.uid,
@@ -619,44 +680,75 @@ export default function Planning(){
         updatedAt: serverTimestamp(),
       });
       // no toast each click to avoid spam
-    }catch(err){ console.error(err); toast.error(t("common.error")); }
+    }catch(err){
+      pendingRecRef.current = null;
+      console.error(err); toast.error(t("common.error"));
+    }
   };
 
-  const getCellValue = (mode, arg, hour) =>
-    mode==="recurring"
-      ? (myRecurring?.days?.[String(arg)] || []).includes(hour)
-      : (myAvailForWeek[arg]?.has(hour) ?? false);
+  // Valeur d'une case (semaine : dispo effective ; récurrent : semaine type).
+  // Lit d'abord les écritures en attente : sinon un deuxième clic rapide sur la
+  // même case se baserait sur l'affichage périmé et ré-cocherait au lieu de décocher.
+  const getCellValue = (mode, arg, hour) => {
+    if(mode==="recurring"){
+      const days = pendingRecRef.current || myRecurring?.days || {};
+      return (days[String(arg)] || []).includes(hour);
+    }
+    const p = user ? pendingAvailRef.current[`${user.uid}_${arg}`] : null;
+    if(!p) return myAvailForWeek[arg]?.has(hour) ?? false;
+    const eff = new Set([ ...(myRecurring?.days?.[String(weekdayKey(arg))] || []), ...p.added ]);
+    p.removed.forEach(h=> eff.delete(h));
+    return eff.has(hour);
+  };
 
-  const handleMouseDownAvail = (mode, arg, hour)=>{
+  const applyCell = (mode, arg, hour, value) =>
+    mode==="recurring" ? toggleRecurring(arg, hour, value) : toggleAvailability(arg, hour, value);
+
+  // Souris / stylet : clic = bascule, glisser = applique la même valeur aux cases survolées.
+  const handleCellPointerDown = (mode, arg, hour) => (e)=>{
+    pointerTypeRef.current = e.pointerType;
+    if(e.pointerType==="touch") return; // tactile : géré au tap (onClick), pas pendant un défilement
+    if(e.button!==0) return;
     dragValueRef.current = !getCellValue(mode, arg, hour);
-    setIsDraggingAvail(true);
-    if(mode==="recurring") toggleRecurring(arg, hour, dragValueRef.current);
-    else toggleAvailability(arg, hour, dragValueRef.current);
+    draggingRef.current = true;
+    applyCell(mode, arg, hour, dragValueRef.current);
   };
-  const handleMouseEnterAvail = (mode, arg, hour)=>{
-    if(!isDraggingAvail) return;
-    if(getCellValue(mode, arg, hour)===dragValueRef.current) return; // skip redundant writes
-    if(mode==="recurring") toggleRecurring(arg, hour, dragValueRef.current);
-    else toggleAvailability(arg, hour, dragValueRef.current);
+  const handleCellPointerEnter = (mode, arg, hour) => (e)=>{
+    if(!draggingRef.current || e.pointerType==="touch") return;
+    if(getCellValue(mode, arg, hour)===dragValueRef.current) return; // évite les écritures inutiles
+    applyCell(mode, arg, hour, dragValueRef.current);
+  };
+  // Tactile : un tap (sans défilement) bascule la case.
+  const handleCellClick = (mode, arg, hour) => ()=>{
+    if(pointerTypeRef.current!=="touch") return;
+    applyCell(mode, arg, hour, !getCellValue(mode, arg, hour));
   };
   useEffect(()=>{
-    const up = ()=> setIsDraggingAvail(false);
-    window.addEventListener("mouseup", up);
-    return ()=> window.removeEventListener("mouseup", up);
+    const up = ()=> { draggingRef.current = false; };
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return ()=> {
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
   }, []);
 
   const clearMyWeek = async ()=>{
     if(!user) return;
     try{
       for(const dateKey of weekKeys){
-        const existing = availIndex[`${user.uid}_${dateKey}`] || {};
+        const key = `${user.uid}_${dateKey}`;
+        const existing = availIndex[key] || {};
         const rec = myRecurring?.days?.[String(weekdayKey(dateKey))] || [];
-        const all = new Set([ ...(existing.added || []), ...(existing.hours || []), ...rec ]);
-        const ref = doc(db,"availabilities", `${user.uid}_${dateKey}`);
-        await setDoc(ref, {
-          uid: user.uid, displayName, game: game||"EVA", roster: roster||null, date: dateKey,
-          added: [], removed: Array.from(all).sort((a,b)=>a-b), hours: deleteField(), updatedAt: serverTimestamp(),
-        }, { merge:true });
+        const base = pendingAvailRef.current[key];
+        const all = new Set([ ...(base ? base.added : [...(existing.added || []), ...(existing.hours || [])]), ...rec ]);
+        pendingAvailRef.current[key] = { added: [], removed: sortedNums(Array.from(all)) };
+        try{
+          await setDoc(doc(db,"availabilities", key), {
+            uid: user.uid, displayName, game: game||"EVA", roster: roster||null, date: dateKey,
+            added: [], removed: Array.from(all).sort((a,b)=>a-b), hours: deleteField(), updatedAt: serverTimestamp(),
+          }, { merge:true });
+        }catch(err){ delete pendingAvailRef.current[key]; throw err; }
       }
       toast.success(t("planning.avail.saved"));
     }catch(e){ console.error(e); toast.error(t("common.error")); }
@@ -728,14 +820,16 @@ export default function Planning(){
   };
 
   // ---- rendering helpers ----
+  // L'onglet disponibilités est toujours hebdomadaire, quelle que soit la vue calendrier choisie
+  const navView = tab==="availability" ? "week" : view;
   const goPrev = ()=>{
-    if(view==="month"){ setCurrentDate(d=> new Date(d.getFullYear(), d.getMonth()-1, 1)); }
-    else if(view==="week"){ setCurrentDate(d=> addDays(d,-7)); }
+    if(navView==="month"){ setCurrentDate(d=> new Date(d.getFullYear(), d.getMonth()-1, 1)); }
+    else if(navView==="week"){ setCurrentDate(d=> addDays(d,-7)); }
     else { setCurrentDate(d=> addDays(d,-1)); }
   };
   const goNext = ()=>{
-    if(view==="month"){ setCurrentDate(d=> new Date(d.getFullYear(), d.getMonth()+1, 1)); }
-    else if(view==="week"){ setCurrentDate(d=> addDays(d,7)); }
+    if(navView==="month"){ setCurrentDate(d=> new Date(d.getFullYear(), d.getMonth()+1, 1)); }
+    else if(navView==="week"){ setCurrentDate(d=> addDays(d,7)); }
     else { setCurrentDate(d=> addDays(d,1)); }
   };
   const goToday = ()=> setCurrentDate(new Date());
@@ -744,16 +838,22 @@ export default function Planning(){
   const weekLabel = `${weekStart.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{day:"numeric", month:"short"})} – ${weekEnd.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{day:"numeric", month:"short", year:"numeric"})}`;
   const dayLabel = currentDate.toLocaleDateString(lang==="en"?"en-US":"fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
-  // ---- Components ----
-  const MiniMonth = ()=>{
+  // ---- Rendu ----
+  // Blocs de rendu appelés comme des fonctions (pas rendus comme <Composant />).
+  // Un composant déclaré à l'intérieur de Planning est recréé à chaque rendu :
+  // React démonte alors tout le sous-arbre, et le conteneur défilant repart tout
+  // en haut à chaque clic sur une case (cause du « saut » signalé).
+  const locale = lang==="en" ? "en-US" : "fr-FR";
+
+  const renderMiniMonth = ()=>{
     const grid = monthGrid(currentDate);
     return (
       <div className="border border-white/10 bg-[#141414] p-3">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-display uppercase tracking-[0.2em] text-[#f7f7f7]">{monthLabel}</p>
           <div className="flex gap-1">
-            <button onClick={goPrev} className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-[#f7f7f7]/60 u-micro"><ChevronLeft size={14}/></button>
-            <button onClick={goNext} className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-[#f7f7f7]/60 u-micro"><ChevronRight size={14}/></button>
+            <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-[#f7f7f7]/60 u-micro"><ChevronLeft size={14}/></button>
+            <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-[#f7f7f7]/60 u-micro"><ChevronRight size={14}/></button>
           </div>
         </div>
         <div className="grid grid-cols-7 gap-px">
@@ -776,9 +876,32 @@ export default function Planning(){
     );
   };
 
-  const EventPill = ({ev, compact=false})=>{
+  // Bandeau de jours (mobile) : sélectionne le jour affiché dans la vue jour / grille.
+  const renderDayStrip = (days, renderMeta, testId)=>{
+    const selectedKey = toDateKey(currentDate);
+    return (
+      <div className="grid grid-cols-7 border-b border-white/10 bg-[#141414] shrink-0" data-testid={testId}>
+        {days.map(d=>{
+          const key = toDateKey(d);
+          const selected = key===selectedKey;
+          const today = isToday(d);
+          return (
+            <button key={key} type="button" onClick={()=> setCurrentDate(d)} aria-pressed={selected}
+              aria-label={d.toLocaleDateString(locale,{weekday:"long", day:"numeric", month:"long"})}
+              data-testid={`${testId}-${key}`}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] border-r border-white/5 last:border-0 u-micro touch-manipulation ${selected ? "bg-[#D8CA82] text-[#111111]" : today ? "bg-[#D8CA82]/10 text-[#f7f7f7]" : "text-[#f7f7f7]/80"}`}>
+              <span className={`text-[10px] uppercase tracking-wider ${selected ? "text-[#111111]/80" : "text-[#c8c8c8]"}`}>{d.toLocaleDateString(locale,{weekday:"short"})}</span>
+              <span className="font-display font-bold text-sm">{d.getDate()}</span>
+              <span className="h-3 flex items-center justify-center text-[10px] leading-none">{renderMeta(d, key)}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderEventPill = (ev, compact=false)=>{
     const s = new Date(ev.start);
-    const e = new Date(ev.end);
     const time = `${pad(s.getHours())}:${pad(s.getMinutes())}`;
     const attVals = Object.values(ev.attendance || {}).filter(v=> v==="yes"||v==="no");
     const present = attVals.filter(v=>v==="yes").length;
@@ -786,7 +909,7 @@ export default function Planning(){
     return (
       <div onClick={(e)=>{ e.stopPropagation(); openEdit(ev); }}
         className={`flex items-center gap-1.5 px-2 py-1 text-xs leading-none cursor-pointer border-l-2 truncate ${compact?"":"mb-1"} hover:brightness-110 u-micro`}
-        style={{ backgroundColor: `${ev.color}22`, borderLeftColor: ev.color, color: ev.color===" #D8CA82"? "#D8CA82": ev.color }}
+        style={{ backgroundColor: `${ev.color}22`, borderLeftColor: ev.color, color: ev.color }}
         title={`${ev.title}\n${time} – ${ev.description||""}`}>
         <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: ev.color}} />
         {!compact && <span className="opacity-70 shrink-0">{time}</span>}
@@ -803,13 +926,13 @@ export default function Planning(){
     );
   };
 
-  const MonthView = ()=>{
+  const renderMonthView = ()=>{
     const grid = monthGrid(currentDate);
     const daysOfWeek = lang==="en" ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] : ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
     return (
       <div className="flex-1 flex flex-col bg-[#0e0e0e] border border-white/10 overflow-hidden">
         <div className="grid grid-cols-7 border-b border-white/10 bg-[#141414]">
-          {daysOfWeek.map(d=> <div key={d} className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] px-3 py-2 border-r border-white/5 last:border-0">{d}</div>)}
+          {daysOfWeek.map(d=> <div key={d} className="text-center md:text-left text-[10px] md:text-xs uppercase tracking-[0.1em] md:tracking-[0.3em] text-[#c8c8c8] px-1 md:px-3 py-2 border-r border-white/5 last:border-0">{d}</div>)}
         </div>
         <div className="grid grid-cols-7 grid-rows-6 flex-1 auto-rows-fr">
           {grid.map((d,i)=>{
@@ -817,15 +940,26 @@ export default function Planning(){
             const isCurMonth = d.getMonth()===currentDate.getMonth();
             const today = isToday(d);
             const dayEvents = eventsByDate[key]||[];
+            // Mobile : un tap ouvre la journée (les pastilles ne tiennent pas dans la case)
+            const onDayClick = ()=> {
+              setCurrentDate(d);
+              if(isMobile){ setView("day"); return; }
+              if(canManage) openNew(d);
+            };
             return (
-              <div key={i} onClick={()=> { setCurrentDate(d); if(canManage) openNew(d); }}
-                className={`relative border-r border-b border-white/[0.07] p-1.5 flex flex-col min-h-[110px] cursor-pointer hover:bg-white/[0.02] u-micro ${!isCurMonth?"bg-[#0c0c0c]/60":"bg-[#111111]"} ${today?"ring-1 ring-inset ring-[#D8CA82]/40":""}`}>
+              <div key={i} onClick={onDayClick}
+                className={`relative border-r border-b border-white/[0.07] p-1 md:p-1.5 flex flex-col min-h-[56px] md:min-h-[110px] cursor-pointer hover:bg-white/[0.02] u-micro ${!isCurMonth?"bg-[#0c0c0c]/60":"bg-[#111111]"} ${today?"ring-1 ring-inset ring-[#D8CA82]/40":""}`}>
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111] font-bold": isCurMonth?"text-[#f7f7f7]/80":"text-[#f7f7f7]/25"}`}>{d.getDate()}</span>
-                  {dayEvents.length>3 && <span className="text-xs text-[#c8c8c8]">+{dayEvents.length-3}</span>}
+                  {dayEvents.length>3 && <span className="hidden md:inline text-xs text-[#c8c8c8]">+{dayEvents.length-3}</span>}
                 </div>
-                <div className="mt-1.5 space-y-1 overflow-hidden">
-                  {dayEvents.slice(0,3).map(ev=> <EventPill key={ev.id} ev={ev} compact />)}
+                {dayEvents.length>0 && (
+                  <div className="flex flex-wrap gap-0.5 mt-1 md:hidden" aria-hidden="true">
+                    {dayEvents.slice(0,4).map(ev=> <span key={ev.id} className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: ev.color}} />)}
+                  </div>
+                )}
+                <div className="hidden md:block mt-1.5 space-y-1 overflow-hidden">
+                  {dayEvents.slice(0,3).map(ev=> <Fragment key={ev.id}>{renderEventPill(ev, true)}</Fragment>)}
                 </div>
               </div>
             );
@@ -835,8 +969,19 @@ export default function Planning(){
     );
   };
 
-  const WeekView = ()=>{
+  const renderWeekView = ()=>{
     const days = weekDays(weekStart);
+    // Mobile : 7 colonnes illisibles sur un téléphone → bandeau de jours + journée
+    if(isMobile){
+      return (
+        <div className="flex flex-col bg-[#0e0e0e] border border-white/10" data-testid="mobile-week">
+          {renderDayStrip(days, (d,key)=> (eventsByDate[key]||[]).length>0
+            ? <span className="w-1.5 h-1.5 rounded-full bg-[#D8CA82]" aria-hidden="true" />
+            : null, "mobile-week-strip")}
+          {renderDayView()}
+        </div>
+      );
+    }
     return (
       <div className="flex-1 flex flex-col bg-[#0e0e0e] border border-white/10 overflow-hidden">
         <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
@@ -846,7 +991,7 @@ export default function Planning(){
             const today = isToday(d);
             return (
               <div key={key} className={`flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center ${today?"bg-[#D8CA82]/10":""}`}>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{d.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short"})}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
                 <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111]":"text-[#f7f7f7]"}`}>{d.getDate()}</p>
               </div>
             );
@@ -903,17 +1048,17 @@ export default function Planning(){
     );
   };
 
-  const DayView = ()=>{
+  const renderDayView = ()=>{
     const key = toDateKey(currentDate);
     const dayEvents = eventsByDate[key]||[];
     return (
-      <div className="flex-1 flex bg-[#0e0e0e] border border-white/10 overflow-hidden">
+      <div className={`${isMobile ? "" : "flex-1"} flex bg-[#0e0e0e] border border-white/10 overflow-hidden`}>
         <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
           {HOURS.map(h=>(
             <div key={h} className="h-[60px] border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1">{pad(h)}:00</div>
           ))}
         </div>
-        <div className="flex-1 relative overflow-y-auto">
+        <div className={`${isMobile ? "" : "overflow-y-auto"} flex-1 relative`}>
           {HOURS.map(h=>(
             <div key={h} onClick={()=> openNew(currentDate,h)}
               className="h-[60px] border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer u-micro" />
@@ -941,11 +1086,14 @@ export default function Planning(){
     );
   };
 
-  const AvailabilityView = ()=>{
+  const renderAvailabilityView = ()=>{
     const days = weekDays(weekStart);
+    const selectedKey = toDateKey(currentDate);
+    // Mobile : un seul jour à la fois (bandeau au-dessus) ; desktop : semaine complète
+    const visibleDays = isMobile ? days.filter(d=> toDateKey(d)===selectedKey) : days;
     return (
       <div className="flex-1 flex flex-col border border-white/10 bg-[#0e0e0e] overflow-hidden">
-        <div className="p-4 border-b border-white/10 bg-[#141414] flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="p-3 md:p-4 border-b border-white/10 bg-[#141414] flex flex-wrap items-center gap-x-4 gap-y-3">
           {/* mode switcher: this week vs recurring template */}
           <div className="flex border border-white/10 bg-[#111111] p-1" role="tablist" aria-label={t("planning.availabilityTab")}>
             <button onClick={()=> setAvailMode("week")} data-testid="avail-mode-week" role="tab" aria-selected={availMode==="week"}
@@ -967,7 +1115,7 @@ export default function Planning(){
               {t("planning.avail.filteredNote")}
             </span>
           )}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="w-full md:w-auto md:ml-auto flex items-center gap-2 flex-wrap">
             {canManage && (
               <div className="text-xs uppercase tracking-widest text-[#D8CA82] border border-[#D8CA82]/30 px-2.5 py-1">
                 <Users size={12} className="inline mr-1" aria-hidden="true" /> Manager • team view
@@ -989,7 +1137,7 @@ export default function Planning(){
         </p>
 
         {availMode==="week" && (
-          <div className="mx-4 my-3 border border-red-400/30 bg-[#8c1d18]/10 p-3" data-testid="absence-quick-panel">
+          <div className="mx-3 md:mx-4 my-3 border border-red-400/30 bg-[#8c1d18]/10 p-3" data-testid="absence-quick-panel">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-start gap-3 lg:w-[300px]">
                 <CalendarOff size={18} className="text-red-300 mt-0.5 shrink-0" aria-hidden="true" />
@@ -1010,7 +1158,7 @@ export default function Planning(){
                       data-testid={`absence-quick-${key}`}
                       className={`border px-3 py-2 text-left u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 ${myAbsence ? "border-red-300/60 bg-red-500/15" : "border-white/10 bg-[#111111] hover:border-red-300/60 hover:bg-red-500/10"}`}
                     >
-                      <span className="block text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/45">{d.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short"})}</span>
+                      <span className="block text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/45">{d.toLocaleDateString(locale,{weekday:"short"})}</span>
                       <span className={`block font-display text-sm mt-0.5 ${myAbsence ? "text-red-200" : "text-[#f7f7f7]"}`}>{d.getDate()}</span>
                       <span className={`block text-xs uppercase tracking-widest mt-1 ${myAbsence ? "text-red-200" : "text-red-300/80"}`}>
                         {myAbsence ? t("planning.absence.editDay") : t("planning.absence.declare")}
@@ -1024,55 +1172,76 @@ export default function Planning(){
         )}
 
         {availMode==="recurring" ? (
-          <RecurringGrid />
+          renderRecurringGrid()
         ) : (
           <div className="flex flex-col overflow-hidden flex-1">
-            <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
-              <div className="w-14 shrink-0 border-r border-white/10" />
-              {days.map(d=>{
-                const key = toDateKey(d);
-                const myCount = myAvailForWeek[key]?.size||0;
-                const totalAvailableInDay = Object.values(teamAvailForWeek[key]||{}).reduce((acc, arr)=> acc + (arr?.length||0),0);
-                const today = isToday(d);
-                const myAbsence = user ? absenceIndex[`${user.uid}_${key}`] : null;
-                const dayAbsences = teamAbsencesForWeek[key] || [];
-                return (
-                  <div key={key} className={`flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center relative group/day ${today?"bg-[#D8CA82]/10":""} ${myAbsence?"bg-[#8c1d18]/10":""}`}>
-                    <div className="flex items-center justify-center gap-1">
-                      <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{d.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short"})}</p>
-                      <button
-                        onClick={()=> openAbsenceModal(key)}
-                        data-testid={`absence-toggle-${key}`}
-                        aria-label={`${t("planning.absence.declare")} — ${d.toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"long", day:"numeric", month:"long"})}`}
-                        title={t("planning.absence.declare")}
-                        className={`w-5 h-5 flex items-center justify-center u-micro ${myAbsence ? "text-red-300" : "text-[#f7f7f7]/25 hover:text-red-300 opacity-60 group-hover/day:opacity-100 focus-visible:opacity-100"}`}>
-                        {myAbsence ? <CalendarX size={12} aria-hidden="true" /> : <CalendarOff size={12} aria-hidden="true" />}
-                      </button>
+            {isMobile ? (
+              <>
+                {renderDayStrip(days, (d,key)=>{
+                  const myAbsence = user ? !!absenceIndex[`${user.uid}_${key}`] : false;
+                  if(myAbsence) return <span className="w-1.5 h-1.5 rounded-full bg-red-400" aria-hidden="true" />;
+                  const myCount = myAvailForWeek[key]?.size||0;
+                  return <span className="text-emerald-300">{myCount}h</span>;
+                }, "avail-day-strip")}
+                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-widest text-[#f7f7f7]/60">
+                    {currentDate.toLocaleDateString(locale,{weekday:"long", day:"numeric", month:"long"})}
+                  </p>
+                  <button onClick={()=> openAbsenceModal(selectedKey)} data-testid={`absence-toggle-${selectedKey}`}
+                    className={`text-xs uppercase tracking-widest px-3 py-2 border u-micro flex items-center gap-1.5 ${user && absenceIndex[`${user.uid}_${selectedKey}`] ? "border-red-300/60 text-red-200" : "border-red-400/40 text-red-300"}`}>
+                    <CalendarOff size={12} aria-hidden="true" />
+                    {user && absenceIndex[`${user.uid}_${selectedKey}`] ? t("planning.absence.editDay") : t("planning.absence.declare")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
+                <div className="w-14 shrink-0 border-r border-white/10" />
+                {days.map(d=>{
+                  const key = toDateKey(d);
+                  const myCount = myAvailForWeek[key]?.size||0;
+                  const totalAvailableInDay = Object.values(teamAvailForWeek[key]||{}).reduce((acc, arr)=> acc + (arr?.length||0),0);
+                  const today = isToday(d);
+                  const myAbsence = user ? absenceIndex[`${user.uid}_${key}`] : null;
+                  const dayAbsences = teamAbsencesForWeek[key] || [];
+                  return (
+                    <div key={key} className={`flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center relative group/day ${today?"bg-[#D8CA82]/10":""} ${myAbsence?"bg-[#8c1d18]/10":""}`}>
+                      <div className="flex items-center justify-center gap-1">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
+                        <button
+                          onClick={()=> openAbsenceModal(key)}
+                          data-testid={`absence-toggle-${key}`}
+                          aria-label={`${t("planning.absence.declare")} — ${d.toLocaleDateString(locale,{weekday:"long", day:"numeric", month:"long"})}`}
+                          title={t("planning.absence.declare")}
+                          className={`w-5 h-5 flex items-center justify-center u-micro ${myAbsence ? "text-red-300" : "text-[#f7f7f7]/25 hover:text-red-300 opacity-60 group-hover/day:opacity-100 focus-visible:opacity-100"}`}>
+                          {myAbsence ? <CalendarX size={12} aria-hidden="true" /> : <CalendarOff size={12} aria-hidden="true" />}
+                        </button>
+                      </div>
+                      <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111]":"text-[#f7f7f7]"}`}>{d.getDate()}</p>
+                      {myAbsence ? (
+                        <p className="text-xs text-red-300 mt-1 uppercase tracking-widest" data-testid={`absence-flag-${key}`}>{t("planning.absence.absent")}</p>
+                      ) : (
+                        <p className="text-xs text-emerald-300 mt-1">{myCount}h dispo {canManage ? `• ${totalAvailableInDay} tot` : ""}</p>
+                      )}
+                      {canManage && dayAbsences.length>0 && (
+                        <p className="text-xs text-red-300/80 mt-0.5 flex items-center justify-center gap-1" data-testid={`team-absence-count-${key}`}>
+                          <CalendarX size={10} aria-hidden="true" /> {dayAbsences.length} {t("planning.absence.absent").toLowerCase()}{dayAbsences.length>1 ? "s" : ""}
+                        </p>
+                      )}
                     </div>
-                    <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111]":"text-[#f7f7f7]"}`}>{d.getDate()}</p>
-                    {myAbsence ? (
-                      <p className="text-xs text-red-300 mt-1 uppercase tracking-widest" data-testid={`absence-flag-${key}`}>{t("planning.absence.absent")}</p>
-                    ) : (
-                      <p className="text-xs text-emerald-300 mt-1">{myCount}h dispo {canManage ? `• ${totalAvailableInDay} tot` : ""}</p>
-                    )}
-                    {canManage && dayAbsences.length>0 && (
-                      <p className="text-xs text-red-300/80 mt-0.5 flex items-center justify-center gap-1" data-testid={`team-absence-count-${key}`}>
-                        <CalendarX size={10} aria-hidden="true" /> {dayAbsences.length} {t("planning.absence.absent").toLowerCase()}{dayAbsences.length>1 ? "s" : ""}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto select-none">
               <div className="flex">
                 <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
                   {HOURS.map(h=>(
-                    <div key={h} className="h-[42px] border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1">{pad(h)}:00</div>
+                    <div key={h} className={`${AVAIL_ROW} border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1`}>{pad(h)}:00</div>
                   ))}
                 </div>
-                <div className="flex-1 grid grid-cols-7">
-                  {days.map(d=>{
+                <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(0,1fr))` }}>
+                  {visibleDays.map(d=>{
                     const key = toDateKey(d);
                     const myAbsence = user ? !!absenceIndex[`${user.uid}_${key}`] : false;
                     const recHours = new Set(myRecurring?.days?.[String(weekdayKey(key))] || []);
@@ -1088,10 +1257,11 @@ export default function Planning(){
                           return (
                             <div key={h}
                               data-testid={`avail-cell-${key}-${h}`}
-                              onMouseDown={()=> !myAbsence && handleMouseDownAvail("week", key, h)}
-                              onMouseEnter={()=> !myAbsence && handleMouseEnterAvail("week", key, h)}
+                              onPointerDown={myAbsence ? undefined : handleCellPointerDown("week", key, h)}
+                              onPointerEnter={myAbsence ? undefined : handleCellPointerEnter("week", key, h)}
+                              onClick={myAbsence ? undefined : handleCellClick("week", key, h)}
                               aria-disabled={myAbsence}
-                              className={`h-[42px] border-b border-white/[0.06] relative group flex items-center justify-center u-micro
+                              className={`${AVAIL_ROW} border-b border-white/[0.06] relative group flex items-center justify-center u-micro touch-manipulation
                                 ${myAbsence ? "cursor-not-allowed" : "cursor-pointer"}
                                 ${isMine && !isRecurring ? "bg-emerald-500/25 hover:bg-emerald-500/35 border-emerald-400/30" : ""}
                                 ${isRecurring ? "bg-emerald-500/10 hover:bg-emerald-500/20" : ""}
@@ -1108,7 +1278,7 @@ export default function Planning(){
                               {/* tooltip on hover for team */}
                               {canManage && teamCount>0 && !myAbsence && (
                                 <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-20 hidden group-hover:block bg-[#1A1A1A] border border-white/20 p-2 min-w-[160px]">
-                                  <p className="text-xs uppercase tracking-widest text-[#D8CA82] mb-1">{pad(h)}:00 – {pad(h+1)}:00 • {teamCount} dispo</p>
+                                  <p className="text-xs uppercase tracking-widest text-[#D8CA82] mb-1">{pad(h)}:00 – {pad((h+1)%24)}:00 • {teamCount} dispo</p>
                                   <div className="space-y-1">
                                     {teamList.slice(0,10).map(p=>(
                                       <div key={p.uid} className="text-xs text-[#f7f7f7]/80 flex items-center gap-1.5">
@@ -1149,33 +1319,52 @@ export default function Planning(){
     );
   };
 
-  const RecurringGrid = ()=>{
+  const renderRecurringGrid = ()=>{
     const daysNames = lang==="en"
       ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
       : ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+    // Mobile : une seule colonne (le jour choisi dans le bandeau)
+    const visibleWk = isMobile ? [recurringDay] : WEEKDAY_KEYS;
     return (
       <div className="flex flex-col overflow-hidden flex-1" data-testid="recurring-grid">
-        <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
-          <div className="w-14 shrink-0 border-r border-white/10" />
-          {WEEKDAY_KEYS.map((wk, i)=>{
-            const count = (myRecurring?.days?.[String(wk)] || []).length;
-            return (
-              <div key={wk} className="flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{daysNames[i]}</p>
-                <p className="text-xs mt-1 text-emerald-300/80">{count>0 ? `${count}h` : ""}</p>
-              </div>
-            );
-          })}
-        </div>
+        {isMobile ? (
+          <div className="grid grid-cols-7 border-b border-white/10 bg-[#141414] shrink-0" data-testid="mobile-recurring-strip">
+            {WEEKDAY_KEYS.map((wk, i)=>{
+              const count = (myRecurring?.days?.[String(wk)] || []).length;
+              const selected = wk===recurringDay;
+              return (
+                <button key={wk} type="button" onClick={()=> setRecurringDay(wk)} aria-pressed={selected}
+                  data-testid={`recurring-day-${wk}`}
+                  className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] border-r border-white/5 last:border-0 u-micro touch-manipulation ${selected ? "bg-[#D8CA82] text-[#111111]" : "text-[#f7f7f7]/80"}`}>
+                  <span className={`text-[10px] uppercase tracking-wider ${selected ? "text-[#111111]/80" : "text-[#c8c8c8]"}`}>{daysNames[i]}</span>
+                  <span className={`text-[10px] ${selected ? "" : "text-emerald-300/80"}`}>{count>0 ? `${count}h` : "—"}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
+            <div className="w-14 shrink-0 border-r border-white/10" />
+            {WEEKDAY_KEYS.map((wk, i)=>{
+              const count = (myRecurring?.days?.[String(wk)] || []).length;
+              return (
+                <div key={wk} className="flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{daysNames[i]}</p>
+                  <p className="text-xs mt-1 text-emerald-300/80">{count>0 ? `${count}h` : ""}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto select-none">
           <div className="flex">
             <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
               {HOURS.map(h=>(
-                <div key={h} className="h-[42px] border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1">{pad(h)}:00</div>
+                <div key={h} className={`${AVAIL_ROW} border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1`}>{pad(h)}:00</div>
               ))}
             </div>
-            <div className="flex-1 grid grid-cols-7">
-              {WEEKDAY_KEYS.map(wk=>{
+            <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${visibleWk.length}, minmax(0,1fr))` }}>
+              {visibleWk.map(wk=>{
                 const hours = new Set(myRecurring?.days?.[String(wk)] || []);
                 return (
                   <div key={wk} className="border-r border-white/5 last:border-0">
@@ -1184,9 +1373,10 @@ export default function Planning(){
                       return (
                         <div key={h}
                           data-testid={`recurring-cell-${wk}-${h}`}
-                          onMouseDown={()=> handleMouseDownAvail("recurring", wk, h)}
-                          onMouseEnter={()=> handleMouseEnterAvail("recurring", wk, h)}
-                          className={`h-[42px] border-b border-white/[0.06] cursor-pointer relative flex items-center justify-center u-micro
+                          onPointerDown={handleCellPointerDown("recurring", wk, h)}
+                          onPointerEnter={handleCellPointerEnter("recurring", wk, h)}
+                          onClick={handleCellClick("recurring", wk, h)}
+                          className={`${AVAIL_ROW} border-b border-white/[0.06] cursor-pointer relative flex items-center justify-center u-micro touch-manipulation
                             ${on ? "bg-emerald-500/15 hover:bg-emerald-500/25" : "hover:bg-white/[0.04]"}`}>
                           {on && <span className="absolute inset-[3px] border border-dashed border-emerald-400/60 pointer-events-none" aria-hidden="true" />}
                           {on && <Repeat size={9} className="text-emerald-300/70 absolute top-1 left-1" aria-hidden="true" />}
@@ -1205,9 +1395,11 @@ export default function Planning(){
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#111111] overflow-hidden" data-testid="planning-page">
+    // Mobile (< sm) : la page prend sa hauteur naturelle et défile avec le layout joueur.
+    // À partir de sm : hauteur fixée, défilement interne (colonne calendrier / sidebar).
+    <div className="flex flex-col bg-[#111111] sm:h-full overflow-hidden" data-testid="planning-page">
       {/* top toolbar - google calendar style */}
-      <div className="min-h-[64px] border-b border-white/10 bg-[#0c0c0c] flex items-center px-4 gap-4 shrink-0 flex-wrap py-2">
+      <div className="min-h-[56px] sm:min-h-[64px] border-b border-white/10 bg-[#0c0c0c] flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 flex-wrap py-2">
         <div className="flex items-center gap-2">
           <button onClick={goToday} data-testid="planning-today"
             className="border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-[0.2em] px-4 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro">
@@ -1215,14 +1407,14 @@ export default function Planning(){
           </button>
           <button onClick={downloadWeekICS} data-testid="planning-export-ics" title={t("planning.downloadWeek")}
             className="border border-white/20 text-[#f7f7f7]/60 text-xs uppercase tracking-[0.2em] px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro flex items-center gap-1.5">
-            <Download size={13} aria-hidden="true" /> {t("planning.downloadWeek")}
+            <Download size={13} aria-hidden="true" /> <span className="hidden sm:inline">{t("planning.downloadWeek")}</span>
           </button>
           <div className="flex border border-white/10">
             <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:bg-white/10 u-micro"><ChevronLeft size={16}/></button>
             <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:bg-white/10 u-micro border-l border-white/10"><ChevronRight size={16}/></button>
           </div>
-          <h2 className="font-display text-sm md:text-base uppercase tracking-[0.2em] text-[#f7f7f7] ml-3 min-w-[160px]">
-            {tab==="availability" && availMode==="recurring" ? t("planning.avail.recurring.title") : view==="month" ? monthLabel : view==="week" ? weekLabel : dayLabel}
+          <h2 className="font-display text-sm md:text-base uppercase tracking-[0.2em] text-[#f7f7f7] ml-1 sm:ml-3 sm:min-w-[160px]" data-testid="planning-title">
+            {tab==="availability" ? (availMode==="recurring" ? t("planning.avail.recurring.title") : weekLabel) : view==="month" ? monthLabel : view==="week" ? weekLabel : dayLabel}
           </h2>
         </div>
 
@@ -1270,14 +1462,14 @@ export default function Planning(){
 
           {/* view switcher - only for calendar tab */}
           {tab==="calendar" && (
-            <div className="hidden md:flex border border-white/10 bg-[#141414] p-1">
+            <div className="flex border border-white/10 bg-[#141414] p-1">
               {[
                 {id:"month", label:t("planning.month")},
                 {id:"week", label:t("planning.week")},
                 {id:"day", label:t("planning.day")},
               ].map(v=>(
                 <button key={v.id} onClick={()=> setView(v.id)} data-testid={`view-${v.id}`}
-                  className={`px-3 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${view===v.id ? "bg-white/10 text-[#f7f7f7]" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+                  className={`px-2 sm:px-3 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${view===v.id ? "bg-white/10 text-[#f7f7f7]" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
                   {v.label}
                 </button>
               ))}
@@ -1294,10 +1486,10 @@ export default function Planning(){
       </div>
 
       {/* main area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* left sidebar - mini calendar + legend */}
-        <aside className="w-[260px] shrink-0 border-r border-white/10 bg-[#0c0c0c] p-4 space-y-4 overflow-y-auto hidden lg:block">
-          <MiniMonth />
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+        {/* left sidebar - mini calendar + legend (sous le calendrier sur mobile, dispos uniquement) */}
+        <aside className={`order-last lg:order-first w-full lg:w-[260px] lg:shrink-0 border-t lg:border-t-0 lg:border-r border-white/10 bg-[#0c0c0c] p-3 lg:p-4 space-y-4 lg:overflow-y-auto ${tab==="calendar" ? "hidden lg:block" : "block"}`}>
+          <div className="hidden md:block">{renderMiniMonth()}</div>
 
           {tab==="calendar" ? (
             <>
@@ -1494,15 +1686,15 @@ export default function Planning(){
         </aside>
 
         {/* center calendar */}
-        <main className="flex-1 flex flex-col overflow-hidden p-2 lg:p-3 bg-[#111111]">
+        <main className="order-first lg:order-none flex-1 min-w-0 min-h-0 flex flex-col p-2 lg:p-3 bg-[#111111] lg:overflow-hidden">
           {tab==="calendar" ? (
             <>
-              {view==="month" && <MonthView />}
-              {view==="week" && <WeekView />}
-              {view==="day" && <DayView />}
+              {view==="month" && renderMonthView()}
+              {view==="week" && renderWeekView()}
+              {view==="day" && renderDayView()}
             </>
           ) : (
-            <AvailabilityView />
+            renderAvailabilityView()
           )}
         </main>
       </div>
@@ -1556,7 +1748,7 @@ export default function Planning(){
       {/* event modal - free writing */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-[560px] bg-[#1A1A1A] border border-white/15 animate-in fade-in zoom-in duration-200">
+          <div className="w-full max-w-[560px] max-h-[calc(100dvh-2rem)] overflow-y-auto bg-[#1A1A1A] border border-white/15 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6" style={{backgroundColor: form.color}} />
@@ -1575,7 +1767,7 @@ export default function Planning(){
                 <p className="text-xs text-[#c8c8c8] mt-1.5">Écris ce que tu veux — pas de liste prédéfinie.</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.start")}</label>
                   <input type="datetime-local" value={form.start} onChange={e=> setForm(f=>({...f,start:e.target.value}))} required
@@ -1588,7 +1780,7 @@ export default function Planning(){
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.game")}</label>
                   <select value={form.game} onChange={e=> setForm(f=>({...f,game:e.target.value, roster: gameHasRosters(e.target.value) ? (f.roster || roster) : null}))}
@@ -1629,7 +1821,7 @@ export default function Planning(){
 
               {selectedEvent && (
                 <>
-                  <AttendanceBlock />
+                  {renderAttendanceBlock()}
                   <div className="border border-white/10 bg-[#111111] p-4" data-testid="event-agenda">
                     <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-3">{t("planning.addToCalendar")}</p>
                     <div className="flex items-center gap-2 flex-wrap">
