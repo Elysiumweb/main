@@ -9,6 +9,7 @@ import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
 import { getElysiumTeamName } from "../lib/constants";
 import { fmtMatchDate } from "../lib/formatters";
+import { formatStatLine, hasPlayerStats, mvpCount } from "../lib/playerStats";
 
 const OpponentLogo = ({ src, name, className = "" }) => {
   const { t } = useLang();
@@ -330,11 +331,20 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
                 {t("results.players")}
               </p>
               <div className="flex flex-wrap gap-2" data-testid={`match-players-${match.id}`}>
-                {participants.map((p, idx) => (
-                  <span key={p.playerId || `${p.pseudo}-${idx}`} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80">
-                    {p.pseudo || "Joueur"}
-                  </span>
-                ))}
+                {participants.map((p, idx) => {
+                  const mvpTimes = mvpCount(p.mvp);
+                  return (
+                    <span key={p.playerId || `${p.pseudo}-${idx}`} className="border border-white/15 bg-[#141414] px-3 py-2 text-xs text-[#f7f7f7]/80">
+                      <span className="font-semibold">{p.pseudo || "Joueur"}</span>
+                      {hasPlayerStats(p) && (
+                        <span className="block text-[#c8c8c8] mt-1">
+                          {formatStatLine(p)}
+                          {mvpTimes > 0 && <span className="text-[#D8CA82] ml-2">· {mvpTimes > 1 ? `MVP ×${mvpTimes}` : "MVP"}</span>}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}

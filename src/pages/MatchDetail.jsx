@@ -12,6 +12,7 @@ import { HeadToHead } from "../components/HeadToHead";
 import { MatchCountdown } from "../components/MatchCountdown";
 import { OptimizedImage } from "../components/OptimizedImage";
 import { LoadingState, ErrorState } from "../components/States";
+import { PLAYER_STAT_KEYS, hasPlayerStats, mvpCount, playerStatValue } from "../lib/playerStats";
 import { Trophy, Skull, CalendarClock, Radio, ExternalLink, PlayCircle, Film, Award, Map as MapIcon, Users } from "lucide-react";
 
 const OpponentLogo = ({ src, name, className = "" }) => {
@@ -263,16 +264,39 @@ export default function MatchDetail() {
             {(match.players||[]).length>0 && (
               <div className="border border-white/10 bg-[#1A1A1A] p-6" data-testid="match-detail-players">
                 <h2 className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-4 flex items-center gap-2"><Users size={14}/> {t("results.players")}</h2>
-                <div className="flex flex-wrap gap-2">
-                  {(match.players||[]).map((p,idx)=>{
-                    const found = rosterMembers.find(r=> r.id===p.playerId || r.pseudo===p.pseudo);
-                    return found ? (
-                      <Link key={p.playerId||idx} to={`/equipe/${found.id}`} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]">{p.pseudo||found.pseudo}{(p.goals || p.points) ? <span className="text-[#c8c8c8] ml-2">{p.goals ? `${p.goals} B` : ""}{p.goals && p.points ? " · " : ""}{p.points ? `${p.points} pts` : ""}</span> : null}</Link>
-                    ) : (
-                      <span key={p.playerId||idx} className="border border-white/15 bg-[#141414] px-3 py-1.5 text-xs text-[#f7f7f7]/80">{p.pseudo||"Joueur"}</span>
-                    );
-                  })}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <caption className="sr-only">{t("stats.playerStats.sub")}</caption>
+                    <thead className="text-[#c8c8c8] uppercase tracking-widest border-b border-white/10">
+                      <tr>
+                        <th scope="col" className="text-left py-2 pr-3">Joueur</th>
+                        {PLAYER_STAT_KEYS.map((key) => <th key={key} scope="col" className="text-center px-2">{t(`stat.${key}`)}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(match.players||[]).map((p,idx)=>{
+                        const found = rosterMembers.find(r=> r.id===p.playerId || r.pseudo===p.pseudo);
+                        const mvpTimes = mvpCount(p.mvp);
+                        const name = p.pseudo||found?.pseudo||"Joueur";
+                        return (
+                          <tr key={p.playerId||idx} className="border-t border-white/5" data-testid={`match-detail-player-${p.playerId||idx}`}>
+                            <td className="py-2 pr-3 text-[#f7f7f7] font-semibold">
+                              {found ? <Link to={`/equipe/${found.id}`} className="hover:text-[#D8CA82] hover:underline">{name}</Link> : name}
+                            </td>
+                            {PLAYER_STAT_KEYS.map((key) => (
+                              <td key={key} className={`text-center px-2 ${key === "mvp" ? "text-[#D8CA82] font-bold" : "text-[#f7f7f7]"}`} data-testid={`match-detail-player-${key}-${p.playerId||idx}`}>
+                                {key === "mvp"
+                                  ? (mvpTimes > 0 ? (mvpTimes > 1 ? `${mvpTimes}×` : "MVP") : "—")
+                                  : (hasPlayerStats(p) ? playerStatValue(p, key) : "—")}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
+                <p className="text-[10px] text-[#c8c8c8]/70 mt-3">{t("stats.replayNote")}</p>
               </div>
             )}
             {mvpPlayer && (

@@ -26,6 +26,7 @@ import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
 import { AdminReplayImport } from "../components/admin/AdminReplayImport";
 import { buildReplaySeries, RL_GAME } from "../lib/rocketLeagueReplay";
+import { mvpCount } from "../lib/playerStats";
 import { logAdminAction } from "../lib/notify";
 import { isImageValue, isOptionalHttpUrl } from "../lib/validation";
 import {
@@ -79,13 +80,23 @@ const parseMatchImport = (text, fileName = "") => {
     return headers.reduce((acc, h, i) => ({ ...acc, [h]: values[i] ?? "" }), {});
   });
 };
+/** Champs de statistiques saisissables pour un joueur du line-up. */
+const MATCH_PLAYER_STAT_KEYS = ["goals", "assists", "saves", "shots", "score"];
+
+/**
+ * Statistiques joueur officielles : but, passe décisive, arrêt, tir, score, MVP.
+ * `points` (ancien nom du score) est conservé en lecture pour les matchs existants.
+ */
 const sanitizeMatchPlayers = (players = []) => (Array.isArray(players) ? players : [])
   .map((p) => ({
     playerId: p.playerId || p.id || "",
     pseudo: p.pseudo || p.name || "",
     goals: p.goals ?? "",
     assists: p.assists ?? "",
-    points: p.points ?? "",
+    saves: p.saves ?? "",
+    shots: p.shots ?? "",
+    score: p.score ?? p.points ?? "",
+    mvp: mvpCount(p.mvp) || "",
   }))
   .filter((p) => p.playerId || p.pseudo);
 
@@ -235,6 +246,12 @@ export default function Admin() {
       .sort((a, b) => (a.pseudo || "").localeCompare(b.pseudo || ""));
   }, [rosterMembers, form.players, form.game, form.roster, rostersForGame]);
 
+  // Série calculée depuis les replays : sert au MVP détecté et au récapitulatif.
+  const replaySeries = useMemo(
+    () => buildReplaySeries(form.replays || [], form.replaySide || ""),
+    [form.replays, form.replaySide]
+  );
+
   const replayMembers = useMemo(() => rosterMembers
     .filter((m) => m.status !== "staff" && m.pseudo)
     .filter((m) => !m.game || m.game === RL_GAME)
@@ -374,6 +391,8 @@ export default function Admin() {
       const base = { ...f, replays: nextGames, replaySide: nextSide || "" };
       const series = buildReplaySeries(nextGames, nextSide);
       if (!series.ready) return base;
+      // Le MVP du match vient du meilleur joueur élu MVP dans les replays.
+      const replayMvp = series.mvp ? (series.mvp.playerId || series.mvp.pseudo || series.mvp.name || "") : "";
       return {
         ...base,
         status: "finished",
@@ -381,6 +400,7 @@ export default function Admin() {
         scoreThem: series.scoreThem,
         maps: series.maps,
         players: series.players,
+        mvp: replayMvp || f.mvp || "",
         date: f.date || series.date,
       };
     });
@@ -845,15 +865,18 @@ export default function Admin() {
                 </div>
                 {(form.players || []).length > 0 && (
                   <div className="space-y-2" data-testid="admin-match-players-list">
-                    <div className="hidden sm:grid grid-cols-[1fr_80px_80px_90px_32px] gap-2 text-[10px] uppercase tracking-widest text-[#c8c8c8] px-2">
-                      <span>Joueur</span><span>Buts</span><span>Passes</span><span>Points</span><span />
+                    <div className="hidden sm:grid grid-cols-[1fr_64px_64px_64px_64px_72px_64px_32px] gap-2 text-[10px] uppercase tracking-widest text-[#c8c8c8] px-2">
+                      <span>Joueur</span>
+                      {MATCH_PLAYER_STAT_KEYS.map((key) => <span key={key}>{t(`stat.short.${key}`)}</span>)}
+                      <span>MVP</span><span />
                     </div>
                     {(form.players || []).map((p, pIndex) => (
-                      <div key={p.playerId || `${p.pseudo}-${pIndex}`} className="grid grid-cols-2 sm:grid-cols-[1fr_80px_80px_90px_32px] gap-2 items-center border border-white/15 bg-[#141414] p-2 text-xs text-[#f7f7f7]" data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}>
+                      <div key={p.playerId || `${p.pseudo}-${pIndex}`} className="grid grid-cols-2 sm:grid-cols-[1fr_64px_64px_64px_64px_72px_64px_32px] gap-2 items-center border border-white/15 bg-[#141414] p-2 text-xs text-[#f7f7f7]" data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}>
                         <span className="font-semibold col-span-2 sm:col-span-1">{p.pseudo || "Joueur"}</span>
-                        {["goals", "assists", "points"].map((key) => (
-                          <input key={key} type="number" min="0" value={p[key] ?? ""} onChange={(e) => updatePlayerStat(pIndex, key, e.target.value)} placeholder={key === "goals" ? "Buts" : key === "assists" ? "Passes" : "Points"} aria-label={`${p.pseudo} ${key}`} className="w-full bg-[#111111] border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-[#D8CA82]" />
+                        {MATCH_PLAYER_STAT_KEYS.map((key) => (
+                          <input key={key} type="number" min="0" value={p[key] ?? ""} onChange={(e) => updatePlayerStat(pIndex, key, e.target.value)} placeholder={t(`stat.short.${key}`)} aria-label={`${p.pseudo} ${t(`stat.${key}`)}`} data-testid={`admin-match-player-${key}-${p.playerId || pIndex}`} className="w-full bg-[#111111] border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-[#D8CA82]" />
                         ))}
+                        <span className="text-center text-[#D8CA82] font-bold" title="MVP (replays)" data-testid={`admin-match-player-mvp-${p.playerId || pIndex}`}>{mvpCount(p.mvp) ? `${mvpCount(p.mvp)}×` : "—"}</span>
                         <button type="button" onClick={() => removePlayerFromMatch(pIndex)} className="text-red-300/80 hover:text-red-300" aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}>×</button>
                       </div>
                     ))}
@@ -871,7 +894,28 @@ export default function Admin() {
                   ))}
                 </select>
                 <input value={form.mvp} onChange={set("mvp")} placeholder="Ou saisie libre (pseudo ou ID)" className={inputCls} data-testid="admin-match-mvp-input" />
-                <p className="text-xs text-[#c8c8c8]">Le MVP alimente les stats par joueur.</p>
+                {replaySeries.ready && (
+                  <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-3 py-2 flex flex-wrap items-center gap-3" data-testid="admin-match-replay-mvp">
+                    {replaySeries.mvp ? (
+                      <>
+                        <span className="text-xs text-[#c8c8c8]">
+                          MVP détecté dans les replays : <span className="text-[#D8CA82] font-bold">{replaySeries.mvp.pseudo || replaySeries.mvp.name}</span> · {replaySeries.mvp.count}× élu(s) sur {replaySeries.games.length} game(s)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, mvp: replaySeries.mvp.playerId || replaySeries.mvp.pseudo || replaySeries.mvp.name || "" }))}
+                          className="ml-auto border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-3 py-1 hover:bg-[#D8CA82]/10"
+                          data-testid="admin-match-replay-mvp-apply"
+                        >
+                          Appliquer
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-[#c8c8c8]">Aucun MVP détecté dans les replays de cette série.</span>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-[#c8c8c8]">Le MVP alimente les statistiques par joueur (but, passe, arrêt, tir, score).</p>
               </div>
 
               <button type="submit" data-testid="admin-match-submit"

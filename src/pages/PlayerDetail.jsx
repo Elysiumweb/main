@@ -13,7 +13,7 @@ import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { isPlayerInMatch, isRemovedGame } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
-import { aggregatePlayer, normalizeCareer } from "../lib/playerStats";
+import { PLAYER_STAT_KEYS, aggregatePlayer, formatStatLine, normalizeCareer } from "../lib/playerStats";
 
 const parseStats = (txt) =>
   (txt || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -138,21 +138,75 @@ export default function PlayerDetail() {
           <BarChart3 size={16} className="text-[#D8CA82]" />
           <h2 className="font-display text-base tracking-[0.3em] uppercase text-[#f7f7f7]">{t("playerpage.stats")}</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <p className="text-xs text-[#c8c8c8] mb-4" data-testid="player-stats-note">{t("stats.playerStats.sub")}</p>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
-            ["Matchs", playerStats.played], ["Victoires", playerStats.wins], ["Défaites", playerStats.losses],
-            ["Win rate", `${playerStats.winRate}%`], ["MVP", playerStats.mvp], ["Buts", playerStats.goals], ["Points", playerStats.points],
-          ].map(([label, value]) => (
-            <div key={label} className="border border-white/10 bg-[#1A1A1A] p-4">
-              <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8]">{label}</p>
-              <p className="font-display font-black text-2xl text-[#D8CA82] mt-1">{value}</p>
+            { label: "Matchs", value: playerStats.played },
+            { label: "Victoires", value: playerStats.wins },
+            { label: "Défaites", value: playerStats.losses },
+            { label: "Win rate", value: `${playerStats.winRate}%`, accent: true },
+            ...PLAYER_STAT_KEYS.map((key) => ({
+              key,
+              label: t(`stat.${key}`),
+              value: playerStats[key],
+              perMatch: key === "mvp" ? `${playerStats.mvpRate}% des matchs` : `moy. ${playerStats[`${key}PerMatch`] ?? "—"}`,
+              accent: key === "mvp",
+            })),
+          ].map((tile) => (
+            <div key={tile.key || tile.label} className="border border-white/10 bg-[#1A1A1A] p-4" data-testid={tile.key ? `player-stat-${tile.key}` : undefined}>
+              <p className="text-[10px] uppercase tracking-widest text-[#c8c8c8]">{tile.label}</p>
+              <p className={`font-display font-black text-2xl mt-1 ${tile.accent ? "text-[#D8CA82]" : "text-[#f7f7f7]"}`}>{tile.value ?? 0}</p>
+              {tile.perMatch && <p className="text-[10px] text-[#c8c8c8]/70 mt-1">{tile.perMatch}</p>}
             </div>
           ))}
         </div>
+        {playerStats.matches.length > 0 && (
+          <div className="mt-8 border border-white/10 bg-[#1A1A1A] overflow-x-auto" data-testid="player-stats-by-match">
+            <table className="w-full text-xs">
+              <caption className="sr-only">Statistiques par match du joueur</caption>
+              <thead className="text-[#c8c8c8] uppercase tracking-widest border-b border-white/10">
+                <tr>
+                  <th scope="col" className="text-left py-2 px-4">Match</th>
+                  {PLAYER_STAT_KEYS.map((key) => <th key={key} scope="col" className="text-center px-2">{t(`stat.${key}`)}</th>)}
+                  <th scope="col" className="text-right px-4">Résultat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {playerStats.matches.slice(0, 10).map((performance) => (
+                  <tr key={performance.id} className="border-t border-white/5">
+                    <td className="py-2 px-4 text-[#f7f7f7]">
+                      <Link to={`/resultats/${performance.id}`} className="hover:text-[#D8CA82] hover:underline">
+                        {performance.opponentName || "Adversaire"}
+                      </Link>
+                      <span className="text-[#c8c8c8] ml-2">{performance.date}</span>
+                    </td>
+                    {PLAYER_STAT_KEYS.map((key) => (
+                      <td key={key} className={`text-center px-2 ${key === "mvp" ? "text-[#D8CA82] font-bold" : "text-[#f7f7f7]"}`}>
+                        {key === "mvp" ? (performance.mvp ? "MVP" : "—") : performance[key]}
+                      </td>
+                    ))}
+                    <td className={`text-right px-4 font-bold ${performance.result === "W" ? "text-emerald-300" : performance.result === "L" ? "text-red-300" : "text-[#c8c8c8]"}`}>{performance.result}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         {playerStats.recent.length > 0 && (
           <div className="mt-5 flex flex-wrap gap-2" data-testid="player-recent-form">
             <span className="text-xs uppercase tracking-widest text-[#c8c8c8] py-2 mr-2">Dernières performances</span>
-            {playerStats.recent.map((performance) => <Link key={performance.id} to={`/resultats/${performance.id}`} title={`${performance.opponentName || "Adversaire"} · ${performance.points} pts · ${performance.goals} buts`} className={`w-9 h-9 flex items-center justify-center border font-display font-bold text-sm ${performance.result === "W" ? "border-emerald-300/40 text-emerald-300 bg-emerald-300/5" : performance.result === "L" ? "border-red-300/40 text-red-300 bg-red-300/5" : "border-white/20 text-[#c8c8c8]"}`}>{performance.result}</Link>)}
+            {playerStats.recent.map((performance) => (
+              <Link
+                key={performance.id}
+                to={`/resultats/${performance.id}`}
+                title={`${performance.opponentName || "Adversaire"} · ${formatStatLine(performance)}${performance.mvp ? " · MVP" : ""}`}
+                data-testid={`player-recent-${performance.id}`}
+                className={`w-9 h-9 flex items-center justify-center border font-display font-bold text-sm ${performance.mvp ? "ring-1 ring-[#D8CA82]/60" : ""} ${performance.result === "W" ? "border-emerald-300/40 text-emerald-300 bg-emerald-300/5" : performance.result === "L" ? "border-red-300/40 text-red-300 bg-red-300/5" : "border-white/20 text-[#c8c8c8]"}`}
+              >
+                {performance.result}
+                {performance.mvp && <span className="sr-only"> MVP</span>}
+              </Link>
+            ))}
           </div>
         )}
       </section>

@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { FileUp, Trash2, AlertTriangle } from "lucide-react";
+import { FileUp, Trash2, AlertTriangle, Award } from "lucide-react";
 import { toast } from "sonner";
 import {
   REPLAY_SIDE_LABELS,
@@ -9,6 +9,8 @@ import {
   linkReplayPlayer,
   listReplayPlayers,
   parseRocketLeagueReplay,
+  replayGameMvp,
+  replayPlayerKey,
   sortReplayGames,
   suggestReplaySide,
   unlinkPlayersOutsideSide,
@@ -162,6 +164,11 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                   </span>
                 ))}
               </div>
+              <p className="text-xs text-[#c8c8c8] mt-3" data-testid="admin-replay-series-mvp">
+                {series.mvp
+                  ? <>MVP de la série : <span className="text-[#D8CA82] font-bold">{series.mvp.pseudo || series.mvp.name}</span> · {series.mvp.count}× MVP sur {series.games.length} game(s)</>
+                  : "Aucun MVP identifiable dans ces replays (stats joueurs manquantes ou games nulles)."}
+              </p>
             </div>
           )}
 
@@ -188,11 +195,12 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                     <tr className="border-b border-white/10 text-left uppercase tracking-widest text-[10px] text-[#c8c8c8]">
                       <th className="px-2 py-2">Pseudo replay</th>
                       <th className="px-2 py-2 text-right">Games</th>
-                      <th className="px-2 py-2 text-right">Score</th>
                       <th className="px-2 py-2 text-right">Buts</th>
                       <th className="px-2 py-2 text-right">Passes</th>
                       <th className="px-2 py-2 text-right">Arrêts</th>
                       <th className="px-2 py-2 text-right">Tirs</th>
+                      <th className="px-2 py-2 text-right">Score</th>
+                      <th className="px-2 py-2 text-right">MVP</th>
                       <th className="px-2 py-2">Joueur du site</th>
                     </tr>
                   </thead>
@@ -201,11 +209,12 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                       <tr key={p.key} className="border-b border-white/5" data-testid={`admin-replay-player-${index}`}>
                         <td className="px-2 py-2 text-[#f7f7f7] font-semibold">{p.name || "—"}</td>
                         <td className="px-2 py-2 text-right text-[#c8c8c8]">{p.games}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.score}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.goals}</td>
+                        <td className="px-2 py-2 text-right text-[#f7f7f7]" data-testid={`admin-replay-player-goals-${index}`}>{p.goals}</td>
                         <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.assists}</td>
                         <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.saves}</td>
                         <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.shots}</td>
+                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.score}</td>
+                        <td className="px-2 py-2 text-right text-[#D8CA82]" data-testid={`admin-replay-player-mvp-${index}`}>{p.mvp > 0 ? `${p.mvp}×` : "—"}</td>
                         <td className="px-2 py-2">
                           <select
                             value={p.playerId || ""}
@@ -234,6 +243,8 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
               const summary = series.games[gi];
               const label = `Game ${gi + 1}`;
               const blueWon = game.blueScore > game.orangeScore;
+              // Le MVP est recalculé pour les replays enregistrés avant cette version.
+              const gameMvp = summary?.mvp || replayGameMvp(game);
               return (
                 <details key={game.replayId} className="border border-white/15 bg-[#111111]" data-testid={`admin-replay-game-${gi + 1}`}>
                   <summary className="flex flex-wrap items-center gap-3 px-3 py-2 cursor-pointer text-xs text-[#f7f7f7]">
@@ -268,16 +279,18 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                           <tr className="border-b border-white/10 text-left uppercase tracking-widest text-[10px] text-[#c8c8c8]">
                             <th className="py-2 pr-2">Équipe</th>
                             <th className="py-2 pr-2">Joueur</th>
-                            <th className="py-2 pr-2 text-right">Score</th>
                             <th className="py-2 pr-2 text-right">Buts</th>
                             <th className="py-2 pr-2 text-right">Passes</th>
                             <th className="py-2 pr-2 text-right">Arrêts</th>
-                            <th className="py-2 text-right">Tirs</th>
+                            <th className="py-2 pr-2 text-right">Tirs</th>
+                            <th className="py-2 pr-2 text-right">Score</th>
+                            <th className="py-2 text-right">MVP</th>
                           </tr>
                         </thead>
                         <tbody>
                           {[...game.players].sort((a, b) => (a.side === b.side ? 0 : a.side === side ? -1 : 1)).map((p, pi) => {
                             const isOurs = side && p.side === side;
+                            const isMvp = p.mvp === true || (!!gameMvp && gameMvp.key === replayPlayerKey(p));
                             return (
                               <tr key={`${p.name}-${pi}`} className={`border-b border-white/5 ${isOurs ? "text-[#f7f7f7]" : "text-[#f7f7f7]/60"}`}>
                                 <td className="py-1.5 pr-2">
@@ -289,11 +302,14 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                                 <td className={`py-1.5 pr-2 ${isOurs ? "font-semibold" : ""}`}>
                                   {p.name || "—"}{p.bot ? " (bot)" : ""}
                                 </td>
-                                <td className="py-1.5 pr-2 text-right">{p.score}</td>
                                 <td className="py-1.5 pr-2 text-right">{p.goals}</td>
                                 <td className="py-1.5 pr-2 text-right">{p.assists}</td>
                                 <td className="py-1.5 pr-2 text-right">{p.saves}</td>
-                                <td className="py-1.5 text-right">{p.shots}</td>
+                                <td className="py-1.5 pr-2 text-right">{p.shots}</td>
+                                <td className="py-1.5 pr-2 text-right">{p.score}</td>
+                                <td className="py-1.5 text-right text-[#D8CA82]" data-testid={`admin-replay-game-mvp-${gi + 1}-${pi}`}>
+                                  {isMvp ? <Award size={12} className="inline" aria-label="MVP" /> : ""}
+                                </td>
                               </tr>
                             );
                           })}

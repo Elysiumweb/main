@@ -5,6 +5,10 @@
  * carte, date, PlayerStats). Les frames ne sont pas lues et le fichier n'est
  * jamais envoyé au serveur : seules les données extraites sont enregistrées
  * dans le document du match.
+ *
+ * Statistiques joueur extraites : but, passe décisive, arrêt, tir, score et MVP.
+ * Le MVP n'existe pas dans l'en-tête d'un replay : il est déduit comme dans le
+ * jeu (meilleur score de l'équipe qui gagne la game).
  */
 
 export const RL_GAME = "Rocket League";
@@ -228,6 +232,89 @@ export const replayPlayerKey = (player) => (
     : `name:${norm(player.name)}`
 );
 
+const normalizeReplayPlayer = (stat) => {
+  const side = TEAM_SIDES[toInt(stat.Team)];
+  if (!side) return null; // spectateur ou joueur hors équipe
+  return {
+    name: text(stat.Name),
+    platform: normalizePlatform(stat.Platform),
+    onlineId: text(stat.OnlineID),
+    side,
+    score: toInt(stat.Score),
+    goals: toInt(stat.Goals),
+    assists: toInt(stat.Assists),
+    saves: toInt(stat.Saves),
+    shots: toInt(stat.Shots),
+    mvp: false,
+    bot: stat.bBot === true,
+    playerId: "",
+    pseudo: "",
+  };
+};
+
+/**
+ * MVP d'une game, déduit des stats du replay : meilleur score de l'équipe
+ * victorieuse (règle du jeu), départagé par les buts puis les passes.
+ * Retourne `null` quand aucune stats joueur n'est disponible ou en cas d'égalité
+ * de score entre les deux équipes (pas de vainqueur, donc pas de MVP).
+ */
+export const replayGameMvp = (game) => {
+  const players = Array.isArray(game?.players) ? game.players.filter((player) => player && player.side) : [];
+  if (!players.length) return null;
+  const blueScore = toInt(game.blueScore);
+  const orangeScore = toInt(game.orangeScore);
+  if (blueScore === orangeScore) return null;
+  const winningSide = blueScore > orangeScore ? "blue" : "orange";
+  const pool = players.filter((player) => player.side === winningSide);
+  if (!pool.length) return null;
+  const best = pool.reduce((top, player) => {
+    if (!top) return player;
+    const scoreDiff = toInt(player.score) - toInt(top.score);
+    if (scoreDiff) return scoreDiff > 0 ? player : top;
+    const goalDiff = toInt(player.goals) - toInt(top.goals);
+    if (goalDiff) return goalDiff > 0 ? player : top;
+    const assistDiff = toInt(player.assists) - toInt(top.assists);
+    if (assistDiff) return assistDiff > 0 ? player : top;
+    return top;
+  }, null);
+  if (!best) return null;
+  return {
+    key: replayPlayerKey(best),
+    name: best.name,
+    side: best.side,
+    onlineId: best.onlineId || "",
+    playerId: best.playerId || "",
+    pseudo: best.pseudo || "",
+    score: toInt(best.score),
+    goals: toInt(best.goals),
+    assists: toInt(best.assists),
+    saves: toInt(best.saves),
+    shots: toInt(best.shots),
+  };
+};
+
+/**
+ * Vrai si le joueur a été élu MVP de la game : on se fie au drapeau écrit à la
+ * lecture du replay, sinon on recalcule (replays enregistrés avant cette version).
+ */
+export const isPlayerGameMvp = (player, gameMvp) => (
+  typeof player?.mvp === "boolean" ? player.mvp : !!gameMvp && gameMvp.key === replayPlayerKey(player)
+);
+
+/** Marque le joueur MVP de la game (et renvoie le nom du MVP, ou null). */
+const markGameMvp = (game) => {
+  const mvp = replayGameMvp(game);
+  if (!mvp) {
+    game.mvp = null;
+    return null;
+  }
+  game.players = game.players.map((player) => (
+    replayPlayerKey(player) === mvp.key ? { ...player, mvp: true } : player
+  ));
+  game.mvp = mvp;
+  return mvp;
+};
+
 /** Transforme l'en-tête brut en objet de game exploitable (et stockable dans Firestore). */
 export const normalizeReplayHeader = (header, fileName = "") => {
   const id = text(header.Id).toUpperCase();
@@ -235,22 +322,8 @@ export const normalizeReplayHeader = (header, fileName = "") => {
   const hasScore = "Team0Score" in header || "Team1Score" in header;
   const players = Array.isArray(header.PlayerStats)
     ? header.PlayerStats.flatMap((stat) => {
-      const side = TEAM_SIDES[toInt(stat.Team)];
-      if (!side) return []; // spectateur ou joueur hors équipe
-      return [{
-        name: text(stat.Name),
-        platform: normalizePlatform(stat.Platform),
-        onlineId: text(stat.OnlineID),
-        side,
-        score: toInt(stat.Score),
-        goals: toInt(stat.Goals),
-        assists: toInt(stat.Assists),
-        saves: toInt(stat.Saves),
-        shots: toInt(stat.Shots),
-        bot: stat.bBot === true,
-        playerId: "",
-        pseudo: "",
-      }];
+      const player = normalizeReplayPlayer(stat);
+      return player ? [player] : [];
     })
     : [];
   const hasStats = players.length > 0;
@@ -265,7 +338,7 @@ export const normalizeReplayHeader = (header, fileName = "") => {
   else if (frames > 0 && fps > 0) durationSeconds = Math.round(frames / fps);
   if (durationSeconds > MAX_DURATION_SECONDS) durationSeconds = 0;
 
-  return {
+  const game = {
     replayId: id,
     fileName: text(fileName),
     date,
@@ -279,7 +352,11 @@ export const normalizeReplayHeader = (header, fileName = "") => {
     orangeScore: toInt(header.Team1Score),
     hasStats,
     players,
+    mvp: null,
   };
+  // MVP marqué côté joueurs + résumé, directement lors de la lecture du replay.
+  markGameMvp(game);
+  return game;
 };
 
 /** Point d'entrée : ArrayBuffer d'un fichier .replay → game normalisée. Lève une Error lisible si le fichier est invalide. */
@@ -340,38 +417,46 @@ export const suggestReplaySide = (games = [], members = []) => {
   return count.blue > count.orange ? "blue" : "orange";
 };
 
-/** Joueurs de notre équipe, dédoublonnés par identité, avec totaux sur la série. */
+/**
+ * Joueurs de notre équipe, dédoublonnés par identité, avec les six statistiques
+ * officielles cumulées sur la série : but, passe, arrêt, tir, score, MVP.
+ */
 export const listReplayPlayers = (games = [], side = "") => {
   const entries = new Map();
-  games.forEach((game) => game.players.forEach((player) => {
-    if (player.side !== side) return;
-    const key = replayPlayerKey(player);
-    const entry = entries.get(key) || {
-      key,
-      name: player.name,
-      platform: player.platform,
-      onlineId: player.onlineId,
-      playerId: "",
-      pseudo: "",
-      games: 0,
-      score: 0,
-      goals: 0,
-      assists: 0,
-      saves: 0,
-      shots: 0,
-    };
-    entry.games += 1;
-    entry.score += player.score;
-    entry.goals += player.goals;
-    entry.assists += player.assists;
-    entry.saves += player.saves;
-    entry.shots += player.shots;
-    if (!entry.playerId && player.playerId) {
-      entry.playerId = player.playerId;
-      entry.pseudo = player.pseudo;
-    }
-    entries.set(key, entry);
-  }));
+  games.forEach((game) => {
+    const gameMvp = replayGameMvp(game);
+    game.players.forEach((player) => {
+      if (player.side !== side) return;
+      const key = replayPlayerKey(player);
+      const entry = entries.get(key) || {
+        key,
+        name: player.name,
+        platform: player.platform,
+        onlineId: player.onlineId,
+        playerId: "",
+        pseudo: "",
+        games: 0,
+        goals: 0,
+        assists: 0,
+        saves: 0,
+        shots: 0,
+        score: 0,
+        mvp: 0,
+      };
+      entry.games += 1;
+      entry.goals += toInt(player.goals);
+      entry.assists += toInt(player.assists);
+      entry.saves += toInt(player.saves);
+      entry.shots += toInt(player.shots);
+      entry.score += toInt(player.score);
+      if (isPlayerGameMvp(player, gameMvp)) entry.mvp += 1;
+      if (!entry.playerId && player.playerId) {
+        entry.playerId = player.playerId;
+        entry.pseudo = player.pseudo;
+      }
+      entries.set(key, entry);
+    });
+  });
   return [...entries.values()];
 };
 
@@ -381,7 +466,7 @@ export const listReplayPlayers = (games = [], side = "") => {
  */
 export const buildReplaySeries = (games = [], side = "") => {
   if (!isReplaySide(side) || games.length === 0) {
-    return { ready: false, side: "", scoreUs: 0, scoreThem: 0, games: [], maps: [], players: [], date: "", warnings: [] };
+    return { ready: false, side: "", scoreUs: 0, scoreThem: 0, games: [], maps: [], players: [], mvp: null, date: "", warnings: [] };
   }
   const theirs = otherReplaySide(side);
   const summaries = games.map((game, index) => {
@@ -390,6 +475,9 @@ export const buildReplaySeries = (games = [], side = "") => {
     let result = "D";
     if (ourGoals > theirGoals) result = "W";
     else if (ourGoals < theirGoals) result = "L";
+    // Le MVP est recalculé depuis les stats : les replays importés avant cette
+    // version (sans champ `mvp`) restent exploitables.
+    const mvp = replayGameMvp(game);
     return {
       index: index + 1,
       map: game.map,
@@ -399,25 +487,59 @@ export const buildReplaySeries = (games = [], side = "") => {
       theirGoals,
       result,
       hasStats: game.hasStats,
+      mvp,
+      mvpSide: mvp ? mvp.side : "",
+      mvpOurs: !!mvp && mvp.side === side,
     };
   });
 
   const players = new Map();
-  games.forEach((game) => game.players
-    .filter((player) => player.side === side && player.playerId)
-    .forEach((player) => {
+  const mvpCounts = new Map();
+  games.forEach((game, index) => {
+    const gameMvp = summaries[index]?.mvp || replayGameMvp(game);
+    game.players.filter((player) => player.side === side).forEach((player) => {
+      const isMvp = isPlayerGameMvp(player, gameMvp);
+      if (isMvp) {
+        const mvpKey = player.playerId || replayPlayerKey(player);
+        const mvpEntry = mvpCounts.get(mvpKey) || {
+          playerId: player.playerId || "",
+          pseudo: player.pseudo || "",
+          name: player.name || "",
+          side: player.side,
+          count: 0,
+          score: 0,
+        };
+        mvpEntry.count += 1;
+        mvpEntry.score += toInt(player.score);
+        if (!mvpEntry.pseudo && player.pseudo) mvpEntry.pseudo = player.pseudo;
+        mvpCounts.set(mvpKey, mvpEntry);
+      }
+      if (!player.playerId) return; // seuls les joueurs liés alimentent le match
       const entry = players.get(player.playerId) || {
         playerId: player.playerId,
         pseudo: player.pseudo || player.name,
+        games: 0,
         goals: 0,
         assists: 0,
-        points: 0,
+        saves: 0,
+        shots: 0,
+        score: 0,
+        mvp: 0,
       };
-      entry.goals += player.goals;
-      entry.assists += player.assists;
-      entry.points += player.score;
+      entry.games += 1;
+      entry.goals += toInt(player.goals);
+      entry.assists += toInt(player.assists);
+      entry.saves += toInt(player.saves);
+      entry.shots += toInt(player.shots);
+      entry.score += toInt(player.score);
+      if (isMvp) entry.mvp += 1;
       players.set(player.playerId, entry);
-    }));
+    });
+  });
+
+  // MVP de la série : le joueur de notre équipe le plus souvent élu MVP
+  // (égalité départagée par le score cumulé).
+  const seriesMvp = [...mvpCounts.values()].sort((a, b) => b.count - a.count || b.score - a.score)[0] || null;
 
   const warnings = [];
   games.forEach((game, index) => {
@@ -426,7 +548,7 @@ export const buildReplaySeries = (games = [], side = "") => {
       warnings.push(`${label} : pas de statistiques joueurs dans ce replay (score seul).`);
     } else {
       const scored = game.blueScore + game.orangeScore;
-      const counted = game.players.reduce((sum, player) => sum + player.goals, 0);
+      const counted = game.players.reduce((sum, player) => sum + toInt(player.goals), 0);
       if (counted !== scored) {
         warnings.push(`${label} : les buts individuels (${counted}) ne correspondent pas au score (${scored}). Un but a peut-être été marqué contre son camp ou par un joueur parti.`);
       }
@@ -450,6 +572,7 @@ export const buildReplaySeries = (games = [], side = "") => {
       scoreThem: game[`${theirs}Score`],
     })),
     players: [...players.values()],
+    mvp: seriesMvp,
     date: games[0].date || "",
     warnings,
   };

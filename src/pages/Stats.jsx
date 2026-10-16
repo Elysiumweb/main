@@ -9,7 +9,16 @@ import { BarChart3, TrendingUp, Trophy, Target, Calendar, Flame, Skull, Map as M
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
-import { aggregatePlayers, radarValues } from "../lib/playerStats";
+import { PLAYER_STAT_KEYS, aggregatePlayers, playerStatValue, radarValues } from "../lib/playerStats";
+
+const STAT_HIGHLIGHT = {
+  goals: "text-[#D8CA82]",
+  assists: "text-[#c4b5fd]",
+  saves: "text-[#67e8f9]",
+  shots: "text-[#f7f7f7]",
+  score: "text-[#D8CA82]",
+  mvp: "text-[#F4511E]",
+};
 
 const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 
@@ -177,26 +186,36 @@ export default function Stats() {
       winRate: m.played ? ((m.wins / m.played)*100).toFixed(1) : "0.0",
     })).sort((a,b)=> b.played - a.played || b.winRate - a.winRate);
 
-    // Player leaderboard
+    // Player leaderboard — statistiques officielles : but, passe, arrêt, tir, score, MVP
     const playerAgg = new Map();
     filtered.forEach(m=>{
       const result = getResultCode(m);
       (m.players||[]).forEach(p=>{
         const key = p.playerId || p.pseudo;
         if (!key) return;
-        const entry = playerAgg.get(key) || { id: p.playerId, pseudo: p.pseudo, played:0, wins:0, mvp:0 };
+        const entry = playerAgg.get(key) || {
+          id: p.playerId || "", pseudo: p.pseudo, played:0, wins:0,
+          goals:0, assists:0, saves:0, shots:0, score:0, mvp:0,
+        };
         entry.played++;
         if (result==="W") entry.wins++;
         if (m.mvp && (m.mvp===p.playerId || m.mvp===p.pseudo)) entry.mvp++;
+        entry.goals += playerStatValue(p, "goals");
+        entry.assists += playerStatValue(p, "assists");
+        entry.saves += playerStatValue(p, "saves");
+        entry.shots += playerStatValue(p, "shots");
+        entry.score += playerStatValue(p, "score");
         playerAgg.set(key, entry);
       });
     });
     const legacyLeaderboard = [...playerAgg.values()].map(p=>({
       ...p,
       winRate: p.played ? ((p.wins / p.played)*100).toFixed(1) : "0.0",
-    })).sort((a,b)=> b.mvp - a.mvp || b.winRate - a.winRate || b.played - a.played).slice(0,20);
+    })).sort((a,b)=> b.mvp - a.mvp || b.score - a.score || b.winRate - a.winRate || b.played - a.played);
     const richPlayers = aggregatePlayers(filtered, roster);
-    const leaderboard = richPlayers.length ? richPlayers.map((player) => ({ ...player.stats, id: player.id, pseudo: player.pseudo, player })).slice(0, 20) : legacyLeaderboard;
+    // Pool complet (non tronqué) : sert au classement et aux leaders par statistique.
+    const playerPool = richPlayers.length ? richPlayers.map((player) => ({ ...player.stats, id: player.id, pseudo: player.pseudo, player })) : legacyLeaderboard;
+    const leaderboard = playerPool.slice(0, 20);
 
     let rollingWins = 0;
     const evolution = [...filtered].reverse().map((match, index) => {
@@ -209,12 +228,30 @@ export default function Stats() {
       return map;
     }, new Map())].map(([name, value]) => ({ name, value }));
 
-    return { total, wins, losses, draws, winRate, avgUs, avgThem, currentStreak, currentType, bestStreak, perGame, perMap, leaderboard, richPlayers, evolution, competitions };
+    return { total, wins, losses, draws, winRate, avgUs, avgThem, currentStreak, currentType, bestStreak, perGame, perMap, leaderboard, playerPool, richPlayers, evolution, competitions };
   }, [filtered, roster]);
 
   const firstCompared = stats?.richPlayers.find((player) => player.id === compareA) || stats?.richPlayers[0];
   const secondCompared = stats?.richPlayers.find((player) => player.id === compareB) || stats?.richPlayers[1];
-  const radarData = firstCompared && secondCompared ? Object.entries({ winRate: "Win rate", experience: "Expérience", mvp: "MVP", goals: "Buts", points: "Points" }).map(([key, label]) => ({ metric: label, first: radarValues(firstCompared)[key], second: radarValues(secondCompared)[key] })) : [];
+  const radarData = firstCompared && secondCompared
+    ? PLAYER_STAT_KEYS.map((key) => ({
+      metric: t(`stat.${key}`),
+      first: radarValues(firstCompared)[key],
+      second: radarValues(secondCompared)[key],
+    }))
+    : [];
+  // Leaders par statistique : meilleurs joueurs sur chacune des six stats.
+  const leaders = (stats?.playerPool || [])
+    .length
+    ? PLAYER_STAT_KEYS.map((key) => ({
+      key,
+      label: t(`stat.${key}`),
+      top: [...stats.playerPool]
+        .filter((player) => (player[key] || 0) > 0)
+        .sort((a, b) => (b[key] || 0) - (a[key] || 0))
+        .slice(0, 3),
+    })).filter((row) => row.top.length > 0)
+    : [];
   const chartTooltipStyle = { background: "#1A1A1A", border: "1px solid rgba(216,202,130,.35)", color: "#f7f7f7" };
 
   return (
@@ -228,6 +265,7 @@ export default function Stats() {
             <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="stats-title">{t("stats.title")}</h1>
           </div>
           <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("stats.sub")}</p>
+          <p className="text-xs text-[#D8CA82]/80 mt-2" data-testid="stats-player-stats-note">{t("stats.playerStats.sub")}</p>
         </div>
       </section>
 
@@ -436,11 +474,20 @@ export default function Stats() {
                   <Award className="text-[#D8CA82]" size={16} />
                   <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.leaderboard")}</h3>
                 </div>
-                <p className="text-xs text-[#c8c8c8] mb-3">{t("stats.leaderboard.sub")}</p>
+                <p className="text-xs text-[#c8c8c8] mb-1">{t("stats.leaderboard.sub")}</p>
+                <p className="text-xs text-[#c8c8c8]/70 mb-3">{t("stats.replayNote")}</p>
                 <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead className="text-[#c8c8c8] uppercase tracking-widest border-b border-white/10">
-                      <tr><th className="text-left py-2 px-4">Joueur</th><th className="text-center">Matchs</th><th className="text-center">V / D</th><th className="text-center">Win rate</th><th className="text-center">MVP</th><th className="text-center">Buts</th><th className="text-center">Points</th></tr>
+                      <tr>
+                        <th className="text-left py-2 px-4">Joueur</th>
+                        <th className="text-center">Matchs</th>
+                        <th className="text-center">V / D</th>
+                        <th className="text-center">Win rate</th>
+                        {PLAYER_STAT_KEYS.map((key) => (
+                          <th key={key} className="text-center px-2">{t(`stat.${key}`)}</th>
+                        ))}
+                      </tr>
                     </thead>
                     <tbody>
                       {stats.leaderboard.map((p,i)=>(
@@ -449,14 +496,44 @@ export default function Stats() {
                           <td className="text-center text-[#c8c8c8]">{p.played}</td>
                           <td className="text-center"><span className="text-emerald-300">{p.wins}</span> / <span className="text-red-300">{p.losses ?? "—"}</span></td>
                           <td className="text-center font-bold text-[#D8CA82]">{p.winRate}%</td>
-                          <td className="text-center text-[#D8CA82]">{p.mvp>0 ? `${p.mvp}×` : "—"}</td>
-                          <td className="text-center text-[#c8c8c8]">{p.goals ?? "—"}</td>
-                          <td className="text-center text-[#c8c8c8]">{p.points ?? "—"}</td>
+                          {PLAYER_STAT_KEYS.map((key) => (
+                            <td key={key} className={`text-center px-2 ${key === "mvp" ? "font-bold text-[#D8CA82]" : "text-[#f7f7f7]"}`} data-testid={`stats-player-${key}-${p.id||p.pseudo||i}`}>
+                              {key === "mvp" ? ((p.mvp || 0) > 0 ? `${p.mvp}×` : "—") : (p[key] ?? "—")}
+                            </td>
+                          ))}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+
+                {leaders.length > 0 && (
+                  <div className="mt-6" data-testid="stats-leaders">
+                    <div className="flex items-center gap-3 mb-1">
+                      <TrendingUp className="text-[#D8CA82]" size={14} />
+                      <h4 className="font-display text-xs uppercase tracking-[0.3em] text-[#f7f7f7]">{t("stats.leaders")}</h4>
+                    </div>
+                    <p className="text-xs text-[#c8c8c8] mb-4">{t("stats.leaders.sub")}</p>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {leaders.map((row) => (
+                        <div key={row.key} className="border border-white/10 bg-[#1A1A1A] p-4" data-testid={`stats-leader-${row.key}`}>
+                          <p className={`text-[10px] uppercase tracking-[0.25em] mb-3 ${STAT_HIGHLIGHT[row.key] || "text-[#D8CA82]"}`}>{row.label}</p>
+                          <ol className="space-y-1.5">
+                            {row.top.map((player, rank) => (
+                              <li key={player.id || player.pseudo || rank} className="flex items-center justify-between gap-3 text-xs">
+                                <span className="text-[#f7f7f7] truncate">
+                                  <span className="text-[#c8c8c8] mr-2">{rank + 1}.</span>
+                                  {player.id ? <Link to={`/equipe/${player.id}`} className="hover:text-[#D8CA82] hover:underline">{player.pseudo}</Link> : player.pseudo}
+                                </span>
+                                <span className={`font-bold ${STAT_HIGHLIGHT[row.key] || "text-[#D8CA82]"}`}>{player[row.key]}{row.key === "mvp" ? "×" : ""}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -471,7 +548,18 @@ export default function Stats() {
                   {[firstCompared, secondCompared].map((player, index) => player && <div key={player.id} className={`border border-white/10 bg-[#1A1A1A] p-5 ${index === 1 ? "lg:col-start-3" : ""}`}>
                     <Link to={`/equipe/${player.id}`} className="font-display font-black text-xl text-[#f7f7f7] hover:text-[#D8CA82]">{player.pseudo}</Link>
                     <p className="text-xs uppercase tracking-widest text-[#D8CA82] mt-1">{player.game}{player.ingameRole ? ` · ${player.ingameRole}` : ""}</p>
-                    <dl className="grid grid-cols-2 gap-3 mt-5 text-xs"><div><dt className="text-[#c8c8c8]">Matchs</dt><dd className="text-lg text-[#f7f7f7] font-bold">{player.stats.played}</dd></div><div><dt className="text-[#c8c8c8]">Win rate</dt><dd className="text-lg text-[#D8CA82] font-bold">{player.stats.winRate}%</dd></div><div><dt className="text-[#c8c8c8]">MVP</dt><dd className="text-lg text-[#f7f7f7] font-bold">{player.stats.mvp}</dd></div><div><dt className="text-[#c8c8c8]">Buts / match</dt><dd className="text-lg text-[#f7f7f7] font-bold">{player.stats.goalsPerMatch}</dd></div></dl>
+                    <dl className="grid grid-cols-2 gap-3 mt-5 text-xs">
+                      <div><dt className="text-[#c8c8c8]">Matchs</dt><dd className="text-lg text-[#f7f7f7] font-bold">{player.stats.played}</dd></div>
+                      <div><dt className="text-[#c8c8c8]">Win rate</dt><dd className="text-lg text-[#D8CA82] font-bold">{player.stats.winRate}%</dd></div>
+                      {PLAYER_STAT_KEYS.map((key) => (
+                        <div key={key}>
+                          <dt className="text-[#c8c8c8]">{t(`stat.${key}`)}</dt>
+                          <dd className={`text-lg font-bold ${STAT_HIGHLIGHT[key] || "text-[#f7f7f7]"}`} data-testid={`compare-${key}-${player.id}`}>
+                            {key === "mvp" ? player.stats.mvp : (player.stats[key] ?? 0)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
                     {player.palmares && <div className="mt-4 pt-4 border-t border-white/10"><p className="text-[10px] uppercase tracking-widest text-[#c8c8c8] mb-2">Palmarès</p><p className="text-xs text-[#f7f7f7]/80 whitespace-pre-line line-clamp-4">{player.palmares}</p></div>}
                   </div>)}
                   <div className="h-72 lg:col-start-2 lg:row-start-1" aria-label="Radar de comparaison des joueurs"><ResponsiveContainer width="100%" height="100%"><RadarChart data={radarData}><PolarGrid stroke="rgba(255,255,255,.2)" /><PolarAngleAxis dataKey="metric" tick={{ fill: "#c8c8c8", fontSize: 10 }} /><Radar name={firstCompared?.pseudo} dataKey="first" stroke="#D8CA82" fill="#D8CA82" fillOpacity={0.25} /><Radar name={secondCompared?.pseudo} dataKey="second" stroke="#F4511E" fill="#F4511E" fillOpacity={0.2} /><Legend wrapperStyle={{ fontSize: 11 }} /><Tooltip contentStyle={chartTooltipStyle} /></RadarChart></ResponsiveContainer></div>
