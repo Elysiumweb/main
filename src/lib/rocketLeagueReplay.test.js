@@ -8,6 +8,7 @@ import {
   parseReplayHeader,
   parseRocketLeagueReplay,
   prettifyMapName,
+  replayGameMvp,
   replayPlayerKey,
   sortReplayGames,
   suggestReplaySide,
@@ -177,7 +178,7 @@ describe("parseRocketLeagueReplay", () => {
     expect(game.hasStats).toBe(true);
     // Le spectateur (team -1) n'est pas compté dans les équipes
     expect(game.players).toHaveLength(4);
-    expect(game.players[0]).toMatchObject({ name: "Alpha", platform: "Steam", side: "blue", score: 450, goals: 2, assists: 1, saves: 2, shots: 5, bot: false, playerId: "" });
+    expect(game.players[0]).toMatchObject({ name: "Alpha", platform: "Steam", side: "blue", score: 450, goals: 2, assists: 1, saves: 2, shots: 5, bot: false, playerId: "", mvp: true });
     expect(game.players[1]).toMatchObject({ name: "Bravo", side: "blue", bot: true });
     expect(game.players[2]).toMatchObject({ name: "Charlie", side: "orange", goals: 1 });
   });
@@ -223,6 +224,41 @@ describe("parseRocketLeagueReplay", () => {
     expect(game.blueScore).toBe(4);
     expect(game.orangeScore).toBe(0);
     expect(game.players).toEqual([]);
+  });
+});
+
+describe("MVP déduit des replays", () => {
+  const replay = (overrides) => parseRocketLeagueReplay(toBuffer(buildReplay(overrides)), "mvp.replay");
+
+  test("le MVP est le meilleur score de l'équipe qui gagne la game", () => {
+    const game = replay({ blue: 3, orange: 1, players: SAMPLE_PLAYERS });
+    expect(replayGameMvp(game)).toMatchObject({
+      name: "Alpha", side: "blue", score: 450, goals: 2, assists: 1, saves: 2, shots: 5,
+    });
+    expect(game.players.find((p) => p.name === "Alpha").mvp).toBe(true);
+    expect(game.players.filter((p) => p.mvp)).toHaveLength(1);
+    // Charlie a le meilleur score côté orange, mais son équipe perd : pas MVP.
+    expect(game.players.find((p) => p.name === "Charlie").mvp).toBe(false);
+  });
+
+  test("le MVP bascule du côté orange quand l'équipe orange gagne", () => {
+    const game = replay({
+      blue: 0, orange: 2, players: [
+        SAMPLE_PLAYERS[0],
+        SAMPLE_PLAYERS[2],
+        SAMPLE_PLAYERS[3],
+      ],
+    });
+    expect(replayGameMvp(game)).toMatchObject({ name: "Charlie", side: "orange", score: 250 });
+    expect(game.players.find((p) => p.name === "Charlie").mvp).toBe(true);
+  });
+
+  test("pas de MVP sans statistiques joueurs ni en cas d'égalité", () => {
+    const noStats = replay({ blue: 1, orange: 0, players: [] });
+    expect(noStats.mvp).toBeNull();
+    const draw = replay({ blue: 2, orange: 2, players: SAMPLE_PLAYERS });
+    expect(draw.mvp).toBeNull();
+    expect(draw.players.some((p) => p.mvp)).toBe(false);
   });
 });
 
@@ -288,10 +324,44 @@ describe("série de replays", () => {
     games = linkReplayPlayer(games, replayPlayerKey({ onlineId: ALPHA_ID, name: "Alpha" }), members[0]);
     const series = buildReplaySeries(games, "blue");
     const alpha = series.players.find((p) => p.playerId === "m-alpha");
-    // Alpha : g1 2 buts/1 passe/450 pts ; g2 0 but/1 passe/200 pts ; g3 2 buts/1 passe/450 pts
-    expect(alpha).toEqual({ playerId: "m-alpha", pseudo: "alpha", goals: 4, assists: 3, points: 450 + 200 + 450 });
+    // Alpha : g1 2 buts/1 passe/2 arrêts/5 tirs/450 pts ; g2 0 but/1 passe/2 arrêts/5 tirs/200 pts ; g3 identique à g1
+    // MVP : g1 et g3 (bleu gagne, meilleur score), pas g2 (orange gagne)
+    expect(alpha).toEqual({
+      playerId: "m-alpha", pseudo: "alpha", games: 3,
+      goals: 4, assists: 3, saves: 6, shots: 15, score: 450 + 200 + 450, mvp: 2,
+    });
     // Charlie est dans l'équipe orange : pas de stats côté Elysium
     expect(series.players.find((p) => p.playerId === "m-charlie")).toBeUndefined();
+  });
+
+  test("désigne le MVP de la série et le MVP de chaque game", () => {
+    let games = autoLinkReplayPlayers(buildSeries(), members, "blue");
+    games = linkReplayPlayer(games, replayPlayerKey({ onlineId: ALPHA_ID, name: "Alpha" }), members[0]);
+    const series = buildReplaySeries(games, "blue");
+    // `score` du MVP de série = score cumulé sur les games où il a été élu (450 + 450)
+    expect(series.mvp).toMatchObject({ playerId: "m-alpha", name: "Alpha", side: "blue", count: 2, score: 900 });
+    expect(series.games.map((g) => [g.mvpOurs, g.mvp ? g.mvp.name : null])).toEqual([
+      [true, "Alpha"],
+      [false, "Charlie"],
+      [true, "Alpha"],
+    ]);
+  });
+
+  test("recalcule le MVP des replays importés avant cette version", () => {
+    const legacy = buildSeries().map((game) => ({
+      ...game,
+      mvp: null,
+      players: game.players.map((player) => {
+        const copy = { ...player };
+        delete copy.mvp;
+        return copy;
+      }),
+    }));
+    let games = autoLinkReplayPlayers(legacy, members, "blue");
+    games = linkReplayPlayer(games, replayPlayerKey({ onlineId: ALPHA_ID, name: "Alpha" }), members[0]);
+    const series = buildReplaySeries(games, "blue");
+    expect(series.players.find((p) => p.playerId === "m-alpha").mvp).toBe(2);
+    expect(series.games[0].mvp).toMatchObject({ name: "Alpha", side: "blue" });
   });
 
   test("suggère la couleur uniquement si les pseudos sont clairement d'un côté", () => {
@@ -305,10 +375,12 @@ describe("série de replays", () => {
     const games = buildSeries();
     const linked = autoLinkReplayPlayers(games, members, "blue");
     const list = listReplayPlayers(linked, "blue");
-    expect(list.map((p) => [p.name, p.pseudo, p.games])).toEqual([
-      ["Alpha", "alpha", 3],
-      ["Bravo", "", 3],
+    expect(list.map((p) => [p.name, p.pseudo, p.games, p.mvp])).toEqual([
+      ["Alpha", "alpha", 3, 2],
+      ["Bravo", "", 3, 0],
     ]);
+    // Les six statistiques officielles sont exposées pour chaque joueur replays.
+    expect(Object.keys(list[0])).toEqual(expect.arrayContaining(["goals", "assists", "saves", "shots", "score", "mvp"]));
   });
 
   test("délie un joueur sans toucher aux autres", () => {

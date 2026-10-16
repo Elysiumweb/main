@@ -103,4 +103,28 @@ describe("AdminReplayImport", () => {
     expect($("admin-replay-player-0").textContent).toContain("Alpha");
     expect($("admin-replay-player-1")).toBeNull();
   });
+
+  test("affiche les six statistiques officielles par joueur", () => {
+    render({ games, side: "blue", members });
+    const row = $("admin-replay-player-0").textContent;
+    // Alpha : 2 buts en game 1 (bleu gagne 3-1) + 0 en game 2
+    expect($("admin-replay-player-goals-0").textContent).toBe("2");
+    ["Games", "Buts", "Passes", "Arrêts", "Tirs", "Score", "MVP"].forEach((label) => {
+      expect(row).toBeDefined();
+    });
+    expect(container.textContent).toContain("Passes");
+    expect(container.textContent).toContain("Arrêts");
+    expect(container.textContent).toContain("Tirs");
+    expect(container.textContent).toContain("Score");
+  });
+
+  test("déduit et affiche le MVP des replays (game et série)", () => {
+    render({ games, side: "blue", members });
+    // Game 1 : bleu gagne, Alpha (meilleur score) est MVP ; game 2 : orange gagne, Charlie est MVP
+    expect(container.querySelector('[data-testid="admin-replay-game-mvp-1-0"] svg')).not.toBeNull();
+    expect(container.querySelector('[data-testid="admin-replay-game-mvp-2-0"] svg')).toBeNull();
+    expect($("admin-replay-player-mvp-0").textContent).toBe("1×");
+    expect($("admin-replay-series-mvp").textContent).toContain("Alpha");
+    expect($("admin-replay-series-mvp").textContent).toContain("1×");
+  });
 });
