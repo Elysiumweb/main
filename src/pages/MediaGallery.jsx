@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { Image as ImageIcon, PlayCircle } from "lucide-react";
 import { db } from "../lib/firebase";
@@ -33,6 +34,9 @@ export default function MediaGallery() {
   const [game, setGame] = useState("all");
   const [player, setPlayer] = useState("all");
   const [event, setEvent] = useState("all");
+  const [folder, setFolder] = useState("all");
+  const [tag, setTag] = useState("all");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     setError(false); setMedia(null);
@@ -45,12 +49,19 @@ export default function MediaGallery() {
 
   const players = useMemo(() => [...new Set((media || []).map((m) => m.playerTag).filter(Boolean))], [media]);
   const events = useMemo(() => [...new Set((media || []).map((m) => m.event).filter(Boolean))], [media]);
+  const folders = useMemo(() => [...new Set((media || []).map((m) => m.folder).filter(Boolean))].sort(), [media]);
+  const tags = useMemo(() => [...new Set((media || []).flatMap((m) => (Array.isArray(m.tags) ? m.tags : [])))].sort(), [media]);
 
-  const filtered = (media || []).filter((m) =>
-    (type === "all" || m.type === type) &&
-    (game === "all" || m.game === game) &&
-    (player === "all" || m.playerTag === player) &&
-    (event === "all" || m.event === event));
+  const filtered = (media || []).filter((m) => {
+    const needle = query.trim().toLowerCase();
+    return (type === "all" || m.type === type) &&
+      (game === "all" || m.game === game) &&
+      (player === "all" || m.playerTag === player) &&
+      (event === "all" || m.event === event) &&
+      (folder === "all" || (m.folder || "") === folder) &&
+      (tag === "all" || (m.tags || []).includes(tag)) &&
+      (!needle || [m.title, m.alt, m.folder, m.playerTag, m.event, ...(m.tags || [])].filter(Boolean).join(" ").toLowerCase().includes(needle));
+  });
 
   return (
     <div className="min-h-[70vh] bg-[#111111]">
@@ -86,6 +97,15 @@ export default function MediaGallery() {
             <option value="all">{`${t("media.filter.event")} : ${t("media.all")}`}</option>
             {events.map((ev) => <option key={ev} value={ev}>{ev}</option>)}
           </select>
+          <select value={folder} onChange={(e) => setFolder(e.target.value)} className={selectCls} data-testid="media-filter-folder" aria-label="Filtrer par dossier">
+            <option value="all">Dossier : tous</option>
+            {folders.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select value={tag} onChange={(e) => setTag(e.target.value)} className={selectCls} data-testid="media-filter-tag" aria-label="Filtrer par tag">
+            <option value="all">Tag : tous</option>
+            {tags.map((item) => <option key={item} value={item}>#{item}</option>)}
+          </select>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un média…" className={`${selectCls} min-w-[200px]`} data-testid="media-search" aria-label="Rechercher un média" />
         </div>
         {error ? (
           <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="media-error" />
@@ -125,6 +145,11 @@ export default function MediaGallery() {
                         <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mt-1">
                           {t(`media.type.${m.type}`)}{m.game ? ` · ${m.game}` : ""}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}
                         </p>
+                        {(m.folder || (m.tags || []).length > 0) && (
+                          <p className="text-[10px] uppercase tracking-widest text-[#D8CA82]/70 mt-1 truncate">
+                            {m.folder ? `${m.folder} ` : ""}{(m.tags || []).map((item) => `#${item}`).join(" ")}
+                          </p>
+                        )}
                       </div>
                     </button>
                   </DialogTrigger>
@@ -136,7 +161,11 @@ export default function MediaGallery() {
                     ) : (
                       <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] underline p-8 block text-center">{m.url}</a>
                     )}
-                    <p className="text-sm text-[#f7f7f7]/70 px-2 pb-2">{m.title}</p>
+                    <div className="px-2 pb-2 flex items-center gap-3 flex-wrap">
+                      <p className="text-sm text-[#f7f7f7]/70">{m.alt || m.title}</p>
+                      {m.matchId && <Link to={`/resultats/${m.matchId}`} className="text-[10px] uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid={`media-link-match-${m.id}`}>Voir le match</Link>}
+                      {m.articleId && <Link to={`/actus/${m.articleId}`} className="text-[10px] uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid={`media-link-article-${m.id}`}>Voir l'article</Link>}
+                    </div>
                   </DialogContent>
                 </Dialog>
               );

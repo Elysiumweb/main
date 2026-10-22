@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
-import { OFFICIAL_UID } from "../lib/constants";
+import { canAccessAdmin, hasPermission, resolvePermissions } from "../lib/permissions";
 
 /**
  * Publie une fiche minimale dans `profiles/{uid}` (annuaire privé entre joueurs).
@@ -29,7 +29,23 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [officialUids, setOfficialUids] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Liste d'amorçage des comptes officiels, lue sur le même document que les
+  // règles Firestore (`config/officials`). Sans ce document, le statut vient
+  // uniquement de `users/{uid}.official`.
+  useEffect(() => {
+    if (!user) { setOfficialUids([]); return undefined; }
+    return onSnapshot(
+      doc(db, "config", "officials"),
+      (snap) => {
+        const uids = snap.exists() ? snap.data().uids : [];
+        setOfficialUids(Array.isArray(uids) ? uids : []);
+      },
+      () => setOfficialUids([]),
+    );
+  }, [user]);
 
   useEffect(() => {
     let unsubProfile = null;
@@ -62,8 +78,7 @@ export const AuthProvider = ({ children }) => {
           const data = s.data() || null;
           setProfile(data);
           setLoading(false);
-          const hasAccess = !!OFFICIAL_UID && u.uid === OFFICIAL_UID
-            || ["player", "manager", "bureau"].includes(data?.role);
+          const hasAccess = ["player", "manager", "bureau"].includes(data?.role);
           publishProfileDirectory({
             uid: u.uid,
             displayName: data?.displayName || u.displayName || (u.email ? u.email.split("@")[0] : ""),
@@ -79,14 +94,27 @@ export const AuthProvider = ({ children }) => {
     return () => { unsub(); if (unsubProfile) unsubProfile(); };
   }, []);
 
-  const isOfficial = !!user && user.uid === OFFICIAL_UID;
+  // Le statut officiel vient exclusivement des données (`users/{uid}.official`
+  // ou `config/officials.uids`), exactement comme les règles Firestore. Aucun
+  // UID n'est codé en dur : l'interface ne peut pas afficher des droits que le
+  // serveur refuserait.
+  const isOfficial = !!user && (profile?.official === true || officialUids.includes(user.uid));
   const role = isOfficial ? "bureau" : profile?.role || "visitor";
   const game = profile?.game || null;
   const roster = profile?.roster || null;
+  const permissions = useMemo(
+    () => resolvePermissions({ role, permissions: profile?.permissions || [], official: isOfficial }),
+    [role, profile?.permissions, isOfficial],
+  );
+  const can = useCallback(
+    (permission) => hasPermission(permissions, permission),
+    [permissions],
+  );
   const hasPlayerAccess = isOfficial || ["player", "manager", "bureau"].includes(profile?.role);
-  const canSeeSupport = isOfficial || profile?.role === "bureau";
-  const canSeeRecruit = isOfficial || ["manager", "bureau"].includes(profile?.role);
-  const canManage = isOfficial || ["manager", "bureau"].includes(profile?.role);
+  const canSeeSupport = can("inbox.support");
+  const canSeeRecruit = can("inbox.recruit");
+  const canManage = isOfficial || ["manager", "bureau"].includes(profile?.role) || can("inbox.manage");
+  const canAccessAdminPanel = canAccessAdmin(permissions);
   const displayName = profile?.displayName || user?.displayName || user?.email?.split("@")[0] || "";
 
   const logout = async () => {
@@ -94,7 +122,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isOfficial, role, game, roster, permissions, can, canAccessAdmin: canAccessAdminPanel, hasPlayerAccess, canSeeSupport, canSeeRecruit, canManage, displayName, logout }}>
       {children}
     </AuthContext.Provider>
   );

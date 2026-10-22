@@ -10,6 +10,8 @@ import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart,
 import { DonateBlock } from "../components/DonateButton";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
+import { useSiteContent } from "../lib/siteContent";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const values = [
   { key: "compete", icon: Trophy },
@@ -43,131 +45,16 @@ const PartnerLogo = ({ src, name, className }) => {
   return <img src={src} alt={`Logo du partenaire : ${safeName}`} onError={() => setErr(true)} className={`${className} object-contain`} />;
 };
 
-// Données EXACTES issues de l'Annexe 3 pages 15-16 - Grille ElyWalk pour l'association Elysium
-// Textes confidentiels de la convention supprimés sur demande, on ne parle que des offres partenaire.
-//
-// Trois points ont été arbitrés pour le palier GOLD, en dérogation à la grille :
-//   - logo sur maillot : inclus pour le Gold seul (non prévu Bronze / Argent) ;
-//   - offres simultanément actives : illimitées pour le Gold (1 Bronze / 5 Argent) ;
-//   - invitations / places en évènement : incluses mais limitées pour le Gold.
-export const grille = {
-  bronze: {
-    label: "BRONZE",
-    tarifRef: "196 € HT",
-    tarif12: "196 € HT",
-    engagement: "Sans engagement",
-    renouvellement: "Mensuel",
-    resiliation: "1 mois avant l'échéance du mois",
-    offresActives: "1",
-    dureeOffre: "Au choix du Partenaire, sans maximum",
-    attractivite: "Faible",
-    part: "75 % / 25 %",
-    logoTwitch: false,
-    elyCoins: false,
-    affiches: false,
-    affichesDetail: "",
-    stand: false,
-    miseEnAvant: false,
-    invitations: false,
-    invitationsDetail: "",
-    maillots: false,
-    maillotsDetail: "—",
-    bandeElywalk: false,
-    bandeSite: false,
-    videos: false,
-    videosDetail: "—",
-    futursProjets: false,
-    futursDetail: "—",
-    nombreAdmis: "Illimité",
-  },
-  argent: {
-    label: "ARGENT",
-    tarifRef: "356 € HT",
-    tarif12: "356 € HT",
-    engagement: "3 mois minimum",
-    renouvellement: "Par périodes de 3 mois",
-    resiliation: "1 mois avant l'échéance de la période",
-    offresActives: "5",
-    dureeOffre: "Idem",
-    attractivite: "Normal",
-    part: "50 % / 50 %",
-    logoTwitch: true,
-    elyCoins: true,
-    affiches: true,
-    affichesDetail: "logo à chaque affiche",
-    stand: false,
-    miseEnAvant: false,
-    invitations: false,
-    invitationsDetail: "",
-    maillots: false,
-    maillotsDetail: "—",
-    bandeElywalk: false,
-    bandeSite: false,
-    videos: false,
-    videosDetail: "—",
-    futursProjets: false,
-    futursDetail: "—",
-    nombreAdmis: "Illimité",
-  },
-  gold: {
-    label: "GOLD",
-    tarifRef: "676 € HT",
-    tarif12: "676 € HT",
-    engagement: "6 mois minimum",
-    renouvellement: "Par périodes de 6 mois",
-    resiliation: "1 mois avant l'échéance de la période",
-    offresActives: "Illimité",
-    dureeOffre: "Idem",
-    attractivite: "Élevé",
-    part: "25 % / 75 %",
-    logoTwitch: true,
-    elyCoins: true,
-    affiches: true,
-    affichesDetail: "logo à chaque affiche",
-    stand: true,
-    miseEnAvant: true,
-    invitations: true,
-    invitationsDetail: "limité",
-    maillots: true,
-    maillotsDetail: "",
-    bandeElywalk: true,
-    bandeSite: true,
-    videos: true,
-    videosDetail: "sans limite de nombre, 60 s max, montage au Partenaire",
-    futursProjets: true,
-    futursDetail: "selon supports disponibles",
-    nombreAdmis: "limité",
-  },
-};
+import { grille as PARTNER_GRILLE, rows as PARTNER_ROWS } from "../lib/partnersDefaults";
 
-export const rows = [
-  { key: "ficheSite", label: "Fiche partenaire : site Elysium", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
-  { key: "ficheMap", label: "Fiche partenaire : map ElyWalk", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
-  { key: "offresActives", label: "Offres simultanément actives dans Elywalk", type: "text" },
-  { key: "dureeOffre", label: "Durée de chaque offre", type: "text" },
-  { key: "tarifRef", label: "Tarif mensuel de référence", type: "price" },
-  { key: "tarif12", label: "Tarif mensuel pour un engagement de 12 mois", type: "price" },
-  { key: "engagement", label: "Engagement", type: "text" },
-  { key: "renouvellement", label: "Renouvellement", type: "text" },
-  { key: "resiliation", label: "Résiliation", type: "text" },
-  { key: "attractivite", label: "Niveau d'attractivité des offres", type: "text" },
-  { key: "part", label: "Part d'Elysium / part de l'Utilisateur", type: "text" },
-  { key: "logoTwitch", label: "Logo sur les streams Twitch", type: "bool" },
-  { key: "elyCoins", label: "Retrait des ElyCoins en cartes cadeaux ou de réduction", type: "bool" },
-  { key: "affiches", label: "Présence sur les affiches de communication", type: "boolDetail" },
-  { key: "stand", label: "Stand autorisé à chaque évènement", type: "bool" },
-  { key: "miseEnAvant", label: "Mise en avant du partenaire en évènement", type: "bool" },
-  { key: "invitations", label: "Invitations ou places en évènement", type: "boolDetail" },
-  { key: "maillots", label: "Logo sur les maillots", type: "boolDetailCustom" },
-  { key: "bandeElywalk", label: "Bande publicitaire : Elywalk", type: "bool" },
-  { key: "bandeSite", label: "Bande publicitaire : site Elysium", type: "bool" },
-  { key: "videos", label: "Vidéos publicitaires dans Elywalk", type: "boolDetail" },
-  { key: "futursProjets", label: "Présence sur les futurs projets numériques", type: "boolDetail" },
-  { key: "nombreAdmis", label: "Nombre de partenaires admis", type: "textLong" },
-];
+export const grille = PARTNER_GRILLE;
+export const rows = PARTNER_ROWS;
 
 export default function Partners() {
   const { t } = useLang();
+  const { content: partnerContent, isFallback: partnerFallback } = useSiteContent("partners");
+  const activeGrille = partnerContent.grille || PARTNER_GRILLE;
+  const activeRows = partnerContent.rows || PARTNER_ROWS;
   const [partners, setPartners] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -192,7 +79,7 @@ export default function Partners() {
 
   const scrollToContact = (tierKey) => {
     const mapTier = { bronze: "bronze", argent: "argent", gold: "gold" };
-    const g = grille[mapTier[tierKey] || tierKey];
+    const g = activeGrille[mapTier[tierKey] || tierKey];
     if (!g) return;
     setPrefilled({
       budget: `${g.label} — ${g.tarifRef} / mois`,
@@ -230,7 +117,7 @@ export default function Partners() {
   };
 
   const renderCell = (tierKey, row) => {
-    const g = grille[tierKey];
+    const g = activeGrille[tierKey];
     if (row.type === "text" || row.type === "textLong" || row.type === "price") {
       if (row.key === "offresActives") return g.offresActives;
       if (row.key === "dureeOffre") return g.dureeOffre;
@@ -286,7 +173,7 @@ export default function Partners() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("partners.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
+          <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{partnerFallback ? t("partners.sub") : partnerContent.intro}</p>
         </div>
       </section>
 
@@ -320,7 +207,7 @@ export default function Partners() {
             { key: "argent", color: "border-[#C0C0C0]/30 bg-[#C0C0C0]/5", text: "text-[#C0C0C0]" },
             { key: "gold", color: "border-[#D8CA82]/50 bg-[#D8CA82]/5", text: "text-[#D8CA82]", popular: true },
           ].map(({ key, color, text, popular }) => {
-            const g = grille[key];
+            const g = activeGrille[key];
             return (
               <div key={key} className={`relative border ${color} p-6 flex flex-col`} data-testid={`partners-offer-${key}`}>
                 {popular && <div className="absolute -top-3 left-6 bg-[#D8CA82] text-[#111111] text-[10px] font-display font-bold uppercase tracking-[0.2em] px-3 py-1">Recommandé</div>}
@@ -358,7 +245,7 @@ export default function Partners() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, idx) => (
+                {activeRows.map((row, idx) => (
                   <tr key={row.key} className={`${idx % 2 === 0 ? "bg-[#111111]" : "bg-[#1A1A1A]/50"} border-b border-white/5`}>
                     <td className="p-3 text-[#f7f7f7]/80 font-medium">{row.label}</td>
                     <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("bronze", row)}</td>
@@ -411,6 +298,7 @@ export default function Partners() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {list.map((p) => (
                       <a key={p.id} href={p.website || "#"} target="_blank" rel="noopener noreferrer"
+                        onClick={() => trackEvent(ANALYTICS_EVENTS.PARTNER_CLICK, { partnerId: p.id, tier: p.tier || "" })}
                         className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors">
                         <PartnerLogo src={p.logoUrl} name={p.name} className="w-full h-20" />
                         <p className="font-display font-bold text-sm text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors text-center">{p.name}</p>

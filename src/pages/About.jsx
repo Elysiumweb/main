@@ -9,6 +9,7 @@ import { PlayerPhoto } from "./Team";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { useSEO } from "../lib/useSEO";
 import { CONTACT_EMAIL } from "../lib/notify";
+import { useSiteContent } from "../lib/siteContent";
 
 const VALUES = [
   { key: "1", icon: Trophy },
@@ -18,6 +19,7 @@ const VALUES = [
 
 export default function About() {
   const { t } = useLang();
+  const { content, isFallback } = useSiteContent("about");
   const [bureau, setBureau] = useState(null);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb items={[{ label: t("about.title") }]} />
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="about-title">{t("about.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("about.sub")}</p>
+          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide max-w-3xl">{isFallback ? t("about.sub") : content.intro}</p>
         </div>
       </section>
 
@@ -53,11 +55,17 @@ export default function About() {
               <ScrollText className="text-[#D8CA82]" size={18} aria-hidden="true" />
               <h2 className="font-display text-base tracking-[0.35em] uppercase text-[#f7f7f7]">{t("about.history.title")}</h2>
             </div>
-            <p className="text-[#c8c8c8] leading-relaxed text-lg">{t("about.history.text")}</p>
+            <p className="text-[#c8c8c8] leading-relaxed text-lg">{isFallback ? t("about.history.text") : content.history}</p>
             {/* Chronologie */}
             <div className="mt-10 border-l border-[#D8CA82]/30 pl-6 space-y-6" data-testid="about-timeline">
-              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82] rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Juillet 2026 — Fondation</p><p className="text-sm text-[#c8c8c8]">Création de l’association, premier roster EVA, slogan “Not given. Earned.”</p></div>
-              <div className="relative"><span className="absolute -left-[29px] top-1 w-3 h-3 bg-[#D8CA82]/60 rounded-full"/><p className="font-display font-bold text-[#f7f7f7]">Juillet 2026 — Expansion RL</p><p className="text-sm text-[#c8c8c8]">Ouverture du pôle Rocket League.</p></div>
+              {(content.timeline || []).map((step, index) => (
+                <div key={`${step.date}-${index}`} className="relative">
+                  <span className={`absolute -left-[29px] top-1 w-3 h-3 rounded-full ${index === 0 ? "bg-[#D8CA82]" : "bg-[#D8CA82]/60"}`} />
+                  <p className="font-display font-bold text-[#f7f7f7]">{step.date}</p>
+                  {step.title && <p className="text-xs uppercase tracking-widest text-[#D8CA82]/80 mt-0.5">{step.title}</p>}
+                  <p className="text-sm text-[#c8c8c8]">{step.text}</p>
+                </div>
+              ))}
             </div>
           </div>
           <div className="lg:col-span-5">
@@ -83,13 +91,19 @@ export default function About() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
           <h2 className="font-display text-base tracking-[0.35em] uppercase text-[#f7f7f7] mb-8">{t("about.values.title")}</h2>
           <div className="grid sm:grid-cols-3 gap-6">
-            {VALUES.map(({ key, icon: Icon }) => (
-              <div key={key} className="border border-white/10 bg-[#141414] p-6" data-testid={`about-value-${key}`}>
-                <Icon className="text-[#D8CA82] mb-4" size={22} aria-hidden="true" />
-                <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t(`about.values.${key}`)}</h3>
-                <p className="text-sm text-[#c8c8c8] leading-relaxed">{t(`about.values.${key}.desc`)}</p>
-              </div>
-            ))}
+            {(isFallback ? VALUES.map(({ key }) => ({ key })) : content.values || []).map((value, index) => {
+              const Icon = VALUES[index]?.icon || VALUES[0].icon;
+              const key = value.key || String(index + 1);
+              const title = isFallback ? t(`about.values.${key}`) : value.title;
+              const description = isFallback ? t(`about.values.${key}.desc`) : value.description;
+              return (
+                <div key={key} className="border border-white/10 bg-[#141414] p-6" data-testid={`about-value-${key}`}>
+                  <Icon className="text-[#D8CA82] mb-4" size={22} aria-hidden="true" />
+                  <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{title}</h3>
+                  <p className="text-sm text-[#c8c8c8] leading-relaxed">{description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

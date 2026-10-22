@@ -14,6 +14,7 @@ import {
 } from "./ui/command";
 import { Users, Newspaper, Trophy, FileText } from "lucide-react";
 import { getElysiumTeamName } from "../lib/constants";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const PAGE_LINKS = [
   { path: "/", key: "nav.home" },
@@ -42,6 +43,7 @@ export const GlobalSearch = () => {
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [articles, setArticles] = useState([]);
+  const [queryText, setQueryText] = useState("");
 
   // Load data
   useEffect(() => {
@@ -73,15 +75,24 @@ export const GlobalSearch = () => {
 
   const runCommand = useCallback((action) => {
     setOpen(false);
+    if (queryText.trim()) {
+      trackEvent(ANALYTICS_EVENTS.GLOBAL_SEARCH, {
+        queryLength: queryText.trim().length,
+      });
+    }
     action();
-  }, []);
+  }, [queryText]);
 
   const pages = PAGE_LINKS.map((p) => ({ ...p, label: t(p.key) }));
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandList data-testid="global-search-list">
-        <CommandInput placeholder={t("search.placeholder")} data-testid="global-search-input" />
+        <CommandInput
+          placeholder={t("search.placeholder")}
+          data-testid="global-search-input"
+          onValueChange={setQueryText}
+        />
         <CommandEmpty>{t("search.empty")}</CommandEmpty>
 
         {/* Pages */}

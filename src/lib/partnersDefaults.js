@@ -1,0 +1,132 @@
+/**
+ * Grille partenaire par défaut (palier Bronze / Argent / Gold).
+ * ----------------------------------------------------------------------------
+ * Ce contenu était codé en dur dans `Partners.jsx` : il est désormais éditable
+ * depuis l'admin (collection `siteContent`, document `partners`) avec ces
+ * valeurs comme repli tant que le document n'existe pas.
+ *
+ * Données EXACTES issues de l'Annexe 3 pages 15-16 — Grille ElyWalk pour
+ * l'association Elysium.
+ */
+
+// Textes confidentiels de la convention supprimés sur demande, on ne parle que des offres partenaire.
+//
+// Trois points ont été arbitrés pour le palier GOLD, en dérogation à la grille :
+//   - logo sur maillot : inclus pour le Gold seul (non prévu Bronze / Argent) ;
+//   - offres simultanément actives : illimitées pour le Gold (1 Bronze / 5 Argent) ;
+//   - invitations / places en évènement : incluses mais limitées pour le Gold.
+export const grille = {
+  bronze: {
+    label: "BRONZE",
+    tarifRef: "196 € HT",
+    tarif12: "196 € HT",
+    engagement: "Sans engagement",
+    renouvellement: "Mensuel",
+    resiliation: "1 mois avant l'échéance du mois",
+    offresActives: "1",
+    dureeOffre: "Au choix du Partenaire, sans maximum",
+    attractivite: "Faible",
+    part: "75 % / 25 %",
+    logoTwitch: false,
+    elyCoins: false,
+    affiches: false,
+    affichesDetail: "",
+    stand: false,
+    miseEnAvant: false,
+    invitations: false,
+    invitationsDetail: "",
+    maillots: false,
+    maillotsDetail: "—",
+    bandeElywalk: false,
+    bandeSite: false,
+    videos: false,
+    videosDetail: "—",
+    futursProjets: false,
+    futursDetail: "—",
+    nombreAdmis: "Illimité",
+  },
+  argent: {
+    label: "ARGENT",
+    tarifRef: "356 € HT",
+    tarif12: "356 € HT",
+    engagement: "3 mois minimum",
+    renouvellement: "Par périodes de 3 mois",
+    resiliation: "1 mois avant l'échéance de la période",
+    offresActives: "5",
+    dureeOffre: "Idem",
+    attractivite: "Normal",
+    part: "50 % / 50 %",
+    logoTwitch: true,
+    elyCoins: true,
+    affiches: true,
+    affichesDetail: "logo à chaque affiche",
+    stand: false,
+    miseEnAvant: false,
+    invitations: false,
+    invitationsDetail: "",
+    maillots: false,
+    maillotsDetail: "—",
+    bandeElywalk: false,
+    bandeSite: false,
+    videos: false,
+    videosDetail: "—",
+    futursProjets: false,
+    futursDetail: "—",
+    nombreAdmis: "Illimité",
+  },
+  gold: {
+    label: "GOLD",
+    tarifRef: "676 € HT",
+    tarif12: "676 € HT",
+    engagement: "6 mois minimum",
+    renouvellement: "Par périodes de 6 mois",
+    resiliation: "1 mois avant l'échéance de la période",
+    offresActives: "Illimité",
+    dureeOffre: "Idem",
+    attractivite: "Élevé",
+    part: "25 % / 75 %",
+    logoTwitch: true,
+    elyCoins: true,
+    affiches: true,
+    affichesDetail: "logo à chaque affiche",
+    stand: true,
+    miseEnAvant: true,
+    invitations: true,
+    invitationsDetail: "limité",
+    maillots: true,
+    maillotsDetail: "",
+    bandeElywalk: true,
+    bandeSite: true,
+    videos: true,
+    videosDetail: "sans limite de nombre, 60 s max, montage au Partenaire",
+    futursProjets: true,
+    futursDetail: "selon supports disponibles",
+    nombreAdmis: "limité",
+  },
+};
+
+export const rows = [
+  { key: "ficheSite", label: "Fiche partenaire : site Elysium", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
+  { key: "ficheMap", label: "Fiche partenaire : map ElyWalk", type: "text", bronze: "✓", argent: "✓", gold: "✓" },
+  { key: "offresActives", label: "Offres simultanément actives dans Elywalk", type: "text" },
+  { key: "dureeOffre", label: "Durée de chaque offre", type: "text" },
+  { key: "tarifRef", label: "Tarif mensuel de référence", type: "price" },
+  { key: "tarif12", label: "Tarif mensuel pour un engagement de 12 mois", type: "price" },
+  { key: "engagement", label: "Engagement", type: "text" },
+  { key: "renouvellement", label: "Renouvellement", type: "text" },
+  { key: "resiliation", label: "Résiliation", type: "text" },
+  { key: "attractivite", label: "Niveau d'attractivité des offres", type: "text" },
+  { key: "part", label: "Part d'Elysium / part de l'Utilisateur", type: "text" },
+  { key: "logoTwitch", label: "Logo sur les streams Twitch", type: "bool" },
+  { key: "elyCoins", label: "Retrait des ElyCoins en cartes cadeaux ou de réduction", type: "bool" },
+  { key: "affiches", label: "Présence sur les affiches de communication", type: "boolDetail" },
+  { key: "stand", label: "Stand autorisé à chaque évènement", type: "bool" },
+  { key: "miseEnAvant", label: "Mise en avant du partenaire en évènement", type: "bool" },
+  { key: "invitations", label: "Invitations ou places en évènement", type: "boolDetail" },
+  { key: "maillots", label: "Logo sur les maillots", type: "boolDetailCustom" },
+  { key: "bandeElywalk", label: "Bande publicitaire : Elywalk", type: "bool" },
+  { key: "bandeSite", label: "Bande publicitaire : site Elysium", type: "bool" },
+  { key: "videos", label: "Vidéos publicitaires dans Elywalk", type: "boolDetail" },
+  { key: "futursProjets", label: "Présence sur les futurs projets numériques", type: "boolDetail" },
+  { key: "nombreAdmis", label: "Nombre de partenaires admis", type: "textLong" },
+];
