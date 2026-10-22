@@ -5,6 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import { useInboxBadge } from "../hooks/useInboxBadge";
+import { useFeatureFlag } from "../lib/featureFlags";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
@@ -44,8 +46,10 @@ export const UserAvatar = ({ src, name, className = "h-8 w-8" }) => {
 
 // Architecture D-05 : principal 5 + Découvrir 5 + CTA visibles + actions compactes
 export const Navbar = () => {
-  const { user, profile, hasPlayerAccess, isOfficial, role, displayName, logout } = useAuth();
+  const { user, profile, hasPlayerAccess, isOfficial, role, displayName, logout, canAccessAdmin } = useAuth();
   const { t, lang, toggle } = useLang();
+  const inbox = useInboxBadge();
+  const donationsEnabled = useFeatureFlag("donationsEnabled");
   const [open, setOpen] = useState(false);
   const headerRef = useRef(null);
   const navigate = useNavigate();
@@ -149,9 +153,16 @@ export const Navbar = () => {
               <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
             </NavLink>
           )}
-          {isOfficial && (
+          {canAccessAdmin && (
             <NavLink to="/admin" className={linkCls} data-testid="nav-link-admin">
-              <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
+              <span className="inline-flex items-center gap-1.5 relative">
+                <Shield size={14} aria-hidden="true" />{t("nav.admin")}
+                {inbox.total > 0 && (
+                  <span className="bg-[#D8CA82] text-[#111111] text-[9px] font-bold min-w-[16px] h-4 inline-flex items-center justify-center px-1" data-testid="nav-inbox-badge" title={`${inbox.total} dossier(s) en attente`}>
+                    {inbox.total > 99 ? "99+" : inbox.total}
+                  </span>
+                )}
+              </span>
             </NavLink>
           )}
         </nav>
@@ -165,7 +176,7 @@ export const Navbar = () => {
           >
             Rejoindre
           </Link>
-          <Link
+          {donationsEnabled && <Link
             to="/soutenir"
             data-testid="nav-donate-btn"
             title={t("donate.cta")}
@@ -173,7 +184,7 @@ export const Navbar = () => {
           >
             <Heart size={13} aria-hidden="true" />
             <span className="hidden lg:inline">{t("nav.donate")}</span>
-          </Link>
+          </Link>}
           {/* Actions compactes : recherche / notif / langue / compte */}
           <button
             onClick={openSearch}
@@ -230,10 +241,11 @@ export const Navbar = () => {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {isOfficial && (
+                {canAccessAdmin && (
                   <DropdownMenuItem asChild className="rounded-none focus:bg-[#D8CA82]/10 focus:text-[#D8CA82] cursor-pointer">
                     <Link to="/admin" className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] px-3 py-2" data-testid="nav-menu-admin">
                       <Shield size={13} aria-hidden="true" /> {t("nav.admin")}
+                      {inbox.total > 0 && <span className="ml-auto bg-[#D8CA82] text-[#111111] text-[9px] font-bold px-1.5">{inbox.total}</span>}
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -336,9 +348,12 @@ export const Navbar = () => {
                     <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
                   </NavLink>
                 )}
-                {isOfficial && (
+                {canAccessAdmin && (
                   <NavLink to="/admin" className={mobileLinkCls} onClick={() => setOpen(false)}>
-                    <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Shield size={14} aria-hidden="true" />{t("nav.admin")}
+                      {inbox.total > 0 && <span className="bg-[#D8CA82] text-[#111111] text-[9px] font-bold px-1.5" data-testid="nav-inbox-badge-mobile">{inbox.total}</span>}
+                    </span>
                   </NavLink>
                 )}
                 {user && (

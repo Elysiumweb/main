@@ -3,6 +3,7 @@ import { useLang } from "../lib/i18n";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -54,6 +55,7 @@ export const NewsletterSignup = ({ compact = false }) => {
       setMessage(t("newsletter.success"));
       setEmail("");
       setConsent(false);
+      trackEvent(ANALYTICS_EVENTS.NEWSLETTER_SIGNUP, { source: compact ? "inline" : "page" });
     } catch (err) {
       console.error(err);
       setStatus("error");

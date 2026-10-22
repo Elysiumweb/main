@@ -3,11 +3,14 @@ import { db } from "./firebase";
 
 export const CONTACT_EMAIL = "contact@elysium-esport.fr";
 
-export const createNotification = async ({ targetUid = null, targetRoles = null, targetGame = null, type, extra = "", link = "/" }) => {
+export const createNotification = async ({ targetUid = null, targetRoles = null, targetGame = null, type, extra = "", message = "", link = "/" }) => {
   try {
-    await addDoc(collection(db, "notifications"), {
+    const payload = {
       targetUid, targetRoles, targetGame, type, extra, link, readBy: [], createdAt: serverTimestamp(),
-    });
+    };
+    // `message` n'est renseigné que pour les annonces (corps de l'email).
+    if (message) payload.message = String(message).slice(0, 800);
+    await addDoc(collection(db, "notifications"), payload);
   } catch (e) { console.error("notify", e); }
 };
 

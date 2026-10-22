@@ -8,6 +8,7 @@ import { CampaignProgress } from "../components/CampaignProgress";
 import { OptimizedImage } from "../components/OptimizedImage";
 import { CONTACT_EMAIL } from "../lib/notify";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import { useSiteContent } from "../lib/siteContent";
 
 const USES = [
   { key: "gear", icon: Wrench },
@@ -18,6 +19,10 @@ const USES = [
 
 export default function Donate() {
   const { t } = useLang();
+  const { content: donateContent, isFallback: donateFallback } = useSiteContent("donate");
+  const contentUses = !donateFallback && Array.isArray(donateContent.usages) && donateContent.usages.length > 0
+    ? donateContent.usages
+    : null;
   useSEO({
     title: `${t("donate.title")} — Elysium Esport`,
     description: t("donate.sub"),
@@ -53,7 +58,7 @@ export default function Donate() {
             className="w-40 h-auto my-7 opacity-80"
           />
           <p className="text-[#c8c8c8] text-base sm:text-lg tracking-wide max-w-2xl leading-relaxed">
-            {t("donate.sub")}
+            {donateFallback ? t("donate.sub") : donateContent.intro}
           </p>
         </div>
       </section>
@@ -80,17 +85,25 @@ export default function Donate() {
           <p className="text-[#c8c8c8] leading-relaxed">{t("donate.why.text2")}</p>
 
           <div className="mt-10 grid sm:grid-cols-2 gap-6" data-testid="donate-uses">
-            {USES.map(({ key, icon: Icon }) => (
-              <div
-                key={key}
-                className="border border-white/10 bg-[#1A1A1A] p-6 hover:border-[#D8CA82]/40 transition-colors motion-reduce:transition-none"
-                data-testid={`donate-use-${key}`}
-              >
-                <Icon className="text-[#D8CA82] mb-4" size={22} aria-hidden="true" />
-                <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t(`donate.use.${key}`)}</h3>
-                <p className="text-sm text-[#c8c8c8] leading-relaxed">{t(`donate.use.${key}.desc`)}</p>
-              </div>
-            ))}
+            {(contentUses || USES).map((item, index) => {
+              const Icon = item.icon || USES[index]?.icon || Wrench;
+              const key = item.key || USES[index]?.key || `usage-${index}`;
+              return (
+                <div
+                  key={key}
+                  className="border border-white/10 bg-[#1A1A1A] p-6 hover:border-[#D8CA82]/40 transition-colors motion-reduce:transition-none"
+                  data-testid={`donate-use-${key}`}
+                >
+                  <Icon className="text-[#D8CA82] mb-4" size={22} aria-hidden="true" />
+                  <h3 className="font-display font-bold text-[#f7f7f7] mb-2">
+                    {contentUses ? item.title : t(`donate.use.${key}`)}
+                  </h3>
+                  <p className="text-sm text-[#c8c8c8] leading-relaxed">
+                    {contentUses ? item.description : t(`donate.use.${key}.desc`)}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -154,7 +167,12 @@ export default function Donate() {
             <div className="flex-1 h-px bg-white/10" />
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
+            {contentUses ? contentUses.slice(0, 3).map((item, index) => (
+              <div key={item.title || index} className="border border-white/10 bg-[#141414] p-6" data-testid={`donate-transparency-${index + 1}`}>
+                <p className="font-display font-black text-2xl text-[#D8CA82] mb-3">{item.percent ?? "—"}{item.percent != null ? " %" : ""}</p>
+                <p className="text-sm text-[#c8c8c8] leading-relaxed">{item.title} — {item.description}</p>
+              </div>
+            )) : [1, 2, 3].map((i) => (
               <div key={i} className="border border-white/10 bg-[#141414] p-6" data-testid={`donate-transparency-${i}`}>
                 <p className="font-display font-black text-2xl text-[#D8CA82] mb-3">0{i}</p>
                 <p className="text-sm text-[#c8c8c8] leading-relaxed">{t(`donate.transparency.item${i}`)}</p>
@@ -162,7 +180,7 @@ export default function Donate() {
             ))}
           </div>
           <p className="text-xs text-[#c8c8c8] mt-8 max-w-3xl leading-relaxed" data-testid="donate-legal-note">
-            {t("donate.legal")}
+            {contentUses ? donateContent.transparency : t("donate.legal")}
           </p>
         </div>
       </section>
