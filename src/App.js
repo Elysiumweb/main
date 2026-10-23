@@ -15,11 +15,6 @@ import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SEOManager } from "@/components/SEOManager";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { StagingBanner } from "@/components/StagingBanner";
-import { AnalyticsTracker } from "@/components/AnalyticsTracker";
-import { RedirectGate } from "@/components/RedirectGate";
-import { AnalyticsConsent } from "@/components/AnalyticsConsent";
 // La page d'accueil reste en import statique : c'est la cible la plus
 // fréquente, lui imposer un aller-retour réseau supplémentaire dégraderait
 // le LCP. Toutes les autres routes sont chargées à la demande.
@@ -52,7 +47,6 @@ const About = lazy(() => import("@/pages/About"));
 const Press = lazy(() => import("@/pages/Press"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Offline = lazy(() => import("@/pages/Offline"));
-const Invitation = lazy(() => import("@/pages/Invitation"));
 
 // Composants exportés nommément : React.lazy attend un export default.
 const NewsletterSignup = lazy(() =>
@@ -108,14 +102,9 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AnalyticsTracker />
-          <RedirectGate />
-          <AnalyticsConsent />
           <SEOManager />
           <SkipLink />
-          <StagingBanner />
           <Navbar />
-          <AnnouncementBanner />
           <VerifyEmailBanner />
           <GlobalSearch />
           <Routes>
@@ -146,7 +135,6 @@ function App() {
               <Route path="/newsletter" element={<NewsletterSignup />} />
               <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
               <Route path="/connexion" element={<Login />} />
-              <Route path="/invitation/:token" element={<Invitation />} />
               <Route path="/profil" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/mentions-legales" element={<LegalPage kind="mentions" />} />

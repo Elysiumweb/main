@@ -5,7 +5,7 @@ import { FileUp, Search, Shield, Trophy, Users } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
-import { GAMES, ROLES, getElysiumTeamName } from "../lib/constants";
+import { GAMES, ROLES, OFFICIAL_UID, getElysiumTeamName } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
 import { MatchCard } from "../components/MatchCard";
 import { ImageUpload } from "../components/ImageUpload";
@@ -25,21 +25,10 @@ import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
 import { AdminReplayImport } from "../components/admin/AdminReplayImport";
-import { AdminInbox } from "../components/admin/AdminInbox";
-import { AdminMatchesBulk } from "../components/admin/AdminMatchesBulk";
-import { AdminAnnouncements } from "../components/admin/AdminAnnouncements";
-import { AdminAnalytics } from "../components/admin/AdminAnalytics";
-import { AdminContent } from "../components/admin/AdminContent";
-import { AdminTeam } from "../components/admin/AdminTeam";
-import { AdminRedirects } from "../components/admin/AdminRedirects";
-import { AdminFlags } from "../components/admin/AdminFlags";
 import { buildReplaySeries, RL_GAME } from "../lib/rocketLeagueReplay";
 import { mvpCount } from "../lib/playerStats";
 import { logAdminAction } from "../lib/notify";
 import { isImageValue, isOptionalHttpUrl } from "../lib/validation";
-import { allowedAdminTabs } from "../lib/permissions";
-import { useFeatureFlag } from "../lib/featureFlags";
-import { useSearchParams } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -160,11 +149,8 @@ const normalizeImportedMatch = (raw) => ({
 });
 
 export default function Admin() {
-  const { user, displayName, isOfficial, role, loading, permissions, can, canAccessAdmin } = useAuth();
+  const { user, displayName, isOfficial, role, loading } = useAuth();
   const { t } = useLang();
-  const newInbox = useFeatureFlag("newInbox");
-  const analyticsDashboard = useFeatureFlag("analyticsDashboard");
-  const [searchParams, setSearchParams] = useSearchParams();
   const { rostersForGame, gameHasRosters } = useRosters();
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
@@ -200,48 +186,32 @@ export default function Admin() {
     setForm((f) => ({ ...f, roster: e.target.value, players: [], mvp: "" }));
   };
 
-  // Onglets pilotés par les permissions fines (et non plus par un rôle figé).
-  // Un manager peut recevoir l'accès aux candidatures sans devenir bureau.
-  const tabs = useMemo(() => allowedAdminTabs(permissions).filter((key) => {
-    if (key === "inbox") return newInbox && (can("inbox.support") || can("inbox.recruit"));
-    if (key === "analytics") return analyticsDashboard;
-    return true;
-  }), [permissions, newInbox, analyticsDashboard]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    const requested = searchParams.get("tab");
-    if (requested && tabs.includes(requested)) {
-      setTab((current) => (current === requested ? current : requested));
-      return;
-    }
-    if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
-  }, [tabs, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const selectTab = (key) => {
-    setTab(key);
-    setSearchParams({ tab: key }, { replace: true });
+  const isBureau = isOfficial || role === "bureau";
+  const isStaff = isBureau || role === "manager";
+  const allowed = {
+    users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
+    articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
+    competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
+    newsletter: isBureau, audit: isBureau, help: isBureau, tryouts: isStaff,
   };
+  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "tryouts", "help", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
-    const unsubs = [];
-    if (can("team.manage")) {
-      unsubs.push(onSnapshot(collection(db, "users"), (s) => setUsers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error));
-    }
-    if (can("matches.manage")) {
-      unsubs.push(onSnapshot(collection(db, "matches"), (s) => {
-        const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
-        list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-        setMatches(list);
-      }, console.error));
-    }
-    if (can("rosters.manage") || can("matches.manage")) {
-      unsubs.push(onSnapshot(collection(db, "roster"), (s) => setRosterMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error));
-    }
-    if (can("media.manage")) {
-      unsubs.push(onSnapshot(collection(db, "media"), (s)=> setMediaList(s.docs.map(d=>({id:d.id,...d.data()}))), console.error));
-    }
-    return () => unsubs.forEach((unsubscribe) => unsubscribe());
-  }, [permissions]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
+  }, [role, isOfficial]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!isOfficial) return;
+    const u1 = onSnapshot(collection(db, "users"), (s) => setUsers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    const u2 = onSnapshot(collection(db, "matches"), (s) => {
+      const list = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      setMatches(list);
+    }, console.error);
+    const u3 = onSnapshot(collection(db, "roster"), (s) => setRosterMembers(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
+    const u4 = onSnapshot(collection(db, "media"), (s)=> setMediaList(s.docs.map(d=>({id:d.id,...d.data()}))), console.error);
+    return () => { u1(); u2(); u3(); u4(); };
+  }, [isOfficial]);
 
   const filteredUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
@@ -293,7 +263,7 @@ export default function Admin() {
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#c8c8c8]">{t("common.loading")}</div>;
-  if (!canAccessAdmin || tabs.length === 0) return (
+  if (!isStaff) return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <p className="text-[#f7f7f7]/50" data-testid="admin-denied">{t("player.noAccess")}</p>
     </div>
@@ -612,13 +582,12 @@ export default function Admin() {
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
         <div className="flex gap-1 border-b border-white/10 mb-10 flex-wrap" data-testid="admin-tabs">
           {tabs.map((k) => (
-            <button key={k} onClick={() => selectTab(k)} data-testid={`admin-tab-${k}`}
+            <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
               className={`px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
               {t(`admin.tab.${k}`)}
             </button>
           ))}
         </div>
-        {tab === "inbox" && <AdminInbox />}
         {tab === "users" && (
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -654,11 +623,11 @@ export default function Admin() {
                 {pagedUsers.map((u) => (
                   <tr key={u.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-user-row-${u.id}`}>
                     <td className="px-4 py-3 font-semibold text-[#f7f7f7]">
-                      {u.displayName} {u.official === true && <span className="text-xs text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
+                      {u.displayName} {u.id === OFFICIAL_UID && <span className="text-xs text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
                     </td>
                     <td className="px-4 py-3 text-[#f7f7f7]/50">{u.email}</td>
                     <td className="px-4 py-3">
-                      <select value={u.role || "visitor"} onChange={(e) => setRole(u.id, e.target.value)} disabled={u.official === true}
+                      <select value={u.role || "visitor"} onChange={(e) => setRole(u.id, e.target.value)} disabled={u.id === OFFICIAL_UID}
                         data-testid={`admin-role-select-${u.id}`}
                         className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
                         {ROLES.map((r) => <option key={r} value={r}>{t(`admin.role.${r}`)}</option>)}
@@ -959,7 +928,6 @@ export default function Admin() {
                 <p className="text-[#c8c8c8]" data-testid="admin-matches-empty">{t("results.empty")}</p>
               ) : (
                 <>
-                  <AdminMatchesBulk matches={filteredMatches} actor={auditActor} />
                   <div className="grid sm:grid-cols-2 gap-4">
                     {pagedMatches.map((m) => (
                       <MatchCard
@@ -1002,12 +970,6 @@ export default function Admin() {
         {tab === "partners" && <AdminPartnerRequests />}
         {tab === "newsletter" && <AdminNewsletter />}
         {tab === "audit" && <AdminAudit />}
-        {tab === "team" && <AdminTeam />}
-        {tab === "content" && <AdminContent />}
-        {tab === "announcements" && <AdminAnnouncements />}
-        {tab === "analytics" && <AdminAnalytics />}
-        {tab === "redirects" && <AdminRedirects />}
-        {tab === "flags" && <AdminFlags />}
       </section>
 
       <AlertDialog open={!!confirmMatch} onOpenChange={(open) => !open && setConfirmMatch(null)}>

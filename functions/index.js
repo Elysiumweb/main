@@ -27,6 +27,7 @@ const {
   getMailFrom, getResendKey, getBrevoKey, escapeHtml, sendEmail,
 } = require("./lib/mail");
 
+const OFFICIAL_UID = "9IzGlpp6DHhrN9GW72haeb869Om1";
 const REGION_SECRETS = ["RESEND_API_KEY", "BREVO_API_KEY"];
 const APP_URL = process.env.APP_URL || "https://elysium-esport.fr";
 
@@ -71,11 +72,6 @@ const TEMPLATES = {
     subject: (n) => `[Match] Coup d'envoi imminent — ${n.extra || ""}`,
     title: "Match à venir",
     intro: () => "Un match démarre bientôt. Préparez-vous !",
-  },
-  announcement: {
-    subject: (n) => `[Elysium] ${n.extra || "Annonce de l'équipe"}`,
-    title: "Annonce de l'équipe",
-    intro: (n) => n.message || n.extra || "Le bureau a publié une nouvelle annonce.",
   },
 };
 
@@ -278,20 +274,11 @@ exports.unsubscribeNewsletter = onRequest({ memory: "128MiB", timeoutSeconds: 15
   res.redirect(`${APP_URL}/newsletter?unsubscribed=1`);
 });
 
-// Le compte officiel n'est plus un UID codé en dur : il est désigné par les
-// données (`users/{uid}.official`) ou par la liste d'amorçage `config/officials`.
 const isBureauUser = async (uid) => {
   if (!uid) return false;
-  const [userSnap, officialsSnap] = await Promise.all([
-    db.collection("users").doc(uid).get(),
-    db.collection("config").doc("officials").get(),
-  ]);
-  if (userSnap.exists) {
-    const data = userSnap.data();
-    if (data.role === "bureau" || data.official === true) return true;
-  }
-  const uids = officialsSnap.exists ? officialsSnap.data().uids : [];
-  return Array.isArray(uids) && uids.includes(uid);
+  if (uid === OFFICIAL_UID) return true;
+  const snap = await db.collection("users").doc(uid).get();
+  return snap.exists && snap.data().role === "bureau";
 };
 
 const digestHtml = ({ subject, body, token }) => {
@@ -403,7 +390,6 @@ exports.purgeDeletedAccount = functionsV1.auth.user().onDelete(async (user) => {
 // - retention.js : purges planifiées (corbeille Notes 30 j, threads 24 mois…).
 // - users.js     : purge du planning quand un joueur perd son rôle/pôle/roster.
 // - live.js      : détection automatique du statut live via Twitch API + webhook
-// - invitations.js : acceptation transactionnelle des invitations staff
 Object.assign(
   exports,
   require("./forms"),
@@ -412,6 +398,5 @@ Object.assign(
   require("./retention"),
   require("./users"),
   require("./live"),
-  require("./invitations"),
 );
 

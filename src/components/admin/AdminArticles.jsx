@@ -11,7 +11,6 @@ import { Markdown } from "../../lib/markdown";
 import { logAdminAction } from "../../lib/notify";
 import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
-import { useBulkSelection } from "../../hooks/useBulkSelection";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
@@ -23,7 +22,6 @@ export const AdminArticles = () => {
   const [form, setForm] = useState(EMPTY);
   const [editId, setEditId] = useState(null);
   const [editorTab, setEditorTab] = useState("write"); // write | preview
-  const bulk = useBulkSelection(articles);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
@@ -82,28 +80,6 @@ export const AdminArticles = () => {
       toast.success(t("common.saved"));
     }
     catch { toast.error(t("common.error")); }
-  };
-
-  const bulkSetStatus = async (status) => {
-    if (!bulk.count) return;
-    try {
-      await Promise.all(bulk.selected.map((id) => updateDoc(doc(db, "articles", id), {
-        status,
-        updatedAt: serverTimestamp(),
-        ...(status === "published" ? { publishedAt: serverTimestamp() } : {}),
-      })));
-      await logAdminAction({
-        action: "articles_bulk_status",
-        label: `${bulk.count} article(s) → ${status}`,
-        actor: { uid: user?.uid, name: displayName, email: user?.email },
-        target: { collection: "articles", id: bulk.selected.join(",") },
-      });
-      toast.success(`${bulk.count} article(s) mis à jour`);
-      bulk.clear();
-    } catch (err) {
-      console.error(err);
-      toast.error(t("common.error"));
-    }
   };
 
   const edit = (a) => {
@@ -190,23 +166,9 @@ export const AdminArticles = () => {
         </div>
       </div>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-articles-list">
-        {articles.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border border-white/10 bg-[#141414] px-3 py-2" data-testid="admin-articles-bulk-bar">
-            <input type="checkbox" checked={bulk.allSelected} onChange={bulk.toggleAll} aria-label="Sélectionner tous les articles" className="accent-[#D8CA82] h-3.5 w-3.5" data-testid="admin-articles-select-all" />
-            <span className="text-[10px] uppercase tracking-widest text-[#c8c8c8]">{bulk.count ? `${bulk.count} sélectionné(s)` : "Tout sélectionner"}</span>
-            {bulk.count > 0 && (
-              <>
-                <button onClick={() => bulkSetStatus("published")} className="text-[10px] uppercase tracking-widest text-emerald-300 hover:underline" data-testid="admin-articles-bulk-publish">Publier</button>
-                <button onClick={() => bulkSetStatus("draft")} className="text-[10px] uppercase tracking-widest text-orange-300 hover:underline" data-testid="admin-articles-bulk-draft">Brouillon</button>
-                <button onClick={() => bulkSetStatus("deleted")} className="text-[10px] uppercase tracking-widest text-red-300 hover:underline" data-testid="admin-articles-bulk-delete">Corbeille</button>
-              </>
-            )}
-          </div>
-        )}
         {articles.length === 0 && <p className="text-[#c8c8c8]">{t("news.empty")}</p>}
         {articles.map((a) => (
-          <div key={a.id} className={`flex items-center gap-3 border bg-[#1A1A1A] px-4 py-3 ${bulk.isSelected(a.id) ? "border-[#D8CA82]/50" : "border-white/10"}`}>
-            <input type="checkbox" checked={bulk.isSelected(a.id)} onChange={() => bulk.toggle(a.id)} aria-label={`Sélectionner ${a.title}`} data-testid={`admin-article-select-${a.id}`} className="accent-[#D8CA82] h-3.5 w-3.5 shrink-0" />
+          <div key={a.id} className="flex items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3">
             <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_BADGE[a.status] || ""}`}>
               {a.status === "published" ? t("admin.published") : a.status === "deleted" ? t("admin.deleted") : t("notes.draft")}
             </span>
