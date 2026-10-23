@@ -1,38 +1,91 @@
 import { useLang } from "../lib/i18n";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
-import { Markdown } from "../lib/markdown";
-import { useSiteContent } from "../lib/siteContent";
 
-const TITLE_KEYS = {
-  mentions: "legal.mentions",
-  privacy: "legal.privacy",
-  terms: "legal.terms",
+const H = ({ children }) => <h2 className="font-display text-base md:text-lg uppercase tracking-[0.2em] text-[#D8CA82] mt-10 mb-3">{children}</h2>;
+const P = ({ children }) => <p className="text-[#f7f7f7]/70 leading-relaxed mb-3 text-sm sm:text-base">{children}</p>;
+
+const CONTENT = {
+  mentions: {
+    titleKey: "legal.mentions",
+    body: (
+      <>
+        <P>Le présent site est édité par l'équipe esport <strong>Elysium</strong> (ci-après « l'Éditeur »).</P>
+        <H>Éditeur du site</H>
+        <P>Elysium — Équipe esport française, éditée par l'association Elysium, association régie par la loi du 1er juillet 1901, dont le siège social est situé 22 Avenue Lamartine, 77380 Combs-la-Ville (numéro RNA : W772011943). Directeur de la publication : Nathan Martins, Président de l'association.</P>
+        <P>Contact : via la page Support du site ou le serveur Discord officiel (https://discord.gg/RH3ZZkMJsw).</P>
+        <H>Hébergement</H>
+        <P>Le site est hébergé par Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis (vercel.com). Les données applicatives sont stockées par Google Firebase (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande).</P>
+        <H>Propriété intellectuelle</H>
+        <P>L'ensemble des éléments du site (logos, charte graphique, textes, visuels Elysium) est la propriété exclusive de l'Éditeur. Toute reproduction ou représentation, totale ou partielle, sans autorisation écrite préalable est interdite.</P>
+        <H>Responsabilité</H>
+        <P>L'Éditeur s'efforce d'assurer l'exactitude des informations diffusées mais ne saurait être tenu responsable des erreurs, omissions ou indisponibilités du service.</P>
+      </>
+    ),
+  },
+  privacy: {
+    titleKey: "legal.privacy",
+    body: (
+      <>
+        <P>Cette politique décrit comment Elysium collecte et traite vos données personnelles, conformément au Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et Libertés.</P>
+        <P>Responsable du traitement : l'association Elysium, dont le siège social est situé 22 Avenue Lamartine, 77380 Combs-la-Ville.</P>
+        <H>Données collectées</H>
+        <P>• Compte : email, pseudo, photo de profil (via Firebase Authentication — email/mot de passe ou Google).<br />• Support : sujet et description de votre demande, messages échangés.<br />• Candidature : pseudo, tranche d'âge, pays/fuseau horaire, expérience, liens vidéo, disponibilités, identifiant Discord — et, pour les candidats de moins de 15 ans, nom et email d'un titulaire de l'autorité parentale (uniquement pour recueillir et prouver son accord).<br />• Espace joueur (membres) : messages, notes, planning, tableaux collaboratifs.</P>
+        <H>Finalités et base légale</H>
+        <P>Les données sont traitées pour : la gestion des comptes et l'authentification (exécution du contrat), le traitement des demandes de support et des candidatures (mesures précontractuelles / intérêt légitime), et le fonctionnement des espaces d'équipe (intérêt légitime).</P>
+        <H>Destinataires</H>
+        <P>Les demandes de support sont accessibles uniquement aux membres du bureau et au compte officiel. Les candidatures sont accessibles uniquement aux manageurs, aux membres du bureau et au compte officiel. Les données sont hébergées par Google Firebase.</P>
+        <H>Dons et paiements</H>
+        <P>Les dons sont traités par PayPal (PayPal (Europe) S.à r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxembourg), qui agit en tant que responsable de traitement indépendant pour l'opération de paiement. Elysium ne collecte, ne traite ni ne conserve aucune donnée bancaire : celles-ci sont saisies directement sur les interfaces sécurisées de PayPal. Nous recevons uniquement la confirmation du paiement (montant, date, nom et email du donateur) via notre compte PayPal, conservée à des fins de comptabilité associative pendant la durée légale applicable.</P>
+        <P>Le module de paiement PayPal n'est chargé que sur les sections de don du site (page « Soutenir », encart de don de l'accueil et de la page Partenaires), et uniquement lorsque celles-ci s'affichent réellement à l'écran. Il est susceptible de déposer des cookies tiers relevant de la sécurité et de la lutte contre la fraude, régis par la politique de confidentialité de PayPal (paypal.com). Les autres pages du site n'émettent aucune requête vers PayPal.</P>
+        <H>Durée de conservation</H>
+        <P>Les données de compte sont conservées tant que le compte est actif. Les candidatures et demandes de support sont conservées au maximum 24 mois : une tâche automatique quotidienne archive des statistiques anonymisées puis supprime les dossiers au-delà de ce délai. Les notes placées en corbeille sont définitivement supprimées après 30 jours par une purge automatique. Les candidatures de mineurs sans consentement parental confirmé sous 30 jours sont supprimées.</P>
+        <H>Cookies</H>
+        <P>Le site utilise uniquement des cookies et stockages locaux essentiels : session d'authentification Firebase, préférence de langue et choix de consentement. Aucun cookie publicitaire ou de suivi tiers n'est déposé. Seules les sections de don chargent le module de paiement PayPal, qui peut déposer ses propres cookies techniques et anti-fraude lors de son affichage.</P>
+        <H>Vos droits</H>
+        <P>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition. Vous pouvez supprimer votre compte à tout moment depuis la page « Mon profil ». Pour toute demande : contactez-nous via la page Support ou Discord. Vous pouvez également saisir la CNIL (cnil.fr).</P>
+        <H>Mineurs</H>
+        <P>Si vous avez moins de 15 ans, l'accord d'un titulaire de l'autorité parentale est requis pour candidater : le formulaire de candidature demande alors ses nom et email, un email de confirmation lui est envoyé et la candidature n'est examinée qu'après sa validation explicite. Sans confirmation sous 30 jours, la candidature est automatiquement supprimée.</P>
+      </>
+    ),
+  },
+  terms: {
+    titleKey: "legal.terms",
+    body: (
+      <>
+        <P>Les présentes conditions régissent l'utilisation du site Elysium. En créant un compte ou en naviguant sur le site, vous les acceptez.</P>
+        <H>Accès au service</H>
+        <P>Le site est accessible gratuitement. Certaines fonctionnalités (espace joueur, support, candidature) nécessitent un compte. Les rôles (joueur, manageur, membre du bureau) sont attribués exclusivement par le compte officiel de l'équipe.</P>
+        <H>Comportement</H>
+        <P>Vous vous engagez à ne pas publier de contenus illicites, haineux, diffamatoires ou portant atteinte aux droits de tiers dans les espaces de discussion, notes et tableaux. L'équipe se réserve le droit de supprimer tout contenu inapproprié et de suspendre les comptes concernés.</P>
+        <H>Compte</H>
+        <P>Vous êtes responsable de la confidentialité de vos identifiants. Vous pouvez supprimer votre compte à tout moment depuis la page « Mon profil ».</P>
+        <H>Dons</H>
+        <P>Le site permet de soutenir l'association par un don volontaire, traité par PayPal. Un don est un soutien libre : il ne constitue ni un achat, ni une adhésion, et n'ouvre droit à aucune contrepartie, avantage ou statut particulier au sein de l'association. En l'état, il n'ouvre pas droit à une réduction d'impôt.</P>
+        <P>Les dons sont définitifs et non remboursables, sauf erreur manifeste (double débit, montant erroné) : contactez-nous dans ce cas à contact@elysium-esport.fr et nous procéderons au remboursement. Les mineurs doivent obtenir l'accord d'un titulaire de l'autorité parentale avant tout don. Les fonds sont exclusivement affectés au fonctionnement sportif et associatif d'Elysium.</P>
+        <H>Disponibilité</H>
+        <P>Le service est fourni « en l'état ». Elysium ne garantit pas une disponibilité continue et peut faire évoluer le site à tout moment.</P>
+        <H>Droit applicable</H>
+        <P>Les présentes conditions sont soumises au droit français.</P>
+      </>
+    ),
+  },
 };
 
-/**
- * Pages légales — le texte vient de `siteContent/legal` (Markdown), éditable
- * depuis l'admin. Les valeurs par défaut de `siteContent.js` assurent le repli
- * si le document n'existe pas encore.
- */
 export default function LegalPage({ kind }) {
   const { t } = useLang();
-  const { content, isFallback } = useSiteContent("legal");
-  const doc = content[kind] || content.mentions;
-  const title = isFallback ? t(TITLE_KEYS[kind] || "legal.mentions") : doc?.title || t(TITLE_KEYS[kind] || "legal.mentions");
-  const updatedAt = doc?.updatedAt || "juillet 2026";
-
+  const c = CONTENT[kind];
   return (
     <div className="min-h-[70vh] bg-[#111111]">
       <section className="relative border-b border-white/10 overflow-hidden">
         <div className="pattern-overlay" />
         <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
-          <PageBreadcrumb items={[{ label: title }]} />
-          <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-[#f7f7f7] uppercase" data-testid={`legal-title-${kind}`}>{title}</h1>
+          <PageBreadcrumb items={[{ label: t(c.titleKey) }]} />
+          <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-[#f7f7f7] uppercase" data-testid={`legal-title-${kind}`}>{t(c.titleKey)}</h1>
         </div>
       </section>
       <section className="max-w-4xl mx-auto px-4 sm:px-8 py-12" data-testid={`legal-content-${kind}`}>
-        <Markdown source={doc?.markdown || ""} className="text-[#f7f7f7]/70" />
-        <p className="text-xs text-[#c8c8c8] mt-12">Dernière mise à jour : {updatedAt}</p>
+        {c.body}
+        <p className="text-xs text-[#c8c8c8] mt-12">Dernière mise à jour : juillet 2026</p>
       </section>
     </div>
   );

@@ -10,7 +10,6 @@ import { ArticleCover } from "./News";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Markdown } from "../lib/markdown";
 import { ShareButtons } from "../components/ShareButtons";
-import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 export default function ArticleDetail() {
   const { id } = useParams();
@@ -24,12 +23,6 @@ export default function ArticleDetail() {
   }, [id]);
 
   useArticleSEO(article && article.id ? article : null);
-
-  useEffect(() => {
-    if (article?.id && article.status === "published") {
-      trackEvent(ANALYTICS_EVENTS.ARTICLE_VIEW, { articleId: article.id, category: article.category || "" });
-    }
-  }, [article?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (article === undefined) return <LoadingState testId="article-loading" />;
   if (article === null || article.status === "deleted") return (

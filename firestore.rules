@@ -2,67 +2,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ===== Comptes officiels & permissions =====
-    // Aucun UID n'est codé en dur : un compte est « officiel » soit via le
-    // document de données `users/{uid}.official == true`, soit via la liste
-    // d'amorçage `config/officials.uids` (créée une fois en console). Les
-    // permissions fines sont stockées dans `users/{uid}.permissions` et
-    // partagent les mêmes clés que le front (`src/lib/permissions.js`).
+    // ===== Compte officiel Elysium =====
+    function isOfficial() {
+      return request.auth != null && request.auth.uid == '9IzGlpp6DHhrN9GW72haeb869Om1';
+    }
+
     function isAuth() {
       return request.auth != null;
     }
 
-    function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isOfficial() {
-      return isAuth() && (
-        userDoc().get('official', false) == true
-        || (exists(/databases/$(database)/documents/config/officials)
-            && request.auth.uid in get(/databases/$(database)/documents/config/officials).data.get('uids', []))
-      );
-    }
-
     function userRole() {
-      return userDoc().role;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     function userGame() {
-      return userDoc().game;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.game;
     }
 
     function userRoster() {
-      return userDoc().roster;
-    }
-
-    // Permissions effectives = officiel > rôle historique > permissions fines.
-    // Les valeurs par défaut du rôle `manager` sont dupliquées ici volontairement :
-    // un compte créé avant l'introduction des permissions n'a pas de tableau
-    // `permissions` et doit conserver exactement les accès dont il disposait.
-    function hasPerm(permission) {
-      return isAuth() && (
-        isOfficial()
-        || userRole() == 'bureau'
-        || permission in userDoc().get('permissions', [])
-        || (userRole() == 'manager' && permission in [
-          'inbox.recruit', 'inbox.manage', 'inbox.export', 'inbox.canned',
-          'media.manage', 'events.manage', 'tryouts.manage', 'positions.manage'
-        ])
-      );
-    }
-
-    function isValidPermissions(list) {
-      return list is list
-        && list.size() <= 40
-        && list.hasOnly([
-          'inbox.support', 'inbox.recruit', 'inbox.manage', 'inbox.export', 'inbox.canned',
-          'articles.manage', 'media.manage', 'content.edit', 'announcements.manage',
-          'matches.manage', 'rosters.manage', 'positions.manage', 'events.manage',
-          'tryouts.manage', 'competitions.manage', 'opponents.manage',
-          'partners.manage', 'campaigns.manage', 'newsletter.manage',
-          'analytics.view', 'team.manage', 'redirects.manage', 'flags.manage', 'audit.view'
-        ]);
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roster;
     }
 
     function hasPlayerAccess() {
@@ -89,39 +47,25 @@ service cloud.firestore {
     match /users/{uid} {
       // Un joueur lit uniquement son propre profil privé. Managers/bureau lisent
       // la collection pour le planning d'équipe et l'administration des rôles.
-      allow read: if isAuth() && (request.auth.uid == uid || isManagerPlus() || hasPerm('team.manage'));
+      allow read: if isAuth() && (request.auth.uid == uid || isManagerPlus());
 
-      // Un compte ne peut se créer qu'avec le rôle visiteur : aucune
-      // auto-promotion, aucune permission, aucun statut officiel.
       allow create: if isAuth() && request.auth.uid == uid
         && request.resource.data.role == 'visitor'
         && request.resource.data.game == null
-        && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null)
-        && (!request.resource.data.keys().hasAny(['official']) || request.resource.data.official == false)
-        && (!request.resource.data.keys().hasAny(['permissions']) || request.resource.data.permissions == []);
+        && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null);
 
-      // Rôles et permissions validés côté règles. Un membre du bureau (ou un
-      // compte disposant de `team.manage`) gère les autres comptes ; seul un
-      // compte officiel peut nommer un autre compte officiel.
-      allow update: if ((hasPerm('team.manage') || isOfficial())
+      // Rôles validés côté règles. Les utilisateurs ne peuvent jamais s'auto-promouvoir
+      // ni changer leur pôle/roster : séparation stricte joueur/staff côté serveur.
+      allow update: if (isOfficial()
           && isValidRole(request.resource.data.role)
-          // Seul le bureau peut nommer un autre membre du bureau : `team.manage`
-          // permet de gérer les comptes, pas de s'auto-promouvoir.
-          && (request.resource.data.role != 'bureau' || isBureau())
-          // Personne ne modifie son propre rôle/permissions (sauf officiel).
-          && (request.auth.uid != uid || isOfficial())
           && (!request.resource.data.keys().hasAny(['game']) || request.resource.data.game == null || request.resource.data.game in ['EVA', 'Rocket League'])
-          && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null || request.resource.data.roster is string)
-          && isValidPermissions(request.resource.data.get('permissions', []))
-          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['official']) || isOfficial()))
+          && (!request.resource.data.keys().hasAny(['roster']) || request.resource.data.roster == null || request.resource.data.roster is string))
         || (request.auth.uid == uid
             && request.resource.data.role == resource.data.role
             && request.resource.data.game == resource.data.game
-            && request.resource.data.roster == resource.data.roster
-            && request.resource.data.get('permissions', []) == resource.data.get('permissions', [])
-            && request.resource.data.get('official', false) == resource.data.get('official', false));
+            && request.resource.data.roster == resource.data.roster);
 
-      allow delete: if isBureau() || request.auth.uid == uid;
+      allow delete: if isOfficial() || request.auth.uid == uid;
     }
 
     // ===== Annuaire joueurs (espace privé) =====
@@ -144,7 +88,7 @@ service cloud.firestore {
     // Lecture publique (filtres /equipe, formulaires). Aucun roster codé en dur.
     match /rosters/{id} {
       allow read: if true;
-      allow create, update, delete: if hasPerm('rosters.manage');
+      allow create, update, delete: if isOfficial();
     }
 
     // ===== Roster public (fiches joueurs) =====
@@ -164,7 +108,7 @@ service cloud.firestore {
     // ===== Postes =====
     match /positions/{id} {
       allow read: if true;
-      allow create, update, delete: if isManagerPlus() || hasPerm('positions.manage');
+      allow create, update, delete: if isManagerPlus();
     }
 
     // ===== Base de connaissances (centre d'aide public) =====
@@ -177,7 +121,7 @@ service cloud.firestore {
       allow read: if resource.data.published == true
         || !resource.data.keys().hasAny(['published'])
         || isBureau();
-      allow create, update, delete: if isBureau() || hasPerm('content.edit');
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Tryouts (créneaux d'essai ouverts au public) =====
@@ -186,10 +130,10 @@ service cloud.firestore {
     // vérifiée en transaction, quotas, rattachement au dossier de candidature).
     match /tryoutSlots/{id} {
       allow read: if true;
-      allow create, update, delete: if isManagerPlus() || hasPerm('tryouts.manage');
+      allow create, update, delete: if isManagerPlus();
 
       match /bookings/{uid} {
-        allow read: if isAuth() && (request.auth.uid == uid || isManagerPlus() || hasPerm('tryouts.manage'));
+        allow read: if isAuth() && (request.auth.uid == uid || isManagerPlus());
         allow write: if false;
       }
     }
@@ -197,13 +141,13 @@ service cloud.firestore {
     // ===== Réglages publics (délais moyens du parcours de candidature…) =====
     match /settings/{id} {
       allow read: if true;
-      allow write: if isManagerPlus() || hasPerm('content.edit');
+      allow write: if isManagerPlus();
     }
 
     // ===== Matchs =====
     match /matches/{id} {
       allow read: if true;
-      allow create, update, delete: if hasPerm('matches.manage');
+      allow create, update, delete: if isOfficial();
     }
 
     // ===== Chats (game + roster + global) =====
@@ -235,8 +179,8 @@ service cloud.firestore {
     // ===== Planning =====
     match /events/{id} {
       allow read: if hasPlayerAccess();
-      allow create, delete: if isManagerPlus() || hasPerm('events.manage');
-      allow update: if isManagerPlus() || hasPerm('events.manage')
+      allow create, delete: if isManagerPlus();
+      allow update: if isManagerPlus()
         || (hasPlayerAccess() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendance']));
     }
 
@@ -278,8 +222,8 @@ service cloud.firestore {
 
     // ===== Actualités =====
     match /articles/{id} {
-      allow read: if resource.data.status == 'published' || isBureau() || hasPerm('articles.manage');
-      allow create, update, delete: if isBureau() || hasPerm('articles.manage');
+      allow read: if resource.data.status == 'published' || isBureau();
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Banque d'images (base64, téléversées depuis l'admin) =====
@@ -304,7 +248,7 @@ service cloud.firestore {
     // ===== Médiathèque =====
     match /media/{id} {
       allow read: if true;
-      allow create, update, delete: if hasPerm('media.manage');
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Calendrier communautaire =====
@@ -328,7 +272,7 @@ service cloud.firestore {
     // ===== Compétitions (page /competitions) =====
     match /competitions/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau() || hasPerm('competitions.manage');
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Adversaires enrichis (collection opponents) =====
@@ -336,7 +280,7 @@ service cloud.firestore {
     // générées depuis les matchs, cette collection ajoute logo/pays/liens.
     match /opponents/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau() || hasPerm('opponents.manage');
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Alertes de match pour visiteurs non connectés =====
@@ -355,7 +299,7 @@ service cloud.firestore {
     // Données saisies manuellement en admin (comptabilité de l'association).
     match /campaigns/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau() || hasPerm('campaigns.manage');
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Notifications =====
@@ -402,8 +346,8 @@ service cloud.firestore {
 
     // ===== Journal d'audit admin / modération =====
     match /admin_audit/{id} {
-      allow read: if isBureau() || hasPerm('audit.view');
-      allow create: if isManagerPlus() || hasPerm('inbox.manage');
+      allow read: if isBureau();
+      allow create: if isManagerPlus();
       allow update: if false;
       allow delete: if isBureau();
     }
@@ -436,23 +380,21 @@ service cloud.firestore {
 
     // ===== Support =====
     match /supportThreads/{id} {
-      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isBureau() || hasPerm('inbox.support'));
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isBureau());
       // Création exclusivement via la Cloud Function `submitSupportTicket`
       // (quotas par compte/IP, CAPTCHA adaptatif, validation serveur).
       allow create: if false;
-      allow update: if isBureau() || hasPerm('inbox.manage')
+      allow update: if isBureau()
         || (isAuth() && resource.data.uid == request.auth.uid
             && request.resource.data.uid == resource.data.uid
-            && request.resource.data.status == resource.data.status
-            && request.resource.data.get('assigneeUid', null) == resource.data.get('assigneeUid', null)
-            && request.resource.data.get('priority', null) == resource.data.get('priority', null));
-      allow delete: if isBureau() || hasPerm('inbox.manage');
+            && request.resource.data.status == resource.data.status);
+      allow delete: if isBureau();
 
       match /messages/{mid} {
         allow read: if isAuth()
-          && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau() || hasPerm('inbox.support'));
+          && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau());
         allow create: if isAuth()
-          && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau() || hasPerm('inbox.manage'))
+          && (get(/databases/$(database)/documents/supportThreads/$(id)).data.uid == request.auth.uid || isBureau())
           && request.resource.data.uid == request.auth.uid
           && isShortString(request.resource.data.text, 4000);
       }
@@ -461,7 +403,7 @@ service cloud.firestore {
     // ===== Partenaires =====
     match /partners/{id} {
       allow read: if true;
-      allow create, update, delete: if isBureau() || hasPerm('partners.manage');
+      allow create, update, delete: if isBureau();
     }
 
     // ===== Demandes de partenariat =====
@@ -470,120 +412,41 @@ service cloud.firestore {
       // `submitPartnerRequest` (App Check, quotas IP, CAPTCHA adaptatif,
       // validation des champs côté serveur). Plus d'écriture directe client.
       allow create: if false;
-      allow read, update, delete: if isBureau() || hasPerm('partners.manage');
+      allow read, update, delete: if isBureau();
     }
 
     // ===== Newsletter =====
     match /newsletter/{id} {
-      allow read: if isBureau() || hasPerm('newsletter.manage');
+      allow read: if isBureau();
       // Inscription / désinscription exclusivement via les Cloud Functions
       // `subscribeNewsletter` et `requestNewsletterUnsubscribe` (quotas par IP,
       // CAPTCHA adaptatif, jeton généré côté serveur, pas d'énumération).
       allow create: if false;
-      allow update, delete: if isBureau() || hasPerm('newsletter.manage');
+      allow update: if isBureau();
+      allow delete: if isBureau();
     }
 
     // ===== Recrutement =====
     match /recruitThreads/{id} {
-      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus() || hasPerm('inbox.recruit'));
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isManagerPlus());
       // Création exclusivement via la Cloud Function `submitRecruitApplication`
       // (quotas, CAPTCHA adaptatif, validation serveur et parcours de
       // consentement parental vérifié par email pour les moins de 15 ans).
       allow create: if false;
-      allow update: if isManagerPlus() || hasPerm('inbox.manage')
+      allow update: if isManagerPlus()
         || (isAuth() && resource.data.uid == request.auth.uid
             && request.resource.data.uid == resource.data.uid
             && request.resource.data.status == resource.data.status);
-      allow delete: if isManagerPlus() || hasPerm('inbox.manage');
+      allow delete: if isManagerPlus();
 
       match /messages/{mid} {
         allow read: if isAuth()
-          && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus() || hasPerm('inbox.recruit'));
+          && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus());
         allow create: if isAuth()
-          && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus() || hasPerm('inbox.manage'))
+          && (get(/databases/$(database)/documents/recruitThreads/$(id)).data.uid == request.auth.uid || isManagerPlus())
           && request.resource.data.uid == request.auth.uid
           && isShortString(request.resource.data.text, 4000);
       }
-    }
-
-    // ===== Invitations du staff =====
-    // Jeton = identifiant du document (48 caractères hex). Lecture et création
-    // réservées aux gestionnaires d'équipe ; l'acceptation passe par la Cloud
-    // Function `redeemInvitation` (Admin SDK) qui valide email, expiration et
-    // applique rôle + permissions en une transaction.
-    match /invitations/{token} {
-      allow read: if hasPerm('team.manage');
-      allow create: if hasPerm('team.manage')
-        && token.size() >= 24 && token.size() <= 96
-        && request.resource.data.status == 'pending'
-        && request.resource.data.role in ['player', 'manager', 'bureau']
-        // Une invitation « bureau » ne peut être émise que par le bureau.
-        && (request.resource.data.role != 'bureau' || isBureau())
-        && isValidPermissions(request.resource.data.get('permissions', []))
-        && (!request.resource.data.keys().hasAny(['note']) || isShortString(request.resource.data.note, 160))
-        && (!request.resource.data.keys().hasAny(['email']) || isShortString(request.resource.data.email, 160))
-        && request.resource.data.expiresAt is timestamp;
-      allow update, delete: if hasPerm('team.manage');
-    }
-
-    // ===== Annonces / bannières publiques =====
-    match /announcements/{id} {
-      allow read: if true;
-      allow create, update, delete: if hasPerm('announcements.manage');
-    }
-
-    // ===== Contenus statiques éditables (À propos, partenaires, légal, accueil) =====
-    match /siteContent/{id} {
-      allow read: if true;
-      allow create, update, delete: if hasPerm('content.edit');
-    }
-
-    // ===== Redirections =====
-    match /redirects/{id} {
-      allow read: if true;
-      allow create, update, delete: if hasPerm('redirects.manage');
-    }
-
-    // ===== Feature flags / mode staging =====
-    match /featureFlags/{id} {
-      allow read: if true;
-      allow create, update, delete: if hasPerm('flags.manage');
-    }
-
-    // ===== Événements analytics =====
-    // Écriture publique (consentement géré côté client) avec validation
-    // stricte des champs ; lecture réservée au dashboard admin. Pas de mise à
-    // jour : un événement est immuable (suppression bureau pour purge RGPD).
-    match /analytics_events/{id} {
-      allow create: if request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 64
-        && request.resource.data.path is string
-        && request.resource.data.path.size() <= 200
-        && request.resource.data.timestamp is string
-        && request.resource.data.timestamp.size() <= 40
-        && request.resource.data.sessionId is string
-        && request.resource.data.sessionId.size() <= 120
-        && (!request.resource.data.keys().hasAny(['properties'])
-            || request.resource.data.properties is map);
-      allow read: if hasPerm('analytics.view');
-      allow update: if false;
-      allow delete: if isBureau();
-    }
-
-    // ===== Réponses types de la boîte de réception =====
-    match /cannedReplies/{id} {
-      // Une seule vérification de permission : chaque `get` compte dans la
-      // limite de 10 accès documentaires par requête des règles.
-      allow read, create, update, delete: if hasPerm('inbox.canned');
-    }
-
-    // ===== Liste d'amorçage des comptes officiels =====
-    // Créée manuellement en console (voir docs/admin-avance.md) : elle permet
-    // de désigner les premiers comptes officiels sans UID dans les règles.
-    match /config/{docId} {
-      allow read: if isAuth();
-      allow write: if false;
     }
 
     // ===== Compteurs de quotas anti-abus (Cloud Functions uniquement) =====

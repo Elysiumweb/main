@@ -104,22 +104,3 @@ Sans rapport avec les images : c'est ce qui protège les collections.
 ## Fonctions
 
 Le reste de la documentation des functions est dans
----
-
-## Migration « permissions fines » (à faire une seule fois)
-
-Les règles ne contiennent plus aucun UID en dur. Après avoir publié
-`firestore.rules`, le compte administrateur historique doit être désigné par
-les données, sinon il perd ses droits :
-
-1. Console Firebase → **Firestore** → créer le document `config/officials` :
-   `{ "uids": ["<UID du compte officiel>"] }` (collection `config`, ID `officials`).
-   Ce document n'est modifiable que depuis la console (`allow write: if false`).
-2. Se reconnecter : `/admin` doit afficher tous les onglets.
-3. Depuis **Admin → Équipe**, cocher « Compte officiel » sur les comptes de
-   confiance, puis créer les invitations du reste du staff.
-4. Déployer les Functions (`redeemInvitation`) : `firebase deploy --only functions`.
-
-Sans l'étape 1, l'application reste lisible mais toute écriture d'administration
-est refusée (`permission-denied`). Le détail des permissions, flags et
-collections est dans `docs/admin-avance.md`.

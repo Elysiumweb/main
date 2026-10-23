@@ -4,7 +4,6 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink, Shirt } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
-import { useSiteContent } from "../lib/siteContent";
 import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel, isRemovedGame } from "../lib/constants";
 import { SocialIcon } from "../components/SocialIcon";
 import { RecruitHomeBlock } from "../components/RecruitHomeBlock";
@@ -38,13 +37,6 @@ const OpponentMark = ({ src, name }) => {
 
 export default function Home() {
   const { t, lang } = useLang();
-  const { content: homeContent, isFallback: homeFallback } = useSiteContent("homeGames");
-  const evaCard = homeFallback
-    ? { tagline: t("home.games.eva.team"), short: t("home.games.eva.short"), description: t("home.games.eva") }
-    : { tagline: homeContent.eva.tagline, short: homeContent.eva.short, description: homeContent.eva.description };
-  const rlCard = homeFallback
-    ? { tagline: t("home.games.rl.team"), short: t("home.games.rl.short"), description: t("home.games.rl") }
-    : { tagline: homeContent.rl.tagline, short: homeContent.rl.short, description: homeContent.rl.description };
   const [matches, setMatches] = useState([]);
   const [members, setMembers] = useState([]);
   const [videos, setVideos] = useState([]);
@@ -280,10 +272,10 @@ export default function Home() {
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-[#D8CA82]/10 to-transparent pointer-events-none" />
             <div className="flex items-start justify-between">
               <p className="font-display font-black text-4xl text-[#D8CA82]">EVA</p>
-              <Badge variant="eva" size="md">{evaCard.tagline}</Badge>
+              <Badge variant="eva" size="md">{t("home.games.eva.team")}</Badge>
             </div>
-            <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{evaCard.short}</p>
-            <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{evaCard.description}</p>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.eva.short")}</p>
+            <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.eva")}</p>
             <Link to="/equipe?game=EVA" className="mt-6 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
               {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
             </Link>
@@ -295,10 +287,10 @@ export default function Home() {
             </div>
             <div className="flex items-start justify-between">
               <p className="font-display font-black text-4xl text-[#f7f7f7] group-hover:text-[#D8CA82] u-micro">RL</p>
-              <Badge variant="outline" size="md" className="group-hover:text-[#D8CA82] group-hover:border-[#D8CA82]/50 u-micro">{rlCard.tagline}</Badge>
+              <Badge variant="outline" size="md" className="group-hover:text-[#D8CA82] group-hover:border-[#D8CA82]/50 u-micro">{t("home.games.rl.team")}</Badge>
             </div>
-            <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{rlCard.short}</p>
-            <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{rlCard.description}</p>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#c8c8c8] mt-2">{t("home.games.rl.short")}</p>
+            <p className="text-[#c8c8c8] mt-4 leading-relaxed flex-1">{t("home.games.rl")}</p>
             <div className="mt-6 flex items-center gap-3">
               <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2.5 py-1 font-bold">{t("home.badge.new")}</span>
               <Link to="/equipe?game=Rocket%20League" className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#c8c8c8] hover:text-[#D8CA82] u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
@@ -308,7 +300,7 @@ export default function Home() {
           </div>
           <div className="border border-white/10 bg-[#0c0c0c] p-8 flex flex-col justify-center relative overflow-hidden">
             <p className="font-display text-[#c8c8c8] tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
-            <p className="text-[#c8c8c8] text-sm leading-relaxed">{homeFallback ? t("home.games.pillars") : homeContent.pillars}</p>
+            <p className="text-[#c8c8c8] text-sm leading-relaxed">{t("home.games.pillars")}</p>
             <div className="mt-6 h-px bg-white/10" />
             <p className="mt-4 text-xs uppercase tracking-[0.3em] text-[#D8CA82]/70">Not given. Earned.</p>
           </div>

@@ -5,7 +5,6 @@ import { useLang } from "../lib/i18n";
 import { loadPayPalSdk } from "../lib/paypal";
 import { PAYPAL_HOSTED_BUTTON_ID, PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID, paypalCheckoutUrl } from "../lib/constants";
 import { CONTACT_EMAIL } from "../lib/notify";
-import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 let instanceCount = 0;
 
@@ -81,8 +80,7 @@ export const DonateButton = ({
   }, [visible, hostedButtonId, domId]);
 
   return (
-    <div ref={wrapperRef} className={className} data-testid={testId}
-      onClick={() => trackEvent(ANALYTICS_EVENTS.DONATE_CLICK, { source: testId })}>
+    <div ref={wrapperRef} className={className} data-testid={testId}>
       {/* Conteneur de rendu du bouton hébergé PayPal */}
       <div
         id={domId}
@@ -185,7 +183,6 @@ export const DonateLink = ({ testId = "donate-link", compact = false, className 
     <Link
       to="/soutenir"
       data-testid={testId}
-      onClick={() => trackEvent(ANALYTICS_EVENTS.DONATE_CLICK, { source: testId })}
       className={`bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest inline-flex items-center justify-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${
         compact ? "text-xs px-4 py-2.5 min-h-[44px]" : "text-sm px-8 py-4"
       } ${className}`}
