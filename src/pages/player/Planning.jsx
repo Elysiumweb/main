@@ -15,6 +15,7 @@ import {
   eventSignature,
   readFileAsText,
   isIcsFileTooLarge,
+  ensureVisibleOnDark,
   MAX_IMPORT_EVENTS,
   DEFAULT_IMPORT_HORIZON_DAYS,
 } from "../../lib/icsImport";
@@ -126,7 +127,8 @@ export default function Planning(){
   const [importParsed, setImportParsed] = useState(null); // résultat de parseICS
   const [importTargetGame, setImportTargetGame] = useState(game || "EVA");
   const [importTargetRoster, setImportTargetRoster] = useState(roster || "");
-  const [importColor, setImportColor] = useState("#D8CA82");
+  const [importColor, setImportColor] = useState("#D8CA82"); // couleur par défaut des séances
+  const [importUseFileColors, setImportUseFileColors] = useState(true); // reprendre les COLOR du .ics
   const [importHorizon, setImportHorizon] = useState(DEFAULT_IMPORT_HORIZON_DAYS);
   const [importBusy, setImportBusy] = useState(false);
   const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
@@ -605,6 +607,21 @@ export default function Planning(){
     });
   }, [importParsed, importWindow]);
 
+  // Couleurs réellement présentes dans le fichier (.ics) : COLOR par événement
+  // ou couleur du calendrier (X-APPLE-CALENDAR-COLOR / COLOR du VCALENDAR).
+  const importFileColors = useMemo(() => {
+    const found = new Set();
+    (importOccurrences.occurrences || []).forEach(occ => { if(occ.color) found.add(occ.color); });
+    return [...found];
+  }, [importOccurrences]);
+
+  // Couleur retenue pour une séance : celle du fichier si demandé, sinon la
+  // couleur par défaut choisie dans la modale. On éclaircit les teintes trop
+  // sombres pour que le titre reste lisible sur le planning noir.
+  const importColorFor = (occ) => (
+    importUseFileColors && occ?.color ? ensureVisibleOnDark(occ.color) : importColor
+  );
+
   // Doublons : un même titre au même instant sur la même cible est déjà planifié.
   const importPlan = useMemo(() => {
     const key = (game, roster, title, start) => `${game || ""}|${roster || ""}|${eventSignature(title, start)}`;
@@ -629,6 +646,7 @@ export default function Planning(){
     setImportTargetGame(defaultGame);
     setImportTargetRoster(defaultRoster);
     setImportColor(getGameColor(defaultGame));
+    setImportUseFileColors(true);
     setImportHorizon(DEFAULT_IMPORT_HORIZON_DAYS);
     setImportBusy(false);
     setImportProgress({ done: 0, total: 0 });
@@ -695,7 +713,7 @@ export default function Planning(){
         await addDoc(collection(db, "events"), {
           title: (occ.title || t("planning.import.untitled")).slice(0, 140),
           description: [occ.description, occ.location].filter(Boolean).join("\n").slice(0, 2000),
-          color: importColor,
+          color: importColorFor(occ),
           game: importTargetGame,
           roster: targetRoster,
           start: occ.start,
@@ -2031,7 +2049,9 @@ export default function Planning(){
                   </select>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.color")}</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block" data-testid="import-color-label">
+                    {importFileColors.length > 0 && importUseFileColors ? t("planning.import.defaultColor") : t("planning.color")}
+                  </p>
                   <div className="flex items-center gap-2 flex-wrap">
                     {COLORS.map(c=>(
                       <button key={c.id} type="button" onClick={()=> setImportColor(c.id)} disabled={importBusy}
@@ -2042,6 +2062,36 @@ export default function Planning(){
                   </div>
                 </div>
               </div>
+
+              {/* couleurs du fichier .ics (COLOR / X-APPLE-CALENDAR-COLOR) */}
+              {importFileColors.length > 0 && (
+                <div className="border border-white/10 bg-[#111111] p-4 space-y-2" data-testid="import-file-colors">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" checked={importUseFileColors} disabled={importBusy}
+                      onChange={(e)=> setImportUseFileColors(e.target.checked)}
+                      className="accent-[#D8CA82] mt-0.5" data-testid="import-use-file-colors" />
+                    <span>
+                      <span className="block text-xs uppercase tracking-[0.2em] text-[#f7f7f7]">{t("planning.import.fileColors")}</span>
+                      <span className="block text-xs text-[#c8c8c8]">
+                        {t("planning.import.fileColorsHelp").replace("{count}", String(importFileColors.length))}
+                      </span>
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-1.5 flex-wrap pl-6" data-testid="import-file-palette">
+                    {importFileColors.slice(0, 16).map(c=>(
+                      <span key={c} className="w-4 h-4 rounded-sm border border-white/25" style={{ backgroundColor: ensureVisibleOnDark(c) }} title={c} aria-label={c} />
+                    ))}
+                    {importFileColors.length > 16 && (
+                      <span className="text-xs text-[#c8c8c8]">+{importFileColors.length - 16}</span>
+                    )}
+                  </div>
+                  {importUseFileColors && importPlan.fresh.some(occ => !occ.color) && (
+                    <p className="text-xs text-[#c8c8c8] leading-relaxed pl-6">
+                      {t("planning.import.colorFallback")}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* aperçu */}
               {importParsed && !importParsed.error && (
@@ -2058,6 +2108,9 @@ export default function Planning(){
                     <ul className="space-y-1.5" data-testid="import-preview-list">
                       {importPlan.fresh.slice(0, 6).map((occ, i)=>(
                         <li key={`${occ.start}_${i}`} className="flex items-baseline gap-2 text-xs">
+                          <span className="w-2 h-2 rounded-full shrink-0" aria-hidden="true"
+                            data-testid={`import-swatch-${i}`}
+                            style={{ backgroundColor: importColorFor(occ) }} />
                           <span className="text-[#c8c8c8] shrink-0">{formatImportSlot(occ)}</span>
                           <span className="text-[#f7f7f7]/80 truncate">{occ.title || t("planning.import.untitled")}</span>
                         </li>

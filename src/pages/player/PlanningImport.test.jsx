@@ -35,7 +35,7 @@ jest.mock("../../lib/firebase", () => ({ db: {}, auth: {}, functions: {}, storag
 jest.mock("../../context/AuthContext", () => ({
   useAuth: () => ({
     user: { uid: "manager-1", email: "manager@example.com" },
-    game: "RL",
+    game: "Rocket League",
     roster: "Elysium RL",
     isOfficial: false,
     canManage: true,
@@ -45,9 +45,9 @@ jest.mock("../../context/AuthContext", () => ({
 jest.mock("../../lib/i18n", () => ({ useLang: () => ({ t: (k) => k, lang: "fr" }) }));
 jest.mock("../../hooks/useRosters", () => ({
   useRosters: () => ({
-    rostersForGame: (game) => (game === "RL" ? ["Elysium RL", "Elysium RL B"] : []),
+    rostersForGame: (game) => (game === "Rocket League" ? ["Elysium RL", "Elysium RL B"] : []),
     allNames: ["Elysium RL", "Elysium RL B"],
-    gameHasRosters: (game) => game === "RL",
+    gameHasRosters: (game) => game === "Rocket League",
   }),
 }));
 jest.mock("../../lib/notify", () => ({
@@ -126,6 +126,25 @@ DTSTART:${icsStamp(start)}
 DTEND:${icsStamp(new Date(start.getTime() + 2 * 3600 * 1000))}
 SUMMARY:${title}
 ${rrule ? `RRULE:${rrule}\n` : ""}END:VEVENT
+END:VCALENDAR`;
+
+// Fichier avec couleurs : COLOR par événement + couleur de calendrier Apple en secours.
+const buildColoredICS = (start) => `BEGIN:VCALENDAR
+VERSION:2.0
+X-APPLE-CALENDAR-COLOR:#0B8043
+BEGIN:VEVENT
+UID:colored-1
+DTSTART:${icsStamp(start)}
+DTEND:${icsStamp(new Date(start.getTime() + 7200e3))}
+SUMMARY:Scrim RL vs VIT
+COLOR:#FF4500
+END:VEVENT
+BEGIN:VEVENT
+UID:colored-2
+DTSTART:${icsStamp(new Date(start.getTime() + 86400e3))}
+DTEND:${icsStamp(new Date(start.getTime() + 86400e3 + 3600e3))}
+SUMMARY:Review VOD
+END:VEVENT
 END:VCALENDAR`;
 
 beforeEach(() => {
@@ -209,7 +228,7 @@ END:VCALENDAR`;
     expect(titles.filter((t) => t === "Scrim RL vs VIT")).toHaveLength(3);
     expect(titles).toContain("Review VOD");
     writes.forEach((write) => {
-      expect(write.data.game).toBe("RL");
+      expect(write.data.game).toBe("Rocket League");
       expect(write.data.roster).toBe("Elysium RL");
       expect(write.data.attendance).toEqual({});
       expect(write.data.importSource.fileName).toBe("planning.ics");
@@ -226,7 +245,7 @@ END:VCALENDAR`;
     const start = daysFromNow(4);
     emit("events", [{
       id: "e1", title: "Scrim RL vs VIT", start: start.toISOString(),
-      end: new Date(start.getTime() + 7200e3).toISOString(), color: "#4285F4", game: "RL", roster: "Elysium RL",
+      end: new Date(start.getTime() + 7200e3).toISOString(), color: "#4285F4", game: "Rocket League", roster: "Elysium RL",
     }]);
 
     openImport();
@@ -263,5 +282,65 @@ END:VCALENDAR`;
     // Le roster du manager est présélectionné : on le vide.
     selectValue("import-roster", "");
     expect(container.querySelector('[data-testid="import-submit"]').disabled).toBe(true);
+  });
+
+  it("reprend les couleurs présentes dans le fichier .ics", async () => {
+    mountPlanning();
+    openImport();
+    selectValue("import-roster", "Elysium RL");
+    await chooseFile(buildColoredICS(daysFromNow(3)));
+
+    // 2 couleurs détectées (une par événement : COLOR puis couleur du calendrier)
+    const palette = container.querySelector('[data-testid="import-file-colors"]');
+    expect(palette).not.toBeNull();
+    expect(container.querySelectorAll('[data-testid="import-file-palette"] span').length).toBe(2);
+    expect(container.querySelector('[data-testid="import-use-file-colors"]').checked).toBe(true);
+    // Tant que les couleurs du fichier sont actives, la palette sert de secours
+    expect(container.querySelector('[data-testid="import-color-label"]').textContent).toBe("planning.import.defaultColor");
+
+    // Aperçu : la pastille de chaque ligne reprend la couleur du fichier
+    expect(container.querySelector('[data-testid="import-swatch-0"]').style.backgroundColor).toBe("rgb(255, 69, 0)");
+    expect(container.querySelector('[data-testid="import-swatch-1"]').style.backgroundColor).toBe("rgb(11, 128, 67)");
+
+    await act(async () => {
+      container.querySelector('[data-testid="import-submit"]').click();
+    });
+
+    const byTitle = Object.fromEntries(writes.map((w) => [w.data.title, w.data.color]));
+    expect(byTitle["Scrim RL vs VIT"]).toBe("#FF4500");
+    expect(byTitle["Review VOD"]).toBe("#0B8043");
+  });
+
+  it("utilise la couleur choisie quand les couleurs du fichier sont désactivées", async () => {
+    mountPlanning();
+    openImport();
+    selectValue("import-roster", "Elysium RL");
+    await chooseFile(buildColoredICS(daysFromNow(3)));
+
+    act(() => {
+      container.querySelector('[data-testid="import-use-file-colors"]').click();
+    });
+    expect(container.querySelector('[data-testid="import-swatch-0"]').style.backgroundColor).toBe("rgb(244, 81, 30)");
+    // Couleurs du fichier coupées : la palette redevient la couleur choisie
+    // (elle n'était proposée comme « couleur par défaut » que si le fichier en fournissait).
+    expect(container.querySelector('[data-testid="import-color-label"]').textContent).toBe("planning.color");
+
+    await act(async () => {
+      container.querySelector('[data-testid="import-submit"]').click();
+    });
+    // Couleur par défaut du pôle Rocket League (orange) pour toutes les séances
+    writes.forEach((write) => expect(write.data.color).toBe("#F4511E"));
+  });
+
+  it("n'affiche pas le bloc couleurs pour un fichier sans couleur", async () => {
+    mountPlanning();
+    openImport();
+    selectValue("import-roster", "Elysium RL");
+    await chooseFile(buildICS("Scrim", daysFromNow(3)));
+    expect(container.querySelector('[data-testid="import-file-colors"]')).toBeNull();
+    await act(async () => {
+      container.querySelector('[data-testid="import-submit"]').click();
+    });
+    expect(writes[0].data.color).toBe("#F4511E");
   });
 });
