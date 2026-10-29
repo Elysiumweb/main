@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Trash2, Pencil, ExternalLink } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
+import { StandingsCsvImport } from "./StandingsCsvImport";
+import { sortStandingsRows } from "../../lib/standingsCsv";
 
 const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
 const STATUSES = ["upcoming", "ongoing", "finished"];
@@ -40,7 +42,7 @@ export const AdminCompetitions = () => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error(t("common.error")); return; }
     if (form.officialUrl && !/^https?:\/\//.test(form.officialUrl)) { toast.error("URL invalide"); return; }
-    const cleanStandings = (form.standings||[]).filter(s=>s.team?.trim()).map(s=>({
+    const cleanStandings = sortStandingsRows((form.standings||[]).filter(s=>s.team?.trim()).map(s=>({
       team: s.team.trim(),
       played: Number(s.played)||0,
       wins: Number(s.wins)||0,
@@ -48,7 +50,7 @@ export const AdminCompetitions = () => {
       losses: Number(s.losses)||0,
       points: Number(s.points)||0,
       diff: s.diff ? String(s.diff) : "",
-    })).sort((a,b)=> b.points - a.points || b.diff - a.diff);
+    })));
     try {
       const payload = { ...form, name: form.name.trim(), standings: cleanStandings };
       if (editId) await updateDoc(doc(db, "competitions", editId), payload);
@@ -82,11 +84,17 @@ export const AdminCompetitions = () => {
         <input value={form.notes} onChange={set("notes")} placeholder={t("admin.competitions.notes")} className={inputCls} data-testid="admin-competition-notes" />
 
         <div className="border-t border-white/10 pt-4 mt-2" data-testid="admin-competition-standings">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]">Classement détaillé (équipes, J, V, N, D, Pts, +/-)</p>
             <button type="button" onClick={addStanding} className="text-xs border border-[#D8CA82]/40 text-[#D8CA82] px-3 py-1 hover:bg-[#D8CA82]/10">+ Équipe</button>
           </div>
-          {(form.standings||[]).length===0 && <p className="text-xs text-[#c8c8c8] mb-2">Aucune ligne — ajoutez les équipes du classement. Si vide, l'ancien affichage “position Elysium” reste.</p>}
+
+          <StandingsCsvImport
+            existingStandings={form.standings || []}
+            onApply={(rows) => setForm((f) => ({ ...f, standings: rows }))}
+          />
+
+          {(form.standings||[]).length===0 && <p className="text-xs text-[#c8c8c8] mb-2">Aucune ligne — importez un .csv ou ajoutez les équipes une par une. Si vide, l'ancien affichage “position Elysium” reste.</p>}
           <div className="space-y-2 max-h-[320px] overflow-auto pr-1">
             {(form.standings||[]).map((s,idx)=>(
               <div key={idx} className="grid grid-cols-12 gap-1 items-center">
