@@ -1,4 +1,6 @@
 import {
+  normalizeICSColor,
+  ensureVisibleOnDark,
   parseICS,
   expandICS,
   expandEvent,
@@ -151,6 +153,117 @@ describe("parseICSDate — fuseaux", () => {
   it("refuse une valeur invalide", () => {
     expect(parseICSDate("pas une date")).toBeNull();
     expect(parseICSDate("20261340")).toBeNull();
+  });
+});
+
+describe("normalizeICSColor / ensureVisibleOnDark", () => {
+  it("normalise les écritures hexadécimales", () => {
+    expect(normalizeICSColor("#fff")).toBe("#FFFFFF");
+    expect(normalizeICSColor("#0b8043")).toBe("#0B8043");
+    expect(normalizeICSColor("#FF0000AA")).toBe("#FF0000");
+    expect(normalizeICSColor('"#123456"')).toBe("#123456");
+  });
+
+  it("convertit les noms CSS et les notations rgb()", () => {
+    expect(normalizeICSColor("red")).toBe("#FF0000");
+    expect(normalizeICSColor(" DarkSlateBlue ")).toBe("#483D8B");
+    expect(normalizeICSColor("rgb(255, 128, 0)")).toBe("#FF8000");
+    expect(normalizeICSColor("rgba(0,128,255,0.5)")).toBe("#0080FF");
+  });
+
+  it("refuse une couleur inconnue plutôt que de casser le planning", () => {
+    expect(normalizeICSColor("transparent")).toBeNull();
+    expect(normalizeICSColor("pasunecouleur")).toBeNull();
+    expect(normalizeICSColor("#GG0000")).toBeNull();
+    expect(normalizeICSColor("")).toBeNull();
+  });
+
+  it("éclaircit une couleur trop sombre pour le planning noir", () => {
+    const black = ensureVisibleOnDark("#000000");
+    expect(black).not.toBe("#000000");
+    expect(black).toMatch(/^#[0-9A-F]{6}$/);
+    // Une couleur déjà lisible n'est pas modifiée.
+    expect(ensureVisibleOnDark("#4285F4")).toBe("#4285F4");
+    expect(ensureVisibleOnDark("#D8CA82")).toBe("#D8CA82");
+  });
+});
+
+describe("parseICS — couleurs du fichier", () => {
+  it("lit COLOR sur un événement (RFC 7986)", () => {
+    const parsed = parseICS(wrap(`BEGIN:VEVENT
+DTSTART:20260210T200000Z
+DTEND:20260210T220000Z
+SUMMARY:Scrim
+COLOR:#0B8043
+END:VEVENT
+`));
+    expect(parsed.events[0].color).toBe("#0B8043");
+    expect(parsed.colors).toEqual(["#0B8043"]);
+  });
+
+  it("accepte un nom de couleur CSS", () => {
+    const parsed = parseICS(wrap(`BEGIN:VEVENT
+DTSTART:20260210T200000Z
+SUMMARY:Scrim
+COLOR:crimson
+END:VEVENT
+`));
+    expect(parsed.events[0].color).toBe("#DC143C");
+  });
+
+  it("applique X-APPLE-CALENDAR-COLOR aux événements sans couleur", () => {
+    const parsed = parseICS(wrap(`BEGIN:VEVENT
+DTSTART:20260210T200000Z
+SUMMARY:Sans couleur
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20260211T200000Z
+SUMMARY:Avec couleur
+COLOR:#FF4500
+END:VEVENT
+`, "X-APPLE-CALENDAR-COLOR:#0B8043\r\n"));
+    expect(parsed.calendarColor).toBe("#0B8043");
+    expect(parsed.events[0].color).toBe("#0B8043");
+    expect(parsed.events[1].color).toBe("#FF4500");
+    expect(parsed.colors).toEqual(["#0B8043", "#FF4500"]);
+  });
+
+  it("ne fabrique pas de couleur quand le fichier n'en contient pas", () => {
+    const parsed = parseICS(wrap(`BEGIN:VEVENT
+DTSTART:20260210T200000Z
+SUMMARY:Neutre
+END:VEVENT
+`));
+    expect(parsed.calendarColor).toBeNull();
+    expect(parsed.events[0].color).toBeNull();
+    expect(parsed.colors).toEqual([]);
+  });
+
+  it("ignore une couleur invalide", () => {
+    const parsed = parseICS(wrap(`BEGIN:VEVENT
+DTSTART:20260210T200000Z
+SUMMARY:Scrim
+COLOR:pasunecouleur
+END:VEVENT
+`));
+    expect(parsed.events[0].color).toBeNull();
+  });
+
+  it("propage la couleur jusqu'aux occurrences développées", () => {
+    const parsed = parseICS(wrap(`BEGIN:VEVENT
+DTSTART:20260210T200000Z
+DTEND:20260210T220000Z
+SUMMARY:Scrim
+COLOR:teal
+RRULE:FREQ=WEEKLY;COUNT=3
+END:VEVENT
+`));
+    const { occurrences } = expandICS(parsed.events, {
+      from: new Date(2026, 1, 1),
+      to: new Date(2026, 2, 1),
+    });
+    expect(occurrences).toHaveLength(3);
+    occurrences.forEach((occ) => expect(occ.color).toBe("#008080"));
   });
 });
 
