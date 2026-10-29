@@ -10,6 +10,15 @@ import { useRosters } from "../../hooks/useRosters";
 import { createNotification, logActivity, logAdminAction } from "../../lib/notify";
 import { downloadICS, gcalUrl } from "../../lib/calendar";
 import {
+  PLANNING_ZOOM_LEVELS,
+  DEFAULT_PLANNING_ZOOM,
+  getHourHeight,
+  getEventMinHeight,
+  layoutDayEvents,
+  slotFromPointer,
+  formatSlotRange,
+} from "../../lib/calendarLayout";
+import {
   parseICS,
   expandICS,
   eventSignature,
@@ -110,6 +119,19 @@ export default function Planning(){
   const [usersList, setUsersList] = useState([]); // roster/game mapping for the manager team view
   const [usersLoaded, setUsersLoaded] = useState(false); // users connues => filtre des comptes retirés actif
   const [view, setView] = useState("week"); // month | week | day
+  // Hauteur d'une heure dans la grille : « grand » par défaut pour que les
+  // créneaux courts (15 min) restent lisibles. Choix mémorisé sur l'appareil.
+  const [calendarZoom, setCalendarZoom] = useState(()=> {
+    try {
+      const saved = localStorage.getItem("elysium_planning_zoom");
+      return PLANNING_ZOOM_LEVELS.some(l=> l.id===saved) ? saved : DEFAULT_PLANNING_ZOOM;
+    } catch { return DEFAULT_PLANNING_ZOOM; }
+  });
+  useEffect(()=>{
+    try { localStorage.setItem("elysium_planning_zoom", calendarZoom); } catch { /* stockage indisponible */ }
+  }, [calendarZoom]);
+  const hourHeight = getHourHeight(calendarZoom);
+  const eventMinHeight = getEventMinHeight(hourHeight);
   const [tab, setTab] = useState("calendar"); // calendar | availability
   const [availMode, setAvailMode] = useState("week"); // week | recurring
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -437,12 +459,15 @@ export default function Planning(){
   const teamFilterActive = gameFilter!=="all" || rosterFilter!=="all";
 
   // ---- event modal ----
-  const openNew = (dateObj, hour=null)=>{
+  const openNew = (dateObj, hour=null, minute=0)=>{
     if(!canManage && tab==="calendar") return;
     const d = dateObj ? new Date(dateObj) : new Date(currentDate);
-    if(hour!==null) d.setHours(hour,0,0,0);
+    if(hour!==null) d.setHours(hour, minute || 0, 0, 0);
     else { /* keep time if in day/week view click */ }
-    const end = new Date(d); end.setHours(end.getHours()+1);
+    // Créneau par défaut d'une heure, sauf si on part d'un quart d'heure :
+    // on propose alors 15 min, plus simple à ajuster dans la modale.
+    const defaultDuration = hour!==null && (minute || 0) > 0 ? 15 : 60;
+    const end = new Date(d); end.setMinutes(end.getMinutes()+defaultDuration);
     const defaultGame = gameFilter!=="all" ? gameFilter : (game || "EVA");
     setForm({
       title:"",
@@ -1188,6 +1213,57 @@ export default function Planning(){
     );
   };
 
+  // Options communes aux vues semaine / jour : même repère de temps, même
+  // hauteur d'heure, donc un clic dans l'une donne le même créneau dans l'autre.
+  const gridOptions = useMemo(()=>({
+    startHour: HOURS[0],
+    endHour: HOURS[HOURS.length - 1] + 1,
+    hourHeight,
+    minHeight: eventMinHeight,
+  }), [hourHeight, eventMinHeight]);
+
+  // Rendu d'un événement positionné dans la grille horaire. La largeur vient du
+  // placement en colonnes (événements simultanés côte à côte), donc plus de
+  // superposition ; la hauteur suit la durée réelle et la taille choisie.
+  const renderTimeEvent = (item, variant="week")=>{
+    const ev = item.event;
+    const s = new Date(ev.start);
+    const e = new Date(ev.end);
+    const isDay = variant==="day";
+    // Sous 52 px, le bloc n'a la place que pour deux lignes : on resserre les
+    // marges plutôt que de rogner le titre (cas des créneaux de 15 min).
+    const tight = item.height < 52;
+    const range = formatSlotRange(s, e);
+    const padding = isDay
+      ? (tight ? "rounded px-2 py-0.5" : "rounded px-3 py-2")
+      : (tight ? "rounded-[2px] px-1.5 py-0" : "rounded-[2px] px-1.5 py-1");
+    return (
+      <div key={ev.id}
+        onClick={(e_)=>{ e_.stopPropagation(); openEdit(ev); }}
+        data-testid={`event-block-${ev.id}`}
+        title={`${ev.title}\n${range}${ev.description ? `\n${ev.description}` : ""}`}
+        className={`absolute cursor-pointer pointer-events-auto overflow-hidden border-l-2 hover:brightness-110 u-micro ${padding}`}
+        style={{
+          top: `${item.top}px`,
+          height: `${item.height}px`,
+          left: `calc(${item.leftPercent}% + 2px)`,
+          width: `calc(${item.widthPercent}% - 4px)`,
+          backgroundColor: `${ev.color}26`,
+          borderLeftColor: ev.color,
+          color: "#f7f7f7",
+        }}>
+        <p className={`font-semibold leading-tight truncate ${isDay ? (tight ? "text-xs" : "font-display font-bold text-sm") : tight ? "text-[11px]" : "text-xs"}`}
+          style={{ color: ev.color }}>{ev.title}</p>
+        <p className={`opacity-70 truncate leading-tight ${isDay && !tight ? "text-xs" : "text-[10px]"}`}>
+          {range}{isDay ? ` · ${ev.game}` : ` · ${getGameShortLabel(ev.game)}`}
+        </p>
+        {!tight && ev.description && (
+          <p className={`opacity-50 truncate ${isDay ? "text-xs mt-0.5" : "text-[10px]"}`}>{ev.description}</p>
+        )}
+      </div>
+    );
+  };
+
   const renderWeekView = ()=>{
     const days = weekDays(weekStart);
     // Mobile : 7 colonnes illisibles sur un téléphone → bandeau de jours + journée
@@ -1216,46 +1292,39 @@ export default function Planning(){
             );
           })}
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" data-testid="week-scroll">
           <div className="flex">
             <div className="w-14 shrink-0">
               {HOURS.map(h=>(
-                <div key={h} className="h-[60px] border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1">{pad(h)}:00</div>
+                <div key={h} style={{ height: hourHeight }}
+                  className="border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1 tabular-nums">{pad(h)}:00</div>
               ))}
             </div>
             <div className="flex-1 grid grid-cols-7">
               {days.map(d=>{
                 const key = toDateKey(d);
-                const dayEvents = eventsByDate[key]||[];
+                const dayItems = layoutDayEvents(eventsByDate[key]||[], gridOptions);
                 return (
                   <div key={key} className="relative border-r border-white/5 last:border-0">
                     {HOURS.map(h=>(
-                      <div key={h} onClick={()=> { setCurrentDate(d); openNew(d,h); }}
-                        className="h-[60px] border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer relative group u-micro">
-                        <div className="absolute inset-x-0 top-1/2 h-px bg-white/[0.03] group-hover:bg-white/10" />
+                      <div key={h} style={{ height: hourHeight }}
+                        onClick={(e)=> {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const { minute } = slotFromPointer(e.clientY - rect.top, hourHeight, h);
+                          setCurrentDate(d);
+                          openNew(d, h, minute);
+                        }}
+                        data-testid={`week-cell-${key}-${h}`}
+                        className="border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer relative group u-micro">
+                        {/* repères des quarts d'heure : on peut viser un créneau de 15 min */}
+                        {[25, 50, 75].map(pct=>(
+                          <div key={pct} className="absolute inset-x-0 border-t border-dashed border-white/[0.05] group-hover:border-white/[0.12] pointer-events-none" style={{ top: `${pct}%` }} aria-hidden="true" />
+                        ))}
                       </div>
                     ))}
                     {/* events absolute */}
                     <div className="absolute inset-0 pointer-events-none">
-                      {dayEvents.map(ev=>{
-                        const s = new Date(ev.start);
-                        const e = new Date(ev.end);
-                        if(isNaN(s.getTime())|| isNaN(e.getTime())) return null;
-                        const startHour = s.getHours() + s.getMinutes()/60;
-                        const endHour = e.getHours() + e.getMinutes()/60;
-                        const top = (startHour - HOURS[0]) * 60;
-                        const height = Math.max(22, (endHour - startHour)*60);
-                        if(top<0 || top> HOURS.length*60) return null;
-                        return (
-                          <div key={ev.id} onClick={(e_)=>{ e_.stopPropagation(); openEdit(ev); }}
-                            className="absolute left-1 right-1 rounded-[2px] px-2 py-1 cursor-pointer pointer-events-auto overflow-hidden text-xs border-l-2 hover:brightness-110 u-micro"
-                            style={{ top: `${top}px`, height: `${height}px`, backgroundColor: `${ev.color}26`, borderLeftColor: ev.color, color:"#f7f7f7" }}>
-                            <p className="font-semibold truncate leading-tight" style={{color: ev.color}}>{ev.title}</p>
-                            <p className="text-xs opacity-70 truncate">{pad(s.getHours())}:{pad(s.getMinutes())} – {pad(e.getHours())}:{pad(e.getMinutes())} · {getGameShortLabel(ev.game)}</p>
-                            {ev.description && height>40 && <p className="text-xs opacity-50 truncate mt-0.5">{ev.description}</p>}
-                          </div>
-                        );
-                      })}
+                      {dayItems.map(item=> renderTimeEvent(item, "week"))}
                     </div>
                   </div>
                 );
@@ -1269,36 +1338,38 @@ export default function Planning(){
 
   const renderDayView = ()=>{
     const key = toDateKey(currentDate);
-    const dayEvents = eventsByDate[key]||[];
+    const dayItems = layoutDayEvents(eventsByDate[key]||[], gridOptions);
     return (
-      <div className={`${isMobile ? "" : "flex-1"} flex bg-[#0e0e0e] border border-white/10 overflow-hidden`}>
-        <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
-          {HOURS.map(h=>(
-            <div key={h} className="h-[60px] border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1">{pad(h)}:00</div>
-          ))}
-        </div>
-        <div className={`${isMobile ? "" : "overflow-y-auto"} flex-1 relative`}>
-          {HOURS.map(h=>(
-            <div key={h} onClick={()=> openNew(currentDate,h)}
-              className="h-[60px] border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer u-micro" />
-          ))}
-          <div className="absolute inset-0 pointer-events-none">
-            {dayEvents.map(ev=>{
-              const s = new Date(ev.start);
-              const e = new Date(ev.end);
-              const startHour = s.getHours() + s.getMinutes()/60;
-              const endHour = e.getHours() + e.getMinutes()/60;
-              const top = (startHour - HOURS[0]) * 60;
-              const height = Math.max(28, (endHour-startHour)*60);
-              return (
-                <div key={ev.id} onClick={(e_)=>{ e_.stopPropagation(); openEdit(ev); }}
-                  className="absolute left-3 right-6 rounded px-3 py-2 cursor-pointer pointer-events-auto border-l-2"
-                  style={{ top:`${top}px`, height:`${height}px`, backgroundColor:`${ev.color}26`, borderLeftColor: ev.color }}>
-                  <p className="font-display font-bold text-sm" style={{color: ev.color}}>{ev.title}</p>
-                  <p className="text-xs text-[#f7f7f7]/70">{pad(s.getHours())}:{pad(s.getMinutes())} – {pad(e.getHours())}:{pad(e.getMinutes())} · {ev.game} · {ev.description}</p>
+      <div className={`${isMobile ? "" : "flex-1"} flex bg-[#0e0e0e] border border-white/10 overflow-hidden`} data-testid="day-view">
+        {/* Un seul conteneur défilant : les libellés d'heures restent alignés
+            avec la grille quand on descend dans la journée. */}
+        <div className={isMobile ? "w-full" : "flex-1 overflow-y-auto"} data-testid="day-scroll">
+          <div className="flex">
+            <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
+              {HOURS.map(h=>(
+                <div key={h} style={{ height: hourHeight }}
+                  className="border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1 tabular-nums">{pad(h)}:00</div>
+              ))}
+            </div>
+            <div className="flex-1 relative">
+              {HOURS.map(h=>(
+                <div key={h} style={{ height: hourHeight }}
+                  onClick={(e)=> {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const { minute } = slotFromPointer(e.clientY - rect.top, hourHeight, h);
+                    openNew(currentDate, h, minute);
+                  }}
+                  data-testid={`day-cell-${h}`}
+                  className="border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer relative group u-micro">
+                  {[25, 50, 75].map(pct=>(
+                    <div key={pct} className="absolute inset-x-0 border-t border-dashed border-white/[0.05] group-hover:border-white/[0.12] pointer-events-none" style={{ top: `${pct}%` }} aria-hidden="true" />
+                  ))}
                 </div>
-              );
-            })}
+              ))}
+              <div className="absolute inset-0 pointer-events-none">
+                {dayItems.map(item=> renderTimeEvent(item, "day"))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1695,6 +1766,21 @@ export default function Planning(){
             </div>
           )}
 
+          {/* taille de la grille horaire — les créneaux de 15 min restent lisibles */}
+          {tab==="calendar" && view!=="month" && (
+            <div className="flex border border-white/10 bg-[#141414] p-1" role="group" aria-label={t("planning.zoom.label")}>
+              {PLANNING_ZOOM_LEVELS.map(level=>(
+                <button key={level.id} type="button" onClick={()=> setCalendarZoom(level.id)}
+                  data-testid={`planning-zoom-${level.id}`}
+                  aria-pressed={calendarZoom===level.id}
+                  title={t(`planning.zoom.${level.id}`)}
+                  className={`px-2 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${calendarZoom===level.id ? "bg-white/10 text-[#f7f7f7]" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+                  {t(`planning.zoom.${level.id}`)}
+                </button>
+              ))}
+            </div>
+          )}
+
           {tab==="calendar" && canManage && (
             <button onClick={openImport} data-testid="planning-import-ics" title={t("planning.import.help")}
               className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-[0.2em] px-3 py-2.5 flex items-center gap-1.5 hover:bg-[#D8CA82]/10 hover:border-[#D8CA82] u-micro">
@@ -1761,7 +1847,7 @@ export default function Planning(){
                   ))}
                 </div>
                 <p className="text-xs text-[#c8c8c8] mt-4 leading-relaxed">
-                  {t("planning.clickToAdd")}. {t("planning.freePlaceholder")}
+                  {t("planning.clickToAdd")}. {t("planning.slotHelp")} {t("planning.freePlaceholder")}
                 </p>
               </div>
 

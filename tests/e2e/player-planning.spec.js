@@ -53,3 +53,21 @@ test('un manager peut ouvrir l’import de planning .ics', async ({ page }) => {
   await expect(page.getByTestId('import-file-input')).toBeAttached();
   await expect(page.getByTestId('import-submit')).toBeDisabled();
 });
+
+test('la grille horaire propose des tailles lisibles pour les créneaux courts', async ({ page }) => {
+  await page.goto('/espace-joueur/planning');
+  if (page.url().includes('/connexion')) {
+    await expect(page.locator('input[type="email"]').first()).toBeVisible();
+    return;
+  }
+
+  await expect(page.getByTestId('planning-page')).toBeVisible();
+  if (await page.getByTestId('view-week').count() === 0) return;
+  await page.getByTestId('view-week').click();
+
+  // Vue semaine : une heure fait au moins 120 px (60 px avant), donc un
+  // créneau de 15 min dispose d'au moins 30 px.
+  const scroll = page.getByTestId('week-scroll');
+  if (await scroll.count() === 0) return; // vue mobile = jour
+  await expect(page.getByTestId('planning-zoom-large')).toHaveAttribute('aria-pressed', 'true');
+});
