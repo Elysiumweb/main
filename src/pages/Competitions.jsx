@@ -29,7 +29,12 @@ export default function Competitions() {
     setError(false); setItems(null);
     const unsub1 = onSnapshot(collection(db, "competitions"), (snap) => {
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      list.sort((a, b) => (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9) || (b.season || "").localeCompare(a.season || ""));
+      list.sort((a, b) => {
+        const ao = typeof a.order === "number" ? a.order : Number.MAX_SAFE_INTEGER;
+        const bo = typeof b.order === "number" ? b.order : Number.MAX_SAFE_INTEGER;
+        if (ao !== bo) return ao - bo;
+        return (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9) || (b.season || "").localeCompare(a.season || "");
+      });
       setItems(list);
     }, (e) => { console.error(e); setError(true); });
     const unsub2 = onSnapshot(collection(db, "matches"), (snap)=>{
