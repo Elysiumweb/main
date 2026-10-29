@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState, useMemo, useRef } from "react";
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, deleteField } from "firebase/firestore";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX, UserCheck, UserX, Download, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, CalendarDays, Edit2, X, Plus, Users, Check, Repeat, CalendarOff, CalendarX, UserCheck, UserX, Download, ExternalLink, Upload, FileText, AlertTriangle, Loader2 } from "lucide-react";
 import { db } from "../../lib/firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
@@ -9,6 +9,15 @@ import { GAMES, OFFICIAL_UID, getGameColor, getGameShortLabel } from "../../lib/
 import { useRosters } from "../../hooks/useRosters";
 import { createNotification, logActivity, logAdminAction } from "../../lib/notify";
 import { downloadICS, gcalUrl } from "../../lib/calendar";
+import {
+  parseICS,
+  expandICS,
+  eventSignature,
+  readFileAsText,
+  isIcsFileTooLarge,
+  MAX_IMPORT_EVENTS,
+  DEFAULT_IMPORT_HORIZON_DAYS,
+} from "../../lib/icsImport";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -111,6 +120,16 @@ export default function Planning(){
   const [absenceModal, setAbsenceModal] = useState(null); // dateKey | null
   const [absenceReason, setAbsenceReason] = useState("");
   const [confirmDialog, setConfirmDialog] = useState(null);
+  // Import .ics (managers) : fichier lu -> aperçu -> écriture du planning
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState("");
+  const [importParsed, setImportParsed] = useState(null); // résultat de parseICS
+  const [importTargetGame, setImportTargetGame] = useState(game || "EVA");
+  const [importTargetRoster, setImportTargetRoster] = useState(roster || "");
+  const [importColor, setImportColor] = useState("#D8CA82");
+  const [importHorizon, setImportHorizon] = useState(DEFAULT_IMPORT_HORIZON_DAYS);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
   const isMobile = useIsMobile();
   // Mobile : jour affiché dans la grille « semaine type » (un seul jour de la semaine à la fois)
   const [recurringDay, setRecurringDay] = useState(()=> weekdayKey(toDateKey(new Date())));
@@ -557,6 +576,178 @@ export default function Planning(){
     downloadICS(list, "elysium-planning.ics", { calendarName: "Planning Elysium" });
   };
 
+  // ---- import .ics (managers) ----
+  // Le manager dépose un fichier .ics, choisit le pôle + le roster cible, voit
+  // l'aperçu des séances détectées puis valide. Chaque occurrence devient un
+  // document `events` identique à ceux créés à la main (attendance incluse),
+  // donc les joueurs peuvent répondre présent/absent normalement.
+  const importRosterOptions = useMemo(
+    () => (importTargetGame && importTargetGame !== "global" ? rostersForGame(importTargetGame) : []),
+    [importTargetGame, rostersForGame]
+  );
+  const importNeedsRoster = importTargetGame !== "global" && gameHasRosters(importTargetGame);
+
+  // Fenêtre d'import : à partir d'aujourd'hui (les séances passées ne servent à rien).
+  const importWindow = useMemo(() => {
+    const from = new Date();
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(from);
+    to.setDate(to.getDate() + importHorizon);
+    return { from, to };
+  }, [importHorizon]);
+
+  const importOccurrences = useMemo(() => {
+    if(!importParsed || importParsed.error) return { occurrences: [], truncated: false, approximate: false };
+    return expandICS(importParsed.events, {
+      from: importWindow.from,
+      to: importWindow.to,
+      max: MAX_IMPORT_EVENTS,
+    });
+  }, [importParsed, importWindow]);
+
+  // Doublons : un même titre au même instant sur la même cible est déjà planifié.
+  const importPlan = useMemo(() => {
+    const key = (game, roster, title, start) => `${game || ""}|${roster || ""}|${eventSignature(title, start)}`;
+    const existing = new Set(events.map(ev => key(ev.game, ev.roster, ev.title, ev.start)));
+    const fresh = [];
+    const duplicates = [];
+    (importOccurrences.occurrences || []).forEach(occ => {
+      const target = key(importTargetGame, importNeedsRoster ? importTargetRoster : null, occ.title, occ.start);
+      if(existing.has(target)) duplicates.push(occ);
+      else fresh.push(occ);
+    });
+    return { fresh, duplicates, total: (importOccurrences.occurrences || []).length };
+  }, [importOccurrences, events, importTargetGame, importTargetRoster, importNeedsRoster]);
+
+  const openImport = () => {
+    const defaultGame = gameFilter !== "all" && gameFilter !== "global" ? gameFilter : (game || "EVA");
+    const gameRosters = rostersForGame(defaultGame);
+    // On ne présélectionne un roster que s'il appartient bien au pôle visé.
+    const defaultRoster = [rosterFilter, roster].find(r => r && gameRosters.includes(r)) || "";
+    setImportFileName("");
+    setImportParsed(null);
+    setImportTargetGame(defaultGame);
+    setImportTargetRoster(defaultRoster);
+    setImportColor(getGameColor(defaultGame));
+    setImportHorizon(DEFAULT_IMPORT_HORIZON_DAYS);
+    setImportBusy(false);
+    setImportProgress({ done: 0, total: 0 });
+    setImportOpen(true);
+  };
+
+  const closeImport = () => {
+    if(importBusy) return;
+    setImportOpen(false);
+    setImportParsed(null);
+    setImportFileName("");
+  };
+
+  const handleImportFile = async (file) => {
+    if(!file) return;
+    const name = file.name || "";
+    setImportFileName(name);
+    setImportParsed(null);
+    if(!/\.ics$/i.test(name) && !/calendar/i.test(file.type || "")){
+      toast.error(t("planning.import.invalidFile"));
+      return;
+    }
+    if(isIcsFileTooLarge(file)){
+      toast.error(t("planning.import.tooLarge"));
+      return;
+    }
+    try{
+      const text = await readFileAsText(file);
+      const parsed = parseICS(text);
+      if(parsed.error){
+        toast.error(t("planning.import.invalidFile"));
+        setImportParsed({ ...parsed, error: parsed.error });
+        return;
+      }
+      if(parsed.events.length === 0){
+        toast.error(t("planning.import.noEvents"));
+        setImportParsed(parsed);
+        return;
+      }
+      setImportParsed(parsed);
+      // Le fichier ne contient qu'un seul pôle ? On présélectionne sa couleur.
+      setImportColor(getGameColor(importTargetGame));
+    }catch(err){
+      console.error("ics import", err);
+      toast.error(t("planning.import.invalidFile"));
+    }
+  };
+
+  const runImport = async () => {
+    if(importBusy) return;
+    if(importNeedsRoster && !importRosterOptions.includes(importTargetRoster)){
+      toast.error(t("planning.rosterRequired")); return;
+    }
+    const list = importPlan.fresh;
+    if(list.length === 0){ toast.error(t("planning.import.nothing")); return; }
+    setImportBusy(true);
+    setImportProgress({ done: 0, total: list.length });
+    const targetRoster = importNeedsRoster && importRosterOptions.includes(importTargetRoster) ? importTargetRoster : null;
+    let created = 0;
+    let failed = 0;
+    for(let i = 0; i < list.length; i += 1){
+      const occ = list[i];
+      try{
+        await addDoc(collection(db, "events"), {
+          title: (occ.title || t("planning.import.untitled")).slice(0, 140),
+          description: [occ.description, occ.location].filter(Boolean).join("\n").slice(0, 2000),
+          color: importColor,
+          game: importTargetGame,
+          roster: targetRoster,
+          start: occ.start,
+          end: occ.end,
+          allDay: !!occ.allDay,
+          updatedAt: serverTimestamp(),
+          createdBy: user?.uid || null,
+          createdByName: displayName || "",
+          createdAt: serverTimestamp(),
+          attendance: {},
+          importSource: {
+            fileName: importFileName.slice(0, 120),
+            uid: occ.uid || null,
+            importedAt: new Date().toISOString(),
+          },
+        });
+        created += 1;
+      }catch(err){
+        console.error("ics import write", err);
+        failed += 1;
+      }
+      setImportProgress({ done: i + 1, total: list.length });
+    }
+    setImportBusy(false);
+    if(created > 0){
+      createNotification({
+        targetRoles: ["player", "manager", "bureau"],
+        targetGame: importTargetGame,
+        type: "event_new",
+        extra: `${created} · ${importTargetGame}${targetRoster ? ` · ${targetRoster}` : ""}`,
+        link: "/espace-joueur/planning",
+      });
+      logActivity({
+        game: importTargetGame,
+        type: "event_import",
+        label: `${created} événement(s) — ${importFileName}`,
+        byUid: user?.uid,
+        byName: displayName,
+      });
+    }
+    const resetImport = () => { setImportOpen(false); setImportParsed(null); setImportFileName(""); };
+    if(created > 0 && failed === 0){
+      toast.success(t("planning.import.success").replace("{count}", String(created)));
+      resetImport();
+    }else if(created > 0){
+      toast.error(t("planning.import.partial").replace("{created}", String(created)).replace("{failed}", String(failed)));
+      resetImport();
+    }else{
+      toast.error(t("common.error"));
+    }
+  };
+
   // Bloc « présent / absent » affiché dans la modale d'événement.
   const renderAttendanceBlock = () => {
     if(!user || !selectedEvent) return null;
@@ -844,6 +1035,16 @@ export default function Planning(){
   // React démonte alors tout le sous-arbre, et le conteneur défilant repart tout
   // en haut à chaque clic sur une case (cause du « saut » signalé).
   const locale = lang==="en" ? "en-US" : "fr-FR";
+
+  // Ligne d'aperçu d'une séance importée : « mar. 10 févr. · 21h00–23h00 »
+  const formatImportSlot = (occ) => {
+    const start = new Date(occ.start);
+    if(isNaN(start.getTime())) return "—";
+    const date = start.toLocaleDateString(locale, { weekday:"short", day:"numeric", month:"short" });
+    if(occ.allDay) return `${date} · ${t("planning.import.allDay")}`;
+    const end = new Date(occ.end);
+    return `${date} · ${pad(start.getHours())}h${pad(start.getMinutes())}–${pad(end.getHours())}h${pad(end.getMinutes())}`;
+  };
 
   const renderMiniMonth = ()=>{
     const grid = monthGrid(currentDate);
@@ -1477,6 +1678,13 @@ export default function Planning(){
           )}
 
           {tab==="calendar" && canManage && (
+            <button onClick={openImport} data-testid="planning-import-ics" title={t("planning.import.help")}
+              className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-[0.2em] px-3 py-2.5 flex items-center gap-1.5 hover:bg-[#D8CA82]/10 hover:border-[#D8CA82] u-micro">
+              <Upload size={14} aria-hidden="true" /> <span className="hidden sm:inline">{t("planning.import")}</span>
+            </button>
+          )}
+
+          {tab==="calendar" && canManage && (
             <button onClick={()=> openNew(currentDate)} data-testid="planning-new-event"
               className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] u-micro-shadow">
               <Plus size={14} /> {t("planning.new")}
@@ -1738,6 +1946,180 @@ export default function Planning(){
                     <CalendarOff size={14} aria-hidden="true" />
                     {t("planning.absence.declare")}
                   </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* import .ics modal (managers) */}
+      {importOpen && canManage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+          <div className="w-full max-w-[600px] max-h-[calc(100dvh-2rem)] overflow-y-auto bg-[#1A1A1A] border border-white/15 animate-in fade-in zoom-in duration-200" data-testid="import-modal">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-[#D8CA82]" aria-hidden="true" />
+                <div>
+                  <h3 id="import-modal-title" className="font-display text-sm uppercase tracking-[0.25em] text-[#f7f7f7]">{t("planning.import.title")}</h3>
+                  <p className="text-xs text-[#c8c8c8] mt-1">{t("planning.import.subtitle")}</p>
+                </div>
+              </div>
+              <button onClick={closeImport} aria-label={t("common.cancel")} disabled={importBusy}
+                className="w-8 h-8 flex items-center justify-center text-[#c8c8c8] hover:text-[#f7f7f7] hover:bg-white/10 u-micro disabled:opacity-40"><X size={16}/></button>
+            </div>
+
+            <form onSubmit={(e)=>{ e.preventDefault(); runImport(); }} className="p-6 space-y-5">
+              {/* fichier */}
+              <div
+                onDragOver={(e)=> e.preventDefault()}
+                onDrop={(e)=>{ e.preventDefault(); if(!importBusy) handleImportFile(e.dataTransfer?.files?.[0]); }}
+                className="border border-dashed border-white/25 px-4 py-5 text-center hover:border-[#D8CA82]/60 hover:bg-[#D8CA82]/5 transition-colors"
+                data-testid="import-dropzone"
+              >
+                <label className="flex flex-col items-center gap-2 cursor-pointer">
+                  <FileText size={20} className="text-[#D8CA82]" aria-hidden="true" />
+                  <span className="text-sm text-[#f7f7f7]">{t("planning.import.chooseFile")}</span>
+                  <span className="text-xs text-[#c8c8c8]">{t("planning.import.fileHint")}</span>
+                  <input type="file" accept=".ics,text/calendar" className="sr-only" disabled={importBusy}
+                    data-testid="import-file-input"
+                    onChange={(e)=>{ const file = e.target.files?.[0]; e.target.value = ""; handleImportFile(file); }} />
+                </label>
+                {importFileName && (
+                  <p className="mt-3 text-xs text-[#D8CA82] truncate" data-testid="import-file-name">📎 {importFileName}</p>
+                )}
+              </div>
+
+              {/* cible : pôle + roster */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="import-game" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.game")}</label>
+                  <select id="import-game" value={importTargetGame} disabled={importBusy}
+                    data-testid="import-game"
+                    onChange={(e)=>{
+                      const nextGame = e.target.value;
+                      setImportTargetGame(nextGame);
+                      setImportTargetRoster(prev => (rostersForGame(nextGame).includes(prev) ? prev : ""));
+                      setImportColor(getGameColor(nextGame));
+                    }}
+                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                    {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
+                    <option value="global">Global</option>
+                  </select>
+                </div>
+                {importNeedsRoster && (
+                  <div>
+                    <label htmlFor="import-roster" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.roster")} *</label>
+                    <select id="import-roster" value={importTargetRoster} disabled={importBusy}
+                      data-testid="import-roster"
+                      onChange={(e)=> setImportTargetRoster(e.target.value)}
+                      className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                      <option value="">— {t("planning.rosterRequired")} —</option>
+                      {importRosterOptions.map(r=> <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label htmlFor="import-horizon" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.import.horizon")}</label>
+                  <select id="import-horizon" value={importHorizon} disabled={importBusy}
+                    data-testid="import-horizon"
+                    onChange={(e)=> setImportHorizon(Number(e.target.value))}
+                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                    {[30, 90, 180, 365].map(d=> (
+                      <option key={d} value={d}>{t("planning.import.days").replace("{count}", String(d))}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.color")}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {COLORS.map(c=>(
+                      <button key={c.id} type="button" onClick={()=> setImportColor(c.id)} disabled={importBusy}
+                        className={`w-7 h-7 rounded-sm border-2 u-micro ${importColor===c.id ? "border-white scale-110" : "border-transparent opacity-70 hover:opacity-100"}`}
+                        style={{backgroundColor:c.id}} title={c.name} aria-label={c.name}
+                        aria-pressed={importColor===c.id} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* aperçu */}
+              {importParsed && !importParsed.error && (
+                <div className="border border-white/10 bg-[#111111] p-4 space-y-2" data-testid="import-preview">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8]">{t("planning.import.preview")}</p>
+                    <span className="text-xs font-bold text-[#D8CA82]" data-testid="import-count">
+                      {t("planning.import.detected").replace("{count}", String(importPlan.fresh.length))}
+                    </span>
+                  </div>
+                  {importPlan.fresh.length === 0 ? (
+                    <p className="text-xs text-[#c8c8c8] italic">{t("planning.import.nothing")}</p>
+                  ) : (
+                    <ul className="space-y-1.5" data-testid="import-preview-list">
+                      {importPlan.fresh.slice(0, 6).map((occ, i)=>(
+                        <li key={`${occ.start}_${i}`} className="flex items-baseline gap-2 text-xs">
+                          <span className="text-[#c8c8c8] shrink-0">{formatImportSlot(occ)}</span>
+                          <span className="text-[#f7f7f7]/80 truncate">{occ.title || t("planning.import.untitled")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {importPlan.fresh.length > 6 && (
+                    <p className="text-xs text-[#c8c8c8]">+ {importPlan.fresh.length - 6} {t("planning.import.others")}</p>
+                  )}
+                  {importPlan.duplicates.length > 0 && (
+                    <p className="text-xs text-[#D8CA82]/80" data-testid="import-duplicates">
+                      {t("planning.import.duplicates").replace("{count}", String(importPlan.duplicates.length))}
+                    </p>
+                  )}
+                  {importOccurrences.truncated && (
+                    <p className="text-xs text-amber-300/90" data-testid="import-truncated">
+                      {t("planning.import.truncated").replace("{count}", String(MAX_IMPORT_EVENTS))}
+                    </p>
+                  )}
+                  {importOccurrences.approximate && (
+                    <p className="text-xs text-amber-300/90 flex items-start gap-1.5" data-testid="import-approximate">
+                      <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+                      {t("planning.import.approximate")}
+                    </p>
+                  )}
+                  {importParsed.counts?.cancelled > 0 && (
+                    <p className="text-xs text-[#c8c8c8]">{t("planning.import.cancelled").replace("{count}", String(importParsed.counts.cancelled))}</p>
+                  )}
+                </div>
+              )}
+
+              {importParsed?.error && (
+                <p className="text-xs text-red-300/90" data-testid="import-error">{t("planning.import.invalidFile")}</p>
+              )}
+
+              {/* actions */}
+              <div className="space-y-3 pt-1">
+                {importBusy && (
+                  <div>
+                    <div className="h-1 w-full bg-white/10 overflow-hidden">
+                      <div className="h-full bg-[#D8CA82] transition-all"
+                        style={{ width: `${importProgress.total ? Math.round((importProgress.done / importProgress.total) * 100) : 0}%` }} />
+                    </div>
+                    <p className="text-xs text-[#c8c8c8] mt-1.5" data-testid="import-progress">
+                      {importProgress.done} / {importProgress.total}
+                    </p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-[#c8c8c8] max-w-[55%] leading-relaxed">{t("planning.import.help")}</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={closeImport} disabled={importBusy}
+                      className="border border-white/15 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-[#f7f7f7] hover:border-white/30 u-micro disabled:opacity-40">
+                      {t("common.cancel")}
+                    </button>
+                    <button type="submit" data-testid="import-submit"
+                      disabled={importBusy || importPlan.fresh.length === 0 || (importNeedsRoster && !importTargetRoster)}
+                      className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] u-micro-shadow disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                      {importBusy ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Upload size={14} aria-hidden="true" />}
+                      {t("planning.import.submit").replace("{count}", String(importPlan.fresh.length))}
+                    </button>
+                  </div>
                 </div>
               </div>
             </form>

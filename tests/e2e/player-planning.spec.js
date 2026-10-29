@@ -35,3 +35,21 @@ test('le planning propose l’export agenda (.ics) et la réponse présent/absen
     await expect(page.getByTestId('attendance-block').or(page.getByTestId('event-agenda'))).toBeVisible();
   }
 });
+
+test('un manager peut ouvrir l’import de planning .ics', async ({ page }) => {
+  await page.goto('/espace-joueur/planning');
+  if (page.url().includes('/connexion')) {
+    // Non authentifié (ou simple joueur) : l'importeur n'est pas rendu.
+    await expect(page.locator('input[type="email"]').first()).toBeVisible();
+    return;
+  }
+
+  await expect(page.getByTestId('planning-page')).toBeVisible();
+  const importButton = page.getByTestId('planning-import-ics');
+  if (await importButton.count() === 0) return; // joueur sans droit de gestion
+
+  await importButton.click();
+  await expect(page.getByTestId('import-modal')).toBeVisible();
+  await expect(page.getByTestId('import-file-input')).toBeAttached();
+  await expect(page.getByTestId('import-submit')).toBeDisabled();
+});
