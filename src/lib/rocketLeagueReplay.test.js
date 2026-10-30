@@ -383,6 +383,21 @@ describe("série de replays", () => {
     expect(Object.keys(list[0])).toEqual(expect.arrayContaining(["goals", "assists", "saves", "shots", "score", "mvp"]));
   });
 
+  test("liaison automatique via plusieurs pseudos liés (aliases /link)", () => {
+    const games = buildSeries();
+    const membersWithAliases = [
+      { id: "m-1", pseudo: "ZenOfficiel", aliases: ["Alpha", "Zen_Smurf"] },
+      { id: "m-2", pseudo: "ExoTiiK", aliases: ["bravo", "Exo_Alt"] },
+    ];
+    expect(suggestReplaySide(games, membersWithAliases)).toBe("blue");
+    const linked = autoLinkReplayPlayers(games, membersWithAliases, "blue");
+    const list = listReplayPlayers(linked, "blue");
+    expect(list.map((p) => [p.name, p.playerId, p.pseudo])).toEqual([
+      ["Alpha", "m-1", "ZenOfficiel"],
+      ["Bravo", "m-2", "ExoTiiK"],
+    ]);
+  });
+
   test("délie un joueur sans toucher aux autres", () => {
     let games = autoLinkReplayPlayers(buildSeries(), members, "blue");
     games = linkReplayPlayer(games, replayPlayerKey({ onlineId: ALPHA_ID, name: "Alpha" }), null);

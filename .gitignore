@@ -30,3 +30,11 @@ yarn-error.log*
 # functions
 functions/node_modules
 functions/package-lock.json
+
+# discord bot
+bot/node_modules
+bot/.env
+bot/data
+bot/serviceAccountKey.json
+bot/*firebase-adminsdk*.json
+
