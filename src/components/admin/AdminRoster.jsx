@@ -139,6 +139,11 @@ export const AdminRoster = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#f7f7f7]">{m.pseudo}</p>
                   <p className="text-xs text-[#c8c8c8]">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {t(`team.status.${m.status || "player"}`)}</p>
+                  {Array.isArray(m.aliases) && m.aliases.length > 0 && (
+                    <p className="text-xs text-[#D8CA82]/80 mt-0.5 truncate" data-testid={`admin-roster-aliases-${m.id}`}>
+                      Pseudos replays liés : {m.aliases.join(", ")}
+                    </p>
+                  )}
                   {m.uid ? (
                     <p className="text-xs text-emerald-300/80 mt-0.5 flex items-center gap-1">
                       <Link2 size={11} aria-hidden="true" /> {owner ? (owner.displayName || owner.email) : m.uid}

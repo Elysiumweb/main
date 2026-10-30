@@ -377,9 +377,31 @@ export const sortReplayGames = (games = []) => [...games].sort(
   (a, b) => (a.dateTime || "").localeCompare(b.dateTime || "") || (a.fileName || "").localeCompare(b.fileName || "")
 );
 
-/** Joueur du site dont le pseudo correspond à un joueur du replay, côté `side`. */
+/** Liste normalisée de tous les pseudos rattachés à un joueur du site (pseudo principal + pseudos liés via /link). */
+export const memberReplayNames = (member) => {
+  if (!member) return [];
+  const raw = [
+    member.pseudo,
+    ...(Array.isArray(member.aliases) ? member.aliases : []),
+  ];
+  return [...new Set(raw.map(norm).filter(Boolean))];
+};
+
+/** Joueur du site dont le pseudo (ou un pseudo lié via /link) correspond à un joueur du replay, côté `side`. */
 export const autoLinkReplayPlayers = (games = [], members = [], side = "") => {
-  const byName = new Map(members.filter((m) => norm(m.pseudo)).map((m) => [norm(m.pseudo), m]));
+  const byName = new Map();
+  // On indexe d'abord les alias secondaires puis le pseudo principal (prioritaire en cas de collision).
+  members.forEach((m) => {
+    if (!m) return;
+    (Array.isArray(m.aliases) ? m.aliases : []).forEach((alias) => {
+      const key = norm(alias);
+      if (key && !byName.has(key)) byName.set(key, m);
+    });
+  });
+  members.forEach((m) => {
+    const key = norm(m?.pseudo);
+    if (key) byName.set(key, m);
+  });
   return games.map((game) => ({
     ...game,
     players: game.players.map((player) => {
@@ -406,9 +428,9 @@ export const linkReplayPlayer = (games = [], key, member = null) => games.map((g
     : player)),
 }));
 
-/** Suggère la couleur de notre équipe si les pseudos du site se trouvent clairement d'un côté. */
+/** Suggère la couleur de notre équipe si les pseudos (ou alias /link) du site se trouvent clairement d'un côté. */
 export const suggestReplaySide = (games = [], members = []) => {
-  const names = new Set(members.map((m) => norm(m.pseudo)).filter(Boolean));
+  const names = new Set(members.flatMap(memberReplayNames));
   const count = { blue: 0, orange: 0 };
   games.forEach((game) => game.players.forEach((player) => {
     if (names.has(norm(player.name))) count[player.side] += 1;

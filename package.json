@@ -74,7 +74,10 @@
     "test:e2e": "playwright test",
     "test:lighthouse": "npx lighthouse http://127.0.0.1:3000 --preset=desktop --view",
     "ics": "node scripts/generate-ics.mjs",
-    "deploy:rules": "firebase deploy --only firestore:rules"
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "bot:start": "npm --prefix bot start",
+    "bot:register": "npm --prefix bot run register",
+    "bot:test": "npm --prefix bot test"
   },
   "browserslist": {
     "production": [

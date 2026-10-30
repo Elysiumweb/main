@@ -256,7 +256,7 @@ export default function Admin() {
     .filter((m) => m.status !== "staff" && m.pseudo)
     .filter((m) => !m.game || m.game === RL_GAME)
     .filter((m) => !matchRosters.length || !form.roster || (m.roster || "") === form.roster)
-    .map((m) => ({ id: m.id, pseudo: m.pseudo }))
+    .map((m) => ({ id: m.id, pseudo: m.pseudo, aliases: Array.isArray(m.aliases) ? m.aliases : [] }))
     .sort((a, b) => a.pseudo.localeCompare(b.pseudo)), [rosterMembers, matchRosters.length, form.roster]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setUserPage(1); }, [userQuery]);
