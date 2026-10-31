@@ -6,6 +6,7 @@ import { useLang } from "../lib/i18n";
 import { SITE_URL, useSEO, OG_VARIANTS } from "../lib/useSEO";
 import { getElysiumTeamName } from "../lib/constants";
 import { fmtMatchDate } from "../lib/formatters";
+import { getEffectiveMatchStatus, useNowMs } from "../lib/matchStatus";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { ShareButtons } from "../components/ShareButtons";
 import { HeadToHead } from "../components/HeadToHead";
@@ -13,7 +14,7 @@ import { MatchCountdown } from "../components/MatchCountdown";
 import { OptimizedImage } from "../components/OptimizedImage";
 import { LoadingState, ErrorState } from "../components/States";
 import { PLAYER_STAT_KEYS, hasPlayerStats, mvpCount, playerStatValue } from "../lib/playerStats";
-import { Trophy, Skull, CalendarClock, Radio, ExternalLink, PlayCircle, Film, Award, Map as MapIcon, Users } from "lucide-react";
+import { Trophy, Skull, CalendarClock, Radio, ExternalLink, PlayCircle, Film, Award, Map as MapIcon, Users, Ban } from "lucide-react";
 
 const OpponentLogo = ({ src, name, className = "" }) => {
   const { t } = useLang();
@@ -30,12 +31,15 @@ const OpponentLogo = ({ src, name, className = "" }) => {
   return <img src={src} alt={`${t("a11y.opponentLogo")} : ${safeName}`} onError={()=>setErr(true)} loading="lazy" decoding="async" className={`${className} object-contain`} />;
 };
 
-const ResultBadge = ({ match, t }) => {
-  const live = match.status === "live";
-  const upcoming = match.status === "upcoming";
+const ResultBadge = ({ match, effectiveStatus, t }) => {
+  const status = effectiveStatus || getEffectiveMatchStatus(match);
+  const cancelled = status === "cancelled";
+  const live = status === "live";
+  const upcoming = status === "upcoming";
   const us = Number(match.scoreUs);
   const them = Number(match.scoreThem);
   const result = us > them ? "win" : us < them ? "loss" : "draw";
+  if (cancelled) return <span className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-amber-300 border-amber-400/50 bg-amber-500/10 flex items-center gap-1"><Ban size={11} /> <span>{t("results.cancelled")}</span></span>;
   if (live) return <span className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-400/60 bg-red-500/10 flex items-center gap-1.5"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" /></span><span>{t("results.live")}</span></span>;
   if (upcoming) return <span className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-sky-300 border-sky-300/40 flex items-center gap-1"><CalendarClock size={11} /> <span>{t("results.upcoming")}</span></span>;
   if (result === "win") return <span className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-emerald-300 border-emerald-300/50 flex items-center gap-1"><Trophy size={11} /> <span>{t("results.win")}</span></span>;
@@ -48,6 +52,7 @@ const slugify = (s) => String(s||"").toLowerCase().normalize("NFD").replace(/[\u
 export default function MatchDetail() {
   const { id } = useParams();
   const { t, lang } = useLang();
+  const nowMs = useNowMs();
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -128,6 +133,8 @@ export default function MatchDetail() {
     return { pseudo: String(match.mvp) };
   }, [match, rosterMembers]);
 
+  const effectiveStatus = useMemo(() => getEffectiveMatchStatus(match, nowMs), [match, nowMs]);
+
   const jsonLd = useMemo(()=>{
     if (!match) return null;
     const startDate = match.date ? `${match.date}${match.time ? `T${match.time}` : ""}` : undefined;
@@ -136,7 +143,7 @@ export default function MatchDetail() {
       "@id": `${SITE_URL}/resultats/${match.id}#event`,
       name: `${teamName} vs ${match.opponentName || t("common.adversary")}`,
       startDate,
-      eventStatus: match.status==="upcoming" ? "https://schema.org/EventScheduled" : match.status==="live" ? "https://schema.org/EventInProgress" : "https://schema.org/EventCompleted",
+      eventStatus: effectiveStatus==="cancelled" ? "https://schema.org/EventCancelled" : effectiveStatus==="upcoming" ? "https://schema.org/EventScheduled" : effectiveStatus==="live" ? "https://schema.org/EventInProgress" : "https://schema.org/EventCompleted",
       sport: match.game || "Esport",
       competitor: [
         { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
@@ -145,7 +152,7 @@ export default function MatchDetail() {
       location: match.platform ? { "@type": "VirtualLocation", name: match.platform, url: match.watchUrl || match.vodUrl } : undefined,
       organizer: { "@id": `${SITE_URL}/#organization` },
     };
-  }, [match, teamName, t]);
+  }, [match, effectiveStatus, teamName, t]);
 
   useSEO({
     title: match ? `${teamName} vs ${match.opponentName || t("common.adversary")} — ${match.competition || "Match"} | ELYSIUM Esport` : "Match — ELYSIUM Esport",
@@ -164,8 +171,9 @@ export default function MatchDetail() {
     </div>
   );
 
-  const upcoming = match.status==="upcoming";
-  const live = match.status==="live";
+  const upcoming = effectiveStatus==="upcoming";
+  const live = effectiveStatus==="live";
+  const cancelled = effectiveStatus==="cancelled";
   const us = Number(match.scoreUs);
   const them = Number(match.scoreThem);
 
@@ -178,7 +186,7 @@ export default function MatchDetail() {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span className="text-xs font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game||"EVA"}</span>
             {match.roster && <span className="text-xs font-display tracking-[0.25em] uppercase text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5">{match.roster}</span>}
-            <ResultBadge match={match} t={t} />
+            <ResultBadge match={match} effectiveStatus={effectiveStatus} t={t} />
             {match.competition && <span className="text-xs text-[#D8CA82]/80 uppercase tracking-wider">{match.competition}</span>}
           </div>
           <h1 className="font-display font-black text-3xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="match-detail-title">{teamName} vs {match.opponentName}</h1>
@@ -197,7 +205,9 @@ export default function MatchDetail() {
                 <span className="text-sm font-display uppercase tracking-wider text-[#f7f7f7] text-center leading-tight">{teamName}</span>
               </div>
               <div className="text-center">
-                {upcoming || (live && (match.scoreUs===undefined||match.scoreUs==="")) ? (
+                {cancelled ? (
+                  <p className="font-display font-bold text-xl uppercase tracking-widest text-amber-300">{t("results.cancelled")}</p>
+                ) : upcoming || (live && (match.scoreUs===undefined||match.scoreUs==="")) ? (
                   <p className="font-display font-black text-3xl text-[#c8c8c8]">VS</p>
                 ) : (
                   <p className="font-display font-black text-5xl text-[#f7f7f7]">
@@ -206,7 +216,7 @@ export default function MatchDetail() {
                     <span className="text-[#f7f7f7]">{match.scoreThem}</span>
                   </p>
                 )}
-                {live && <p className="text-xs uppercase tracking-widest text-red-300 mt-2 flex items-center justify-center gap-1"><Radio size={12}/> En direct</p>}
+                {live && <p className="text-xs uppercase tracking-widest text-red-300 mt-2 flex items-center justify-center gap-1"><Radio size={12}/> {t("results.live")}</p>}
               </div>
               <div className="flex flex-col items-center gap-2 w-1/3">
                 <OpponentLogo src={match.opponentLogo} name={match.opponentName} className="h-16 w-16" />
@@ -322,7 +332,7 @@ export default function MatchDetail() {
         {/* Sidebar */}
         <aside className="lg:col-span-4 space-y-6">
           <div className="border border-white/10 bg-[#1A1A1A] p-6" data-testid="match-detail-share">
-            <ShareButtons url={`${SITE_URL}/resultats/${match.id}`} text={`${teamName} vs ${match.opponentName || t("common.adversary")} ${!upcoming && !live ? `— ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`} title={`Partager le match ${teamName} vs ${match.opponentName}`} testId={`match-detail-share-${match.id}`} />
+            <ShareButtons url={`${SITE_URL}/resultats/${match.id}`} text={`${teamName} vs ${match.opponentName || t("common.adversary")} ${!upcoming && !live && !cancelled ? `— ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`} title={`Partager le match ${teamName} vs ${match.opponentName}`} testId={`match-detail-share-${match.id}`} />
             <p className="text-xs text-[#c8c8c8]/60 mt-3">Lien canonique : <span className="text-[#c8c8c8]">/resultats/{match.id}</span></p>
             <Link to="/resultats" className="mt-4 inline-flex text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">← Tous les résultats</Link>
           </div>
@@ -348,7 +358,7 @@ export default function MatchDetail() {
               {match.roster && <li>Roster : <span className="text-[#f7f7f7]">{match.roster} ({teamName})</span></li>}
               {match.game && <li>Jeu : <span className="text-[#f7f7f7]">{match.game}</span></li>}
               {match.platform && <li>Plateforme : <span className="text-[#f7f7f7]">{match.platform}</span></li>}
-              <li>Statut : <span className="text-[#f7f7f7]">{match.status}</span></li>
+              <li>Statut : <span className="text-[#f7f7f7]">{t(`admin.match.${effectiveStatus}`)}</span></li>
             </ul>
           </div>
         </aside>

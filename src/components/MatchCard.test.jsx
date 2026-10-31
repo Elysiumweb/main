@@ -29,11 +29,11 @@ afterEach(() => {
   errorSpy.mockRestore();
 });
 
-const render = (match) => act(() => {
+const render = (match, props = {}) => act(() => {
   root.render(
     <LanguageProvider>
       <MemoryRouter>
-        <MatchCard match={match} />
+        <MatchCard match={match} {...props} />
       </MemoryRouter>
     </LanguageProvider>
   );
@@ -84,5 +84,36 @@ describe("MatchCard — statistiques joueur de la modale", () => {
     render(match);
     openDialog();
     expect($("match-mvp-m1").textContent).toContain("Nova");
+  });
+
+  test("affiche le badge Annulé lorsqu'un match est annulé", () => {
+    render({
+      id: "m_cancelled",
+      date: "2026-10-31",
+      time: "21:00",
+      game: "Rocket League",
+      roster: "Black",
+      status: "cancelled",
+      opponentName: "Karmine Corp",
+    });
+    expect($("match-status-cancelled").textContent).toContain("Annulé");
+  });
+
+  test("affiche le badge En direct lorsqu'un match à venir est en cours", () => {
+    render(
+      {
+        id: "m_live_auto",
+        date: "2026-10-31",
+        time: "20:00",
+        endTime: "21:00",
+        timezone: "Europe/Paris",
+        game: "Rocket League",
+        roster: "Black",
+        status: "upcoming",
+        opponentName: "Vitality",
+      },
+      { nowMs: Date.parse("2026-10-31T19:15:00Z") } // 20:15 Paris
+    );
+    expect($("match-status-live").textContent).toContain("En direct");
   });
 });

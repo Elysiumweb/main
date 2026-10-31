@@ -8,7 +8,7 @@ Bot Discord officiel relié en temps réel au site **Elysium Esport** (Firebase 
 
 ### Restriction stricte aux 2 serveurs officiels
 Le bot fonctionne **exclusivement** sur :
-- **`1526866278462001202`** *(Serveur Matchs / Esport)* : `/ask-result`, `/link`, `/command-allowed`
+- **`1526866278462001202`** *(Serveur Matchs / Esport)* : `/ask-result`, `/link`, `/link-discord`, `/scrim`, `/cancel`, `/command-allowed`
 - **`1565264995078508554`** *(Serveur Communauté / Commandes Graphiques)* : messages de bienvenue & au revoir, `/send-message`, `/command-allowed`
 
 Si le bot est ajouté sur n'importe quel autre serveur, il le quitte automatiquement. En messages privés (MP), seul l'administrateur principal (`520496557146243072`) peut interagir avec le studio de réponse aux tickets.
@@ -20,11 +20,23 @@ Tous les embeds envoyés par le bot intègrent automatiquement **le logo Elysium
 ### Serveur `1526866278462001202` (Matchs & Liaison site)
 
 1. **`/command-allowed`** *(réservée exclusivement à `520496557146243072`)*
-   - Donne (ou retire / affiche) la permission à un autre utilisateur Discord d'utiliser `/ask-result`, `/link` et `/send-message`.
+   - Donne (ou retire / affiche) la permission à un autre utilisateur Discord d'utiliser `/ask-result`, `/link`, `/link-discord` et `/send-message`.
 2. **`/link`** *(réservée à `520496557146243072` et aux membres autorisés)*
    - Saisie manuelle d'un pseudo en jeu / replay + sélection dynamique dans la liste des fiches joueurs présentes sur le site (`roster`).
    - Plusieurs pseudos peuvent être attribués à un même joueur : lors de l'import des replays (via le bot **ou** depuis le panel Admin du site), les pseudos sont automatiquement rattachés à la fiche joueur correspondante.
-3. **`/ask-result`** *(réservée à `520496557146243072` et aux membres autorisés)*
+3. **`/link-discord`** *(réservée à `520496557146243072` et aux membres autorisés)*
+   - Relie un compte Discord (`@membre`) à la fiche d'un joueur du site (`roster`).
+   - Permet d'identifier automatiquement le joueur et son roster lorsqu'il utilise `/scrim` ou `/cancel` (avec affichage du compte Discord lié dans le panel Admin du site).
+4. **`/scrim`** *(réservée exclusivement aux joueurs dont le compte Discord est lié via `/link-discord`)*
+   - Le joueur indique l'heure souhaitée du scrim pour la journée (ex: `20:00`, `21h00`).
+   - **Règle des 2h minimum** : si l'heure demandée débute dans moins de **2 heures**, la demande est automatiquement rejetée.
+   - **Notification privée** : envoie en MP à `520496557146243072` l'heure demandée, le jeu, le roster du joueur (récupéré automatiquement depuis sa fiche joueur) et le joueur à l'origine de la demande.
+   - **Illusion d'IA côté joueurs** : la réponse affichée aux joueurs ne mentionne jamais `520496557146243072` ni un envoi humain, mais annonce que **l'IA de matchmaking Elysium lance ses recherches** pour ce créneau.
+5. **`/cancel`** *(réservée exclusivement aux joueurs dont le compte Discord est lié via `/link-discord`)*
+   - Annule tous les scrims liés au roster du joueur pour la journée en cours.
+   - Si des matchs pour ce roster étaient déjà notés pour aujourd'hui sur le site (`matches`), ils passent automatiquement en statut **Annulé** (`status: "cancelled"`).
+   - Envoie un message privé d'annulation à `520496557146243072` récapitulant l'annulation de la journée pour ce roster.
+6. **`/ask-result`** *(réservée à `520496557146243072` et aux membres autorisés)*
    - Demande les 10 informations du match :
      - **Quel jeu ?** *(liste dynamique issue du site)*
      - **Quel roster ?** *(liste dynamique des rosters du site filtrée par jeu)*
@@ -37,7 +49,7 @@ Tous les embeds envoyés par le bot intègrent automatiquement **le logo Elysium
      - **Logo équipe adverse** *(compressé automatiquement en base64 `< 600 Ko` et enregistré dans la banque d'images Firestore du site)*
      - **ID du channel à envoyer** *(autocomplétion des salons ou saisie directe de l'ID)*
    - **Création immédiate sur le site** : le match apparaît dans les matchs **À venir** (`status: "upcoming"`) avec jeu, roster, équipe adverse, logo, date, heure et format.
-   - **À l'heure du match** : envoie dans le salon indiqué une présentation complète avec le nom de l'équipe adverse, le format, les identifiants (nom + mot de passe) et précise que **c'est la Elysium qui ouvre**.
+   - **Passage automatique en « En direct » (`live`)** : dès que le match est en cours (à l'heure du début), le match bascule automatiquement en **En direct** sur le site (sur la page d'accueil, la page Résultats et la fiche du match), et le bot envoie dans le salon indiqué la présentation complète avec l'équipe adverse, le format, les identifiants (nom + mot de passe) et précise que **c'est la Elysium qui ouvre**.
    - **À l'heure de fin du match** : demande dans le salon la liste de **tous les replays** (l'utilisateur peut déposer **autant de fichiers `.replay` que nécessaire**, en un ou plusieurs messages) ainsi que le **score déclaré** (ex: `4` Elysium – `1` Adversaire).
    - **Validation & mise à jour du site** : passe le match en **Terminé** (`status: "finished"`), choisit automatiquement la bonne couleur d'équipe (`Bleu` ou `Orange`) pour correspondre au score déclaré (inverse automatiquement si nécessaire, et garantit la victoire à la bonne équipe même en présence d'un replay en double), calcule le MVP et lie automatiquement les statistiques individuelles aux fiches joueurs du site.
 
@@ -100,7 +112,7 @@ npm install
 npm start
 ```
 
-> Les commandes Slash (`/ask-result`, `/link`, `/command-allowed`, `/send-message`) sont synchronisées automatiquement sur chacun des deux serveurs dès le démarrage du bot (ou manuellement via `npm run register`).
+> Les commandes Slash (`/ask-result`, `/link`, `/link-discord`, `/scrim`, `/cancel`, `/command-allowed`, `/send-message`) sont synchronisées automatiquement sur chacun des deux serveurs dès le démarrage du bot (ou manuellement via `npm run register`).
 
 ---
 

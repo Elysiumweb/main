@@ -37,6 +37,7 @@ const teamName = (m) => {
 
 const matchSummary = (m) => {
   const base = `${teamName(m)} vs ${m.opponentName || "Adversaire"}`;
+  if (m.status === "cancelled") return `❌ ${base} — ANNULÉ`;
   if (m.status === "finished" && m.scoreUs !== undefined && m.scoreUs !== null && m.scoreUs !== "") {
     return `${base} (${m.scoreUs}-${m.scoreThem})`;
   }

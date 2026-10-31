@@ -15,6 +15,8 @@ const ACTION_LABELS = {
   match_deleted: "Match supprimé",
   match_duplicated: "Match dupliqué",
   match_marked_upcoming: "Match passé à venir",
+  match_live: "Match passé en direct",
+  match_cancelled: "Match annulé",
   matches_imported: "Calendrier importé",
   article_deleted: "Article supprimé",
   article_hard_deleted: "Article supprimé définitivement",

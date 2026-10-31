@@ -82,7 +82,7 @@ export const handleCommandAllowed = async (interaction) => {
     color: ELYSIUM_SUCCESS,
     title: added ? "✅ Permission accordée" : "ℹ️ Déjà autorisé",
     description: added
-      ? `<@${targetUser.id}> (\`${targetUser.id}\`) peut désormais utiliser les commandes \`/ask-result\`, \`/link\` et \`/send-message\`.`
+      ? `<@${targetUser.id}> (\`${targetUser.id}\`) peut désormais utiliser les commandes \`/ask-result\`, \`/link\`, \`/link-discord\` et \`/send-message\`.`
       : `<@${targetUser.id}> dispose déjà de la permission d'utiliser les commandes du bot.`,
   });
 };

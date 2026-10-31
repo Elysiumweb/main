@@ -144,6 +144,11 @@ export const AdminRoster = () => {
                       Pseudos replays liés : {m.aliases.join(", ")}
                     </p>
                   )}
+                  {m.discordId && (
+                    <p className="text-xs text-indigo-300/90 mt-0.5 truncate" data-testid={`admin-roster-discord-${m.id}`}>
+                      Discord lié : {m.discordUsername ? `@${m.discordUsername} (${m.discordId})` : m.discordId}
+                    </p>
+                  )}
                   {m.uid ? (
                     <p className="text-xs text-emerald-300/80 mt-0.5 flex items-center gap-1">
                       <Link2 size={11} aria-hidden="true" /> {owner ? (owner.displayName || owner.email) : m.uid}

@@ -19,9 +19,18 @@ import {
 } from "./handlers/askResult.js";
 import { handleCommandAllowed } from "./handlers/commandAllowed.js";
 import {
+  handleLinkDiscordAutocomplete,
+  handleLinkDiscordCommand,
+} from "./handlers/linkDiscord.js";
+import {
   handleLinkAutocomplete,
   handleLinkCommand,
 } from "./handlers/linkPlayer.js";
+import {
+  handleCancelCommand,
+  handleScrimAutocomplete,
+  handleScrimCommand,
+} from "./handlers/scrim.js";
 import {
   handleSendMessageCommand,
   handleTicketAndDmMessage,
@@ -126,7 +135,7 @@ export const createBotClient = () => {
         return;
       }
 
-      // 1) Autocomplétion dynamique (jeux, rosters, joueurs, adversaires, salons)
+      // 1) Autocomplétion dynamique (jeux, rosters, joueurs, adversaires, salons, créneaux scrim)
       if (interaction.isAutocomplete()) {
         if (interaction.commandName === "ask-result") {
           await handleAskResultAutocomplete(interaction);
@@ -134,6 +143,14 @@ export const createBotClient = () => {
         }
         if (interaction.commandName === "link") {
           await handleLinkAutocomplete(interaction);
+          return;
+        }
+        if (interaction.commandName === "link-discord") {
+          await handleLinkDiscordAutocomplete(interaction);
+          return;
+        }
+        if (interaction.commandName === "scrim") {
+          await handleScrimAutocomplete(interaction);
           return;
         }
         await interaction.respond([]);
@@ -148,6 +165,15 @@ export const createBotClient = () => {
             return;
           case "link":
             await handleLinkCommand(interaction);
+            return;
+          case "link-discord":
+            await handleLinkDiscordCommand(interaction);
+            return;
+          case "scrim":
+            await handleScrimCommand(interaction);
+            return;
+          case "cancel":
+            await handleCancelCommand(interaction);
             return;
           case "ask-result":
             await handleAskResultCommand(interaction);

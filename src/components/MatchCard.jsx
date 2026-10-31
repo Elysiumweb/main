@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "../lib/i18n";
-import { CalendarClock, ExternalLink, PlayCircle, Pencil, Trophy, Skull, Radio, Copy, RotateCcw, Film, Award, Map as MapIcon } from "lucide-react";
+import { CalendarClock, ExternalLink, PlayCircle, Pencil, Trophy, Skull, Radio, Copy, RotateCcw, Film, Award, Map as MapIcon, Ban } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ShareButtons } from "./ShareButtons";
 import { SITE_URL } from "../lib/useSEO";
@@ -9,6 +9,7 @@ import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { OptimizedImage } from "./OptimizedImage";
 import { getElysiumTeamName } from "../lib/constants";
 import { fmtMatchDate } from "../lib/formatters";
+import { getEffectiveMatchStatus } from "../lib/matchStatus";
 import { formatStatLine, hasPlayerStats, mvpCount } from "../lib/playerStats";
 
 const OpponentLogo = ({ src, name, className = "" }) => {
@@ -47,7 +48,18 @@ const OpponentLogo = ({ src, name, className = "" }) => {
   );
 };
 
-const ResultBadge = ({ result, t, upcoming = false, live = false }) => {
+const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = false }) => {
+  if (cancelled) {
+    return (
+      <span
+        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-amber-300 border-amber-400/50 bg-amber-500/10 flex items-center gap-1"
+        data-testid="match-status-cancelled"
+      >
+        <Ban size={11} aria-hidden="true" />
+        <span>{t("results.cancelled")}</span>
+      </span>
+    );
+  }
   if (live) {
     return (
       <span
@@ -134,13 +146,15 @@ const normalizeMaps = (maps) => {
 
 const slugify = (s) => String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80) || "adversaire";
 
-export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming, initialOpen = false }) => {
+export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming, nowMs, initialOpen = false }) => {
   const { t, lang } = useLang();
   const [open, setOpen] = useState(!!initialOpen);
   useEffect(()=>{ if (initialOpen) setOpen(true); }, [initialOpen]);
 
-  const upcoming = match.status === "upcoming";
-  const live = match.status === "live";
+  const effectiveStatus = getEffectiveMatchStatus(match, nowMs);
+  const upcoming = effectiveStatus === "upcoming";
+  const live = effectiveStatus === "live";
+  const cancelled = effectiveStatus === "cancelled";
   const us = Number(match.scoreUs);
   const them = Number(match.scoreThem);
   const result = us > them ? "win" : us < them ? "loss" : "draw";
@@ -153,11 +167,13 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
   const hasVod = !!match.vodUrl;
   const mvp = match.mvp ? String(match.mvp) : "";
 
-  const ariaDesc = live
-    ? `Match en direct : ${teamName} contre ${match.opponentName || t("common.adversary")}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
-    : upcoming
-      ? `Match à venir : ${teamName} contre ${match.opponentName || t("common.adversary")}`
-      : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || t("common.adversary")}`;
+  const ariaDesc = cancelled
+    ? `Match annulé : ${teamName} contre ${match.opponentName || t("common.adversary")}`
+    : live
+      ? `Match en direct : ${teamName} contre ${match.opponentName || t("common.adversary")}${match.scoreUs !== undefined && match.scoreUs !== "" ? ` (${match.scoreUs}-${match.scoreThem})` : ""}`
+      : upcoming
+        ? `Match à venir : ${teamName} contre ${match.opponentName || t("common.adversary")}`
+        : `Résultat : ${result === "win" ? "Victoire" : result === "loss" ? "Défaite" : "Égalité"} de ${teamName} ${us}-${them} contre ${match.opponentName || t("common.adversary")}`;
 
   const formattedDate = fmtMatchDate(match, lang);
   const canonicalUrl = `${SITE_URL}/resultats/${match.id}`;
@@ -191,7 +207,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           {maps.length>0 && <span className="text-xs border border-white/10 text-[#c8c8c8] px-1.5 py-0.5 flex items-center gap-1"><MapIcon size={10}/> {maps.length}</span>}
           {mvp && <span className="text-xs border border-[#D8CA82]/20 text-[#D8CA82] px-1.5 py-0.5 flex items-center gap-1"><Award size={10}/> MVP</span>}
         </div>
-        <ResultBadge result={result} t={t} upcoming={upcoming} live={live} />
+        <ResultBadge result={result} t={t} upcoming={upcoming} live={live} cancelled={cancelled} />
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
@@ -199,7 +215,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7] text-center leading-tight" data-testid={`match-team-name-${match.id}`}>{teamName}</span>
         </div>
         <div className="text-center">
-          {upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? (
+          {cancelled ? (
+            <p className="font-display font-bold text-sm uppercase tracking-widest text-amber-300" aria-label={t("results.cancelled")}>{t("results.cancelled")}</p>
+          ) : upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? (
             <p className="font-display font-black text-2xl text-[#c8c8c8]" aria-label={live ? "Score en cours de mise à jour" : "Match à venir"}>VS</p>
           ) : (
             <p className="font-display font-black text-3xl text-[#f7f7f7]" aria-label={`Score : ${us} à ${them}`}>
@@ -234,7 +252,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           )}
         </div>
       )}
-      {hasVod && !upcoming && !live && (
+      {hasVod && !upcoming && !live && !cancelled && (
         <div className="mt-3">
           <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" onClick={(e)=> e.stopPropagation()} data-testid={`match-vod-${match.id}`} className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-1.5"><Film size={12}/> {t("results.vod")}</a>
         </div>
@@ -308,8 +326,8 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="808" height="798" loading="lazy" className="h-10 w-auto object-contain" />
               <span className="text-xs font-display uppercase text-center leading-tight">{teamName}</span>
             </div>
-            <p className="font-display font-black text-3xl" aria-label={upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
-              {upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
+            <p className="font-display font-black text-3xl" aria-label={cancelled ? t("results.cancelled") : upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
+              {cancelled ? <span className="text-base uppercase tracking-widest text-amber-300">{t("results.cancelled")}</span> : upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
             </p>
             <div className="flex flex-col items-center gap-1 w-1/3">
               <OpponentLogo src={match.opponentLogo} name={match.opponentName} className="h-10 w-10" />
@@ -371,7 +389,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           <div className="pt-2 border-t border-white/10 flex flex-col gap-3">
             <ShareButtons
               url={canonicalUrl}
-              text={`${teamName} vs ${match.opponentName || t("common.adversary")}${!upcoming && !live ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
+              text={`${teamName} vs ${match.opponentName || t("common.adversary")}${!upcoming && !live && !cancelled ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
               title={`Partager le match ${teamName} vs ${match.opponentName}`}
               testId={`match-share-${match.id}`}
               compact

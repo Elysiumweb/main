@@ -12,7 +12,7 @@ export const computeHeadToHead = (matches, opponentName) => {
   if (!opponentName || !matches || !Array.isArray(matches)) return null;
   const name = String(opponentName).trim().toLowerCase();
   const list = matches
-    .filter((m) => (m.opponentName || "").trim().toLowerCase() === name && m.status !== "upcoming")
+    .filter((m) => (m.opponentName || "").trim().toLowerCase() === name && m.status === "finished")
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
   if (list.length === 0) return null;

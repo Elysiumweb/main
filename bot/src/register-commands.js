@@ -8,13 +8,21 @@ import {
 } from "./config.js";
 import { askResultDefinition } from "./handlers/askResult.js";
 import { commandAllowedDefinition } from "./handlers/commandAllowed.js";
+import { linkDiscordCommandDefinition } from "./handlers/linkDiscord.js";
 import { linkCommandDefinition } from "./handlers/linkPlayer.js";
+import {
+  cancelCommandDefinition,
+  scrimCommandDefinition,
+} from "./handlers/scrim.js";
 import { sendMessageDefinition } from "./handlers/tickets.js";
 
 /** Commandes déployées sur le serveur esport / matchs (1526866278462001202). */
 export const getMatchGuildCommandsJson = () => [
   askResultDefinition.toJSON(),
   linkCommandDefinition.toJSON(),
+  linkDiscordCommandDefinition.toJSON(),
+  scrimCommandDefinition.toJSON(),
+  cancelCommandDefinition.toJSON(),
   commandAllowedDefinition.toJSON(),
 ];
 
