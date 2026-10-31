@@ -44,7 +44,7 @@ export default function Opponents() {
       const existing = map.get(slug) || { slug, name: m.opponentName, logo: m.opponentLogo, count:0, wins:0, losses:0, draws:0 };
       existing.count++;
       const us = Number(m.scoreUs); const them = Number(m.scoreThem);
-      if (!isNaN(us) && !isNaN(them) && m.status!=="upcoming" && m.status!=="live") {
+      if (!isNaN(us) && !isNaN(them) && m.status==="finished") {
         if (us>them) existing.wins++; else if (us<them) existing.losses++; else existing.draws++;
       }
       if (m.opponentLogo && !existing.logo) existing.logo = m.opponentLogo;

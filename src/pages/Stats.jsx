@@ -96,7 +96,7 @@ export default function Stats() {
   useEffect(() => {
     setError(false); setMatches(null);
     const unsubscribeMatches = onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && m.status !== "live" && !isRemovedGame(m.game));
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status === "finished" && !isRemovedGame(m.game));
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, (e) => { console.error(e); setError(true); });

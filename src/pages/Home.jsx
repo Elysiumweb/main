@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { videoEmbedUrl } from "./MediaGallery";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { fmtMatchDate } from "../lib/formatters";
+import { getEffectiveMatchStatus, useNowMs } from "../lib/matchStatus";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 
@@ -37,6 +38,7 @@ const OpponentMark = ({ src, name }) => {
 
 export default function Home() {
   const { t, lang } = useLang();
+  const nowMs = useNowMs();
   const [matches, setMatches] = useState([]);
   const [members, setMembers] = useState([]);
   const [videos, setVideos] = useState([]);
@@ -70,22 +72,25 @@ export default function Home() {
 
   // ---- preuves : prochain match, palmarès, effectif ----
   const nextMatch = useMemo(() => {
-    const upcoming = matches.filter((m) => m.status === "upcoming");
-    upcoming.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const upcoming = matches.filter((m) => getEffectiveMatchStatus(m, nowMs) === "upcoming");
+    upcoming.sort((a, b) => `${a.date || ""}T${a.time || "00:00"}`.localeCompare(`${b.date || ""}T${b.time || "00:00"}`));
     return upcoming[0] || null;
-  }, [matches]);
+  }, [matches, nowMs]);
 
-  const liveMatches = useMemo(() => matches.filter((m) => m.status === "live"), [matches]);
+  const liveMatches = useMemo(
+    () => matches.filter((m) => getEffectiveMatchStatus(m, nowMs) === "live"),
+    [matches, nowMs]
+  );
 
   const palmares = useMemo(() => {
-    const finished = matches.filter((m) => m.status !== "upcoming");
+    const finished = matches.filter((m) => getEffectiveMatchStatus(m, nowMs) === "finished");
     finished.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
     const wins = finished.filter((m) => Number(m.scoreUs) > Number(m.scoreThem)).length;
     const losses = finished.filter((m) => Number(m.scoreUs) < Number(m.scoreThem)).length;
     const draws = finished.length - wins - losses;
     const winRate = finished.length ? Math.round((wins / finished.length) * 100) : null;
     return { total: finished.length, wins, losses, draws, winRate, last: finished[0] || null };
-  }, [matches]);
+  }, [matches, nowMs]);
 
   const rosterStats = useMemo(() => {
     const players = members.filter((m) => m.status !== "staff");

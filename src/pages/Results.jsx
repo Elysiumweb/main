@@ -8,8 +8,9 @@ import { MatchCard } from "../components/MatchCard";
 import { MatchCountdown } from "../components/MatchCountdown";
 import { HeadToHeadPanel } from "../components/HeadToHead";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Trophy, CalendarClock, ChevronDown, CalendarDays, Download } from "lucide-react";
+import { Trophy, CalendarClock, ChevronDown, CalendarDays, Download, Ban } from "lucide-react";
 import { GAMES, getElysiumTeamName, isRemovedGame } from "../lib/constants";
+import { getEffectiveMatchStatus, getTodayIsoInTimezone, useNowMs } from "../lib/matchStatus";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
@@ -36,6 +37,8 @@ const getPeriodDates = (preset) => {
 
 export default function Results() {
   const { t } = useLang();
+  const nowMs = useNowMs();
+  const todayIso = useMemo(() => getTodayIsoInTimezone(new Date(nowMs)), [nowMs]);
   const [matches, setMatches] = useState(null);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -71,22 +74,37 @@ export default function Results() {
 
   const competitions = useMemo(() => [...new Set((matches || []).map((m) => m.competition).filter(Boolean))], [matches]);
 
-  const liveMatches = useMemo(() => (matches || []).filter((m) => m.status === "live"), [matches]);
+  const liveMatches = useMemo(
+    () => (matches || []).filter((m) => getEffectiveMatchStatus(m, nowMs) === "live"),
+    [matches, nowMs]
+  );
+
+  const hasCancelledMatches = useMemo(
+    () => (matches || []).some((m) => getEffectiveMatchStatus(m, nowMs) === "cancelled"),
+    [matches, nowMs]
+  );
 
   const nextMatch = useMemo(() => {
-    const upcoming = (matches || []).filter((m) => m.status === "upcoming").sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const upcoming = (matches || [])
+      .filter((m) => getEffectiveMatchStatus(m, nowMs) === "upcoming")
+      .sort((a, b) => `${a.date || ""}T${a.time || "00:00"}`.localeCompare(`${b.date || ""}T${b.time || "00:00"}`));
     return upcoming[0] || null;
-  }, [matches]);
+  }, [matches, nowMs]);
 
   const filtered = useMemo(() => {
-    let list = (matches || []).filter((m) => (tab === "upcoming" ? m.status === "upcoming" : m.status === "finished"));
+    let list = (matches || []).filter((m) => {
+      const st = getEffectiveMatchStatus(m, nowMs);
+      if (tab === "cancelled") return st === "cancelled";
+      if (tab === "upcoming") return st === "upcoming" || (st === "cancelled" && (m.date || "") >= todayIso);
+      return st === "finished";
+    });
     if (game !== "all") list = list.filter((m) => m.game === game);
     if (competition !== "all") list = list.filter((m) => m.competition === competition);
     if (from) list = list.filter((m) => (m.date || "") >= from);
     if (to) list = list.filter((m) => (m.date || "") <= to);
     list.sort((a, b) => tab === "upcoming" ? (a.date || "").localeCompare(b.date || "") : (b.date || "").localeCompare(a.date || ""));
     return list;
-  }, [matches, tab, game, competition, from, to]);
+  }, [matches, tab, game, competition, from, to, nowMs, todayIso]);
 
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [tab, game, competition, from, to]);
 
@@ -105,7 +123,13 @@ export default function Results() {
           "@id": `${SITE_URL}/resultats/${m.id}#event`,
           name: `${teamName} vs ${m.opponentName || t("common.adversary")}`,
           startDate: m.date ? `${m.date}${m.time ? `T${m.time}` : ""}` : undefined,
-          eventStatus: m.status === "upcoming" || m.status === "live" ? "https://schema.org/EventScheduled" : "https://schema.org/EventCompleted",
+          eventStatus: (() => {
+            const st = getEffectiveMatchStatus(m, nowMs);
+            if (st === "cancelled") return "https://schema.org/EventCancelled";
+            if (st === "live") return "https://schema.org/EventInProgress";
+            if (st === "upcoming") return "https://schema.org/EventScheduled";
+            return "https://schema.org/EventCompleted";
+          })(),
           sport: m.game || "Esport",
           competitor: [
             { "@type": "SportsTeam", name: teamName, memberOf: { "@id": `${SITE_URL}/#organization` } },
@@ -175,7 +199,7 @@ export default function Results() {
               <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="results-live-grid">
-              {liveMatches.map((m) => <MatchCard key={m.id} match={m} initialOpen={m.id===matchParam} />)}
+              {liveMatches.map((m) => <MatchCard key={m.id} match={m} nowMs={nowMs} initialOpen={m.id===matchParam} />)}
             </div>
           </div>
         )}
@@ -193,7 +217,7 @@ export default function Results() {
           role="tablist"
           aria-label={t("results.title")}
         >
-          {[[ "finished", Trophy], ["upcoming", CalendarClock]].map(([k, Icon]) => (
+          {[[ "finished", Trophy], ["upcoming", CalendarClock], ...(hasCancelledMatches || tab === "cancelled" ? [["cancelled", Ban]] : [])].map(([k, Icon]) => (
             <button
               key={k}
               onClick={() => setTab(k)}
@@ -311,7 +335,7 @@ export default function Results() {
         ) : (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-grid">
-              {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} initialOpen={m.id===matchParam} />)}
+              {filtered.slice(0, visibleCount).map((m) => <MatchCard key={m.id} match={m} nowMs={nowMs} initialOpen={m.id===matchParam} />)}
             </div>
             {filtered.length > visibleCount && (
               <div className="mt-10 flex flex-col items-center gap-3" data-testid="results-load-more">

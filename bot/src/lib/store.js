@@ -14,6 +14,7 @@ import {
 const DEFAULT_STATE = () => ({
   allowedUsers: [],
   scheduledMatches: {},
+  scrimRequests: {},
   ticketPanels: {},
   tickets: {},
   dmSessions: {},
@@ -21,6 +22,7 @@ const DEFAULT_STATE = () => ({
     panel: 0,
     ticket: 0,
     match: 0,
+    scrim: 0,
   },
 });
 
@@ -50,6 +52,7 @@ export const getState = () => {
       state = {
         ...DEFAULT_STATE(),
         ...parsed,
+        scrimRequests: parsed.scrimRequests || {},
         counters: { ...DEFAULT_STATE().counters, ...(parsed.counters || {}) },
       };
       return state;
@@ -134,6 +137,15 @@ export const getScheduledMatch = (id) => getState().scheduledMatches[id] || null
 
 export const listScheduledMatches = () => Object.values(getState().scheduledMatches);
 
+const normKey = (v) => String(v || "").trim().toLowerCase();
+
+const matchesRosterIdentity = (item, { game, roster }) => {
+  if (normKey(item?.game) !== normKey(game)) return false;
+  const targetRoster = normKey(roster);
+  const itemRoster = normKey(item?.roster);
+  return targetRoster ? itemRoster === targetRoster : !itemRoster;
+};
+
 /** Retourne les matchs en attente de replays/résultat dans un salon donné. */
 export const getPendingResultMatchesInChannel = (channelId) =>
   listScheduledMatches()
@@ -141,9 +153,77 @@ export const getPendingResultMatchesInChannel = (channelId) =>
       (m) =>
         m.channelId === String(channelId) &&
         m.endPromptSent === true &&
-        m.completed !== true
+        m.completed !== true &&
+        m.cancelled !== true
     )
     .sort((a, b) => (b.activeUploadAt || b.endAtMs || 0) - (a.activeUploadAt || a.endAtMs || 0));
+
+/** Annule dans le planificateur local les matchs non terminés prévus pour un roster à une date donnée. */
+export const cancelScheduledMatchesForRosterDate = ({
+  game,
+  roster,
+  date,
+  cancelledBy = "",
+  nowMs = Date.now(),
+}) => {
+  const current = getState();
+  const cancelledJobs = [];
+  for (const job of Object.values(current.scheduledMatches)) {
+    if (job.completed || job.cancelled) continue;
+    if (job.date !== date) continue;
+    if (!matchesRosterIdentity(job, { game, roster })) continue;
+    job.cancelled = true;
+    job.cancelledAt = nowMs;
+    job.cancelledBy = String(cancelledBy || "");
+    cancelledJobs.push(job);
+  }
+  if (cancelledJobs.length > 0) saveState();
+  return cancelledJobs;
+};
+
+// --- Gestion des demandes de scrim (/scrim & /cancel) ---
+export const saveScrimRequest = (scrimReq) => {
+  const current = getState();
+  if (!current.scrimRequests) current.scrimRequests = {};
+  current.scrimRequests[scrimReq.id] = scrimReq;
+  saveState();
+  return scrimReq;
+};
+
+export const listScrimRequests = () => Object.values(getState().scrimRequests || {});
+
+export const getActiveScrimRequestsForRosterDate = ({ game, roster, date }) =>
+  listScrimRequests()
+    .filter(
+      (r) =>
+        r.status === "active" &&
+        r.date === date &&
+        matchesRosterIdentity(r, { game, roster })
+    )
+    .sort((a, b) => (a.startAtMs || 0) - (b.startAtMs || 0));
+
+export const cancelScrimRequestsForRosterDate = ({
+  game,
+  roster,
+  date,
+  cancelledBy = "",
+  nowMs = Date.now(),
+}) => {
+  const current = getState();
+  if (!current.scrimRequests) current.scrimRequests = {};
+  const cancelledList = [];
+  for (const req of Object.values(current.scrimRequests)) {
+    if (req.status !== "active") continue;
+    if (req.date !== date) continue;
+    if (!matchesRosterIdentity(req, { game, roster })) continue;
+    req.status = "cancelled";
+    req.cancelledAt = nowMs;
+    req.cancelledBy = String(cancelledBy || "");
+    cancelledList.push(req);
+  }
+  if (cancelledList.length > 0) saveState();
+  return cancelledList.sort((a, b) => (a.startAtMs || 0) - (b.startAtMs || 0));
+};
 
 // --- Gestion des panneaux /send-message & des tickets ---
 export const saveTicketPanel = (panel) => {

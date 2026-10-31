@@ -766,6 +766,7 @@ export default function Admin() {
                     <option value="finished">{t("admin.match.finished")}</option>
                     <option value="upcoming">{t("admin.match.upcoming")}</option>
                     <option value="live">{t("admin.match.live")}</option>
+                    <option value="cancelled">{t("admin.match.cancelled")}</option>
                   </select>
                   {form.status === "live" && <p className="text-xs text-[#c8c8c8] mt-1">{t("admin.match.scoreHint")}</p>}
                 </div>

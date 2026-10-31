@@ -14,10 +14,21 @@ const isValidCalendarDate = (year, month, day) => {
   );
 };
 
+const resolveSafeTimeZone = (tz) => {
+  const candidate = String(tz || "").trim() || DEFAULT_TIMEZONE;
+  try {
+    Intl.DateTimeFormat("en-CA", { timeZone: candidate });
+    return candidate;
+  } catch {
+    return DEFAULT_TIMEZONE;
+  }
+};
+
 /** Retourne { year, month, day, hour, minute, second } dans le fuseau horaire demandé. */
 export const getZonedParts = (dateObj = new Date(), timeZone = DEFAULT_TIMEZONE) => {
+  const safeTz = resolveSafeTimeZone(timeZone);
   const dtf = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
+    timeZone: safeTz,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

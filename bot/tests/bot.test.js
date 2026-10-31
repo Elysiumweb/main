@@ -24,9 +24,18 @@ import {
 } from "../src/handlers/askResult.js";
 import { handleCommandAllowed } from "../src/handlers/commandAllowed.js";
 import {
+  handleLinkDiscordAutocomplete,
+  handleLinkDiscordCommand,
+} from "../src/handlers/linkDiscord.js";
+import {
   handleLinkAutocomplete,
   handleLinkCommand,
 } from "../src/handlers/linkPlayer.js";
+import {
+  handleCancelCommand,
+  handleScrimAutocomplete,
+  handleScrimCommand,
+} from "../src/handlers/scrim.js";
 import {
   handleSendMessageCommand,
   handleTicketAndDmMessage,
@@ -53,7 +62,10 @@ import {
   parseReplayBuffer,
   resolveReplaySideAndSeries,
 } from "../src/lib/replayProcessor.js";
-import { runSchedulerTick } from "../src/lib/scheduler.js";
+import {
+  __resetSchedulerForTests,
+  runSchedulerTick,
+} from "../src/lib/scheduler.js";
 import {
   __setStateFileForTests,
   getScheduledMatch,
@@ -246,7 +258,7 @@ const createInMemoryFirestore = (seed = {}) => {
 // Tests
 // ============================================================================
 
-test("Configuration, extraction Client ID et définitions des 4 commandes Slash", () => {
+test("Configuration, extraction Client ID et définitions des commandes Slash", () => {
   const syntheticToken = `${Buffer.from("1565640632779677796").toString("base64")}.test00.synthetic_unit_test_sig`;
   const clientId = deriveClientIdFromToken(syntheticToken);
   assert.equal(clientId, "1565640632779677796");
@@ -257,7 +269,7 @@ test("Configuration, extraction Client ID et définitions des 4 commandes Slash"
 
   assert.deepEqual(
     matchCmds.map((c) => c.name),
-    ["ask-result", "link", "command-allowed"]
+    ["ask-result", "link", "link-discord", "scrim", "cancel", "command-allowed"]
   );
   assert.deepEqual(
     communityCmds.map((c) => c.name),
@@ -623,9 +635,31 @@ test("Flux complet Match : /ask-result -> annonce début -> demande fin -> repla
     },
   };
 
-  // 1) À l'heure du début (20:00 Paris = 19:00 UTC) : le bot annonce le match + identifiants + "Elysium ouvre"
+  // Ajout également d'un match créé directement depuis l'admin du site à la même heure (sans passer par /ask-result)
+  await mockDb.collection("matches").add({
+    game: "EVA",
+    roster: null,
+    opponentName: "Solary",
+    date: "2026-10-30",
+    time: "20:00",
+    endTime: "21:30",
+    timezone: "Europe/Paris",
+    status: "upcoming",
+  });
+
+  // 1) À l'heure du début (20:00 Paris = 19:00 UTC) :
+  //    - le match passe en "En direct" ("live") sur le site (ainsi que le match créé via l'admin du site)
+  //    - le bot annonce le match + identifiants + "Elysium ouvre"
+  __resetSchedulerForTests();
   const startMs = Date.parse("2026-10-30T19:00:05Z");
   await runSchedulerTick(mockClient, startMs);
+  assert.equal(mockDb.store.get("matches").get(siteMatchId).status, "live");
+  const allSiteMatchesAtStart = [...mockDb.store.get("matches").values()];
+  assert.equal(
+    allSiteMatchesAtStart.find((m) => m.opponentName === "Solary")?.status,
+    "live"
+  );
+
   assert.equal(sentMessages.length, 1);
   const startEmbed = sentMessages[0].payload.embeds[0].data;
   assert.ok(startEmbed.description.includes("Elysium qui ouvre"));
@@ -1134,4 +1168,260 @@ test("Client Discord principal : instanciation propre et rejet immédiat des ser
   assert.equal(leftAuthorizedGuild, false);
 
   client.destroy();
+});
+
+test("Commandes /link-discord, /scrim (délai 2h + illusion IA + MP admin) et /cancel (annulation journée + site)", async () => {
+  const tmpState = path.join(os.tmpdir(), `elysium-scrim-test-${Date.now()}.json`);
+  __setStateFileForTests(tmpState);
+
+  const mockDb = createInMemoryFirestore({
+    rosters: {
+      r_black: { game: "Rocket League", name: "Black" },
+      r_white: { game: "Rocket League", name: "White" },
+    },
+    roster: {
+      p_black_1: {
+        pseudo: "ElysiumZen",
+        game: "Rocket League",
+        roster: "Black",
+        status: "player",
+      },
+      p_black_2: {
+        pseudo: "ElysiumExoTiiK",
+        game: "Rocket League",
+        roster: "Black",
+        status: "player",
+      },
+      p_white_1: {
+        pseudo: "ElysiumAtow",
+        game: "Rocket League",
+        roster: "White",
+        status: "player",
+      },
+    },
+    matches: {
+      m_today_black: {
+        game: "Rocket League",
+        roster: "Black",
+        opponentName: "Karmine Corp",
+        date: "2026-10-31",
+        time: "21:00",
+        status: "upcoming",
+      },
+      m_today_white: {
+        game: "Rocket League",
+        roster: "White",
+        opponentName: "BDS",
+        date: "2026-10-31",
+        time: "21:00",
+        status: "upcoming",
+      },
+      m_tomorrow_black: {
+        game: "Rocket League",
+        roster: "Black",
+        opponentName: "Gentle Mates",
+        date: "2026-11-01",
+        time: "20:00",
+        status: "upcoming",
+      },
+      m_finished_today_black: {
+        game: "Rocket League",
+        roster: "Black",
+        opponentName: "Team Liquid",
+        date: "2026-10-31",
+        time: "14:00",
+        scoreUs: 4,
+        scoreThem: 2,
+        status: "finished",
+      },
+    },
+  });
+  __setFirestoreForTests(mockDb);
+  invalidateSiteCache();
+
+  const ownerDms = [];
+  const mockClient = {
+    users: {
+      fetch: async (id) =>
+        id === OWNER_USER_ID
+          ? {
+              id: OWNER_USER_ID,
+              send: async (p) => {
+                ownerDms.push(p);
+                return { id: `dm_scrim_${ownerDms.length}`, payload: p };
+              },
+            }
+          : null,
+    },
+  };
+
+  // 1) Un utilisateur Discord NON lié tente /scrim et /cancel -> rejeté ("Commande réservée aux joueurs")
+  let unlinkedReply = null;
+  await handleScrimCommand(
+    {
+      guildId: MATCH_GUILD_ID,
+      user: { id: "444444444444444444", username: "RandomUser" },
+      client: mockClient,
+      options: { getString: () => "21:00" },
+      reply: async (p) => { unlinkedReply = p; },
+    },
+    { now: new Date("2026-10-31T17:00:00Z") } // 18:00 Europe/Paris
+  );
+  assert.ok(unlinkedReply.embeds[0].data.title.includes("réservée aux joueurs"));
+
+  let unlinkedCancelReply = null;
+  await handleCancelCommand(
+    {
+      guildId: MATCH_GUILD_ID,
+      user: { id: "444444444444444444", username: "RandomUser" },
+      client: mockClient,
+      reply: async (p) => { unlinkedCancelReply = p; },
+    },
+    { now: new Date("2026-10-31T17:00:00Z") }
+  );
+  assert.ok(unlinkedCancelReply.embeds[0].data.title.includes("réservée aux joueurs"));
+
+  // 2) /link-discord : l'admin lie 2 joueurs du roster Black à leurs comptes Discord
+  let linkDiscordChoices = [];
+  await handleLinkDiscordAutocomplete({
+    user: { id: OWNER_USER_ID },
+    options: { getFocused: () => "Zen" },
+    respond: async (c) => { linkDiscordChoices = c; },
+  });
+  assert.equal(linkDiscordChoices.length, 1);
+  assert.equal(linkDiscordChoices[0].value, "p_black_1");
+
+  let linkDiscordReply = null;
+  await handleLinkDiscordCommand({
+    guildId: MATCH_GUILD_ID,
+    user: { id: OWNER_USER_ID },
+    deferred: false,
+    replied: false,
+    deferReply: async function () { this.deferred = true; },
+    editReply: async (p) => { linkDiscordReply = p; },
+    options: {
+      getUser: () => ({ id: "555555555555555551", username: "zen_discord", bot: false }),
+      getString: () => "p_black_1",
+      getBoolean: () => false,
+    },
+  });
+  assert.ok(linkDiscordReply.embeds[0].data.title.includes("Compte Discord relié"));
+  assert.equal(mockDb.store.get("roster").get("p_black_1").discordId, "555555555555555551");
+
+  await handleLinkDiscordCommand({
+    guildId: MATCH_GUILD_ID,
+    user: { id: OWNER_USER_ID },
+    deferred: false,
+    replied: false,
+    deferReply: async function () { this.deferred = true; },
+    editReply: async () => {},
+    options: {
+      getUser: () => ({ id: "555555555555555552", username: "exotiik_discord", bot: false }),
+      getString: () => "p_black_2",
+      getBoolean: () => false,
+    },
+  });
+
+  // 3) Autocomplétion de /scrim : à 18:00 Paris (17:00 UTC le 31/10/2026), seuls les créneaux >= 20:00 sont proposés
+  const refNow = new Date("2026-10-31T17:00:00Z"); // 18:00 Europe/Paris (UTC+1)
+  let scrimSlotChoices = [];
+  await handleScrimAutocomplete(
+    {
+      user: { id: "555555555555555551" },
+      options: { getFocused: () => "" },
+      respond: async (c) => { scrimSlotChoices = c; },
+    },
+    { now: refNow }
+  );
+  assert.ok(scrimSlotChoices.some((c) => c.value === "20:00"));
+  assert.ok(!scrimSlotChoices.some((c) => c.value === "19:30"));
+
+  // 4) Règle des 2H minimum : demande à 19:30 alors qu'il est 18:00 (1h30 d'avance < 2h) -> REJETÉE !
+  let rejectedScrimReply = null;
+  await handleScrimCommand(
+    {
+      guildId: MATCH_GUILD_ID,
+      user: { id: "555555555555555551", username: "zen_discord" },
+      client: mockClient,
+      options: { getString: () => "19:30" },
+      reply: async (p) => { rejectedScrimReply = p; },
+    },
+    { now: refNow }
+  );
+  assert.ok(rejectedScrimReply.embeds[0].data.title.includes("Demande rejetée"));
+  assert.equal(ownerDms.length, 0); // Aucun MP envoyé lors d'un rejet !
+
+  // 5) Demande /scrim valide à 21:00 (3h d'avance >= 2h) :
+  //    - Envoie le MP à 520496557146243072 avec l'heure (21:00) et le roster (Elysium Black)
+  //    - Répond au joueur que l'IA lance ses recherches, SANS AUCUNE mention de 520496557146243072 ni de MP !
+  let acceptedScrimReply = null;
+  await handleScrimCommand(
+    {
+      guildId: MATCH_GUILD_ID,
+      channelId: "1888888888888888888",
+      user: { id: "555555555555555551", username: "zen_discord" },
+      client: mockClient,
+      deferred: false,
+      replied: false,
+      deferReply: async function () { this.deferred = true; },
+      editReply: async (p) => { acceptedScrimReply = p; },
+      options: { getString: () => "21:00" },
+    },
+    { now: refNow }
+  );
+
+  assert.equal(ownerDms.length, 1);
+  const scrimDmText = JSON.stringify(ownerDms[0].embeds[0].data);
+  assert.ok(scrimDmText.includes("Elysium Black"));
+  assert.ok(scrimDmText.includes("21:00"));
+  assert.ok(scrimDmText.includes("Rocket League"));
+
+  const playerFacingScrimText = JSON.stringify(acceptedScrimReply.embeds[0].data);
+  assert.ok(playerFacingScrimText.includes("IA"));
+  assert.ok(playerFacingScrimText.includes("recherches"));
+  assert.ok(playerFacingScrimText.includes("21:00"));
+  assert.ok(!playerFacingScrimText.includes(OWNER_USER_ID));
+  assert.ok(!playerFacingScrimText.toLowerCase().includes("message privé"));
+  assert.equal(
+    acceptedScrimReply.embeds[0].data.image?.url,
+    `attachment://${BANNER_ATTACHMENT_NAME}`
+  );
+
+  // 6) /cancel exécuté par un coéquipier du même roster (ElysiumExoTiiK) :
+  //    - Annule les scrims de Elysium Black pour la journée (2026-10-31)
+  //    - Passe le match du jour de Elysium Black sur le site (`m_today_black`) en "cancelled"
+  //    - Ne touche NI au match du roster White (`m_today_white`), NI au match de demain (`m_tomorrow_black`), NI au match déjà terminé (`m_finished_today_black`)
+  //    - Envoie un MP d'annulation à 520496557146243072
+  let cancelReply = null;
+  await handleCancelCommand(
+    {
+      guildId: MATCH_GUILD_ID,
+      channelId: "1888888888888888888",
+      user: { id: "555555555555555552", username: "exotiik_discord" },
+      client: mockClient,
+      deferred: false,
+      replied: false,
+      deferReply: async function () { this.deferred = true; },
+      editReply: async (p) => { cancelReply = p; },
+    },
+    { now: refNow }
+  );
+
+  assert.equal(mockDb.store.get("matches").get("m_today_black").status, "cancelled");
+  assert.equal(mockDb.store.get("matches").get("m_today_white").status, "upcoming");
+  assert.equal(mockDb.store.get("matches").get("m_tomorrow_black").status, "upcoming");
+  assert.equal(mockDb.store.get("matches").get("m_finished_today_black").status, "finished");
+
+  assert.equal(ownerDms.length, 2);
+  const cancelDmText = JSON.stringify(ownerDms[1].embeds[0].data);
+  assert.ok(cancelDmText.includes("Annulation journée"));
+  assert.ok(cancelDmText.includes("Elysium Black"));
+  assert.ok(cancelDmText.includes("Karmine Corp"));
+  assert.ok(cancelDmText.includes("21:00"));
+
+  const playerFacingCancelText = JSON.stringify(cancelReply.embeds[0].data);
+  assert.ok(playerFacingCancelText.includes("Annulé"));
+  assert.ok(!playerFacingCancelText.includes(OWNER_USER_ID));
+
+  fs.rmSync(tmpState, { force: true });
 });

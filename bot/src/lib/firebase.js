@@ -8,6 +8,11 @@ import {
   LEGACY_REMOVED_GAMES,
   OFFICIAL_FIREBASE_UID,
 } from "../config.js";
+import {
+  addDaysToIsoDate,
+  parseMatchTime,
+  zonedDateTimeToUtcMs,
+} from "./dateTime.js";
 
 let firestoreDb = null;
 let initAttempted = false;
@@ -206,6 +211,8 @@ export const getSitePlayers = async ({ game = "", roster = "", includeStaff = fa
           game: String(data.game || "").trim(),
           roster: data.roster ? String(data.roster).trim() : "",
           status: data.status || "player",
+          discordId: data.discordId ? String(data.discordId).trim() : null,
+          discordUsername: data.discordUsername ? String(data.discordUsername).trim() : "",
           aliases: Array.isArray(data.aliases)
             ? data.aliases.map((a) => String(a || "").trim()).filter(Boolean)
             : [],
@@ -221,6 +228,98 @@ export const getSitePlayers = async ({ game = "", roster = "", includeStaff = fa
     if (roster && p.roster && norm(p.roster) !== norm(roster)) return false;
     return true;
   });
+};
+
+/** Retourne la fiche joueur du site liée à un identifiant utilisateur Discord (hors staff), ou null. */
+export const getPlayerByDiscordId = async (discordId) => {
+  const cleanId = String(discordId || "").trim();
+  if (!cleanId) return null;
+  const players = await getSitePlayers({ includeStaff: false });
+  return players.find((p) => p.discordId && p.discordId === cleanId) || null;
+};
+
+/**
+ * Lie (ou délie) un compte Discord (`discordId` + `discordUsername`) à une fiche joueur du site (`roster/{playerId}`).
+ * Garantit qu'un compte Discord n'est rattaché qu'à une seule fiche joueur à la fois.
+ */
+export const linkDiscordToPlayer = async ({
+  discordId,
+  discordUsername = "",
+  playerId,
+  remove = false,
+}) => {
+  const db = requireDb();
+  const playerRef = db.collection("roster").doc(playerId);
+  const playerSnap = await playerRef.get();
+  if (!playerSnap.exists) {
+    throw new Error("Joueur introuvable sur le site.");
+  }
+
+  const playerData = playerSnap.data() || {};
+  const previousDiscordId = playerData.discordId ? String(playerData.discordId).trim() : null;
+
+  if (remove) {
+    await playerRef.update({
+      discordId: null,
+      discordUsername: null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    invalidateSiteCache();
+    return {
+      action: "removed",
+      player: {
+        id: playerSnap.id,
+        ...playerData,
+        discordId: null,
+        discordUsername: null,
+      },
+      movedFrom: null,
+      previousDiscordId,
+    };
+  }
+
+  const cleanDiscordId = String(discordId || "").trim();
+  const cleanUsername = String(discordUsername || "").trim();
+  if (!cleanDiscordId) {
+    throw new Error("Identifiant Discord invalide.");
+  }
+
+  // Assure l'unicité : si ce compte Discord était lié à une autre fiche joueur, on le détache de l'ancienne
+  let movedFrom = null;
+  const allSnap = await db.collection("roster").get();
+  for (const docSnap of allSnap.docs) {
+    if (docSnap.id === playerId) continue;
+    const otherData = docSnap.data() || {};
+    if (otherData.discordId && String(otherData.discordId).trim() === cleanDiscordId) {
+      await docSnap.ref.update({
+        discordId: null,
+        discordUsername: null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      movedFrom = otherData.pseudo || docSnap.id;
+    }
+  }
+
+  const alreadyLinkedSame = previousDiscordId === cleanDiscordId;
+
+  await playerRef.update({
+    discordId: cleanDiscordId,
+    discordUsername: cleanUsername || null,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  invalidateSiteCache();
+
+  return {
+    action: alreadyLinkedSame ? "already_linked" : "linked",
+    player: {
+      id: playerSnap.id,
+      ...playerData,
+      discordId: cleanDiscordId,
+      discordUsername: cleanUsername || "",
+    },
+    movedFrom,
+    previousDiscordId: previousDiscordId && !alreadyLinkedSame ? previousDiscordId : null,
+  };
 };
 
 /** Liste les équipes adverses déjà connues sur le site (pour autocomplétion et réutilisation). */
@@ -369,6 +468,7 @@ export const createUpcomingMatchOnSite = async ({
   endTime,
   format,
   timezone = DEFAULT_TIMEZONE,
+  initialStatus = "upcoming",
   actorDiscordId = "",
 }) => {
   const db = requireDb();
@@ -379,6 +479,8 @@ export const createUpcomingMatchOnSite = async ({
       : roster && siteRosters.length === 0
         ? null
         : roster || null;
+
+  const statusToSet = initialStatus === "live" ? "live" : "upcoming";
 
   const matchPayload = {
     game: String(game || "Rocket League").trim(),
@@ -393,7 +495,7 @@ export const createUpcomingMatchOnSite = async ({
     timezone,
     competition: String(format || "").trim(),
     format: String(format || "").trim(),
-    status: "upcoming",
+    status: statusToSet,
     platform: "",
     watchUrl: "",
     vodUrl: "",
@@ -480,6 +582,148 @@ export const completeMatchOnSite = async ({
 
   invalidateSiteCache();
   return { id: matchId, ...(snap.data() || {}), ...updatePayload };
+};
+
+/**
+ * Bascule un match du site en statut "En direct" (`status: "live"`) lorsqu'il est en cours.
+ * Ne modifie pas un match déjà terminé (`finished`) ou annulé (`cancelled`).
+ */
+export const markMatchLiveOnSite = async ({ matchId, actorDiscordId = "scheduler" } = {}) => {
+  const db = getFirestoreDb();
+  if (!db || !matchId) return null;
+
+  const matchRef = db.collection("matches").doc(matchId);
+  const snap = await matchRef.get();
+  if (!snap.exists) return null;
+
+  const current = snap.data() || {};
+  if (current.status !== "upcoming") {
+    return { id: matchId, ...current, changed: false };
+  }
+
+  await matchRef.update({
+    status: "live",
+    liveStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  try {
+    await db.collection("admin_audit").add({
+      action: "match_live",
+      label: `[Bot Discord] Match en direct vs ${current.opponentName || matchId}`,
+      actorUid: OFFICIAL_FIREBASE_UID,
+      actorName: `Discord Bot (${actorDiscordId})`,
+      target: { collection: "matches", id: matchId },
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch {
+    // non bloquant
+  }
+
+  invalidateSiteCache();
+  return { id: matchId, ...current, status: "live", changed: true };
+};
+
+/**
+ * Vérifie sur Firestore tous les matchs `upcoming` et bascule automatiquement en `"live"`
+ * ("En direct") ceux dont l'horaire est actuellement en cours (y compris les matchs créés depuis l'admin du site).
+ */
+export const syncUpcomingSiteMatchesToLive = async ({
+  nowMs = Date.now(),
+  defaultTimeZone = DEFAULT_TIMEZONE,
+} = {}) => {
+  const db = getFirestoreDb();
+  if (!db) return [];
+
+  const snap = await db.collection("matches").where("status", "==", "upcoming").get();
+  const switched = [];
+
+  for (const docSnap of snap.docs) {
+    const data = docSnap.data() || {};
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data.date || ""))) continue;
+    const startHm = parseMatchTime(data.time);
+    if (!startHm) continue;
+
+    const tz = data.timezone || defaultTimeZone;
+    const startAtMs = zonedDateTimeToUtcMs(data.date, startHm, tz);
+    if (!Number.isFinite(startAtMs)) continue;
+
+    const endHm = data.endTime ? parseMatchTime(data.endTime) : null;
+    let endAtMs = startAtMs + 2 * 60 * 60 * 1000;
+    if (endHm) {
+      const endDate = endHm <= startHm ? addDaysToIsoDate(data.date, 1) : data.date;
+      const computedEnd = zonedDateTimeToUtcMs(endDate, endHm, tz);
+      if (Number.isFinite(computedEnd) && computedEnd > startAtMs) {
+        endAtMs = computedEnd;
+      }
+    }
+
+    if (nowMs >= startAtMs && nowMs < endAtMs) {
+      await docSnap.ref.update({
+        status: "live",
+        liveStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      switched.push({ id: docSnap.id, ...data, status: "live" });
+    }
+  }
+
+  if (switched.length > 0) invalidateSiteCache();
+  return switched;
+};
+
+/**
+ * Passe en `"cancelled"` (Annulé) tous les matchs prévus/en cours sur le site pour un roster donné à une date ISO ("YYYY-MM-DD").
+ */
+export const cancelRosterMatchesForDateOnSite = async ({
+  game,
+  roster,
+  date,
+  actorDiscordId = "",
+}) => {
+  const db = requireDb();
+  const targetGame = norm(game);
+  const targetRoster = norm(roster);
+
+  const snap = await db.collection("matches").where("date", "==", date).get();
+  const cancelledMatches = [];
+
+  for (const docSnap of snap.docs) {
+    const data = docSnap.data() || {};
+    if (norm(data.game) !== targetGame) continue;
+
+    const docRoster = norm(data.roster);
+    if (targetRoster ? docRoster !== targetRoster : Boolean(docRoster)) continue;
+
+    const currentStatus = norm(data.status);
+    if (currentStatus === "finished" || currentStatus === "cancelled") continue;
+
+    await docSnap.ref.update({
+      status: "cancelled",
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+      cancelledByDiscordId: String(actorDiscordId || ""),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    const updated = { id: docSnap.id, ...data, status: "cancelled" };
+    cancelledMatches.push(updated);
+
+    try {
+      await db.collection("admin_audit").add({
+        action: "match_cancelled",
+        label: `[Bot Discord /cancel] ${data.game || game}${data.roster ? ` (${data.roster})` : ""} vs ${data.opponentName || docSnap.id}`,
+        actorUid: OFFICIAL_FIREBASE_UID,
+        actorName: `Discord Bot (${actorDiscordId || "player"})`,
+        target: { collection: "matches", id: docSnap.id },
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch {
+      // non bloquant
+    }
+  }
+
+  if (cancelledMatches.length > 0) invalidateSiteCache();
+  return cancelledMatches;
 };
 
 /** Synchronise la liste des utilisateurs autorisés (/command-allowed) avec Firestore. */

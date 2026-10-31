@@ -326,7 +326,7 @@ export default function CommunityCalendar() {
   const officialMatchesICS = useMemo(() =>
     matches.map((m) => ({
       id: `match-${m.id}`,
-      title: `${getTeamName(m)} vs ${m.opponentName || t("common.adversary")}${m.status === "finished" ? ` (${m.scoreUs}-${m.scoreThem})` : ""}`,
+      title: `${getTeamName(m)} vs ${m.opponentName || t("common.adversary")}${m.status === "cancelled" ? " — ANNULÉ" : m.status === "live" ? " — EN DIRECT" : m.status === "finished" ? ` (${m.scoreUs}-${m.scoreThem})` : ""}`,
       date: m.date ? `${m.date}T${m.time || "20:00"}` : "",
       description: m.competition ? `Compétition : ${m.competition}` : "",
       link: m.watchUrl || m.vodUrl || "",

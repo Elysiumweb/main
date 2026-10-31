@@ -380,9 +380,12 @@ export const handleAskResultCommand = async (interaction) => {
     const { dataUrl, mime, bytes, discordThumbnailBuffer } =
       await processOpponentLogoBuffer(rawLogoBuffer);
 
-    // Enregistrement du logo dans la banque d'images Firestore + fiche adversaire + création du match "upcoming"
+    // Enregistrement du logo dans la banque d'images Firestore + fiche adversaire + création du match ("upcoming" ou "live" si déjà en cours)
     await saveImageToSiteBank({ dataUrl, mime, bytes, folder: "matches" });
     await upsertOpponentOnSite({ name: opponentName, logoDataUrl: dataUrl });
+
+    const nowMs = Date.now();
+    const alreadyInProgress = nowMs >= schedule.startAtMs && nowMs < schedule.endAtMs;
 
     const createdMatch = await createUpcomingMatchOnSite({
       game: matchedGame,
@@ -394,6 +397,7 @@ export const handleAskResultCommand = async (interaction) => {
       endTime: schedule.endTime,
       format,
       timezone: schedule.timeZone,
+      initialStatus: alreadyInProgress ? "live" : "upcoming",
       actorDiscordId: interaction.user.id,
     });
 
@@ -420,10 +424,12 @@ export const handleAskResultCommand = async (interaction) => {
       startAtMs: schedule.startAtMs,
       endAtMs: schedule.endAtMs,
       logoLocalPath,
+      liveStatusSet: alreadyInProgress,
       startSent: false,
       endPromptSent: false,
       endPromptMessageId: null,
       completed: false,
+      cancelled: false,
       uploadedReplays: [],
       declaredScoreUs: null,
       declaredScoreThem: null,
@@ -443,9 +449,9 @@ export const handleAskResultCommand = async (interaction) => {
       color: ELYSIUM_SUCCESS,
       title: "✅ Match programmé & publié sur le site !",
       description: [
-        `Le match **${teamName} vs ${opponentName}** a été créé sur le site avec le statut **À venir** ([voir la fiche du match](${matchUrl})).`,
+        `Le match **${teamName} vs ${opponentName}** a été créé sur le site avec le statut **${alreadyInProgress ? "En direct" : "À venir"}** ([voir la fiche du site](${matchUrl})).`,
         "",
-        `📢 **À l'heure du début** (<t:${startUnix}:F> — <t:${startUnix}:R>), le bot enverra la présentation et les identifiants du lobby dans <#${targetChannel.id}>.`,
+        `📢 **À l'heure du début** (<t:${startUnix}:F> — <t:${startUnix}:R>), le match passe en **En direct** sur le site et le bot envoie la présentation + les identifiants du lobby dans <#${targetChannel.id}>.`,
         `🏁 **À l'heure de fin** (<t:${endUnix}:t>), le bot demandera tous les replays et le score dans <#${targetChannel.id}> pour mettre à jour le site automatiquement.`,
       ].join("\n"),
       fields: [
@@ -705,12 +711,14 @@ export const handleMatchResultInteraction = async (interaction) => {
   if (interaction.isButton() && customId.startsWith("match_upload_hint:")) {
     const jobId = customId.split(":")[1];
     const matchJob = getScheduledMatch(jobId);
-    if (!matchJob || matchJob.completed) {
+    if (!matchJob || matchJob.completed || matchJob.cancelled) {
       await respondElysium(interaction, {
         ephemeral: true,
         color: ELYSIUM_INFO,
-        title: "ℹ️ Match déjà clôturé",
-        description: "Ce match a déjà été validé et mis à jour sur le site.",
+        title: matchJob?.cancelled ? "🚫 Match annulé" : "ℹ️ Match déjà clôturé",
+        description: matchJob?.cancelled
+          ? "Ce match a été annulé pour la journée."
+          : "Ce match a déjà été validé et mis à jour sur le site.",
       });
       return true;
     }
@@ -737,7 +745,7 @@ export const handleMatchResultInteraction = async (interaction) => {
   if (interaction.isButton() && customId.startsWith("match_clear_replays:")) {
     const jobId = customId.split(":")[1];
     const matchJob = getScheduledMatch(jobId);
-    if (!matchJob || matchJob.completed) return true;
+    if (!matchJob || matchJob.completed || matchJob.cancelled) return true;
 
     matchJob.uploadedReplays = [];
     matchJob.confirmNoReplay = false;
@@ -751,12 +759,14 @@ export const handleMatchResultInteraction = async (interaction) => {
   if (interaction.isButton() && customId.startsWith("match_score_btn:")) {
     const jobId = customId.split(":")[1];
     const matchJob = getScheduledMatch(jobId);
-    if (!matchJob || matchJob.completed) {
+    if (!matchJob || matchJob.completed || matchJob.cancelled) {
       await respondElysium(interaction, {
         ephemeral: true,
         color: ELYSIUM_INFO,
-        title: "ℹ️ Match déjà clôturé",
-        description: "Ce match a déjà été validé sur le site.",
+        title: matchJob?.cancelled ? "🚫 Match annulé" : "ℹ️ Match déjà clôturé",
+        description: matchJob?.cancelled
+          ? "Ce match a été annulé."
+          : "Ce match a déjà été validé sur le site.",
       });
       return true;
     }
@@ -836,12 +846,14 @@ export const handleMatchResultInteraction = async (interaction) => {
   if (interaction.isButton() && customId.startsWith("match_submit_result:")) {
     const [, jobId, mode] = customId.split(":");
     const matchJob = getScheduledMatch(jobId);
-    if (!matchJob || matchJob.completed) {
+    if (!matchJob || matchJob.completed || matchJob.cancelled) {
       await respondElysium(interaction, {
         ephemeral: true,
         color: ELYSIUM_INFO,
-        title: "ℹ️ Déjà envoyé",
-        description: "Ce match a déjà été mis à jour sur le site.",
+        title: matchJob?.cancelled ? "🚫 Match annulé" : "ℹ️ Déjà envoyé",
+        description: matchJob?.cancelled
+          ? "Ce match a été annulé."
+          : "Ce match a déjà été mis à jour sur le site.",
       });
       return true;
     }

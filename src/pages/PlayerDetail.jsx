@@ -35,7 +35,7 @@ export default function PlayerDetail() {
     const u1 = onSnapshot(doc(db, "roster", id), (s) => setPlayer(s.exists() ? { id: s.id, ...s.data() } : null),
       (e) => { console.error(e); setError(true); });
     const u2 = onSnapshot(collection(db, "matches"), (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status !== "upcoming" && !isRemovedGame(m.game));
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => m.status === "finished" && !isRemovedGame(m.game));
       list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setMatches(list);
     }, console.error);

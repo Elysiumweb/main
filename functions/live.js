@@ -61,11 +61,80 @@ async function isTwitchLive() {
   }
 }
 
-function parseMatchTimestamp(match) {
-  if (!match.date) return null;
-  const time = match.time ? match.time.slice(0,5) : "20:00";
-  const d = new Date(`${match.date}T${time}:00`);
-  return isNaN(d.getTime()) ? null : d.getTime();
+function getZonedParts(dateObj, timeZone = "Europe/Paris") {
+  let safeTz = timeZone || "Europe/Paris";
+  try {
+    Intl.DateTimeFormat("en-CA", { timeZone: safeTz });
+  } catch {
+    safeTz = "Europe/Paris";
+  }
+  const dtf = new Intl.DateTimeFormat("en-CA", {
+    timeZone: safeTz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+  const map = {};
+  for (const part of dtf.formatToParts(dateObj)) {
+    if (part.type !== "literal") map[part.type] = Number(part.value);
+  }
+  return {
+    year: map.year,
+    month: map.month,
+    day: map.day,
+    hour: map.hour === 24 ? 0 : map.hour,
+    minute: map.minute,
+    second: map.second,
+  };
+}
+
+function zonedDateTimeToUtcMs(isoDate, timeHm, timeZone = "Europe/Paris") {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const [hour, minute] = timeHm.split(":").map(Number);
+  const targetUtcAsIfZoned = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  let guess = targetUtcAsIfZoned;
+  for (let i = 0; i < 2; i += 1) {
+    const parts = getZonedParts(new Date(guess), timeZone);
+    const observedAsUtc = Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second,
+      0
+    );
+    guess += targetUtcAsIfZoned - observedAsUtc;
+  }
+  return guess;
+}
+
+function parseMatchWindow(match) {
+  if (!match.date || !/^\d{4}-\d{2}-\d{2}$/.test(match.date)) return null;
+  const tz = match.timezone || "Europe/Paris";
+  const time = match.time ? match.time.slice(0, 5) : "20:00";
+  if (!/^\d{2}:\d{2}$/.test(time)) return null;
+  const startAtMs = zonedDateTimeToUtcMs(match.date, time, tz);
+  if (!Number.isFinite(startAtMs)) return null;
+
+  const endRaw = match.endTime ? String(match.endTime).slice(0, 5) : "";
+  if (/^\d{2}:\d{2}$/.test(endRaw)) {
+    let endDate = match.date;
+    if (endRaw <= time) {
+      const [y, m, d] = match.date.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d + 1));
+      endDate = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+    }
+    const endAtMs = zonedDateTimeToUtcMs(endDate, endRaw, tz);
+    if (Number.isFinite(endAtMs) && endAtMs > startAtMs) {
+      return { startAtMs, endAtMs };
+    }
+  }
+  return { startAtMs, endAtMs: startAtMs + 2 * 3600000 };
 }
 
 async function notifyLive(match) {
@@ -98,30 +167,31 @@ exports.checkLiveStatus = onSchedule(
 
     for (const docSnap of snap.docs) {
       const m = { id: docSnap.id, ...docSnap.data() };
-      const ts = parseMatchTimestamp(m);
-      if (!ts) continue;
+      const win = parseMatchWindow(m);
+      if (!win) continue;
 
+      const ts = win.startAtMs;
       const diffMinutes = (ts - now) / 60000;
+      const inScheduledWindow = now >= win.startAtMs && now < win.endAtMs;
 
       if (m.status === "upcoming") {
-        // Si Twitch est en live ET match prévu dans les 60 min passées / 180 min futures -> passe en live
-        // Si pas de Twitch API, heuristique : match prévu dans les 30 min passées à 120 min futures -> live
+        // Dès que le match est en cours (entre heure de début et heure de fin), il passe en "En direct" ("live").
+        // Si Twitch est également en live peu avant le début, il peut aussi basculer.
         const shouldBeLive =
-          twitchLive === true
-            ? diffMinutes >= -60 && diffMinutes <= 180
-            : diffMinutes >= -30 && diffMinutes <= 30;
+          inScheduledWindow ||
+          (twitchLive === true && diffMinutes >= -60 && diffMinutes <= 30);
 
         if (shouldBeLive) {
           await docSnap.ref.update({ status: "live", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
           switchedToLive++;
           await notifyLive(m);
-          logger.info(`Match ${m.id} switched to live (twitchLive=${twitchLive}, diffMin=${diffMinutes.toFixed(1)})`);
+          logger.info(`Match ${m.id} switched to live (inWindow=${inScheduledWindow}, twitchLive=${twitchLive}, diffMin=${diffMinutes.toFixed(1)})`);
         }
       } else if (m.status === "live") {
-        // Si match live depuis plus de 4h, on le repasse en finished automatiquement (sécurité)
-        // Ou si Twitch n'est plus en live depuis longtemps
+        // Si match live depuis plus de 4h (et après son heure de fin), on le repasse en finished par sécurité
         const liveDurationHours = (now - ts) / 3600000;
-        const shouldFinish = liveDurationHours > 4 || (twitchLive === false && liveDurationHours > 2);
+        const pastEnd = now >= win.endAtMs;
+        const shouldFinish = pastEnd && (liveDurationHours > 4 || (twitchLive === false && liveDurationHours > 2));
         if (shouldFinish) {
           await docSnap.ref.update({ status: "finished", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
           switchedToFinished++;
