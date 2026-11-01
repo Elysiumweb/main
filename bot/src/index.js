@@ -103,13 +103,23 @@ export const createBotClient = () => {
   // --- Messages (collecte illimitée de replays + images/fichiers tickets & MP) ---
   client.on(Events.MessageCreate, async (message) => {
     try {
-      if (message.author?.bot) return;
-      if (message.inGuild() && !ALLOWED_GUILD_IDS.includes(message.guildId)) return;
+      const resolvedMessage =
+        message?.partial && typeof message.fetch === "function"
+          ? await message.fetch().catch(() => message)
+          : message;
 
-      const handledReplay = await handleMatchReplayAttachments(message);
+      if (resolvedMessage.author?.bot) return;
+      const inGuild =
+        typeof resolvedMessage.inGuild === "function"
+          ? resolvedMessage.inGuild()
+          : Boolean(resolvedMessage.guildId || resolvedMessage.guild);
+      const guildId = resolvedMessage.guildId || resolvedMessage.guild?.id;
+      if (inGuild && !ALLOWED_GUILD_IDS.includes(guildId)) return;
+
+      const handledReplay = await handleMatchReplayAttachments(resolvedMessage);
       if (handledReplay) return;
 
-      await handleTicketAndDmMessage(message);
+      await handleTicketAndDmMessage(resolvedMessage);
     } catch (err) {
       console.error("[MessageCreate] Erreur :", err);
     }

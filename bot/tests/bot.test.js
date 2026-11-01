@@ -8,6 +8,7 @@ const DATA_IMAGE_RE = /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i;
 const isImageValue = (s) => DATA_IMAGE_RE.test(String(s ?? "").trim());
 import {
   ALLOWED_GUILD_IDS,
+  COMMUNITY_AUTO_ROLE_ID,
   COMMUNITY_GUILD_ID,
   DONATION_URL,
   GOODBYE_CHANNEL_ID,
@@ -741,13 +742,14 @@ test("Flux complet Match : /ask-result -> annonce début -> demande fin -> repla
   fs.rmSync(tmpState, { force: true });
 });
 
-test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket -> MP -> Modif -> Final + Donation PayPal", async () => {
+test("Serveur 1565264995078508554 : Rôle auto, Bienvenue, Au revoir et cycle complet Ticket (1 msg/étape) -> ID en MP -> Preview -> Final auto -> Modif -> Donation PayPal", async () => {
   const tmpState = path.join(os.tmpdir(), `elysium-ticket-test-${Date.now()}.json`);
   __setStateFileForTests(tmpState);
 
-  // 1) Test Bienvenue & Au revoir
+  // 1) Test attribution automatique du rôle 1566204651521450104 + Bienvenue & Au revoir
   const welcomeSent = [];
   const goodbyeSent = [];
+  const addedRoles = [];
   const welcomeCh = { id: WELCOME_CHANNEL_ID, isTextBased: () => true, send: async (p) => welcomeSent.push(p) };
   const goodbyeCh = { id: GOODBYE_CHANNEL_ID, isTextBased: () => true, send: async (p) => goodbyeSent.push(p) };
 
@@ -755,6 +757,11 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
     id: "111222333444555666",
     displayName: "NeoPlayer",
     user: { tag: "NeoPlayer#0001", displayAvatarURL: () => "" },
+    roles: {
+      add: async (roleId) => {
+        addedRoles.push(roleId);
+      },
+    },
     guild: {
       id: COMMUNITY_GUILD_ID,
       name: "Elysium Community",
@@ -771,6 +778,18 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
 
   await handleGuildMemberAdd(fakeMember);
   await handleGuildMemberRemove(fakeMember);
+
+  assert.equal(COMMUNITY_AUTO_ROLE_ID, "1566204651521450104");
+  assert.deepEqual(addedRoles, ["1566204651521450104"]);
+
+  // Vérifie qu'une arrivée sur un autre serveur n'attribue pas ce rôle
+  const otherServerRoles = [];
+  await handleGuildMemberAdd({
+    ...fakeMember,
+    roles: { add: async (r) => otherServerRoles.push(r) },
+    guild: { ...fakeMember.guild, id: MATCH_GUILD_ID },
+  });
+  assert.deepEqual(otherServerRoles, []);
 
   assert.equal(welcomeSent.length, 1);
   assert.ok(welcomeSent[0].content.includes("111222333444555666"));
@@ -822,7 +841,7 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
   const panel1CustomId = panelMessages[0].payload.components[0].components[0].data.custom_id;
   const panel2CustomId = panelMessages[1].payload.components[0].components[0].data.custom_id;
 
-  // Création d'un ticket sur chaque panneau -> noms de salons clairement identifiables et distincts
+  // Création d'un ticket sur chaque panneau -> noms de salons identifiables et IDs uniques TKT-0001 / TKT-0002
   const createdChannels = [];
   const channelMessages = new Map();
   const ownerDms = [];
@@ -830,7 +849,11 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
   const mockOwnerUser = {
     id: OWNER_USER_ID,
     send: async (p) => {
-      const m = { id: `dm_${ownerDms.length + 1}`, payload: p, edit: async function (np) { this.payload = np; return this; } };
+      const m = {
+        id: `dm_${ownerDms.length + 1}`,
+        payload: p,
+        edit: async function (np) { this.payload = np; return this; },
+      };
       ownerDms.push(m);
       return m;
     },
@@ -844,6 +867,7 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
 
   const mockGuild = {
     id: COMMUNITY_GUILD_ID,
+    client: mockClient,
     members: { fetch: async () => ({ id: OWNER_USER_ID }) },
     channels: {
       cache: new Map(),
@@ -856,12 +880,16 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
           id: chId,
           name: opts.name,
           topic: opts.topic,
+          client: mockClient,
           isTextBased: () => true,
           send: async (p) => {
             const m = {
               id: `tmsg_${msgs.length + 1}`,
               payload: p,
-              edit: async function (np) { this.payload = np; return this; },
+              edit: async function (np) {
+                this.payload = { ...this.payload, ...np };
+                return this;
+              },
             };
             msgs.push(m);
             return m;
@@ -896,103 +924,138 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
   assert.equal(createdChannels[0].name, "ticket-logo-001-clienttest");
   assert.equal(createdChannels[1].name, "ticket-banniere-001-clienttest");
 
-  // 3) Le client remplit sa demande sur le ticket 1 et l'envoie
   const allTicketIds = Object.keys(JSON.parse(fs.readFileSync(tmpState, "utf8")).tickets);
   const ticketId = allTicketIds[0];
+  assert.equal(ticketId, "TKT-0001");
+  assert.equal(allTicketIds[1], "TKT-0002");
+
   const ticketChannel = createdChannels[0];
+  const initialChannelMsgs = channelMessages.get(ticketChannel.id);
 
-  await handleTicketInteraction({
-    customId: `ticket_initial_modal:${ticketId}`,
-    isButton: () => false,
-    isModalSubmit: () => true,
+  // Au tout début du ticket : 1 message d'accueil + 1 message demandant la description détaillée en un seul message
+  assert.equal(initialChannelMsgs.length, 2);
+  assert.ok(JSON.stringify(initialChannelMsgs[0].payload).includes("TKT-0001"));
+  assert.ok(JSON.stringify(initialChannelMsgs[1].payload).includes("TKT-0001"));
+  assert.ok(JSON.stringify(initialChannelMsgs[1].payload).includes("un seul message"));
+
+  const sampleImgUri = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString("base64")}`;
+
+  // 3) Étape 1/2 : le client envoie sa description détaillée en un seul message -> le bot demande les images/liens d'exemple
+  await handleTicketAndDmMessage({
+    author: { id: "333333333333333333", bot: false },
+    inGuild: () => true,
+    guild: { id: COMMUNITY_GUILD_ID, client: mockClient },
+    guildId: COMMUNITY_GUILD_ID,
     channel: ticketChannel,
-    user: { id: "333333333333333333" },
-    fields: {
-      getTextInputValue: (k) =>
-        k === "detailed_description"
-          ? "Je voudrais un logo esport doré et noir minimaliste en haute résolution."
-          : "https://example.com/inspiration-logo.png",
-    },
-    reply: async () => {},
-  });
-
-  let waitingMessagePayload = null;
-  await handleTicketInteraction({
-    customId: `ticket_submit_initial:${ticketId}`,
-    isButton: () => true,
-    isModalSubmit: () => false,
+    channelId: ticketChannel.id,
     client: mockClient,
-    user: { id: "333333333333333333" },
-    deferUpdate: async () => {},
-    editReply: async (p) => { waitingMessagePayload = p; },
+    id: "client_msg_desc",
+    content: "Je voudrais un logo esport doré et noir minimaliste en haute résolution.",
+    attachments: new Map(),
+    react: async () => {},
   });
 
-  // Vérifie le message d'attente dans le ticket ET le MP envoyé à 520496557146243072 avec bouton "Répondre"
-  assert.ok(waitingMessagePayload.embeds[0].data.description.includes("prise en charge"));
-  assert.ok(waitingMessagePayload.embeds[0].data.description.includes("patienter"));
-  assert.equal(ownerDms.length, 1);
-  assert.equal(
-    ownerDms[0].payload.components[0].components[0].data.label,
-    "Répondre"
-  );
+  assert.equal(getTicket(ticketId).status, "awaiting_examples");
+  assert.equal(channelMessages.get(ticketChannel.id).length, 3);
+  const step2PromptText = JSON.stringify(channelMessages.get(ticketChannel.id)[2].payload);
+  assert.ok(step2PromptText.includes("TKT-0001"));
+  assert.ok(step2PromptText.includes("un seul message"));
+  assert.equal(ownerDms.length, 0); // Pas encore envoyé avant l'étape 2
 
-  // 4) 520496557146243072 clique sur "Répondre" en MP -> obtient les 3 boutons Preview / Final / Envoyée
-  let studioPayload = null;
-  const dmMessagesMap = new Map();
+  // 4) Étape 2/2 : le client envoie ses images (pièce jointe !) + lien d'exemple en un seul message -> envoi MP automatique !
+  await handleTicketAndDmMessage({
+    author: { id: "333333333333333333", bot: false },
+    inGuild: () => true,
+    guild: { id: COMMUNITY_GUILD_ID, client: mockClient },
+    guildId: COMMUNITY_GUILD_ID,
+    channel: ticketChannel,
+    channelId: ticketChannel.id,
+    client: mockClient,
+    id: "client_msg_examples",
+    content: "Voici mon inspiration https://example.com/inspiration-logo.png",
+    attachments: new Map([
+      ["ex1", { id: "ex1", name: "exemple_client.png", contentType: "image/png", url: sampleImgUri }],
+    ]),
+    react: async () => {},
+  });
+
+  assert.equal(getTicket(ticketId).status, "pending_designer");
+  assert.equal(getTicket(ticketId).exampleFiles.length, 1);
+  assert.deepEqual(getTicket(ticketId).exampleLinks, ["https://example.com/inspiration-logo.png"]);
+
+  // Message d'attente dans le ticket + MP envoyé automatiquement à 520496557146243072 avec l'ID TKT-0001
+  const waitingMsgText = JSON.stringify(
+    channelMessages.get(ticketChannel.id)[channelMessages.get(ticketChannel.id).length - 1].payload
+  );
+  assert.ok(waitingMsgText.includes("prise en charge"));
+  assert.ok(waitingMsgText.includes("patienter"));
+  assert.ok(waitingMsgText.includes("TKT-0001"));
+
+  assert.equal(ownerDms.length, 1);
+  const firstDmText = JSON.stringify(ownerDms[0].payload);
+  assert.ok(firstDmText.includes("TKT-0001"));
+  assert.ok(firstDmText.includes("exemple_client.png"));
+  assert.ok(firstDmText.includes("https://example.com/inspiration-logo.png"));
+
+  // 5) Flux MP par ID : 520496557146243072 envoie l'ID du ticket -> bot demande Preview -> envoie Preview -> bot demande Final -> envoie Final -> s'envoie tout seul !
+  const dmBotReplies = [];
   const dmChannel = {
     id: "dm_channel_owner",
-    messages: { fetch: async (id) => dmMessagesMap.get(id) || null },
+    client: mockClient,
+    send: async (p) => {
+      dmBotReplies.push(p);
+      return { id: `dm_reply_${dmBotReplies.length}`, payload: p };
+    },
   };
 
-  await handleTicketInteraction({
-    customId: `ticket_dm_reply:${ticketId}`,
-    isButton: () => true,
-    isModalSubmit: () => false,
-    user: { id: OWNER_USER_ID },
-    channelId: dmChannel.id,
-    deferReply: async () => {},
-    editReply: async (p) => {
-      studioPayload = p;
-      const msg = { id: "studio_msg_1", payload: p, edit: async function (np) { studioPayload = np; return this; } };
-      dmMessagesMap.set(msg.id, msg);
-      return msg;
-    },
-  });
-
-  const studioButtons = studioPayload.components[0].components.map((b) => b.data.label);
-  assert.deepEqual(studioButtons, ["Preview", "Final", "Envoyée"]);
-
-  // Import d'un fichier dans Preview en MP
-  const sampleImgUri = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString("base64")}`;
+  // 5a) Envoi de l'ID du ticket en MP
   await handleTicketAndDmMessage({
     author: { id: OWNER_USER_ID, bot: false },
     inGuild: () => false,
     channelId: dmChannel.id,
     channel: dmChannel,
-    id: "dm_upload_1",
+    client: mockClient,
+    id: "dm_send_id_1",
+    content: "TKT-0001",
+    attachments: new Map(),
+    react: async () => {},
+  });
+
+  assert.equal(dmBotReplies.length, 1);
+  assert.ok(JSON.stringify(dmBotReplies[0]).includes("Preview"));
+  assert.ok(JSON.stringify(dmBotReplies[0]).includes("TKT-0001"));
+
+  // 5b) Envoi du fichier Preview en MP -> le bot demande les fichiers finaux
+  await handleTicketAndDmMessage({
+    author: { id: OWNER_USER_ID, bot: false },
+    inGuild: () => false,
+    channelId: dmChannel.id,
+    channel: dmChannel,
+    client: mockClient,
+    id: "dm_upload_preview_1",
+    content: "",
     attachments: new Map([
       ["att1", { id: "att1", name: "preview_v1.png", contentType: "image/png", url: sampleImgUri }],
     ]),
     react: async () => {},
   });
 
-  // Bascule sur le bouton "Final" puis import de 2 fichiers finaux en MP
-  await handleTicketInteraction({
-    customId: `ticket_dm_bucket:${ticketId}:final`,
-    isButton: () => true,
-    isModalSubmit: () => false,
-    user: { id: OWNER_USER_ID },
-    channelId: dmChannel.id,
-    message: { id: "studio_msg_1" },
-    update: async (p) => { studioPayload = p; },
-  });
+  assert.equal(getTicket(ticketId).currentPreviewFiles.length, 1);
+  assert.equal(dmBotReplies.length, 2);
+  assert.ok(JSON.stringify(dmBotReplies[1]).includes("finaux"));
+  assert.ok(JSON.stringify(dmBotReplies[1]).includes("TKT-0001"));
+
+  // 5c) Envoi des fichiers finaux en MP -> une fois reçus, le preview s'envoie TOUT SEUL dans le ticket !
+  const countBeforeAutoPreview = channelMessages.get(ticketChannel.id).length;
 
   await handleTicketAndDmMessage({
     author: { id: OWNER_USER_ID, bot: false },
     inGuild: () => false,
     channelId: dmChannel.id,
     channel: dmChannel,
-    id: "dm_upload_2",
+    client: mockClient,
+    id: "dm_upload_final_1",
+    content: "",
     attachments: new Map([
       ["att2", { id: "att2", name: "logo_final_hd.png", contentType: "image/png", url: sampleImgUri }],
       ["att3", { id: "att3", name: "logo_vecteur.png", contentType: "image/png", url: sampleImgUri }],
@@ -1000,64 +1063,73 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
     react: async () => {},
   });
 
-  assert.equal(getTicket(ticketId).currentPreviewFiles.length, 1);
   assert.equal(getTicket(ticketId).currentFinalFiles.length, 2);
-
-  // Clic sur "Envoyée" -> envoie le preview dans le ticket avec Accepter / Demander une modification
-  await handleTicketInteraction({
-    customId: `ticket_dm_send:${ticketId}`,
-    isButton: () => true,
-    isModalSubmit: () => false,
-    user: { id: OWNER_USER_ID },
-    client: mockClient,
-    deferUpdate: async () => {},
-    editReply: async () => {},
-  });
+  assert.equal(getTicket(ticketId).status, "awaiting_client_review");
+  assert.equal(dmBotReplies.length, 3);
+  assert.ok(JSON.stringify(dmBotReplies[2]).includes("automatiquement"));
 
   const ticketMsgsAfterPreview = channelMessages.get(ticketChannel.id);
+  assert.equal(ticketMsgsAfterPreview.length, countBeforeAutoPreview + 1);
   const previewMsgInTicket = ticketMsgsAfterPreview[ticketMsgsAfterPreview.length - 1];
+  assert.ok(JSON.stringify(previewMsgInTicket.payload).includes("TKT-0001"));
   const clientBtns = previewMsgInTicket.payload.components[0].components.map((b) => b.data.label);
   assert.deepEqual(clientBtns, ["Accepter", "Demander une modification"]);
 
-  // 5) Le client demande d'abord une modification -> renvoyée à 520496557146243072
+  // 6) Le client demande une modification (en 1 message texte + 1 message image/aucun) -> renvoyée automatiquement en MP à 520496557146243072
   await handleTicketInteraction({
-    customId: `ticket_mod_modal:${ticketId}`,
-    isButton: () => false,
-    isModalSubmit: () => true,
-    user: { id: "333333333333333333" },
-    fields: {
-      getTextInputValue: () => "Pouvez-vous éclaircir légèrement le doré du texte ?",
-    },
-    deferReply: async () => {},
-    editReply: async () => ({ id: "mod_draft_1" }),
-  });
-
-  await handleTicketInteraction({
-    customId: `ticket_submit_mod:${ticketId}`,
+    customId: `ticket_client_modify:${ticketId}`,
     isButton: () => true,
     isModalSubmit: () => false,
+    channel: ticketChannel,
     client: mockClient,
     user: { id: "333333333333333333" },
     deferUpdate: async () => {},
     editReply: async () => {},
   });
 
-  assert.equal(ownerDms.length, 2); // L'admin a bien reçu la demande de modification en MP avec bouton Répondre !
-  assert.ok(ownerDms[1].payload.embeds[0].data.title.includes("Modification demandée"));
+  await handleTicketAndDmMessage({
+    author: { id: "333333333333333333", bot: false },
+    inGuild: () => true,
+    guild: { id: COMMUNITY_GUILD_ID, client: mockClient },
+    guildId: COMMUNITY_GUILD_ID,
+    channel: ticketChannel,
+    channelId: ticketChannel.id,
+    client: mockClient,
+    id: "client_mod_desc",
+    content: "Pouvez-vous éclaircir légèrement le doré du texte ?",
+    attachments: new Map(),
+    react: async () => {},
+  });
 
-  // 6) L'admin renvoie une V2 (Preview + 2 fichiers Final) et le client clique sur "Accepter"
-  await handleTicketInteraction({
-    customId: `ticket_dm_reply:${ticketId}`,
-    isButton: () => true,
-    isModalSubmit: () => false,
-    user: { id: OWNER_USER_ID },
+  await handleTicketAndDmMessage({
+    author: { id: "333333333333333333", bot: false },
+    inGuild: () => true,
+    guild: { id: COMMUNITY_GUILD_ID, client: mockClient },
+    guildId: COMMUNITY_GUILD_ID,
+    channel: ticketChannel,
+    channelId: ticketChannel.id,
+    client: mockClient,
+    id: "client_mod_ex",
+    content: "aucun",
+    attachments: new Map(),
+    react: async () => {},
+  });
+
+  assert.equal(ownerDms.length, 2); // L'admin a reçu la demande de modification en MP avec l'ID TKT-0001 !
+  assert.ok(ownerDms[1].payload.embeds[0].data.title.includes("Modification demandée"));
+  assert.ok(JSON.stringify(ownerDms[1].payload).includes("TKT-0001"));
+
+  // 7) L'admin renvoie une V2 en MP en saisissant simplement l'ID ("tkt-0001"), puis Preview V2, puis Final V2 -> envoi auto + clic client sur "Accepter"
+  await handleTicketAndDmMessage({
+    author: { id: OWNER_USER_ID, bot: false },
+    inGuild: () => false,
     channelId: dmChannel.id,
-    deferReply: async () => {},
-    editReply: async (p) => {
-      const msg = { id: "studio_msg_2", payload: p, edit: async () => msg };
-      dmMessagesMap.set(msg.id, msg);
-      return msg;
-    },
+    channel: dmChannel,
+    client: mockClient,
+    id: "dm_send_id_2",
+    content: "tkt-0001",
+    attachments: new Map(),
+    react: async () => {},
   });
 
   await handleTicketAndDmMessage({
@@ -1065,44 +1137,28 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
     inGuild: () => false,
     channelId: dmChannel.id,
     channel: dmChannel,
-    id: "dm_upload_3",
+    client: mockClient,
+    id: "dm_upload_preview_2",
+    content: "",
     attachments: new Map([
       ["att4", { id: "att4", name: "preview_v2.png", contentType: "image/png", url: sampleImgUri }],
     ]),
     react: async () => {},
   });
 
-  await handleTicketInteraction({
-    customId: `ticket_dm_bucket:${ticketId}:final`,
-    isButton: () => true,
-    isModalSubmit: () => false,
-    user: { id: OWNER_USER_ID },
-    channelId: dmChannel.id,
-    message: { id: "studio_msg_2" },
-    update: async () => {},
-  });
-
   await handleTicketAndDmMessage({
     author: { id: OWNER_USER_ID, bot: false },
     inGuild: () => false,
     channelId: dmChannel.id,
     channel: dmChannel,
-    id: "dm_upload_4",
+    client: mockClient,
+    id: "dm_upload_final_2",
+    content: "",
     attachments: new Map([
       ["att5", { id: "att5", name: "final_v2_logo.png", contentType: "image/png", url: sampleImgUri }],
       ["att6", { id: "att6", name: "final_v2_transparent.png", contentType: "image/png", url: sampleImgUri }],
     ]),
     react: async () => {},
-  });
-
-  await handleTicketInteraction({
-    customId: `ticket_dm_send:${ticketId}`,
-    isButton: () => true,
-    isModalSubmit: () => false,
-    user: { id: OWNER_USER_ID },
-    client: mockClient,
-    deferUpdate: async () => {},
-    editReply: async () => {},
   });
 
   const countBeforeAccept = channelMessages.get(ticketChannel.id).length;
@@ -1120,6 +1176,14 @@ test("Serveur 1565264995078508554 : Bienvenue, Au revoir et cycle complet Ticket
 
   const finalTicketMessages = channelMessages.get(ticketChannel.id).slice(countBeforeAccept);
   assert.equal(finalTicketMessages.length, 2); // 1 message avec tous les fichiers finaux + 1 message d'incitation au don PayPal !
+
+  // Vérifie que CHAQUE message envoyé par le bot dans le salon du ticket contient l'ID TKT-0001
+  for (const msg of channelMessages.get(ticketChannel.id)) {
+    assert.ok(
+      JSON.stringify(msg.payload).includes("TKT-0001"),
+      `Un message du ticket ne contient pas l'ID TKT-0001 : ${JSON.stringify(msg.payload.embeds?.[0]?.data?.title)}`
+    );
+  }
 
   const filesMsg = finalTicketMessages[0].payload;
   // 2 fichiers de marque (logo + bannière) + 2 fichiers finaux livrés = 4 fichiers joints
