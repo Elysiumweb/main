@@ -1,4 +1,5 @@
 import {
+  COMMUNITY_AUTO_ROLE_ID,
   COMMUNITY_GUILD_ID,
   ELYSIUM_GOLD,
   GOODBYE_CHANNEL_ID,
@@ -6,25 +7,47 @@ import {
 } from "../config.js";
 import { buildElysiumPayload } from "../lib/embeds.js";
 
-/** Message de bienvenue automatique sur le serveur 1565264995078508554 dans le salon 1565265445752152125. */
+/** Attribution du rôle automatique (1566204651521450104) + message de bienvenue sur le serveur 1565264995078508554. */
 export const handleGuildMemberAdd = async (member) => {
   try {
-    if (!member?.guild || member.guild.id !== COMMUNITY_GUILD_ID) return;
+    const resolvedMember =
+      member?.partial && typeof member.fetch === "function"
+        ? await member.fetch().catch(() => member)
+        : member;
 
+    if (!resolvedMember?.guild || resolvedMember.guild.id !== COMMUNITY_GUILD_ID) return;
+
+    // 1) Attribution automatique du rôle dès l'arrivée sur le serveur 1565264995078508554
+    if (COMMUNITY_AUTO_ROLE_ID && typeof resolvedMember.roles?.add === "function") {
+      try {
+        await resolvedMember.roles.add(
+          COMMUNITY_AUTO_ROLE_ID,
+          "Attribution automatique à l'arrivée sur le serveur Elysium"
+        );
+      } catch (roleErr) {
+        console.error(
+          `[Welcome] Impossible d'attribuer le rôle ${COMMUNITY_AUTO_ROLE_ID} à ${resolvedMember.id} (vérifiez la permission "Gérer les rôles" et placez le rôle du bot au-dessus du rôle cible) :`,
+          roleErr
+        );
+      }
+    }
+
+    // 2) Message de bienvenue dans le salon 1565265445752152125
     const channel =
-      member.guild.channels.cache.get(WELCOME_CHANNEL_ID) ||
-      (await member.guild.channels.fetch(WELCOME_CHANNEL_ID).catch(() => null));
+      resolvedMember.guild.channels.cache.get(WELCOME_CHANNEL_ID) ||
+      (await resolvedMember.guild.channels.fetch(WELCOME_CHANNEL_ID).catch(() => null));
     if (!channel || !channel.isTextBased()) return;
 
-    const avatarUrl = member.user?.displayAvatarURL?.({ extension: "png", size: 256 }) || "";
-    const memberCount = member.guild.memberCount || "";
+    const avatarUrl =
+      resolvedMember.user?.displayAvatarURL?.({ extension: "png", size: 256 }) || "";
+    const memberCount = resolvedMember.guild.memberCount || "";
 
     const payload = buildElysiumPayload({
-      content: `Bienvenue <@${member.id}> !`,
+      content: `Bienvenue <@${resolvedMember.id}> !`,
       color: ELYSIUM_GOLD,
       title: "✨ Bienvenue chez Elysium !",
       description: [
-        `Salut <@${member.id}>, toute l'équipe te souhaite la bienvenue sur le serveur **${member.guild.name}** !`,
+        `Salut <@${resolvedMember.id}>, toute l'équipe te souhaite la bienvenue sur le serveur **${resolvedMember.guild.name}** !`,
         "",
         "N'hésite pas à parcourir les salons et à profiter pleinement de la communauté **Elysium**.",
       ].join("\n"),
@@ -42,7 +65,7 @@ export const handleGuildMemberAdd = async (member) => {
 
     await channel.send(payload);
   } catch (err) {
-    console.error("[Welcome] Erreur lors de l'envoi du message de bienvenue :", err);
+    console.error("[Welcome] Erreur lors du traitement d'arrivée d'un membre :", err);
   }
 };
 

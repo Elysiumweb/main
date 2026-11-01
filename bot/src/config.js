@@ -39,9 +39,10 @@ export const COMMUNITY_GUILD_ID = "1565264995078508554";
 
 export const ALLOWED_GUILD_IDS = [COMMUNITY_GUILD_ID, MATCH_GUILD_ID];
 
-// Salons de bienvenue et d'au revoir sur le serveur 1565264995078508554
+// Salons de bienvenue et d'au revoir + rôle membre automatique sur le serveur 1565264995078508554
 export const WELCOME_CHANNEL_ID = "1565265445752152125";
 export const GOODBYE_CHANNEL_ID = "1565265516992401489";
+export const COMMUNITY_AUTO_ROLE_ID = "1566204651521450104";
 
 // Lien de donation PayPal après acceptation d'un ticket
 export const DONATION_URL =

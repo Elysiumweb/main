@@ -245,6 +245,67 @@ export const saveTicket = (ticket) => {
 
 export const getTicket = (ticketId) => getState().tickets[ticketId] || null;
 
+export const listTickets = () => Object.values(getState().tickets);
+
+/**
+ * Recherche un ticket à partir d'un identifiant envoyé en MP (ex: `TKT-0001`,
+ * `tkt-0001`, `#TKT-0001`, `0001`, `1`, ou ancien format `tkt_1_...`).
+ */
+export const findTicketByIdentifier = (rawInput) => {
+  const raw = String(rawInput || "").trim();
+  if (!raw || raw.length > 120) return null;
+
+  const cleaned = raw.replace(/^[`"'#\s]+|[`"'#\s]+$/g, "");
+  if (!cleaned) return null;
+
+  const tickets = listTickets();
+
+  // 1) Correspondance exacte insensible à la casse (ex: TKT-0001 ou tkt_1_1730...)
+  const exact = tickets.find(
+    (t) => String(t.id || "").toLowerCase() === cleaned.toLowerCase()
+  );
+  if (exact) return exact;
+
+  // 2) Format TKT-XXXX n'importe où dans un message court (ex: "ID du ticket : TKT-0001", "🆔 TKT-0001")
+  const codeMatch = /\btkt[-_\s]*(\d{1,8})\b/i.exec(raw);
+  if (codeMatch) {
+    const num = Number(codeMatch[1]);
+    const normalized = `TKT-${String(num).padStart(4, "0")}`;
+    return (
+      tickets.find(
+        (t) =>
+          String(t.id || "").toUpperCase() === normalized ||
+          Number(t.globalNumber) === num
+      ) || null
+    );
+  }
+
+  // 3) Numéro seul (ex: "0001" ou "1")
+  if (/^\d{1,6}$/.test(cleaned)) {
+    const num = Number(cleaned);
+    const normalized = `TKT-${String(num).padStart(4, "0")}`;
+    return (
+      tickets.find(
+        (t) =>
+          String(t.id || "").toUpperCase() === normalized ||
+          Number(t.globalNumber) === num
+      ) || null
+    );
+  }
+
+  // 4) Ancien identifiant tkt_<n>_<timestamp>
+  const legacyMatch = /^(?:id\s*(?:du\s*ticket)?\s*[:=-]?\s*)?(tkt_\d+_\d+)$/i.exec(cleaned);
+  if (legacyMatch) {
+    return (
+      tickets.find(
+        (t) => String(t.id || "").toLowerCase() === legacyMatch[1].toLowerCase()
+      ) || null
+    );
+  }
+
+  return null;
+};
+
 export const getTicketByChannelId = (channelId) =>
   Object.values(getState().tickets).find((t) => t.channelId === String(channelId)) || null;
 

@@ -55,24 +55,28 @@ Tous les embeds envoyés par le bot intègrent automatiquement **le logo Elysium
 
 ---
 
-### Serveur `1565264995078508554` (Bienvenue, Au revoir & Tickets Design)
+### Serveur `1565264995078508554` (Bienvenue, Au revoir, Rôle auto & Tickets Design)
 
-1. **Arrivées & Départs automatiques**
-   - Arrivée d'un membre → message de bienvenue dans le salon `1565265445752152125`
+1. **Arrivées, Rôle automatique & Départs**
+   - Arrivée d'un membre → attribution automatique du rôle `1566204651521450104` + message de bienvenue dans le salon `1565265445752152125`
    - Départ d'un membre → message d'au revoir dans le salon `1565265516992401489`
+   - *(Veillez à ce que le bot possède la permission **Gérer les rôles** et que son rôle soit placé **au-dessus** du rôle `1566204651521450104` dans les paramètres du serveur.)*
 2. **`/send-message`** *(réservée à `520496557146243072` et aux membres autorisés)*
    - Envoie un message embed personnalisé avec un bouton au texte de votre choix dans un salon spécifique.
    - Chaque panneau génère un préfixe de salon unique (`#ticket-<identifiant>-001-<pseudo>`) permettant d'identifier immédiatement de quel message provient chaque ticket, sans jamais mélanger les tickets de différents panneaux.
-3. **Parcours complet d'un Ticket**
-   - À l'ouverture du ticket, le membre renseigne :
-     1. *Décrivez-nous de manière très détaillée ce que vous désirez* (**obligatoire**)
-     2. *Exemple de design souhaité* (**facultatif**, lien et/ou image(s) envoyée(s) dans le salon)
-   - Dans le ticket, le bot indique que la demande est prise en charge et remercie de patienter.
-   - L'utilisateur `520496557146243072` reçoit la demande complète en **message privé** avec un bouton **`Répondre`**.
-   - En cliquant sur **`Répondre`**, il dispose de **3 boutons** : **`Preview`**, **`Final`** et **`Envoyée`**, et peut importer **autant de fichiers qu'il le souhaite** dans `Preview` comme dans `Final` (en un ou plusieurs messages MP).
-   - Une fois **`Envoyée`** cliqué : le client reçoit l'image de **Preview** dans son ticket avec le choix entre **`Accepter`** et **`Demander une modification`**.
-   - Si **`Demander une modification`** : formulaire obligatoire (*Quelles modifications souhaitez-vous apporter au design ?* — texte + images acceptés), renvoyé en privé à `520496557146243072` qui peut à nouveau répondre.
-   - Si **`Accepter`** : tous les fichiers importés dans **`Final`** sont envoyés dans le ticket, suivis d'un message d'incitation à faire une donation avec le bouton PayPal :  
+3. **Parcours complet d'un Ticket (avec identifiant unique `TKT-XXXX` sur chaque message)**
+   - Chaque message envoyé par le bot pour un ticket (dans le salon comme en MP) affiche clairement **l'ID unique du ticket** (ex : `TKT-0001`).
+   - **À l'ouverture du ticket** :
+     1. Le bot envoie le message d'accueil du ticket suivi d'un message demandant la **description très détaillée** de la demande (**réponse en un seul message**).
+     2. Dès réception de ce message, le bot demande **les images (pièces jointes) ou liens d'exemple** du design souhaité (**toujours en un seul message**, ou `aucun` / bouton **Passer** s'il n'y en a pas).
+     3. Dès réception de ce second message, le bot confirme la prise en charge dans le ticket et **envoie automatiquement le message privé** complet (avec l'ID du ticket, la description et les images/liens joints) à `520496557146243072`.
+   - **Réponse en message privé par `520496557146243072`** :
+     1. `520496557146243072` envoie en privé au bot **l'ID du ticket** (ex : `TKT-0001`).
+     2. Le bot demande le **fichier Preview** → l'utilisateur l'envoie directement en pièce jointe en MP.
+     3. Le bot demande ensuite **les fichiers finaux** → l'utilisateur les envoie directement en pièce jointe en MP.
+     4. **Dès réception des fichiers finaux, l'envoi se fait tout seul** : le client reçoit automatiquement le **Preview** dans son ticket avec les boutons **`Accepter`** et **`Demander une modification`**.
+   - Si **`Demander une modification`** : le bot redemande en 2 messages simples (1. description des modifications en un seul message → 2. images/liens éventuels en un seul message), puis renvoie automatiquement la demande en privé à `520496557146243072` avec l'ID du ticket.
+   - Si **`Accepter`** : tous les **fichiers finaux** enregistrés sont envoyés dans le ticket, suivis d'un message d'incitation à faire une donation avec le bouton PayPal :  
      👉 <https://www.paypal.com/ncp/payment/8R9PKMBPRB45N>
 
 ---
@@ -87,10 +91,10 @@ Tous les embeds envoyés par le bot intègrent automatiquement **le logo Elysium
 3. Cliquez sur **Save Changes**.
 
 ### 2. Inviter le bot sur les deux serveurs
-Utilisez ce lien d'invitation (coche `bot` + `applications.commands` et les permissions salons/messages/fichiers) sur les deux serveurs `1526866278462001202` et `1565264995078508554` :
+Utilisez ce lien d'invitation (coche `bot` + `applications.commands` et les permissions salons/rôles/messages/fichiers) sur les deux serveurs `1526866278462001202` et `1565264995078508554` :
 
 ```
-https://discord.com/oauth2/authorize?client_id=1565640632779677796&permissions=274878033360&scope=bot%20applications.commands
+https://discord.com/oauth2/authorize?client_id=1565640632779677796&permissions=275146468816&scope=bot%20applications.commands
 ```
 
 ### 3. Relier le bot à la base Firebase du site (une seule fois)
