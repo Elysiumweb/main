@@ -1,9 +1,10 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart, ChevronDown, User } from "lucide-react";
+import { Menu, X, Shield, LogOut, Gamepad2, Search, Heart, ChevronDown, User, Inbox } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
 import { NotificationsBell } from "./NotificationsBell";
+import { useInboxCounts } from "../hooks/useInboxCounts";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -44,7 +45,9 @@ export const UserAvatar = ({ src, name, className = "h-8 w-8" }) => {
 
 // Architecture D-05 : principal 5 + Découvrir 5 + CTA visibles + actions compactes
 export const Navbar = () => {
-  const { user, profile, hasPlayerAccess, isOfficial, role, displayName, logout } = useAuth();
+  const { user, profile, hasPlayerAccess, isOfficial, role, displayName, logout, canSeeSupport, canSeeRecruit } = useAuth();
+  const inbox = useInboxCounts();
+  const canSeeInbox = !!user && (canSeeSupport || canSeeRecruit);
   const { t, lang, toggle } = useLang();
   const [open, setOpen] = useState(false);
   const headerRef = useRef(null);
@@ -184,6 +187,22 @@ export const Navbar = () => {
           >
             <Search size={16} aria-hidden="true" />
           </button>
+          {canSeeInbox && (
+            <Link
+              to="/admin?tab=inbox"
+              data-testid="nav-inbox-btn"
+              aria-label={`${t("nav.admin")} — ${inbox.attention}`}
+              title={`${t("nav.admin")} — ${inbox.attention}`}
+              className="relative text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors hidden sm:flex items-center justify-center border border-white/10 w-11 h-11 min-h-[44px] min-w-[44px]"
+            >
+              <Inbox size={16} aria-hidden="true" />
+              {inbox.attention > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-[#D8CA82] text-[#111111] text-xs font-bold min-w-[15px] h-[15px] flex items-center justify-center px-0.5" data-testid="nav-inbox-badge">
+                  {inbox.attention > 99 ? "99+" : inbox.attention}
+                </span>
+              )}
+            </Link>
+          )}
           {user && <NotificationsBell />}
           <button
             onClick={toggle}

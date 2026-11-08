@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { toast } from "sonner";
@@ -411,6 +412,8 @@ export default function Partners() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {list.map((p) => (
                       <a key={p.id} href={p.website || "#"} target="_blank" rel="noopener noreferrer"
+                        onClick={() => trackEvent(ANALYTICS_EVENTS.PARTNER_CLICK, { partnerId: p.id, tier: p.tier || "bronze" })}
+                        data-testid={`partner-link-${p.id}`}
                         className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors">
                         <PartnerLogo src={p.logoUrl} name={p.name} className="w-full h-20" />
                         <p className="font-display font-bold text-sm text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors text-center">{p.name}</p>

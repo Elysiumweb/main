@@ -1,5 +1,6 @@
 import { useState, useId } from "react";
 import { useLang } from "../lib/i18n";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMessage } from "../lib/antiSpam";
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
@@ -52,6 +53,7 @@ export const NewsletterSignup = ({ compact = false }) => {
 
       setStatus("success");
       setMessage(t("newsletter.success"));
+      trackEvent(ANALYTICS_EVENTS.NEWSLETTER_SIGNUP, { source: "newsletter_form" });
       setEmail("");
       setConsent(false);
     } catch (err) {

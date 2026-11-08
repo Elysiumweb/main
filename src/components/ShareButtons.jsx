@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Link2, Check } from "lucide-react";
 import { useLang } from "../lib/i18n";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const SHARE_URL = (network, url, text) => {
   const u = encodeURIComponent(url);
@@ -50,6 +51,7 @@ export const ShareButtons = ({ url, text, title, testId = "share-buttons", compa
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackEvent(ANALYTICS_EVENTS.SHARE, { channel: "copy" });
       toast.success(t("playerpage.copied"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -71,6 +73,7 @@ export const ShareButtons = ({ url, text, title, testId = "share-buttons", compa
           aria-label={`Partager sur ${n.label} (ouvre dans un nouvel onglet)`}
           title={n.label}
           data-testid={`${testId}-${n.key}`}
+          onClick={() => trackEvent(ANALYTICS_EVENTS.SHARE, { channel: n.key })}
           className={`border border-white/15 text-[#f7f7f7]/60 p-2 hover:bg-white/5 transition-colors ${n.className} focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${compact ? "p-1.5" : ""}`}
         >
           <BrandGlyph name={n.icon} size={compact ? 13 : 15} />

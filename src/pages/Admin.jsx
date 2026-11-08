@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, deleteField, serverTimestamp, query, where, getDocs } from "firebase/firestore";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { FileUp, Search, Shield, Trophy, Users } from "lucide-react";
 import { db } from "../lib/firebase";
@@ -24,6 +25,10 @@ import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
+import { AdminInbox } from "../components/admin/AdminInbox";
+import { AdminAnnouncements } from "../components/admin/AdminAnnouncements";
+import { AdminAnalytics } from "../components/admin/AdminAnalytics";
+import { AdminRedirects } from "../components/admin/AdminRedirects";
 import { AdminReplayImport } from "../components/admin/AdminReplayImport";
 import { buildReplaySeries, RL_GAME } from "../lib/rocketLeagueReplay";
 import { mvpCount } from "../lib/playerStats";
@@ -152,7 +157,9 @@ export default function Admin() {
   const { user, displayName, isOfficial, role, loading } = useAuth();
   const { t } = useLang();
   const { rostersForGame, gameHasRosters } = useRosters();
-  const [tab, setTab] = useState("users");
+  const [searchParams] = useSearchParams();
+  // Lien direct depuis la navbar (badge de la boîte de réception) : /admin?tab=inbox
+  const [tab, setTab] = useState(() => searchParams.get("tab") || "users");
   const [users, setUsers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [form, setForm] = useState(EMPTY_MATCH);
@@ -193,8 +200,9 @@ export default function Admin() {
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
     competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
     newsletter: isBureau, audit: isBureau, help: isBureau, tryouts: isStaff,
+    inbox: isStaff, announcements: isBureau, analytics: isBureau, redirects: isBureau,
   };
-  const tabs = ["users", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "tryouts", "help", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "inbox", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "tryouts", "help", "announcements", "analytics", "redirects", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -588,6 +596,10 @@ export default function Admin() {
             </button>
           ))}
         </div>
+        {tab === "inbox" && <AdminInbox />}
+        {tab === "announcements" && <AdminAnnouncements />}
+        {tab === "analytics" && <AdminAnalytics />}
+        {tab === "redirects" && <AdminRedirects />}
         {tab === "users" && (
         <div>
           <div className="flex items-center gap-3 mb-2">
