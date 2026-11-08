@@ -14,6 +14,7 @@ import {
 } from "./ui/command";
 import { Users, Newspaper, Trophy, FileText } from "lucide-react";
 import { getElysiumTeamName } from "../lib/constants";
+import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const PAGE_LINKS = [
   { path: "/", key: "nav.home" },
@@ -71,7 +72,8 @@ export const GlobalSearch = () => {
     return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const runCommand = useCallback((action) => {
+  const runCommand = useCallback((action, meta = {}) => {
+    trackEvent(ANALYTICS_EVENTS.GLOBAL_SEARCH, { target: "page", ...meta });
     setOpen(false);
     action();
   }, []);
@@ -88,7 +90,7 @@ export const GlobalSearch = () => {
         <CommandGroup heading={t("search.pages")}>
           {pages.map((p) => (
             <CommandItem key={p.path} value={p.label} keywords={[p.label, p.path]}
-              onSelect={() => runCommand(() => navigate(p.path))}>
+              onSelect={() => runCommand(() => navigate(p.path), { target: "page", path: p.path })}>
               <FileText size={14} className="mr-2 text-[#D8CA82]" />
               {p.label}
             </CommandItem>
@@ -101,7 +103,7 @@ export const GlobalSearch = () => {
         <CommandGroup heading={t("search.players")}>
           {players.map((p) => (
             <CommandItem key={`player-${p.id}`} value={`${p.pseudo} ${p.game || ""} ${p.bio || ""}`}
-              onSelect={() => runCommand(() => navigate(`/equipe/${p.id}`))}>
+              onSelect={() => runCommand(() => navigate(`/equipe/${p.id}`), { target: "player", game: p.game || "" })}>
               <Users size={14} className="mr-2 text-[#D8CA82]" />
               <span className="font-bold">{p.pseudo}</span>
               {p.game && <span className="ml-2 text-xs text-[#c8c8c8]">{p.game}</span>}
@@ -118,7 +120,7 @@ export const GlobalSearch = () => {
             const label = `${teamName} vs ${m.opponentName || ""} ${m.roster || ""} ${m.competition || ""} ${m.date || ""}`;
             return (
               <CommandItem key={`match-${m.id}`} value={label}
-                onSelect={() => runCommand(() => navigate("/resultats"))}>
+                onSelect={() => runCommand(() => navigate("/resultats"), { target: "match" })}>
                 <Trophy size={14} className="mr-2 text-[#D8CA82]" />
                 <span>{teamName} vs {m.opponentName}</span>
                 {m.roster && <span className="ml-2 text-xs text-[#D8CA82]">{m.roster}</span>}
@@ -135,7 +137,7 @@ export const GlobalSearch = () => {
         <CommandGroup heading={t("search.news")}>
           {articles.map((a) => (
             <CommandItem key={`article-${a.id}`} value={`${a.title || ""} ${a.content?.slice(0, 100) || ""}`}
-              onSelect={() => runCommand(() => navigate(`/actus/${a.id}`))}>
+              onSelect={() => runCommand(() => navigate(`/actus/${a.id}`), { target: "article" })}>
               <Newspaper size={14} className="mr-2 text-[#D8CA82]" />
               <span className="truncate">{a.title}</span>
             </CommandItem>

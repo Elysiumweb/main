@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowRight, ClipboardCheck, HelpCircle, LifeBuoy, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { useAdminT } from "../lib/adminI18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { CONTACT_EMAIL } from "../lib/notify";
 import { DISCORD_INVITE_URL } from "../lib/constants";
@@ -32,6 +33,7 @@ const fold = (s) =>
 export default function Support() {
   const { user, canSeeSupport } = useAuth();
   const { t, lang } = useLang();
+  const tx = useAdminT();
   const { articles, isFallback } = useHelpArticles();
 
   const [subject, setSubject] = useState("");
@@ -398,9 +400,17 @@ export default function Support() {
         <div className="lg:col-span-7">
           {user && (
             <>
-              <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6" data-testid="support-threads-title">
-                {canSeeSupport ? t("support.allTickets") : t("support.myTickets")}
-              </h2>
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82]" data-testid="support-threads-title">
+                  {canSeeSupport ? t("support.allTickets") : t("support.myTickets")}
+                </h2>
+                {canSeeSupport && (
+                  <Link to="/admin?tab=inbox" data-testid="support-inbox-link"
+                    className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+                    {tx("inbox.title")} →
+                  </Link>
+                )}
+              </div>
               <ThreadsPanel collectionName="supportThreads" canSeeAll={canSeeSupport} emptyKey="support.noTickets" titleField="subject" prefix="support"
                 statusOptions={["open", "in_progress", "resolved"]} canSetStatus={canSeeSupport} />
             </>

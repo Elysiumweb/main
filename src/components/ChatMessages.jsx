@@ -36,7 +36,7 @@ const renderText = (text, members) => {
   });
 };
 
-export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = null }) => {
+export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = null, draft = "", draftKey = 0 }) => {
   const { user, displayName, role, game, roster, isOfficial } = useAuth();
   const { t, lang } = useLang();
   const [messages, setMessages] = useState([]);
@@ -69,6 +69,14 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
   }, [user?.uid]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Réponse type insérée depuis l'admin : `draftKey` force la ré-injection quand
+  // le staff clique deux fois sur le même modèle.
+  useEffect(() => {
+    if (!draft) return;
+    setText(draft);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, [draft, draftKey]);
 
   const memberNames = useMemo(() => members.map((m) => m.displayName || "").filter(Boolean), [members]);
   const effectiveChannel = channelId || path.split("/")[1] || "";

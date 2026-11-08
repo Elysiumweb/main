@@ -449,6 +449,49 @@ service cloud.firestore {
       }
     }
 
+    // ===== Analytics produit (consentement requis côté client) =====
+    // Un document par événement, écrit par `trackEvent` uniquement après
+    // acceptation des cookies. Lecture réservée au bureau (onglet Analytics),
+    // aucune modification possible : la donnée est un journal append-only.
+    match /analytics_events/{id} {
+      allow read: if isBureau();
+      allow create: if request.resource.data.keys().hasOnly(
+          ['name', 'properties', 'path', 'referrer', 'sessionId', 'timestamp', 'createdAt']
+        )
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.timestamp is string
+        && request.resource.data.timestamp.size() <= 40
+        && request.resource.data.path is string
+        && request.resource.data.path.size() <= 300
+        && request.resource.data.sessionId is string
+        && request.resource.data.sessionId.size() <= 100
+        && (!request.resource.data.keys().hasAny(['properties'])
+            || (request.resource.data.properties is map
+                && request.resource.data.properties.size() <= 20));
+      allow update, delete: if isBureau();
+    }
+
+    // ===== Annonces diffusées depuis l'admin =====
+    // Lecture publique des seules annonces actives (bannière du site) ; le
+    // bureau voit aussi les brouillons et les annonces expirées.
+    match /announcements/{id} {
+      allow read: if resource.data.active == true || isBureau();
+      allow create, update, delete: if isBureau();
+    }
+
+    // ===== Réponses types de la boîte de réception =====
+    match /cannedResponses/{id} {
+      allow read, write: if isManagerPlus();
+    }
+
+    // ===== Redirections gérées depuis l'admin =====
+    // Lecture publique : le front résout les anciens liens avant les routes.
+    match /redirects/{id} {
+      allow read: if true;
+      allow create, update, delete: if isBureau();
+    }
+
     // ===== Compteurs de quotas anti-abus (Cloud Functions uniquement) =====
     match /rateLimits/{id} {
       allow read, write: if false;

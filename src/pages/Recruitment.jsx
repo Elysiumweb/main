@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import { Briefcase, CalendarCheck, CalendarX, Route as RouteIcon, Sparkles } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../lib/i18n";
+import { useAdminT } from "../lib/adminI18n";
 import { ThreadsPanel, LoginPrompt } from "../components/ThreadsPanel";
 import { ApplicationStepper } from "../components/ApplicationStepper";
 import { TryoutList } from "../components/TryoutList";
@@ -32,6 +33,7 @@ const EMPTY_PARENT = { parentName: "", parentEmail: "" };
 export default function Recruitment() {
   const { user, canSeeRecruit } = useAuth();
   const { t, lang } = useLang();
+  const tx = useAdminT();
   const [searchParams] = useSearchParams();
   const { delays } = useRecruitmentSettings();
   const [positions, setPositions] = useState([]);
@@ -406,9 +408,17 @@ export default function Recruitment() {
         <div className="lg:col-span-7">
           {user && (
             <>
-              <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6" data-testid="recruit-threads-title">
-                {canSeeRecruit ? t("recruit.allApps") : t("recruit.myApps")}
-              </h2>
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82]" data-testid="recruit-threads-title">
+                  {canSeeRecruit ? t("recruit.allApps") : t("recruit.myApps")}
+                </h2>
+                {canSeeRecruit && (
+                  <Link to="/admin?tab=inbox" data-testid="recruit-inbox-link"
+                    className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+                    {tx("inbox.title")} →
+                  </Link>
+                )}
+              </div>
               <ThreadsPanel collectionName="recruitThreads" canSeeAll={canSeeRecruit} emptyKey="recruit.noApps" titleField="position" prefix="recruit"
                 statusOptions={RECRUIT_STATUSES} canSetStatus={canSeeRecruit} renderThreadHeader={renderThreadStepper} />
             </>

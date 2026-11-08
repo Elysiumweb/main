@@ -8,7 +8,7 @@ import { useLang } from "../lib/i18n";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export const NotificationsBell = () => {
-  const { user, role, game, isOfficial, hasPlayerAccess } = useAuth();
+  const { user, role, game, isOfficial } = useAuth();
   const { t, lang } = useLang();
   const navigate = useNavigate();
   const [direct, setDirect] = useState([]);
@@ -20,12 +20,15 @@ export const NotificationsBell = () => {
     const u1 = onSnapshot(query(ref, where("targetUid", "==", user.uid), limit(30)),
       (s) => setDirect(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
     let u2 = () => {};
-    if (hasPlayerAccess) {
+    // Les annonces diffusées par l'admin peuvent cibler les visiteurs : on
+    // écoute donc les notifications de rôle pour tout compte connecté, pas
+    // seulement les joueurs.
+    if (user) {
       u2 = onSnapshot(query(ref, where("targetRoles", "array-contains", isOfficial ? "bureau" : role), limit(30)),
         (s) => setRoleNotifs(s.docs.map((d) => ({ id: d.id, ...d.data() }))), console.error);
     } else setRoleNotifs([]);
     return () => { u1(); u2(); };
-  }, [user, role, hasPlayerAccess, isOfficial]);
+  }, [user, role, isOfficial]);
 
   const notifs = useMemo(() => {
     const map = new Map();

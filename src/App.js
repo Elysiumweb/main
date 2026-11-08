@@ -1,5 +1,5 @@
 import "@/App.css";
-import { lazy } from "react";
+import { lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
@@ -15,6 +15,10 @@ import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { SEOManager } from "@/components/SEOManager";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { RedirectGate } from "@/components/RedirectGate";
+import { trackPageView } from "@/lib/analytics";
+import { registerFirestoreAnalyticsSink } from "@/lib/analyticsFirestore";
 // La page d'accueil reste en import statique : c'est la cible la plus
 // fréquente, lui imposer un aller-retour réseau supplémentaire dégraderait
 // le LCP. Toutes les autres routes sont chargées à la demande.
@@ -65,8 +69,25 @@ const Notes = lazy(() => import("@/pages/player/Notes"));
 const CanvasSpace = lazy(() => import("@/pages/player/CanvasSpace"));
 const ActivityLog = lazy(() => import("@/pages/player/ActivityLog"));
 
-// Register service worker on load
+// Branche la collecte analytics consentie (Firestore) et le service worker.
+registerFirestoreAnalyticsSink();
 registerSW();
+
+/** Émet `page_view` à chaque navigation (hors admin / espace joueur). */
+const PageViewTracker = () => {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    // Laisse le temps au SEOManager de poser le titre de la page.
+    const timer = setTimeout(() => {
+      trackPageView(pathname, {
+        title: typeof document !== "undefined" ? document.title.slice(0, 120) : "",
+        search,
+      });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [pathname, search]);
+  return null;
+};
 
 const SkipLink = () => (
   <a href="#main-content" className="skip-link" data-testid="skip-link">
@@ -103,8 +124,11 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <SEOManager />
+          <RedirectGate />
+          <PageViewTracker />
           <SkipLink />
           <Navbar />
+          <AnnouncementBanner />
           <VerifyEmailBanner />
           <GlobalSearch />
           <Routes>
@@ -131,7 +155,6 @@ function App() {
               <Route path="/partenaires" element={<Partners />} />
               <Route path="/boutique" element={<Shop />} />
               <Route path="/soutenir" element={<Donate />} />
-              <Route path="/dons" element={<Navigate to="/soutenir" replace />} />
               <Route path="/newsletter" element={<NewsletterSignup />} />
               <Route path="/newsletter/confirm/:token" element={<NewsletterConfirm />} />
               <Route path="/connexion" element={<Login />} />
