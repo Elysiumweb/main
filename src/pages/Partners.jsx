@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
@@ -7,10 +8,11 @@ import { getHoneypotProps, isHoneypotFilled, checkSessionRateLimit, rateLimitMes
 import { callProtected, protectedErrorMessage } from "../lib/secureForms";
 import { toast } from "sonner";
 import { LoadingState, ErrorState, EmptyState } from "../components/States";
-import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ExternalLink, Heart, Check, X } from "lucide-react";
+import { Handshake, Shield, Users, Lightbulb, Trophy, Mail, ArrowRight, Heart, Check, X } from "lucide-react";
 import { DonateBlock } from "../components/DonateButton";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { Button } from "../components/ui/button";
+import { partnerFichePath, partnerLogoSrc, partnerTier, visiblePartners } from "../lib/partners";
 
 const values = [
   { key: "compete", icon: Trophy },
@@ -188,7 +190,7 @@ export default function Partners() {
 
   const grouped = partners ? tiersOrder.map((tier) => ({
     tier,
-    list: partners.filter((p) => (p.tier || "bronze") === tier),
+    list: visiblePartners(partners).filter((p) => partnerTier(p) === tier),
   })).filter((g) => g.list.length > 0) : [];
 
   const scrollToContact = (tierKey) => {
@@ -393,6 +395,12 @@ export default function Partners() {
       {/* PARTNER LOGOS */}
       <section className="border-t border-white/10 bg-[#0c0c0c]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-logos">
+          <div className="flex items-center gap-4 mb-10">
+            <Handshake className="text-[#D8CA82]" size={20} aria-hidden="true" />
+            <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("partners.logos.title")}</h2>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          <p className="text-sm text-[#c8c8c8] max-w-2xl mb-8">{t("partners.logos.sub")}</p>
           {error ? (
             <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="partners-error" />
           ) : partners === null ? (
@@ -411,14 +419,20 @@ export default function Partners() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {list.map((p) => (
-                      <a key={p.id} href={p.website || "#"} target="_blank" rel="noopener noreferrer"
-                        onClick={() => trackEvent(ANALYTICS_EVENTS.PARTNER_CLICK, { partnerId: p.id, tier: p.tier || "bronze" })}
+                      <Link
+                        key={p.id}
+                        to={partnerFichePath(p)}
+                        onClick={() => trackEvent(ANALYTICS_EVENTS.PARTNER_CLICK, { partnerId: p.id, tier: partnerTier(p), source: "partners_page" })}
                         data-testid={`partner-link-${p.id}`}
-                        className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors">
-                        <PartnerLogo src={p.logoUrl} name={p.name} className="w-full h-20" />
+                        aria-label={`${p.name} — ${t("partners.logos.cta")}`}
+                        className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+                      >
+                        <PartnerLogo src={partnerLogoSrc(p)} name={p.name} className="w-full h-20" />
                         <p className="font-display font-bold text-sm text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors text-center">{p.name}</p>
-                        {p.website && <ExternalLink size={12} className="text-[#c8c8c8]" />}
-                      </a>
+                        <span className="mt-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-[#c8c8c8] group-hover:text-[#D8CA82] transition-colors">
+                          {t("partners.logos.cta")} <ArrowRight size={11} className="u-micro group-hover:translate-x-0.5" aria-hidden="true" />
+                        </span>
+                      </Link>
                     ))}
                   </div>
                 </div>

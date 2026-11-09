@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
-import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink, Shirt } from "lucide-react";
+import { ArrowRight, Trophy, Swords, Radio, PlayCircle, Youtube, Heart, Users, CalendarClock, ExternalLink, Shirt, Handshake } from "lucide-react";
 import { db } from "../lib/firebase";
 import { useLang } from "../lib/i18n";
 import { SOCIALS, GAMES, getElysiumTeamName, getGameShortLabel, isRemovedGame } from "../lib/constants";
@@ -18,6 +18,7 @@ import { fmtMatchDate } from "../lib/formatters";
 import { getEffectiveMatchStatus, useNowMs } from "../lib/matchStatus";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { partnerFichePath, partnerLogoSrc, visiblePartners } from "../lib/partners";
 
 /* Neutral initials plate when the opponent logo is missing/broken
    (mirrors MatchCard behavior, without implying any partnership). */
@@ -36,6 +37,24 @@ const OpponentMark = ({ src, name }) => {
   return <img src={src} alt={`Logo de l'équipe adverse : ${safeName}`} onError={() => setErr(true)} loading="lazy" className="h-16 w-16 sm:h-20 sm:w-20 object-contain" />;
 };
 
+const PartnerMark = ({ src, name }) => {
+  const [err, setErr] = useState(false);
+  const safeName = (name || "Partenaire").trim();
+  if (!src || err) {
+    const initials = safeName.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "?";
+    return (
+      <span
+        role="img"
+        aria-label={`Logo indisponible : ${safeName}`}
+        className="h-14 w-full flex items-center justify-center border border-white/10 bg-[#0c0c0c] text-[#a0a0a0] font-display tracking-[0.25em] uppercase text-xs"
+      >
+        <span aria-hidden="true">{initials}</span>
+      </span>
+    );
+  }
+  return <img src={src} alt={`Logo : ${safeName}`} onError={() => setErr(true)} loading="lazy" decoding="async" className="h-14 w-full object-contain opacity-75 group-hover:opacity-100 transition-opacity" />;
+};
+
 export default function Home() {
   const { t, lang } = useLang();
   const nowMs = useNowMs();
@@ -43,6 +62,7 @@ export default function Home() {
   const [members, setMembers] = useState([]);
   const [videos, setVideos] = useState([]);
   const [discord, setDiscord] = useState(null);
+  const [partners, setPartners] = useState([]);
 
   useEffect(() => {
     const u = onSnapshot(collection(db, "media"), (snap) => {
@@ -55,6 +75,15 @@ export default function Home() {
       .then((d) => setDiscord({ online: d.approximate_presence_count, members: d.approximate_member_count }))
       .catch(() => {});
     return u;
+  }, []);
+
+  // Partenaires publiés : la bande « Ils nous font confiance » reste masquée
+  // tant qu'aucun logo n'est enregistré depuis l'admin.
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "partners"), (snap) => {
+      setPartners(visiblePartners(snap.docs.map((d) => ({ id: d.id, ...d.data() }))).slice(0, 10));
+    }, () => {});
+    return unsub;
   }, []);
 
   useEffect(() => {
@@ -571,6 +600,42 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* PARTENAIRES — « Ils nous font confiance », logos cliquables vers la fiche */}
+      {partners.length > 0 && (
+        <section className="border-t border-white/10 bg-[#111111]" aria-labelledby="home-partners-h2" data-testid="home-partners">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
+            <div className="flex items-center gap-4 mb-4">
+              <Handshake className="text-[#D8CA82]" size={20} aria-hidden="true" />
+              <h2 id="home-partners-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("home.partners.title")}</h2>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+            <p className="text-sm text-[#c8c8c8] max-w-2xl mb-8">{t("home.partners.sub")}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {partners.map((p) => (
+                <Link
+                  key={p.id}
+                  to={partnerFichePath(p)}
+                  onClick={() => trackEvent(ANALYTICS_EVENTS.PARTNER_CLICK, { partnerId: p.id, source: "home" })}
+                  data-testid={`home-partner-${p.id}`}
+                  aria-label={`${p.name} — ${t("partners.logos.cta")}`}
+                  className="group border border-white/10 bg-[#1A1A1A] p-4 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 hover:-translate-y-0.5 u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+                >
+                  <PartnerMark src={partnerLogoSrc(p)} name={p.name} />
+                  <span className="font-display font-bold text-xs text-center text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors line-clamp-2">{p.name}</span>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-8">
+              <Button variant="outline" size="md" asChild>
+                <Link to="/partenaires" data-testid="home-partners-cta">
+                  {t("home.partners.cta")} <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* SOUTENIR / DONS — réduit selon campagne — D-02 : moins de py-24, déplacé après communauté */}
       <section className="border-t border-white/10" aria-labelledby="donate-block-h2">

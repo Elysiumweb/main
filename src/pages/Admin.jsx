@@ -23,6 +23,7 @@ import { AdminCompetitions } from "../components/admin/AdminCompetitions";
 import { AdminOpponents } from "../components/admin/AdminOpponents";
 import { AdminCampaigns } from "../components/admin/AdminCampaigns";
 import { AdminPartnerRequests } from "../components/admin/AdminPartnerRequests";
+import { AdminPartners } from "../components/admin/AdminPartners";
 import { AdminNewsletter } from "../components/admin/AdminNewsletter";
 import { AdminAudit } from "../components/admin/AdminAudit";
 import { AdminInbox } from "../components/admin/AdminInbox";
@@ -198,11 +199,11 @@ export default function Admin() {
   const allowed = {
     users: isOfficial, matches: isOfficial, rosters: isOfficial, roster: isBureau,
     articles: isBureau, media: isBureau, positions: isStaff, events: isStaff,
-    competitions: isBureau, opponents: isBureau, campaigns: isBureau, partners: isBureau,
+    competitions: isBureau, opponents: isBureau, campaigns: isBureau, partnerLogos: isBureau, partners: isBureau,
     newsletter: isBureau, audit: isBureau, help: isBureau, tryouts: isStaff,
     inbox: isStaff, announcements: isBureau, analytics: isBureau, redirects: isBureau,
   };
-  const tabs = ["users", "inbox", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partners", "newsletter", "tryouts", "help", "announcements", "analytics", "redirects", "audit"].filter((k) => allowed[k]);
+  const tabs = ["users", "inbox", "matches", "rosters", "roster", "articles", "media", "positions", "events", "competitions", "opponents", "campaigns", "partnerLogos", "partners", "newsletter", "tryouts", "help", "announcements", "analytics", "redirects", "audit"].filter((k) => allowed[k]);
 
   useEffect(() => {
     if (tabs.length && !tabs.includes(tab)) setTab(tabs[0]);
@@ -980,6 +981,7 @@ export default function Admin() {
         {tab === "competitions" && <AdminCompetitions />}
         {tab === "opponents" && <AdminOpponents />}
         {tab === "campaigns" && <AdminCampaigns />}
+        {tab === "partnerLogos" && <AdminPartners />}
         {tab === "partners" && <AdminPartnerRequests />}
         {tab === "newsletter" && <AdminNewsletter />}
         {tab === "audit" && <AdminAudit />}
