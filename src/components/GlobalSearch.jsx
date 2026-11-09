@@ -12,9 +12,10 @@ import {
   CommandList,
   CommandSeparator,
 } from "./ui/command";
-import { Users, Newspaper, Trophy, FileText } from "lucide-react";
+import { Users, Newspaper, Trophy, FileText, Handshake } from "lucide-react";
 import { getElysiumTeamName } from "../lib/constants";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
+import { partnerFichePath, visiblePartners } from "../lib/partners";
 
 const PAGE_LINKS = [
   { path: "/", key: "nav.home" },
@@ -43,6 +44,7 @@ export const GlobalSearch = () => {
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [articles, setArticles] = useState([]);
+  const [partners, setPartners] = useState([]);
 
   // Load data
   useEffect(() => {
@@ -55,6 +57,9 @@ export const GlobalSearch = () => {
       }, () => {}),
       onSnapshot(collection(db, "articles"), (snap) => {
         setArticles(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => a.status !== "deleted"));
+      }, () => {}),
+      onSnapshot(collection(db, "partners"), (snap) => {
+        setPartners(visiblePartners(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
       }, () => {}),
     ];
     return () => unsubs.forEach((u) => u());
@@ -130,6 +135,21 @@ export const GlobalSearch = () => {
             );
           })}
         </CommandGroup>
+
+        <CommandSeparator />
+
+        {/* Partners */}
+        {partners.length > 0 && (
+          <CommandGroup heading={t("search.partners")}>
+            {partners.map((p) => (
+              <CommandItem key={`partner-${p.id}`} value={`${p.name || ""} ${p.description?.slice(0, 100) || ""}`}
+                onSelect={() => runCommand(() => navigate(partnerFichePath(p)), { target: "partner" })}>
+                <Handshake size={14} className="mr-2 text-[#D8CA82]" />
+                <span className="truncate">{p.name}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
 
         <CommandSeparator />
 

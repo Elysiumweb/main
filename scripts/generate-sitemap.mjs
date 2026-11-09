@@ -198,12 +198,16 @@ async function main() {
   let roster = [];
   let matches = [];
   let opponents = [];
+  let partners = [];
   try {
-    [articles, roster, matches, opponents] = await Promise.all([
+    [articles, roster, matches, opponents, partners] = await Promise.all([
       fetchCollection("articles"),
       fetchCollection("roster"),
       fetchCollection("matches").catch(()=>[]),
       fetchCollection("opponents").catch(()=>[]),
+      // Nouvelle collection : son absence ne doit pas priver le sitemap
+      // des articles, joueurs, matchs et adversaires.
+      fetchCollection("partners").catch(()=>[]),
     ]);
   } catch (err) {
     if (existsSync(SITEMAP_OUT)) {
@@ -257,7 +261,28 @@ async function main() {
     priority: "0.6",
   })).sort((a,b)=> a.loc.localeCompare(b.loc));
 
-  const entries = [...staticEntries, ...articleEntries, ...rosterEntries, ...matchEntries, ...opponentEntries];
+  // Fiches partenaires (/partenaires/:slug) — seuls les partenaires publiés.
+  const partnerSlug = (p) =>
+    (p.slug || p.name || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80);
+  const partnerEntries = partners
+    .filter((p) => p.active !== false && p.published !== false)
+    .map((p) => ({ slug: partnerSlug(p), lastmod: isoDay(p.updatedAt) }))
+    .filter((p) => p.slug)
+    .map((p) => ({
+      loc: `/partenaires/${p.slug}`,
+      lastmod: p.lastmod,
+      changefreq: "monthly",
+      priority: "0.5",
+    }))
+    .sort((a, b) => a.loc.localeCompare(b.loc));
+
+  const entries = [...staticEntries, ...articleEntries, ...rosterEntries, ...matchEntries, ...opponentEntries, ...partnerEntries];
 
   mkdirSync(PUBLIC_DIR, { recursive: true });
   writeFileSync(SITEMAP_OUT, buildSitemap(entries), "utf8");
@@ -269,7 +294,8 @@ async function main() {
 
   console.log(
     `[sitemap] ${entries.length} URL(s) : ${staticEntries.length} statiques, ` +
-      `${articleEntries.length} article(s), ${rosterEntries.length} joueur(s), ${matchEntries.length} match(s), ${opponentEntries.length} adversaire(s).`
+      `${articleEntries.length} article(s), ${rosterEntries.length} joueur(s), ${matchEntries.length} match(s), ` +
+      `${opponentEntries.length} adversaire(s), ${partnerEntries.length} partenaire(s).`
   );
   console.log(`[sitemap] rss.xml : ${Math.min(published.length, 30)} article(s).`);
 }
