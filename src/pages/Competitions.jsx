@@ -79,7 +79,7 @@ export default function Competitions() {
         <div className="flex flex-wrap gap-2 mb-10" data-testid="competitions-filters">
           {["all", "ongoing", "upcoming", "finished"].map((s) => (
             <button key={s} onClick={() => setStatusFilter(s)} data-testid={`competitions-filter-${s}`}
-              className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${statusFilter === s ? "border-primary text-primary bg-primary/10" : "border-border/30 text-foreground/50 hover:text-foreground"}`}>
+              className={`clip-blade-sm font-label text-[0.68rem] font-semibold uppercase tracking-[0.18em] border px-3 py-1.5 transition-colors ${statusFilter === s ? "border-primary text-primary bg-primary/10" : "border-border/30 text-muted-foreground hover:text-foreground"}`}>
               {s === "all" ? t("media.all") : t(`competitions.status.${s}`)}
             </button>
           ))}
@@ -115,7 +115,7 @@ export default function Competitions() {
                     <div key={c.id} className="clip-blade-sm border border-border/20 bg-background/40 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <p className="font-display font-bold text-foreground">{c.name} {c.season && <span className="text-muted-foreground text-xs">· {c.season}</span>}</p>
-                        <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>{t(`competitions.status.${c.status}`)}</span>
+                        <span className={`clip-blade-sm font-label text-[0.62rem] font-semibold uppercase tracking-[0.16em] border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>{t(`competitions.status.${c.status}`)}</span>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
@@ -170,7 +170,7 @@ export default function Competitions() {
             {filtered.map((c) => (
               <div key={c.id} className="panel clip-blade-sm p-6 flex flex-col hover:border-primary/50 transition-colors" data-testid={`competition-card-${c.id}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>
+                  <span className={`clip-blade-sm font-label text-[0.62rem] font-semibold uppercase tracking-[0.16em] border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>
                     {t(`competitions.status.${c.status}`)}
                   </span>
                   {c.season && (

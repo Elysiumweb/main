@@ -338,7 +338,7 @@ export default function Home() {
           <div className="border border-border/25 bg-background/70 p-8 flex flex-col justify-center relative overflow-hidden">
             <p className="font-display text-muted-foreground tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
             <p className="text-muted-foreground text-sm leading-relaxed">{t("home.games.pillars")}</p>
-            <div className="mt-6 h-px bg-primary/10" />
+            <div className="mt-6 gold-line opacity-50" />
             <p className="mt-4 text-xs uppercase tracking-[0.3em] text-primary/70">Not given. Earned.</p>
           </div>
         </div>
@@ -358,7 +358,7 @@ export default function Home() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-8">
             {/* PROCHAIN MATCH — grande tuile */}
-            <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative border border-border/25 bg-background overflow-hidden flex flex-col group hover:border-primary/50 u-micro" data-testid="home-proof-next-match">
+            <article className="sm:col-span-2 lg:col-span-4 lg:row-span-2 relative clip-blade border border-border/25 bg-background/85 overflow-hidden flex flex-col group hover:border-primary/50 u-micro" data-testid="home-proof-next-match">
               <img src="https://images.pexels.com/photos/9072212/pexels-photo-9072212.jpeg?auto=compress&cs=tinysrgb&w=1200"
                 alt="" aria-hidden="true" loading="lazy" decoding="async" width="1200" height="800"
                 className="absolute inset-0 w-full h-full object-cover opacity-25 saturate-[0.4] contrast-125 grayscale-[0.15]" />
@@ -497,13 +497,13 @@ export default function Home() {
             </a>
           </div>
           <div className="grid lg:grid-cols-2 gap-8">
-            <div className="border border-border/25 bg-background/70">
+            <div className="clip-blade-sm border border-border/25 bg-background/70">
               <iframe title="Twitch Elysium" data-testid="home-twitch-embed"
                 src={`https://player.twitch.tv/?channel=elysiumxeva&parent=${window.location.hostname}&muted=true`}
                 className="w-full aspect-video" allowFullScreen />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-primary mb-4">{t("home.live.replays")}</p>
+              <p className="eyebrow mb-4">{t("home.live.replays")}</p>
               {videos.length === 0 ? (
                 <p className="text-muted-foreground" data-testid="home-replays-empty">{t("home.live.noReplays")}</p>
               ) : (
@@ -513,7 +513,7 @@ export default function Home() {
                     return (
                       <Dialog key={v.id}>
                         <DialogTrigger asChild>
-                          <button className="group relative border border-border/25 bg-background/70 overflow-hidden text-left hover:border-primary/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                          <button className="group relative clip-blade-sm border border-border/25 bg-background/70 overflow-hidden text-left hover:border-primary/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                             data-testid={`home-replay-${v.id}`}
                             aria-label={`${t("home.live.watchReplay")} : ${v.title}`}>
                             {v.thumbnail ? (
@@ -529,7 +529,7 @@ export default function Home() {
                             </span>
                           </button>
                         </DialogTrigger>
-                        <DialogContent className="bg-background border border-primary/30 rounded-none max-w-3xl p-2" data-testid={`home-replay-lightbox-${v.id}`}>
+                        <DialogContent className="panel clip-blade border border-primary/30 rounded-none max-w-3xl p-2" data-testid={`home-replay-lightbox-${v.id}`}>
                           {embed ? (
                             <iframe src={embed} title={v.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
                           ) : (

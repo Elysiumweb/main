@@ -68,7 +68,7 @@ export default function News() {
         <div className="flex flex-wrap gap-2 mb-10" data-testid="news-category-filters">
           {["all", ...CATEGORIES].map((c) => (
             <button key={c} onClick={() => setCat(c)} data-testid={`news-cat-${c}`}
-              className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${cat === c ? "border-primary text-primary bg-primary/10" : "border-border/30 text-foreground/50 hover:text-foreground"}`}>
+              className={`clip-blade-sm font-label text-[0.68rem] font-semibold uppercase tracking-[0.18em] border px-3 py-1.5 transition-colors ${cat === c ? "border-primary text-primary bg-primary/10" : "border-border/30 text-muted-foreground hover:text-foreground"}`}>
               {c === "all" ? t("media.all") : t(`news.cat.${c}`)}
             </button>
           ))}
@@ -84,12 +84,12 @@ export default function News() {
             {/* Article « à la une » */}
             {featured && (
               <Link key={featured.id} to={`/actus/${featured.id}`} data-testid={`news-featured-${featured.id}`}
-                className="group relative border border-primary/40 bg-card hover:border-primary transition-colors overflow-hidden flex flex-col sm:flex-row mb-8 min-h-[260px]">
+                className="group relative panel clip-blade border-primary/40 hover:border-primary transition-colors overflow-hidden flex flex-col sm:flex-row mb-8 min-h-[260px]">
                 <div className="sm:w-1/2 relative overflow-hidden">
                   <ArticleCover src={featured.coverUrl} className="absolute inset-0 w-full h-full" />
                 </div>
                 <div className="sm:w-1/2 p-8 flex flex-col justify-center relative">
-                  <span className="text-xs font-display tracking-[0.25em] uppercase text-primary flex items-center gap-2">
+                  <span className="eyebrow flex items-center gap-2">
                     <Star size={11} className="fill-primary" aria-hidden="true" /> {t("news.featured")}
                     <span aria-hidden="true">·</span> {t(`news.cat.${featured.category}`)}
                   </span>
@@ -126,7 +126,7 @@ export default function News() {
                 <button
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
                   data-testid="news-load-more-btn"
-                  className="border border-primary/50 text-primary text-xs font-display font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-primary/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  className="clip-blade-sm border border-primary/50 text-primary font-display text-xs font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-primary/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   <ChevronDown size={14} aria-hidden="true" /> {t("news.loadMore")}
                 </button>

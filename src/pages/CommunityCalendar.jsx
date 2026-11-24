@@ -392,7 +392,7 @@ export default function CommunityCalendar() {
           <div className="flex flex-wrap gap-2" data-testid="cal-filters">
             {["all", ...TYPES].map((ty) => (
               <button key={ty} onClick={() => setTypeFilter(ty)} data-testid={`cal-filter-${ty}`}
-                className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${typeFilter === ty ? "border-primary text-primary bg-primary/10" : "border-border/30 text-foreground/50 hover:text-foreground"}`}>
+                className={`clip-blade-sm font-label text-[0.68rem] font-semibold uppercase tracking-[0.18em] border px-3 py-1.5 transition-colors ${typeFilter === ty ? "border-primary text-primary bg-primary/10" : "border-border/30 text-muted-foreground hover:text-foreground"}`}>
                 {ty === "all" ? t("media.all") : t(`cal.type.${ty}`)}
               </button>
             ))}
