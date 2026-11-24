@@ -9,6 +9,7 @@ import { SocialIcon } from "../components/SocialIcon";
 import { GAMES, getGameColor, getGameShortLabel, isRemovedGame } from "../lib/constants";
 import { useRosters } from "../hooks/useRosters";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { TiltCard } from "../components/site/TiltCard";
 import { Badge } from "../components/ui/badge";
 
 const GAME_FILTER_KEYS = {
@@ -166,7 +167,7 @@ export default function Team() {
           <div className="mt-10 border border-border/25 bg-background/70 p-6" data-testid="team-group-photo">
             <div className="flex items-center gap-3 mb-4">
               <span className="w-2 h-2 bg-gold rounded-full" />
-              <p className="font-display text-xs uppercase tracking-[0.3em] text-primary">Compositions par roster — photos de groupe authentiques</p>
+              <p className="eyebrow">Compositions par roster — photos de groupe authentiques</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {GAMES.map((g)=> {
@@ -221,8 +222,8 @@ export default function Team() {
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {g.list.map((m) => (
-                    <Link key={m.id} to={`/equipe/${m.id}`} data-testid={`team-card-${m.id}`}
-                      className="group panel clip-blade-sm hover:border-primary/50 transition-colors overflow-hidden">
+                    <TiltCard key={m.id} max={7} className="panel clip-blade-sm hover:border-primary/50 transition-colors overflow-hidden">
+                      <Link to={`/equipe/${m.id}`} data-testid={`team-card-${m.id}`} className="group block">
                       <PlayerPhoto src={m.photo} alt={m.pseudo} className="w-full h-64 sm:h-72" />
                       <div className="p-5">
                         <div className="flex items-start justify-between gap-2">
@@ -242,7 +243,8 @@ export default function Team() {
                           <span className="ml-auto text-xs uppercase tracking-widest text-primary/60">{t("team.view")} →</span>
                         </div>
                       </div>
-                    </Link>
+                      </Link>
+                    </TiltCard>
                   ))}
                 </div>
               </div>

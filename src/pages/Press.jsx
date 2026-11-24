@@ -125,7 +125,7 @@ export default function Press() {
         <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl mb-8" data-testid="press-intro">{t("press.intro")}</p>
 
         {/* Export des résultats (CSV / PDF) */}
-        <div className="border border-primary/30 bg-card p-6 mb-12" data-testid="press-exports-sport">
+        <div className="panel clip-blade-sm border border-primary/30 p-6 mb-12" data-testid="press-exports-sport">
           <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-4 flex items-center gap-2"><FileSpreadsheet size={14}/> Export des résultats (CSV / PDF) — données sportives exportables</h2>
           <p className="text-xs text-muted-foreground mb-4">La presse a les logos mais aussi désormais les données sportives : résultats complets avec VOD, MVP, score par manche.</p>
           <div className="flex flex-wrap gap-3">
@@ -148,7 +148,7 @@ export default function Press() {
 
         <div className="grid md:grid-cols-3 gap-5 mb-12" data-testid="press-kit-complete">
           <a href="/brand/elysium-press-kit.zip" download data-testid="press-download-zip"
-            className="border border-primary/30 bg-card p-6 flex flex-col hover:border-primary/60 transition-colors group">
+            className="panel clip-blade-sm border border-primary/30 p-6 flex flex-col hover:border-primary/60 transition-colors group">
             <Package className="text-primary mb-3 group-hover:scale-105 transition-transform" size={22} aria-hidden="true" />
             <p className="font-display text-xs uppercase tracking-[0.25em] text-foreground">Kit presse complet · ZIP</p>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Tous les logos PNG + SVG + PDF, pattern et accents aux bonnes dimensions. 10 fichiers vectoriels inclus.</p>
@@ -176,12 +176,12 @@ export default function Press() {
 
         <div className="grid md:grid-cols-2 gap-5 mb-12" data-testid="press-presentations">
           <div className="panel clip-blade-sm p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Présentation courte — 280 caractères</p>
+            <p className="eyebrow mb-3">Présentation courte — 280 caractères</p>
             <p className="text-sm text-muted-foreground leading-relaxed">Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.</p>
             <button onClick={() => navigator.clipboard?.writeText("Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.")} className="mt-3 text-xs uppercase tracking-widest text-primary hover:underline">Copier</button>
           </div>
           <div className="panel clip-blade-sm p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Présentation longue — 600 caractères</p>
+            <p className="eyebrow mb-3">Présentation longue — 600 caractères</p>
             <p className="text-sm text-muted-foreground leading-relaxed">Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA (Esports Virtual Arenas) et Rocket League — partagent le même ADN et le mêmeécusson. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et aux dons, avec comptes présentés chaque année en assemblée générale.</p>
             <button onClick={() => navigator.clipboard?.writeText("Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA et Rocket League — partagent le même ADN. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et dons.")} className="mt-3 text-xs uppercase tracking-widest text-primary hover:underline">Copier</button>
           </div>

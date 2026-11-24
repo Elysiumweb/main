@@ -271,7 +271,7 @@ export default function Support() {
                 <LoginPrompt messageKey="support.loginRequired" prefix="support" />
               </div>
 
-              <div className="border border-primary/30 bg-card p-6" data-testid="support-guest-block">
+              <div className="panel clip-blade-sm border border-primary/30 p-6" data-testid="support-guest-block">
                 <p className="font-display text-sm uppercase tracking-[0.25em] text-primary mb-3">{t("support.guest.title")}</p>
                 <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{t("support.guest.sub")}</p>
 

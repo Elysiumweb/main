@@ -243,7 +243,7 @@ export default function MatchDetail() {
           {/* Maps */}
           {maps.length>0 && (
             <div className="panel clip-blade-sm p-6" data-testid="match-detail-maps">
-              <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-4 flex items-center gap-2"><MapIcon size={14}/> {t("results.maps")}</h2>
+              <h2 className="eyebrow mb-4 flex items-center gap-2"><MapIcon size={14}/> {t("results.maps")}</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="text-xs uppercase tracking-widest text-muted-foreground border-b border-border/25">
@@ -273,7 +273,7 @@ export default function MatchDetail() {
           <div className="grid sm:grid-cols-2 gap-6">
             {(match.players||[]).length>0 && (
               <div className="panel clip-blade-sm p-6" data-testid="match-detail-players">
-                <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-4 flex items-center gap-2"><Users size={14}/> {t("results.players")}</h2>
+                <h2 className="eyebrow mb-4 flex items-center gap-2"><Users size={14}/> {t("results.players")}</h2>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <caption className="sr-only">{t("stats.playerStats.sub")}</caption>
@@ -311,7 +311,7 @@ export default function MatchDetail() {
             )}
             {mvpPlayer && (
               <div className="border border-primary/30 bg-primary/5 p-6" data-testid="match-detail-mvp">
-                <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3 flex items-center gap-2"><Award size={14}/> {t("results.mvp")}</h2>
+                <h2 className="eyebrow mb-3 flex items-center gap-2"><Award size={14}/> {t("results.mvp")}</h2>
                 {mvpPlayer.id ? (
                   <Link to={`/equipe/${mvpPlayer.id}`} className="text-foreground font-bold hover:text-primary hover:underline">{mvpPlayer.pseudo}</Link>
                 ) : (
@@ -339,7 +339,7 @@ export default function MatchDetail() {
 
           {opponentSlug && (
             <div className="panel clip-blade-sm p-6" data-testid="match-detail-opponent-link">
-              <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Fiche adversaire</p>
+              <p className="eyebrow mb-3">Fiche adversaire</p>
               <Link to={`/adversaires/${opponentSlug}`} className="flex items-center gap-3 group">
                 <OpponentLogo src={match.opponentLogo} name={match.opponentName} className="h-10 w-10 border border-border/25" />
                 <div>

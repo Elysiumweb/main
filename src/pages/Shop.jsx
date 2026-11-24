@@ -1,5 +1,6 @@
 import { ExternalLink, PackageCheck, Shirt, Sparkles } from "lucide-react";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
+import { TiltCard } from "../components/site/TiltCard";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 import { useLang } from "../lib/i18n";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
@@ -19,7 +20,7 @@ const WARMERS_PRICES = [
 
 /** Carte produit : visuel à gauche, arguments et achat à droite. */
 const ProductCard = ({ id, alt, badge, children }) => (
-  <article className="grid lg:grid-cols-12 panel clip-blade-sm overflow-hidden" data-testid={`shop-${id}`}>
+  <TiltCard max={4} className="grid lg:grid-cols-12 panel clip-blade overflow-hidden shadow-gold" data-testid={`shop-${id}`}>
     <div className="lg:col-span-7 relative min-h-[420px] sm:min-h-[620px] bg-background/70 overflow-hidden">
       <ImageWithFallback
         src={id === "jersey-2026" ? PRODUCT_IMAGE : WARMERS_IMAGE}
@@ -27,12 +28,12 @@ const ProductCard = ({ id, alt, badge, children }) => (
         loading={id === "jersey-2026" ? "eager" : "lazy"}
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <span className="absolute top-5 left-5 bg-background text-primary px-3 py-2 text-xs font-display font-bold uppercase tracking-[0.25em]">
+      <span className="clip-blade-sm absolute top-5 left-5 bg-background/85 px-3 py-2 font-label text-[0.65rem] font-bold uppercase tracking-[0.25em] text-primary backdrop-blur">
         {badge}
       </span>
     </div>
     <div className="lg:col-span-5 p-6 sm:p-10 lg:p-12 flex flex-col justify-center">{children}</div>
-  </article>
+  </TiltCard>
 );
 
 export default function Shop() {
@@ -50,7 +51,7 @@ export default function Shop() {
         rel="noopener noreferrer"
         onClick={() => trackPurchaseClick(source, product)}
         data-testid={testId}
-        className="mt-9 min-h-[52px] inline-flex items-center justify-center gap-3 bg-gold text-primary-foreground px-6 py-4 font-display font-black text-xs uppercase tracking-[0.22em] hover:bg-primary-glow hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.3)] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+        className="clip-blade-sm mt-9 min-h-[52px] inline-flex items-center justify-center gap-3 bg-gold text-primary-foreground px-6 py-4 font-display font-black text-xs uppercase tracking-[0.22em] hover:bg-primary-glow hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.3)] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
         aria-label={`${label} — ${t("common.opensInNewTab")}`}
       >
         {label} <ExternalLink size={16} aria-hidden="true" />
@@ -98,7 +99,7 @@ export default function Shop() {
             <p className="text-xs font-display uppercase tracking-[0.3em] text-muted-foreground mb-3">{t("shop.sizes")}</p>
             <div className="flex flex-wrap gap-2" aria-label={SIZES.join(", ")}>
               {SIZES.map((size) => (
-                <span key={size} className="min-w-10 h-10 px-2 border border-border/30 flex items-center justify-center text-xs font-display text-foreground">
+                <span key={size} className="clip-blade-sm min-w-10 h-10 px-2 border border-border/30 flex items-center justify-center font-label text-xs font-semibold text-foreground">
                   {size}
                 </span>
               ))}
@@ -127,7 +128,7 @@ export default function Shop() {
 
           <div className="grid grid-cols-2 gap-3 mt-8" role="list" aria-label={t("shop.manchettes.prices")}>
             {WARMERS_PRICES.map((o) => (
-              <div key={o.id} role="listitem" className="border border-border/30 p-4 flex flex-col gap-1" data-testid={`shop-price-${o.id}`}>
+              <div key={o.id} role="listitem" className="clip-blade-sm border border-border/30 bg-background/40 p-4 flex flex-col gap-1" data-testid={`shop-price-${o.id}`}>
                 <span className="text-[10px] font-display uppercase tracking-[0.25em] text-muted-foreground">{t(o.labelKey)}</span>
                 <span className="font-display font-black text-2xl text-primary">{o.price}</span>
               </div>

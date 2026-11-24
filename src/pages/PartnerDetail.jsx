@@ -274,7 +274,7 @@ export default function PartnerDetail() {
 
         <aside className="lg:col-span-4 space-y-6">
           <div className="panel clip-blade-sm p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-4">
+            <p className="eyebrow mb-4">
               {t("partners.sheet.title")}
             </p>
             <ul className="text-xs text-muted-foreground space-y-2">

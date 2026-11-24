@@ -70,7 +70,7 @@ export default function About() {
             </div>
             {/* Chiffres-clés */}
             <div className="grid grid-cols-3 gap-3 mt-6" data-testid="about-key-figures">
-              <div className="border border-primary/30 bg-card p-4 text-center"><p className="font-display font-black text-2xl text-primary">2</p><p className="text-xs uppercase tracking-widest text-muted-foreground">Pôles</p></div>
+              <div className="panel clip-blade-sm border border-primary/30 p-4 text-center"><p className="font-display font-black text-2xl text-primary">2</p><p className="text-xs uppercase tracking-widest text-muted-foreground">Pôles</p></div>
               <div className="panel clip-blade-sm p-4 text-center"><p className="font-display font-black text-2xl text-foreground">2026</p><p className="text-xs uppercase tracking-widest text-muted-foreground">Fondation</p></div>
               <div className="panel clip-blade-sm p-4 text-center"><p className="font-display font-black text-2xl text-foreground">100%</p><p className="text-xs uppercase tracking-widest text-muted-foreground">Bénévole</p></div>
             </div>

@@ -192,7 +192,7 @@ export default function Home() {
               ))}
             </div>
           ) : nextMatch ? (
-            <div className="border border-primary/30 bg-card p-6 flex flex-col sm:flex-row items-center gap-6" data-testid="home-primary-next">
+            <div className="panel clip-blade-sm border border-primary/30 p-6 flex flex-col sm:flex-row items-center gap-6" data-testid="home-primary-next">
               <div className="flex items-center gap-4">
                 <OptimizedImage src="/brand/logo-icon-gold.png" alt="" width="808" height="798" className="h-12 w-12 object-contain gold-glow" />
                 <span className="font-display font-black text-xl text-foreground">VS</span>
@@ -487,7 +487,7 @@ export default function Home() {
             <div className="flex-1 gold-line opacity-50" />
             <a href="https://www.twitch.tv/elysiumxeva" target="_blank" rel="noopener noreferrer" data-testid="home-live-twitch-cta"
               onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "home_live", platform: "twitch" })}
-              className="bg-gold text-primary-foreground text-xs font-display font-bold uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+              className="clip-blade-sm bg-gold text-primary-foreground font-display text-xs font-bold uppercase tracking-widest px-4 py-2 flex items-center gap-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
               <PlayCircle size={14} aria-hidden="true" /> {t("home.live.watch")}
             </a>
             <a href="https://www.youtube.com/@elysiumfr" target="_blank" rel="noopener noreferrer" data-testid="home-live-youtube-cta"

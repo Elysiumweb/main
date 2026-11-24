@@ -103,7 +103,7 @@ export default function OpponentDetail() {
           {h2h && <HeadToHead matches={matches} opponentName={opponent.name} testId="opponent-detail-h2h" />}
 
           <div>
-            <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-6 flex items-center gap-2"><Trophy size={14}/> Historique des confrontations ({opponentMatches.length})</h2>
+            <h2 className="eyebrow mb-6 flex items-center gap-2"><Trophy size={14}/> Historique des confrontations ({opponentMatches.length})</h2>
             <div className="grid sm:grid-cols-2 gap-4" data-testid="opponent-detail-grid">
               {opponentMatches.map(m=> <MatchCard key={m.id} match={m} />)}
             </div>
@@ -111,7 +111,7 @@ export default function OpponentDetail() {
         </div>
         <aside className="lg:col-span-4 space-y-6">
           <div className="panel clip-blade-sm p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Fiche</p>
+            <p className="eyebrow mb-3">Fiche</p>
             <ul className="text-xs text-muted-foreground space-y-2">
               <li>Nom : <span className="text-foreground">{opponent.name}</span></li>
               {opponent.country && <li>Pays : <span className="text-foreground">{opponent.country}</span></li>}

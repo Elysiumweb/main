@@ -29,7 +29,7 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
   const reached = pct >= 100;
 
   return (
-    <div className="border border-primary/30 bg-card/70 p-5" data-testid={testId}>
+    <div className="panel clip-blade-sm border border-primary/30/70 p-5" data-testid={testId}>
       <div className="flex items-center gap-2 mb-2">
         <Target size={14} className="text-primary shrink-0" aria-hidden="true" />
         <p className={`font-display uppercase tracking-[0.25em] text-foreground ${compact ? "text-xs" : "text-xs"}`}>

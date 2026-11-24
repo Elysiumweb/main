@@ -313,7 +313,7 @@ export default function Partners() {
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-offers">
         <div className="flex items-center gap-4 mb-10">
           <h2 className="eyebrow">{t("partners.offers.title")}</h2>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
         </div>
 
         {/* CARTES TARIFS */}
@@ -398,7 +398,7 @@ export default function Partners() {
           <div className="flex items-center gap-4 mb-10">
             <Handshake className="text-primary" size={20} aria-hidden="true" />
             <h2 className="eyebrow">{t("partners.logos.title")}</h2>
-            <div className="flex-1 h-px bg-primary/10" />
+            <div className="flex-1 gold-line opacity-50" />
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl mb-8">{t("partners.logos.sub")}</p>
           {error ? (
@@ -415,7 +415,7 @@ export default function Partners() {
                     <h3 className={`font-display text-sm tracking-[0.3em] uppercase ${tier === "gold" ? "text-primary" : tier === "silver" ? "text-[#C0C0C0]" : "text-[#CD7F32]"}`}>
                       {t(`partners.tiers.${tier}`)}
                     </h3>
-                    <div className="flex-1 h-px bg-primary/10" />
+                    <div className="flex-1 gold-line opacity-50" />
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {list.map((p) => (
@@ -448,7 +448,7 @@ export default function Partners() {
           <div className="flex items-center gap-4 mb-10">
             <Heart className="text-primary" size={20} aria-hidden="true" />
             <h2 id="partners-donate-h2" className="eyebrow">{t("donate.title")}</h2>
-            <div className="flex-1 h-px bg-primary/10" />
+            <div className="flex-1 gold-line opacity-50" />
           </div>
           <DonateBlock testId="partners-donate-block" />
         </div>

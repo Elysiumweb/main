@@ -67,7 +67,7 @@ export const RecruitHomeBlock = () => {
           <span className="text-xs font-display uppercase tracking-[0.2em] text-primary border border-primary/40 px-2 py-0.5" data-testid="home-recruit-count">
             {positions.length} {t("home.recruit.more")}
           </span>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
           <Link
             to="/recrutement"
             data-testid="home-recruit-cta"

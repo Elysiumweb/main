@@ -94,7 +94,7 @@ export default function Competitions() {
           <>
             {/* Timeline */}
             <div className="border border-border/25 bg-background/70 p-6 mb-8" data-testid="competitions-timeline">
-              <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-4">Timeline des compétitions</h2>
+              <h2 className="eyebrow mb-4">Timeline des compétitions</h2>
               <div className="relative border-l border-primary/30 pl-6 space-y-4">
                 {(filtered.slice(0,4)).map((c)=> (
                   <div key={c.id} className="relative">
@@ -107,12 +107,12 @@ export default function Competitions() {
             </div>
 
             {/* Real standings */}
-            <div className="border border-primary/20 bg-card p-6 mb-8" data-testid="competitions-standings">
-              <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-4 flex items-center gap-2"><Table2 size={14}/> Classement détaillé (poule / championnat)</h2>
+            <div className="panel clip-blade-sm border border-primary/20 p-6 mb-8" data-testid="competitions-standings">
+              <h2 className="eyebrow mb-4 flex items-center gap-2"><Table2 size={15} aria-hidden="true"/> Classement détaillé (poule / championnat)</h2>
               {filtered.some(c=> Array.isArray(c.standings) && c.standings.length>0) ? (
                 <div className="space-y-8">
                   {filtered.filter(c=> Array.isArray(c.standings) && c.standings.length>0).map(c=>(
-                    <div key={c.id} className="border border-border/20 bg-background/70 p-4">
+                    <div key={c.id} className="clip-blade-sm border border-border/20 bg-background/40 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <p className="font-display font-bold text-foreground">{c.name} {c.season && <span className="text-muted-foreground text-xs">· {c.season}</span>}</p>
                         <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${STATUS_CLS[c.status] || STATUS_CLS.finished}`}>{t(`competitions.status.${c.status}`)}</span>

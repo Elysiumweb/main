@@ -203,7 +203,7 @@ export const DonateBlock = ({ testId = "donate-block" }) => {
   const { t } = useLang();
   return (
     <div
-      className="relative border border-primary/30 bg-card p-8 sm:p-10 overflow-hidden"
+      className="relative panel clip-blade-sm border border-primary/30 p-8 sm:p-10 overflow-hidden"
       data-testid={testId}
     >
       <img

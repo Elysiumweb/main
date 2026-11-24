@@ -122,7 +122,7 @@ export const AdminNewsletter = () => {
         </div>
       </div>
 
-      <form onSubmit={sendDigest} className="border border-primary/30 bg-card p-6 space-y-4" data-testid="admin-newsletter-digest-form">
+      <form onSubmit={sendDigest} className="panel clip-blade-sm border border-primary/30 p-6 space-y-4" data-testid="admin-newsletter-digest-form">
         <div>
           <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{t("admin.newsletter.sendDigest")}</p>
           <p className="text-xs text-muted-foreground mt-2">{t("admin.newsletter.sendDigestSub")}</p>

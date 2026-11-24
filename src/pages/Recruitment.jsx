@@ -209,7 +209,7 @@ export default function Recruitment() {
         <div className="flex items-center gap-4 mb-8">
           <Briefcase className="text-primary" size={18} />
           <h2 className="eyebrow">{t("recruit.positions")}</h2>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
         </div>
         {positions.length === 0 ? (
           <EmptyState icon={CalendarX} text={t("recruit.positions.empty")} testId="recruit-positions-empty" />
@@ -244,7 +244,7 @@ export default function Recruitment() {
                 <div className="mt-auto pt-3 border-t border-border/25 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{p.deadline ? `${t("recruit.deadline")} : ${p.deadline}` : ""}</span>
                   <button onClick={() => applyTo(p)} data-testid={`recruit-apply-${p.id}`}
-                    className="bg-gold text-primary-foreground text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow">
+                    className="clip-blade-sm bg-gold text-primary-foreground font-display text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow">
                     {t("recruit.apply")}
                   </button>
                 </div>
@@ -259,7 +259,7 @@ export default function Recruitment() {
         <div className="flex items-center gap-4 mb-4">
           <RouteIcon className="text-primary" size={18} aria-hidden="true" />
           <h2 id="recruit-process-h2" className="eyebrow">{t("recruit.steps.title")}</h2>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
         </div>
         <p className="text-sm text-muted-foreground mb-8 max-w-3xl">{t("recruit.steps.sub")}</p>
         <ApplicationStepper variant="public" delays={delays} />
@@ -270,7 +270,7 @@ export default function Recruitment() {
         <div className="flex items-center gap-4 mb-4">
           <CalendarCheck className="text-primary" size={18} aria-hidden="true" />
           <h2 id="recruit-tryout-h2" className="eyebrow">{t("recruit.tryout.title")}</h2>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
         </div>
         <p className="text-sm text-muted-foreground mb-8 max-w-3xl">{t("recruit.tryout.sub")}</p>
         <TryoutList />

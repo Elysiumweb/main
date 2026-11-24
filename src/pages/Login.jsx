@@ -232,9 +232,9 @@ export default function Login() {
           </button>
         </form>
         <div className="flex items-center gap-4 my-6" role="separator" aria-orientation="horizontal">
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
           <span className="text-xs uppercase tracking-widest text-muted-foreground">{t("login.or")}</span>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
         </div>
 
         <button

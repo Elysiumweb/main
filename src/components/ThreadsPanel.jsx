@@ -107,7 +107,7 @@ export const LoginPrompt = ({ messageKey, prefix }) => {
   const { t, lang } = useLang();
   const location = useLocation();
   return (
-    <div className="border border-primary/30 bg-card p-10 text-center" data-testid={`${prefix}-login-prompt`}>
+    <div className="panel clip-blade-sm border border-primary/30 p-10 text-center" data-testid={`${prefix}-login-prompt`}>
       <p className="text-foreground/70 mb-6">{t(messageKey)}</p>
       <Link to="/connexion" state={{ from: location }} data-testid={`${prefix}-login-link`}
         className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 inline-block hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">

@@ -182,7 +182,7 @@ export default function Results() {
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         {nextMatch && (
           <div className="border border-primary/30 bg-primary/5 px-5 py-4 mb-8 flex items-center flex-wrap gap-4" data-testid="results-next-countdown">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary">
+            <p className="eyebrow">
               {t("home.proof.nextMatch")} : {getElysiumTeamName(nextMatch.roster)} vs {nextMatch.opponentName}
             </p>
             <MatchCountdown match={nextMatch} testId="results-countdown" />

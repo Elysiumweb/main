@@ -63,7 +63,7 @@ export const PushConsent = () => {
       <p className="text-xs text-foreground/50 mb-4">{t("pwa.push.consent.text")}</p>
       <div className="flex gap-3">
         <button onClick={handleAccept} disabled={busy} data-testid="push-consent-accept"
-          className="bg-gold text-primary-foreground text-xs font-display font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-50">
+          className="clip-blade-sm bg-gold text-primary-foreground font-display text-xs font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-50">
           {t("pwa.push.accept")}
         </button>
         <button onClick={handleDecline} disabled={busy} data-testid="push-consent-decline"

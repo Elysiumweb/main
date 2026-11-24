@@ -20,7 +20,7 @@ export const ErrorState = ({ onRetry, testId = "error-state" }) => {
   const { t } = useLang();
   return (
     <div
-      className="border border-red-300/40 bg-card py-16 flex flex-col items-center gap-4"
+      className="clip-blade-sm border border-red-300/40 bg-card/80 py-16 flex flex-col items-center gap-4"
       data-testid={testId}
       role="alert"
     >
@@ -30,7 +30,7 @@ export const ErrorState = ({ onRetry, testId = "error-state" }) => {
         <button
           onClick={onRetry}
           data-testid={`${testId}-retry-btn`}
-          className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-primary/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          className="clip-blade-sm border border-primary/50 font-label font-semibold text-primary text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-primary/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
           <RefreshCw size={13} aria-hidden="true" /> {t("states.retry")}
         </button>

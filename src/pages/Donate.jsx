@@ -97,7 +97,7 @@ export default function Donate() {
         {/* Carte de don — sticky sur desktop */}
         <aside className="lg:col-span-5">
           <div
-            className="lg:sticky lg:top-24 relative border border-primary/30 bg-card p-8 overflow-hidden"
+            className="lg:sticky lg:top-24 relative panel clip-blade border border-primary/30 p-8 overflow-hidden"
             data-testid="donate-card"
           >
             <OptimizedImage
@@ -151,7 +151,7 @@ export default function Donate() {
             >
               {t("donate.transparency.title")}
             </h2>
-            <div className="flex-1 h-px bg-primary/10" />
+            <div className="flex-1 gold-line opacity-50" />
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
@@ -176,7 +176,7 @@ export default function Donate() {
           >
             {t("donate.alt.title")}
           </h2>
-          <div className="flex-1 h-px bg-primary/10" />
+          <div className="flex-1 gold-line opacity-50" />
         </div>
         <div className="grid sm:grid-cols-2 gap-6" data-testid="donate-alt">
           <Link
