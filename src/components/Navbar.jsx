@@ -30,7 +30,8 @@ const navLinkCls = ({ isActive }) =>
     isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
   );
 
-const navUnderline = (isActive) =>
+/** Gold hairline that fills on hover and stays full on the active route. */
+const navUnderlineCls = ({ isActive }) =>
   cn(
     "pointer-events-none absolute -bottom-0.5 left-0 h-px bg-primary transition-all duration-300",
     isActive ? "w-full" : "w-0 group-hover:w-full"
@@ -160,20 +161,16 @@ export const Navbar = () => {
         {/* Desktop : visible dès lg (pas xl) pour éviter le saut mobile -> dense */}
         <nav className="hidden lg:flex items-center gap-6" aria-label="Navigation principale">
           {principalLinks.map((l) => (
-            <NavLink key={l.to} to={l.to} className={navLinkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
-              {({ isActive }) => (
-                <>
-                  {l.label}
-                  <span aria-hidden="true" className={navUnderline(isActive)} />
-                </>
-              )}
+            <NavLink key={l.to} to={l.to} end={l.to === "/"} className={navLinkCls} data-testid={`nav-link-${l.to === "/" ? "home" : l.to.slice(1)}`}>
+              {l.label}
+              <span aria-hidden="true" className={navUnderlineCls} />
             </NavLink>
           ))}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className={cn(navLinkCls({ isActive: false }), "gap-1")} data-testid="nav-link-more">
                 Découvrir <ChevronDown size={12} aria-hidden="true" />
-                <span aria-hidden="true" className={navUnderline(false)} />
+                <span aria-hidden="true" className={navUnderlineCls} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="panel clip-blade-sm rounded-none p-1.5 text-foreground min-w-[230px]" data-testid="nav-more-menu">
@@ -198,22 +195,14 @@ export const Navbar = () => {
           </DropdownMenu>
           {hasPlayerAccess && (
             <NavLink to="/espace-joueur" className={navLinkCls} data-testid="nav-link-player-space">
-              {({ isActive }) => (
-                <span className="inline-flex items-center gap-1.5">
-                  <Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}
-                  <span aria-hidden="true" className={cn("absolute -bottom-0.5 left-0 h-px bg-primary transition-all duration-300", isActive ? "w-full" : "w-0")} />
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1.5"><Gamepad2 size={14} aria-hidden="true" />{t("nav.playerSpace")}</span>
+              <span aria-hidden="true" className={navUnderlineCls} />
             </NavLink>
           )}
           {isOfficial && (
             <NavLink to="/admin" className={navLinkCls} data-testid="nav-link-admin">
-              {({ isActive }) => (
-                <span className="inline-flex items-center gap-1.5">
-                  <Shield size={14} aria-hidden="true" />{t("nav.admin")}
-                  <span aria-hidden="true" className={cn("absolute -bottom-0.5 left-0 h-px bg-primary transition-all duration-300", isActive ? "w-full" : "w-0")} />
-                </span>
-              )}
+              <span className="inline-flex items-center gap-1.5"><Shield size={14} aria-hidden="true" />{t("nav.admin")}</span>
+              <span aria-hidden="true" className={navUnderlineCls} />
             </NavLink>
           )}
         </nav>
