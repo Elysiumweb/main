@@ -14,7 +14,7 @@ import { getEffectiveMatchStatus, getTodayIsoInTimezone, useNowMs } from "../lib
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { SITE_URL, useSEO } from "../lib/useSEO";
 
-const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const selectCls = "bg-card border border-border/35 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary";
 const PAGE_SIZE = 9;
 
 const getPeriodDates = (preset) => {
@@ -162,18 +162,18 @@ export default function Results() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("results.title") }]} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="results-title">{t("results.title")}</h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("results.sub")}</p>
-          <Link to="/calendrier" className="mt-4 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="results-subscribe-link">
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("results.title") }]} />
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="results-title">{t("results.title")}</h1>
+          <p className="text-muted-foreground mt-4 tracking-wide">{t("results.sub")}</p>
+          <Link to="/calendrier" className="mt-4 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" data-testid="results-subscribe-link">
             <CalendarDays size={13} aria-hidden="true" /> {t("cal.subscribe.title")} →
           </Link>
           {matchParam && matches?.find(m=>m.id===matchParam) && (
-            <div className="mt-4 border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-4 py-3 text-xs text-[#D8CA82]">
+            <div className="mt-4 border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-primary">
               Lien partagé détecté — le match <span className="font-bold">{matches.find(m=>m.id===matchParam)?.opponentName}</span> est mis en avant ci-dessous. <Link to={`/resultats/${matchParam}`} className="underline ml-2">Voir la page dédiée →</Link>
             </div>
           )}
@@ -181,8 +181,8 @@ export default function Results() {
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         {nextMatch && (
-          <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-5 py-4 mb-8 flex items-center flex-wrap gap-4" data-testid="results-next-countdown">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82]">
+          <div className="border border-primary/30 bg-primary/5 px-5 py-4 mb-8 flex items-center flex-wrap gap-4" data-testid="results-next-countdown">
+            <p className="eyebrow">
               {t("home.proof.nextMatch")} : {getElysiumTeamName(nextMatch.roster)} vs {nextMatch.opponentName}
             </p>
             <MatchCountdown match={nextMatch} testId="results-countdown" />
@@ -196,7 +196,7 @@ export default function Results() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-400" />
               </span>
-              <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")}</p>
+              <p className="eyebrow text-red-300 font-bold">{t("results.liveNow")}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="results-live-grid">
               {liveMatches.map((m) => <MatchCard key={m.id} match={m} nowMs={nowMs} initialOpen={m.id===matchParam} />)}
@@ -207,12 +207,12 @@ export default function Results() {
         {matches && matches.length > 0 && (
           <div className="mb-8" data-testid="results-h2h">
             <HeadToHeadPanel matches={matches} testId="results-h2h-panel" />
-            <Link to="/adversaires" className="mt-3 inline-flex text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Toutes les fiches adversaires →</Link>
+            <Link to="/adversaires" className="mt-3 inline-flex text-xs uppercase tracking-widest text-primary hover:underline">Toutes les fiches adversaires →</Link>
           </div>
         )}
 
         <div
-          className="flex gap-1 border-b border-white/10 mb-8"
+          className="flex gap-1 border-b border-border/25 mb-8"
           data-testid="results-tabs"
           role="tablist"
           aria-label={t("results.title")}
@@ -224,7 +224,7 @@ export default function Results() {
               data-testid={`results-tab-${k}`}
               role="tab"
               aria-selected={tab === k}
-              className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#c8c8c8] hover:text-[#f7f7f7]"}`}
+              className={`flex items-center gap-2 px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none ${tab === k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
             >
               <Icon size={14} aria-hidden="true" /> {t(`results.tab.${k}`)}
             </button>
@@ -232,28 +232,28 @@ export default function Results() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4" data-testid="results-filter-bar">
-          <p className="text-xs text-[#c8c8c8]" data-testid="results-count">
+          <p className="text-xs text-muted-foreground" data-testid="results-count">
             {filtered.length} résultat{filtered.length !== 1 ? "s" : ""} {game!=="all" || competition!=="all" || from || to ? "· filtres actifs" : ""}
           </p>
           <div className="flex gap-2">
             {(game!=="all" || competition!=="all" || from || to) && (
-              <button onClick={resetFilters} data-testid="results-filter-reset-all" className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Tout réinitialiser</button>
+              <button onClick={resetFilters} data-testid="results-filter-reset-all" className="text-xs uppercase tracking-widest text-primary hover:underline">Tout réinitialiser</button>
             )}
-            <button onClick={exportCsv} data-testid="results-export-csv" className="text-xs uppercase tracking-widest border border-white/15 px-3 py-1 text-[#c8c8c8] hover:text-[#D8CA82] hover:border-[#D8CA82]/40 flex items-center gap-1"><Download size={12}/> CSV</button>
+            <button onClick={exportCsv} data-testid="results-export-csv" className="text-xs uppercase tracking-widest border border-border/30 px-3 py-1 text-muted-foreground hover:text-primary hover:border-primary/40 flex items-center gap-1"><Download size={12}/> CSV</button>
           </div>
         </div>
         {(game!=="all" || competition!=="all" || from || to) && (
           <div className="flex flex-wrap gap-2 mb-4" data-testid="results-active-filters">
-            {game!=="all" && <button onClick={()=>setGame("all")} data-testid="results-badge-game" className="border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] text-xs px-3 py-1.5 flex items-center gap-2">Jeu: {game} ✕</button>}
-            {competition!=="all" && <button onClick={()=>setCompetition("all")} data-testid="results-badge-competition" className="border border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#D8CA82] text-xs px-3 py-1.5 flex items-center gap-2">Compétition: {competition} ✕</button>}
-            {from && <button onClick={()=>setFrom("")} data-testid="results-badge-from" className="border border-white/20 bg-[#1A1A1A] text-[#c8c8c8] text-xs px-3 py-1.5">Du: {from} ✕</button>}
-            {to && <button onClick={()=>setTo("")} data-testid="results-badge-to" className="border border-white/20 bg-[#1A1A1A] text-[#c8c8c8] text-xs px-3 py-1.5">Au: {to} ✕</button>}
+            {game!=="all" && <button onClick={()=>setGame("all")} data-testid="results-badge-game" className="border border-primary/40 bg-primary/10 text-primary text-xs px-3 py-1.5 flex items-center gap-2">Jeu: {game} ✕</button>}
+            {competition!=="all" && <button onClick={()=>setCompetition("all")} data-testid="results-badge-competition" className="border border-primary/40 bg-primary/10 text-primary text-xs px-3 py-1.5 flex items-center gap-2">Compétition: {competition} ✕</button>}
+            {from && <button onClick={()=>setFrom("")} data-testid="results-badge-from" className="border border-border/35 bg-card text-muted-foreground text-xs px-3 py-1.5">Du: {from} ✕</button>}
+            {to && <button onClick={()=>setTo("")} data-testid="results-badge-to" className="border border-border/35 bg-card text-muted-foreground text-xs px-3 py-1.5">Au: {to} ✕</button>}
           </div>
         )}
 
         {/* Presets */}
         <div className="flex flex-wrap gap-2 mb-6" data-testid="results-presets">
-          <span className="text-xs uppercase tracking-widest text-[#c8c8c8]/60 mr-2 py-1">Raccourcis :</span>
+          <span className="text-xs uppercase tracking-widest text-muted-foreground/60 mr-2 py-1">Raccourcis :</span>
           {[
             ["season2026","Saison 2026"],
             ["last30","30 derniers jours"],
@@ -261,37 +261,37 @@ export default function Results() {
             ["year","Année en cours"],
           ].map(([key,label])=>(
             <button key={key} onClick={()=> setPeriodPreset(key)} data-testid={`results-preset-${key}`}
-              className={`text-xs border px-3 py-1.5 uppercase tracking-widest ${preset===key ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>{label}</button>
+              className={`text-xs border px-3 py-1.5 uppercase tracking-widest ${preset===key ? "border-primary text-primary bg-primary/10" : "border-border/30 text-muted-foreground hover:text-foreground"}`}>{label}</button>
           ))}
-          {preset && <button onClick={()=> setPeriodPreset("")} className="text-xs text-[#D8CA82] hover:underline">Effacer preset ✕</button>}
+          {preset && <button onClick={()=> setPeriodPreset("")} className="text-xs text-primary hover:underline">Effacer preset ✕</button>}
         </div>
 
         <div className="flex flex-wrap items-end gap-4 mb-10 overflow-x-auto pb-2 scrollbar-thin" data-testid="results-filters" style={{scrollbarWidth:"thin"}}>
-          <span className="hidden sm:inline text-xs text-[#c8c8c8]/50 mr-2">← faire défiler →</span>
+          <span className="hidden sm:inline text-xs text-muted-foreground/50 mr-2">← faire défiler →</span>
           <div>
-            <label htmlFor="filter-game" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("common.game")}</label>
+            <label htmlFor="filter-game" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-1.5">{t("common.game")}</label>
             <select id="filter-game" value={game} onChange={(e) => setGame(e.target.value)} className={selectCls} data-testid="results-filter-game">
               <option value="all">{t("results.filter.all")}</option>
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="filter-competition" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.competition")}</label>
+            <label htmlFor="filter-competition" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-1.5">{t("results.filter.competition")}</label>
             <select id="filter-competition" value={competition} onChange={(e) => setCompetition(e.target.value)} className={selectCls} data-testid="results-filter-competition">
               <option value="all">{t("results.filter.all")}</option>
               {competitions.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="filter-from" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.from")}</label>
+            <label htmlFor="filter-from" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-1.5">{t("results.filter.from")}</label>
             <input id="filter-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={selectCls} data-testid="results-filter-from" />
           </div>
           <div>
-            <label htmlFor="filter-to" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-1.5">{t("results.filter.to")}</label>
+            <label htmlFor="filter-to" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-1.5">{t("results.filter.to")}</label>
             <input id="filter-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} className={selectCls} data-testid="results-filter-to" />
           </div>
           <button onClick={resetFilters} data-testid="results-filter-reset"
-            className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] motion-reduce:transition-none">
+            className="border border-border/35 text-muted-foreground text-xs uppercase tracking-widest px-4 py-2.5 hover:border-primary hover:text-primary transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none">
             {t("results.filter.reset")}
           </button>
         </div>
@@ -301,34 +301,34 @@ export default function Results() {
         ) : matches === null ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="results-loading">
             {[1,2,3,4,5,6].map((i)=> (
-              <div key={i} className="border border-white/10 bg-[#1A1A1A] p-6 animate-pulse">
+              <div key={i} className="panel clip-blade-sm p-6 animate-pulse">
                 <div className="flex justify-between mb-4">
-                  <div className="h-5 w-16 bg-white/10" />
-                  <div className="h-5 w-20 bg-white/10" />
+                  <div className="h-5 w-16 bg-primary/10" />
+                  <div className="h-5 w-20 bg-primary/10" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="h-12 w-12 bg-white/5" />
-                  <div className="h-6 w-12 bg-white/10" />
-                  <div className="h-12 w-12 bg-white/5" />
+                  <div className="h-12 w-12 bg-primary/5" />
+                  <div className="h-6 w-12 bg-primary/10" />
+                  <div className="h-12 w-12 bg-primary/5" />
                 </div>
-                <div className="mt-4 h-3 w-full bg-white/5" />
+                <div className="mt-4 h-3 w-full bg-primary/5" />
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
           matches && matches.length===0 ? (
-            <div className="border border-white/10 bg-[#1A1A1A] py-20 flex flex-col items-center gap-4" data-testid="results-empty">
-              <Trophy className="text-[#D8CA82]/50" size={36} aria-hidden="true" />
-              <p className="text-[#c8c8c8]">{t("results.empty")}</p>
-              <p className="text-xs text-[#c8c8c8]/70">Aucune donnée publiée — l’admin peut publier un match.</p>
+            <div className="panel clip-blade-sm py-20 flex flex-col items-center gap-4" data-testid="results-empty">
+              <Trophy className="text-primary/50" size={36} aria-hidden="true" />
+              <p className="text-muted-foreground">{t("results.empty")}</p>
+              <p className="text-xs text-muted-foreground/70">Aucune donnée publiée — l’admin peut publier un match.</p>
             </div>
           ) : (
-            <div className="border border-white/10 bg-[#1A1A1A] py-20 flex flex-col items-center gap-4" data-testid="results-empty">
-              <Trophy className="text-[#D8CA82]/50" size={36} aria-hidden="true" />
-              <p className="text-[#c8c8c8]">Aucun résultat avec ces filtres.</p>
+            <div className="panel clip-blade-sm py-20 flex flex-col items-center gap-4" data-testid="results-empty">
+              <Trophy className="text-primary/50" size={36} aria-hidden="true" />
+              <p className="text-muted-foreground">Aucun résultat avec ces filtres.</p>
               <div className="flex gap-3">
-                <button onClick={resetFilters} data-testid="results-empty-reset" className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-2.5 hover:bg-[#D8CA82]/10">Réinitialiser</button>
-                <Link to="/calendrier" className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-2.5 hover:border-[#D8CA82]">Voir le calendrier</Link>
+                <button onClick={resetFilters} data-testid="results-empty-reset" className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-5 py-2.5 hover:bg-primary/10">Réinitialiser</button>
+                <Link to="/calendrier" className="border border-border/35 text-muted-foreground text-xs uppercase tracking-widest px-5 py-2.5 hover:border-primary">Voir le calendrier</Link>
               </div>
             </div>
           )
@@ -342,11 +342,11 @@ export default function Results() {
                 <button
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
                   data-testid="results-load-more-btn"
-                  className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs font-display font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-[#D8CA82]/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+                  className="border border-primary/50 text-primary text-xs font-display font-bold uppercase tracking-widest px-8 py-3 flex items-center gap-2 hover:bg-primary/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   <ChevronDown size={14} aria-hidden="true" /> {t("results.loadMore")}
                 </button>
-                <p className="text-xs text-[#c8c8c8]">
+                <p className="text-xs text-muted-foreground">
                   {Math.min(visibleCount, filtered.length)} {t("results.loaded")} {filtered.length}
                 </p>
               </div>

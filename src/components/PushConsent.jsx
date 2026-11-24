@@ -55,19 +55,19 @@ export const PushConsent = () => {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 max-w-sm border border-[#D8CA82]/40 bg-[#1A1A1A] p-5 animate-in slide-in-from-bottom-4 fade-in duration-200 motion-reduce:animate-none" data-testid="push-consent-banner">
-      <button onClick={handleDecline} className="absolute top-2 right-2 text-[#c8c8c8] hover:text-[#f7f7f7]/60" data-testid="push-consent-close" aria-label="Fermer">
+    <div className="fixed bottom-20 right-4 z-50 max-w-sm border border-primary/40 bg-card p-5 animate-in slide-in-from-bottom-4 fade-in duration-200 motion-reduce:animate-none" data-testid="push-consent-banner">
+      <button onClick={handleDecline} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground/60" data-testid="push-consent-close" aria-label="Fermer">
         <X size={14} />
       </button>
-      <p className="font-display text-sm font-bold text-[#D8CA82] mb-2">{t("pwa.push.consent.title")}</p>
-      <p className="text-xs text-[#f7f7f7]/50 mb-4">{t("pwa.push.consent.text")}</p>
+      <p className="font-display text-sm font-bold text-primary mb-2">{t("pwa.push.consent.title")}</p>
+      <p className="text-xs text-foreground/50 mb-4">{t("pwa.push.consent.text")}</p>
       <div className="flex gap-3">
         <button onClick={handleAccept} disabled={busy} data-testid="push-consent-accept"
-          className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-50">
+          className="clip-blade-sm bg-gold text-primary-foreground font-display text-xs font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-50">
           {t("pwa.push.accept")}
         </button>
         <button onClick={handleDecline} disabled={busy} data-testid="push-consent-decline"
-          className="border border-white/20 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-4 py-2 hover:border-white/40 transition-colors disabled:opacity-50">
+          className="border border-border/35 text-foreground/60 text-xs uppercase tracking-widest px-4 py-2 hover:border-border/45 transition-colors disabled:opacity-50">
           {t("pwa.push.decline")}
         </button>
       </div>

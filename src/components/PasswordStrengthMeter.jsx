@@ -9,7 +9,7 @@ export const PasswordStrengthMeter = ({ password, id, testId = "password-strengt
   const empty = !password;
   return (
     <div className="mt-2" id={id} data-testid={testId} aria-live="polite">
-      <div className="h-1 w-full bg-white/10 overflow-hidden" role="presentation">
+      <div className="h-1 w-full bg-primary/10 overflow-hidden" role="presentation">
         <div
           className="h-full transition-all motion-reduce:transition-none"
           style={{ width: `${percent}%`, backgroundColor: color }}

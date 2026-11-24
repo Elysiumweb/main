@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
+import { SceneBackground } from "@/components/site/SceneBackground";
 import { Footer } from "@/components/Footer";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { PushConsent } from "@/components/PushConsent";
@@ -100,7 +101,8 @@ const PublicLayout = () => {
   const { pathname } = useLocation();
   return (
     <>
-      <main id="main-content" tabIndex={-1} className="outline-none focus-visible:outline-none">
+      <SceneBackground />
+      <main id="main-content" tabIndex={-1} className="outline-none focus-visible:outline-none relative z-10">
         <RouteChunkBoundary routeKey={pathname}>
           <Outlet />
         </RouteChunkBoundary>
@@ -182,7 +184,7 @@ function App() {
           <UpdatePrompt />
           <PushConsent />
           <CookieConsent />
-          <Toaster theme="dark" position="bottom-right" toastOptions={{ style: { background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", color: "#f7f7f7", borderRadius: 0 } }} />
+          <Toaster theme="dark" position="bottom-right" toastOptions={{ className: "panel clip-blade-sm text-foreground font-sans", style: { background: "oklch(0.16 0.008 85 / 96%)", border: "1px solid oklch(0.84 0.095 98 / 22%)", color: "oklch(0.95 0.012 95)", borderRadius: 0 } }} />
           <Analytics />
         </BrowserRouter>
       </AuthProvider>

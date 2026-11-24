@@ -21,7 +21,7 @@ import {
   statusOptionsFor, toMillis,
 } from "../../lib/inbox";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "w-full bg-background border border-border/35 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary";
 const SLA_CLS = {
   ok: "border-emerald-400/40 text-emerald-300",
   soon: "border-amber-400/40 text-amber-300",
@@ -273,7 +273,7 @@ export const AdminInbox = () => {
   };
 
   if (!canSeeInbox) {
-    return <p className="text-[#f7f7f7]/50" data-testid="admin-inbox-denied">{t("player.noAccess")}</p>;
+    return <p className="text-foreground/50" data-testid="admin-inbox-denied">{t("player.noAccess")}</p>;
   }
 
   const scopedCanned = canned.filter((c) => c.scope === "all" || !c.scope || c.scope === current?.source);
@@ -283,18 +283,18 @@ export const AdminInbox = () => {
       <div className="flex flex-col sm:flex-row sm:items-end gap-4 justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Inbox className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{tx("inbox.title")}</h2>
+            <Inbox className="text-primary" size={18} />
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-foreground">{tx("inbox.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50 max-w-2xl">{tx("inbox.sub")}</p>
+          <p className="text-sm text-foreground/50 max-w-2xl">{tx("inbox.sub")}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" onClick={() => exportRows(filtered)} data-testid="admin-inbox-export"
-            className="inline-flex items-center gap-2 border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82]">
+            className="inline-flex items-center gap-2 border border-border/35 text-foreground text-xs uppercase tracking-widest px-3 py-2 hover:border-primary hover:text-primary">
             <Download size={14} /> {tx("inbox.export")}
           </button>
           <button type="button" onClick={() => setCannedOpen((v) => !v)} data-testid="admin-inbox-canned-toggle"
-            className="inline-flex items-center gap-2 border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82]">
+            className="inline-flex items-center gap-2 border border-border/35 text-foreground text-xs uppercase tracking-widest px-3 py-2 hover:border-primary hover:text-primary">
             <MessageSquare size={14} /> {tx("inbox.canned.title")}
           </button>
         </div>
@@ -303,14 +303,14 @@ export const AdminInbox = () => {
       {/* Compteurs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" data-testid="admin-inbox-counters">
         {[
-          { key: "open", value: counts.open, cls: "text-[#D8CA82] border-[#D8CA82]/30" },
+          { key: "open", value: counts.open, cls: "text-primary border-primary/30" },
           { key: "unassigned", value: counts.unassigned, cls: "text-sky-300 border-sky-300/30" },
           { key: "overdue", value: counts.overdue, cls: "text-red-300 border-red-400/40" },
-          { key: "results", value: filtered.length, cls: "text-[#f7f7f7] border-white/15" },
+          { key: "results", value: filtered.length, cls: "text-foreground border-border/30" },
         ].map((c) => (
-          <div key={c.key} className={`border bg-[#141414] px-4 py-3 ${c.cls}`}>
+          <div key={c.key} className={`border bg-card/70 px-4 py-3 ${c.cls}`}>
             <p className="text-2xl font-display font-bold">{c.value}</p>
-            <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">{tx(`inbox.counter.${c.key}`)}</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">{tx(`inbox.counter.${c.key}`)}</p>
           </div>
         ))}
       </div>
@@ -318,19 +318,19 @@ export const AdminInbox = () => {
       {error && <p className="text-sm text-red-300 mb-4" role="alert">{error}</p>}
 
       {/* Filtres */}
-      <div className="border border-white/10 bg-[#141414] p-4 mb-4" data-testid="admin-inbox-filters">
+      <div className="panel clip-blade-sm p-4 mb-4" data-testid="admin-inbox-filters">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] inline-flex items-center gap-2">
+          <p className="text-xs uppercase tracking-[0.25em] text-primary inline-flex items-center gap-2">
             <Filter size={13} /> {tx("inbox.filters")}
           </p>
           <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} data-testid="admin-inbox-reset"
-            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">
             <RotateCcw size={12} /> {tx("inbox.reset")}
           </button>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <label className="relative lg:col-span-2">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={filters.query} onChange={(e) => setFilters((f) => ({ ...f, query: e.target.value }))}
               placeholder={tx("inbox.search")} className={`${inputCls} pl-9`} data-testid="admin-inbox-search" />
           </label>
@@ -373,20 +373,20 @@ export const AdminInbox = () => {
       {/* Actions groupées */}
       <div className="flex flex-wrap items-center gap-2 mb-4" data-testid="admin-inbox-bulk">
         <button type="button" onClick={toggleAll} data-testid="admin-inbox-select-all"
-          className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+          className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">
           {allVisibleChecked ? <CheckSquare size={14} /> : <Square size={14} />} {tx("inbox.selectAll")}
         </button>
-        <span className="text-xs text-[#c8c8c8]">{checked.length} {tx("inbox.selected")}</span>
+        <span className="text-xs text-muted-foreground">{checked.length} {tx("inbox.selected")}</span>
         <span className="flex-1" />
         <select onChange={(e) => { if (e.target.value) { bulkApply("status", e.target.value); e.target.value = ""; } }}
-          className="bg-[#111111] border border-white/20 px-3 py-2 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+          className="bg-background border border-border/35 px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
           aria-label={tx("inbox.bulk.status")} disabled={!checked.length} data-testid="admin-inbox-bulk-status">
           <option value="">{tx("inbox.bulk.status")}…</option>
           {[...new Set([...statusOptionsFor("support"), ...statusOptionsFor("recruit")])]
             .map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}
         </select>
         <select onChange={(e) => { if (e.target.value) { bulkApply("assign", e.target.value); e.target.value = ""; } }}
-          className="bg-[#111111] border border-white/20 px-3 py-2 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+          className="bg-background border border-border/35 px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
           aria-label={tx("inbox.bulk.assign")} disabled={!checked.length} data-testid="admin-inbox-bulk-assign">
           <option value="">{tx("inbox.bulk.assign")}…</option>
           <option value="__unassigned__">{tx("inbox.detail.unassigned")}</option>
@@ -394,32 +394,32 @@ export const AdminInbox = () => {
         </select>
         <button type="button" onClick={() => exportRows(threads.filter((th) => checked.includes(threadKey(th))))}
           disabled={!checked.length} data-testid="admin-inbox-export-selected"
-          className="inline-flex items-center gap-2 border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] disabled:opacity-40">
+          className="inline-flex items-center gap-2 border border-border/35 text-foreground text-xs uppercase tracking-widest px-3 py-2 hover:border-primary hover:text-primary disabled:opacity-40">
           <Download size={13} /> {tx("inbox.exportSelected")}
         </button>
       </div>
 
       {/* Réponses types : gestion */}
       {cannedOpen && (
-        <div className="border border-[#D8CA82]/25 bg-[#141414] p-4 mb-4" data-testid="admin-inbox-canned-panel">
+        <div className="border border-primary/25 bg-card/70 p-4 mb-4" data-testid="admin-inbox-canned-panel">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82]">{tx("inbox.canned.title")}</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-primary">{tx("inbox.canned.title")}</p>
             <button type="button" onClick={() => setCannedOpen(false)} aria-label={t("common.close")}>
-              <X size={14} className="text-[#c8c8c8] hover:text-[#f7f7f7]" />
+              <X size={14} className="text-muted-foreground hover:text-foreground" />
             </button>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2 max-h-52 overflow-y-auto">
-              {canned.length === 0 && <p className="text-sm text-[#c8c8c8]">{tx("inbox.canned.empty")}</p>}
+              {canned.length === 0 && <p className="text-sm text-muted-foreground">{tx("inbox.canned.empty")}</p>}
               {canned.map((c) => (
-                <div key={c.id} className="flex items-start gap-2 border border-white/10 bg-[#1A1A1A] px-3 py-2">
+                <div key={c.id} className="flex items-start gap-2 panel clip-blade-sm px-3 py-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-[#f7f7f7] font-semibold truncate">{c.title}</p>
-                    <p className="text-xs text-[#c8c8c8] line-clamp-2">{c.body}</p>
-                    <p className="text-[10px] uppercase tracking-widest text-[#D8CA82]/70 mt-1">{c.scope || "all"}</p>
+                    <p className="text-sm text-foreground font-semibold truncate">{c.title}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{c.body}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-primary/70 mt-1">{c.scope || "all"}</p>
                   </div>
                   <button type="button" onClick={() => insertCanned(c)} title={tx("inbox.canned.insert")}
-                    className="text-[#D8CA82] hover:text-[#f7f7f7]" data-testid={`admin-canned-insert-${c.id}`}>
+                    className="text-primary hover:text-foreground" data-testid={`admin-canned-insert-${c.id}`}>
                     <Send size={14} />
                   </button>
                   <ConfirmAction title={tx("inbox.canned.delete")} description={c.title}
@@ -432,7 +432,7 @@ export const AdminInbox = () => {
               ))}
             </div>
             <form onSubmit={saveCanned} className="space-y-2" data-testid="admin-inbox-canned-form">
-              <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">{tx("inbox.canned.new")}</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">{tx("inbox.canned.new")}</p>
               <input value={cannedForm.title} onChange={(e) => setCannedForm((f) => ({ ...f, title: e.target.value }))}
                 placeholder={tx("inbox.canned.fieldTitle")} className={inputCls} required maxLength={120} />
               <textarea value={cannedForm.body} onChange={(e) => setCannedForm((f) => ({ ...f, body: e.target.value }))}
@@ -444,7 +444,7 @@ export const AdminInbox = () => {
                 <option value="recruit">{tx("inbox.canned.scope.recruit")}</option>
               </select>
               <button type="submit" data-testid="admin-inbox-canned-save"
-                className="inline-flex items-center gap-2 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5">
+                className="inline-flex items-center gap-2 bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5">
                 <Plus size={13} /> {tx("inbox.canned.save")}
               </button>
             </form>
@@ -453,11 +453,11 @@ export const AdminInbox = () => {
       )}
 
       {/* Liste + détail */}
-      <div className="grid lg:grid-cols-12 border border-white/10 bg-[#141414] min-h-[520px]">
-        <div ref={listRef} className={`lg:col-span-5 border-r border-white/10 overflow-y-auto max-h-[720px] ${current ? "hidden lg:block" : "block"}`}
+      <div className="grid lg:grid-cols-12 panel clip-blade-sm min-h-[520px]">
+        <div ref={listRef} className={`lg:col-span-5 border-r border-border/25 overflow-y-auto max-h-[720px] ${current ? "hidden lg:block" : "block"}`}
           data-testid="admin-inbox-list">
           {filtered.length === 0 ? (
-            <p className="p-6 text-sm text-[#c8c8c8]">
+            <p className="p-6 text-sm text-muted-foreground">
               {threads.length === 0 ? tx("inbox.empty") : tx("inbox.noResults")}
             </p>
           ) : filtered.map((th) => {
@@ -465,19 +465,19 @@ export const AdminInbox = () => {
             const state = slaState(th, now);
             const isChecked = checked.includes(key);
             return (
-              <div key={key} className={`border-b border-white/5 transition-colors ${selected === key ? "bg-[#D8CA82]/10 border-l-2 border-l-[#D8CA82]" : "hover:bg-white/5"}`}>
+              <div key={key} className={`border-b border-border/20 transition-colors ${selected === key ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-primary/5"}`}>
                 <div className="flex items-start gap-2 px-3 py-3">
-                  <button type="button" onClick={() => toggleChecked(key)} className="mt-0.5 text-[#c8c8c8] hover:text-[#D8CA82]"
+                  <button type="button" onClick={() => toggleChecked(key)} className="mt-0.5 text-muted-foreground hover:text-primary"
                     aria-pressed={isChecked} aria-label={`${tx("inbox.selectAll")} ${threadTitle(th)}`} data-testid={`admin-inbox-check-${th.source}-${th.id}`}>
                     {isChecked ? <CheckSquare size={15} /> : <Square size={15} />}
                   </button>
                   <button type="button" onClick={() => setSelected(key)} className="flex-1 text-left min-w-0"
                     data-testid={`admin-inbox-thread-${th.source}-${th.id}`}>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${th.source === "support" ? "border-[#D8CA82]/40 text-[#D8CA82]" : "border-sky-300/40 text-sky-300"}`}>
+                      <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${th.source === "support" ? "border-primary/40 text-primary" : "border-sky-300/40 text-sky-300"}`}>
                         {tx(`inbox.source.${th.source}`)}
                       </span>
-                      <p className="text-sm font-semibold text-[#f7f7f7] truncate flex-1">{threadTitle(th)}</p>
+                      <p className="text-sm font-semibold text-foreground truncate flex-1">{threadTitle(th)}</p>
                       {!isThreadClosed(th) && (
                         <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${SLA_CLS[state]}`}>
                           {state === "overdue" ? <AlertTriangle size={10} className="inline" /> : <Clock size={10} className="inline" />} {formatAge(th, lang, now)}
@@ -485,15 +485,15 @@ export const AdminInbox = () => {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs text-[#c8c8c8] truncate">{th.name || th.pseudo || "—"}</span>
-                      <span className="text-[#c8c8c8]/40">·</span>
-                      <span className="text-xs text-[#f7f7f7]/50 truncate">
+                      <span className="text-xs text-muted-foreground truncate">{th.name || th.pseudo || "—"}</span>
+                      <span className="text-muted-foreground/40">·</span>
+                      <span className="text-xs text-foreground/50 truncate">
                         {th.source === "support" ? t(`support.cat.${th.category || "other"}`) : th.position || th.game || "—"}
                       </span>
                       {!th.assignedTo && (
                         <span className="text-[10px] uppercase tracking-widest text-sky-300/80">{tx("inbox.filter.unassigned")}</span>
                       )}
-                      <span className="text-[10px] uppercase tracking-widest border border-white/15 px-1.5 py-0.5 text-[#c8c8c8]">
+                      <span className="text-[10px] uppercase tracking-widest border border-border/30 px-1.5 py-0.5 text-muted-foreground">
                         {t(`status.${th.status || (th.source === "support" ? "open" : "pending")}`)}
                       </span>
                     </div>
@@ -507,23 +507,23 @@ export const AdminInbox = () => {
         <div className={`lg:col-span-7 flex flex-col min-h-0 ${current ? "flex" : "hidden lg:flex"}`} data-testid="admin-inbox-detail">
           {!current ? (
             <div className="flex-1 flex items-center justify-center p-8">
-              <p className="text-sm text-[#c8c8c8]">{tx("inbox.detail.empty")}</p>
+              <p className="text-sm text-muted-foreground">{tx("inbox.detail.empty")}</p>
             </div>
           ) : (
             <>
-              <div className="px-4 py-3 border-b border-white/10 bg-[#1A1A1A] shrink-0">
+              <div className="px-4 py-3 border-b border-border/25 bg-card shrink-0">
                 <div className="flex items-start gap-3">
-                  <button type="button" onClick={() => setSelected(null)} className="lg:hidden text-[#c8c8c8] hover:text-[#D8CA82]" aria-label={t("common.close")}>
+                  <button type="button" onClick={() => setSelected(null)} className="lg:hidden text-muted-foreground hover:text-primary" aria-label={t("common.close")}>
                     <ChevronLeft size={18} />
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-display text-[#D8CA82] uppercase tracking-wider truncate">
+                    <p className="text-sm font-display text-primary uppercase tracking-wider truncate">
                       {threadTitle(current)}
                     </p>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-[#c8c8c8]">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                       <span>{current.name || current.pseudo}</span>
                       {current.email && (
-                        <a href={`mailto:${current.email}`} className="inline-flex items-center gap-1 text-[#D8CA82] hover:underline">
+                        <a href={`mailto:${current.email}`} className="inline-flex items-center gap-1 text-primary hover:underline">
                           <Mail size={11} /> {current.email}
                         </a>
                       )}
@@ -538,22 +538,22 @@ export const AdminInbox = () => {
                         {" · "}{tx("inbox.detail.sla")} {slaHoursFor(current)} h
                         {!isThreadClosed(current) && ` · ${Math.abs(slaRemainingHours(current, now))} h ${slaState(current, now) === "overdue" ? "+" : tx("inbox.detail.remaining")}`}
                       </span>
-                      <span className="text-xs text-[#c8c8c8]">{tx("inbox.detail.created")} {formatDate(current.createdAt)}</span>
+                      <span className="text-xs text-muted-foreground">{tx("inbox.detail.created")} {formatDate(current.createdAt)}</span>
                       {current.spontaneous && <span className="text-[10px] uppercase tracking-widest text-sky-300">{tx("inbox.detail.spontaneous")}</span>}
                       {current.parentalConsent && <span className="text-[10px] uppercase tracking-widest text-amber-300">{tx("inbox.detail.parental")}</span>}
                     </div>
                   </div>
                   <a href={current.source === "support" ? "/support" : "/recrutement"} target="_blank" rel="noopener noreferrer"
-                    className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] shrink-0">
+                    className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary shrink-0">
                     {tx("inbox.detail.publicPage")} ↗
                   </a>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <label className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#c8c8c8]">
+                  <label className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
                     {tx("inbox.detail.assignee")}
                     <select value={current.assignedTo || ""} onChange={(e) => assign(current, e.target.value || null)}
-                      className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                      className="bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
                       data-testid="admin-inbox-assign">
                       <option value="">{tx("inbox.detail.unassigned")}</option>
                       {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -564,14 +564,14 @@ export const AdminInbox = () => {
                   </label>
                   {!current.assignedTo && user && (
                     <button type="button" onClick={() => assign(current, user.uid)} data-testid="admin-inbox-assign-me"
-                      className="inline-flex items-center gap-1.5 border border-[#D8CA82]/40 text-[#D8CA82] text-xs uppercase tracking-widest px-2 py-1.5 hover:bg-[#D8CA82]/10">
+                      className="inline-flex items-center gap-1.5 border border-primary/40 text-primary text-xs uppercase tracking-widest px-2 py-1.5 hover:bg-primary/10">
                       <UserCheck size={12} /> {tx("inbox.filter.mine")}
                     </button>
                   )}
-                  <label className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#c8c8c8]">
+                  <label className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
                     {tx("inbox.detail.status")}
                     <select value={current.status || ""} onChange={(e) => setStatus(current, e.target.value)}
-                      className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                      className="bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
                       data-testid="admin-inbox-status">
                       {statusOptionsFor(current.source).map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}
                     </select>
@@ -580,13 +580,13 @@ export const AdminInbox = () => {
               </div>
 
               {scopedCanned.length > 0 && (
-                <div className="px-4 py-2 border-b border-white/10 bg-[#141414] shrink-0 flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] uppercase tracking-widest text-[#c8c8c8] inline-flex items-center gap-1">
+                <div className="px-4 py-2 border-b border-border/25 bg-card/70 shrink-0 flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground inline-flex items-center gap-1">
                     <Tag size={11} /> {tx("inbox.canned.title")}
                   </span>
                   {scopedCanned.slice(0, 6).map((c) => (
                     <button key={c.id} type="button" onClick={() => insertCanned(c)} data-testid={`admin-inbox-canned-${c.id}`}
-                      className="text-[11px] border border-white/15 px-2 py-1 text-[#f7f7f7]/80 hover:border-[#D8CA82] hover:text-[#D8CA82]">
+                      className="text-[11px] border border-border/30 px-2 py-1 text-foreground/80 hover:border-primary hover:text-primary">
                       {c.title}
                     </button>
                   ))}

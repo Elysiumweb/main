@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useLang } from "../lib/i18n";
 
 const genId = () => Math.random().toString(36).slice(2, 10);
-const COLORS = ["#D8CA82", "#f7f7f7", "#e05252", "#5aa9e6"];
+const COLORS = ["oklch(0.84 0.095 98)", "oklch(0.95 0.012 95)", "#e05252", "#5aa9e6"];
 
 export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, onBack }) => {
   const { t } = useLang();
@@ -158,7 +158,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
     ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = 3;
     measured.filter((it) => it.type === "draw").forEach((it) => {
       if (it.points.length < 2) return;
-      ctx.strokeStyle = it.color || "#D8CA82";
+      ctx.strokeStyle = it.color || "oklch(0.84 0.095 98)";
       ctx.beginPath(); ctx.moveTo(it.points[0].x + ox, it.points[0].y + oy);
       it.points.forEach((p) => ctx.lineTo(p.x + ox, p.y + oy));
       ctx.stroke();
@@ -301,67 +301,67 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-white/10 bg-[#141414] px-3 py-2 flex items-center gap-2 flex-wrap shrink-0" data-testid="canvas-toolbar">
-        <button onClick={onBack} className="text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors mr-1" data-testid="canvas-back-btn"><ArrowLeft size={17} /></button>
-        <span className="font-display text-sm text-[#D8CA82] uppercase tracking-wider mr-2 truncate max-w-[140px]" data-testid="canvas-title">{title}</span>
+      <div className="border-b border-border/25 bg-card/70 px-3 py-2 flex items-center gap-2 flex-wrap shrink-0" data-testid="canvas-toolbar">
+        <button onClick={onBack} className="text-foreground/60 hover:text-primary transition-colors mr-1" data-testid="canvas-back-btn"><ArrowLeft size={17} /></button>
+        <span className="font-display text-sm text-primary uppercase tracking-wider mr-2 truncate max-w-[140px]" data-testid="canvas-title">{title}</span>
         <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 ${status === "draft" ? "text-orange-300 border-orange-300/40" : "text-emerald-300 border-emerald-300/40"}`} data-testid="canvas-status">
           {status === "draft" ? t("canvas.draft") : t("common.saved")}
         </span>
-        <div className="h-5 w-px bg-white/10 mx-1" />
+        <div className="h-5 w-px bg-primary/10 mx-1" />
         {tools.map(([k, Icon, label]) => (
           <button key={k} onClick={() => setTool(k)} title={label} data-testid={`canvas-tool-${k}`}
-            className={`p-2 border transition-colors ${tool === k ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/60 hover:text-[#f7f7f7]"}`}>
+            className={`p-2 border transition-colors ${tool === k ? "border-primary text-primary bg-primary/10" : "border-border/30 text-foreground/60 hover:text-foreground"}`}>
             <Icon size={15} />
           </button>
         ))}
         {tool === "image" && (
           <input value={imgUrl} onChange={(e) => setImgUrl(e.target.value)} placeholder={t("canvas.imageUrl")} data-testid="canvas-image-url-input"
-            className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] w-48 focus:outline-none focus:border-[#D8CA82]" />
+            className="bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground w-48 focus:outline-none focus:border-primary" />
         )}
         {tool === "draw" && COLORS.map((c) => (
           <button key={c} onClick={() => setColor(c)} data-testid={`canvas-color-${c.slice(1)}`}
-            className={`w-5 h-5 border ${color === c ? "border-white scale-110" : "border-white/20"} transition-transform`} style={{ background: c }} />
+            className={`w-5 h-5 border ${color === c ? "border-border/25 scale-110" : "border-border/35"} transition-transform`} style={{ background: c }} />
         ))}
-        <div className="h-5 w-px bg-white/10 mx-1" />
+        <div className="h-5 w-px bg-primary/10 mx-1" />
         <button onClick={center} title={t("canvas.center")} data-testid="canvas-center-btn"
-          className="p-2 border border-white/15 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors"><Crosshair size={15} /></button>
+          className="p-2 border border-border/30 text-foreground/60 hover:text-primary transition-colors"><Crosshair size={15} /></button>
         {selected && (
           <button onClick={deleteSelected} title={t("canvas.delete")} data-testid="canvas-delete-btn"
             className="p-2 border border-red-400/40 text-red-400 hover:bg-red-400/10 transition-colors"><Trash2 size={15} /></button>
         )}
         <button onClick={exportPNG} title={t("canvas.export")} data-testid="canvas-export-btn"
-          className="p-2 border border-white/15 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors"><Download size={15} /></button>
-        <div className="flex border border-white/15">
+          className="p-2 border border-border/30 text-foreground/60 hover:text-primary transition-colors"><Download size={15} /></button>
+        <div className="flex border border-border/30">
           <button onClick={undo} disabled={history.past.length === 0} title={t("canvas.undo")} data-testid="canvas-undo-btn"
-            className="p-2 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors disabled:opacity-30 disabled:hover:text-[#f7f7f7]/60"><Undo2 size={15} /></button>
+            className="p-2 text-foreground/60 hover:text-primary transition-colors disabled:opacity-30 disabled:hover:text-foreground/60"><Undo2 size={15} /></button>
           <button onClick={redo} disabled={history.future.length === 0} title={t("canvas.redo")} data-testid="canvas-redo-btn"
-            className="p-2 text-[#f7f7f7]/60 hover:text-[#D8CA82] transition-colors border-l border-white/10 disabled:opacity-30 disabled:hover:text-[#f7f7f7]/60"><Redo2 size={15} /></button>
+            className="p-2 text-foreground/60 hover:text-primary transition-colors border-l border-border/25 disabled:opacity-30 disabled:hover:text-foreground/60"><Redo2 size={15} /></button>
         </div>
         <div className="flex-1" />
         <button onClick={() => onSave(items, "draft")} disabled={saving} data-testid="canvas-save-draft-btn"
-          className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors disabled:opacity-50">
+          className="border border-border/40 text-foreground/70 text-xs uppercase tracking-widest px-3 py-2 hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
           {t("canvas.draft")}
         </button>
         <button onClick={() => onSave(items, "saved")} disabled={saving} data-testid="canvas-save-btn"
-          className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50">
+          className="bg-gold text-primary-foreground text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow disabled:opacity-50">
           {t("canvas.save")}
         </button>
       </div>
       <div ref={containerRef} data-canvasbg="1" data-testid="canvas-area"
-        className={`flex-1 relative overflow-hidden canvas-dots bg-[#0d0d0d] touch-none ${tool === "draw" ? "cursor-crosshair" : tool === "select" ? "cursor-grab" : "cursor-copy"}`}
+        className={`flex-1 relative overflow-hidden canvas-dots bg-background/70 touch-none ${tool === "draw" ? "cursor-crosshair" : tool === "select" ? "cursor-grab" : "cursor-copy"}`}
         onPointerDown={onBgPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
-        <p className="absolute bottom-2 left-3 text-xs text-[#c8c8c8] pointer-events-none z-10">{t("canvas.hint")}</p>
+        <p className="absolute bottom-2 left-3 text-xs text-muted-foreground pointer-events-none z-10">{t("canvas.hint")}</p>
       {/* Alternative structurée au canvas : liste des éléments, édition clavier, déplacement via commandes — D-07 */}
-      <div className="absolute top-2 right-2 z-20 max-w-[280px] max-h-[40vh] overflow-auto border border-white/10 bg-[#111111]/90 backdrop-blur p-2 hidden lg:block" data-testid="canvas-elements-list">
-        <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mb-2">Éléments ({items.length})</p>
-        {items.length===0 ? <p className="text-xs text-[#c8c8c8]">Aucun élément</p> : items.map((el,i)=> (
-          <div key={el.id} className="flex items-center gap-2 text-xs border-b border-white/5 py-1">
-            <span className="text-[#D8CA82]">{i+1}. {el.type}</span>
-            <span className="truncate text-[#c8c8c8]">{(el.text||"").slice(0,20) || el.id.slice(0,6)}</span>
+      <div className="absolute top-2 right-2 z-20 max-w-[280px] max-h-[40vh] overflow-auto border border-border/25 bg-background/90 backdrop-blur p-2 hidden lg:block" data-testid="canvas-elements-list">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Éléments ({items.length})</p>
+        {items.length===0 ? <p className="text-xs text-muted-foreground">Aucun élément</p> : items.map((el,i)=> (
+          <div key={el.id} className="flex items-center gap-2 text-xs border-b border-border/20 py-1">
+            <span className="text-primary">{i+1}. {el.type}</span>
+            <span className="truncate text-muted-foreground">{(el.text||"").slice(0,20) || el.id.slice(0,6)}</span>
             <button onClick={()=> { pushHistory(); setItems(prev=> prev.filter(e=> e.id!==el.id)); }} className="ml-auto text-red-300 hover:text-red-200" aria-label="Supprimer l&apos;élément">✕</button>
           </div>
         ))}
-        <p className="text-xs text-[#c8c8c8]/60 mt-2">Déplacement clavier : flèches + Maj pour 10px, Entrée pour éditer.</p>
+        <p className="text-xs text-muted-foreground/60 mt-2">Déplacement clavier : flèches + Maj pour 10px, Entrée pour éditer.</p>
       </div>
         <div className="absolute" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`, transformOrigin: "0 0" }}>
           <div className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ left: 0, top: 0 }}>
@@ -370,7 +370,7 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
           <svg className="absolute overflow-visible pointer-events-none" style={{ left: 0, top: 0, width: 1, height: 1 }}>
             {items.filter((i) => i.type === "draw").map((i) => (
               <polyline key={i.id} points={i.points.map((p) => `${p.x},${p.y}`).join(" ")} fill="none"
-                stroke={i.color || "#D8CA82"} strokeWidth={2 / view.scale < 1 ? 2 : 2} strokeLinecap="round" strokeLinejoin="round"
+                stroke={i.color || "oklch(0.84 0.095 98)"} strokeWidth={2 / view.scale < 1 ? 2 : 2} strokeLinecap="round" strokeLinejoin="round"
                 style={{ pointerEvents: "stroke", cursor: "pointer" }}
                 onPointerDown={(e) => { if (tool === "select") { e.stopPropagation(); setSelected(i.id); } }}
                 opacity={selected === i.id ? 0.6 : 1} />
@@ -383,17 +383,17 @@ export const InfiniteCanvas = ({ initialItems, onSave, saving, title, status, on
           {items.filter((i) => i.type !== "draw").map((it) => (
             <div key={it.id} data-canvas-item="1" onPointerDown={(e) => onItemPointerDown(e, it)} onDoubleClick={() => { if (it.type !== "image") { pushHistory(); setEditing(it.id); } }}
               data-testid={`canvas-item-${it.id}`}
-              className={`absolute select-none ${selected === it.id ? "ring-1 ring-[#D8CA82]" : ""} ${tool === "select" ? "cursor-move" : ""}`}
+              className={`absolute select-none ${selected === it.id ? "ring-1 ring-primary" : ""} ${tool === "select" ? "cursor-move" : ""}`}
               style={{ left: it.x, top: it.y, width: it.w }}>
               {it.type === "image" ? (
-                <img src={it.url} alt="" draggable={false} className="w-full border border-white/10" />
+                <img src={it.url} alt="" draggable={false} className="w-full border border-border/25" />
               ) : editing === it.id ? (
                 <textarea autoFocus value={it.text} onChange={(e) => updateText(it.id, e.target.value)} onBlur={() => setEditing(null)}
                   onPointerDown={(e) => e.stopPropagation()} data-testid={`canvas-item-edit-${it.id}`}
-                  className={`w-full min-h-[60px] bg-[#161616] text-sm text-[#f7f7f7] p-2 resize focus:outline-none border ${it.type === "box" ? "border-[#D8CA82]/60" : "border-white/20"}`} />
+                  className={`w-full min-h-[60px] bg-card text-sm text-foreground p-2 resize focus:outline-none border ${it.type === "box" ? "border-primary/60" : "border-border/35"}`} />
               ) : (
-                <div className={`min-h-[36px] p-2 text-sm text-[#f7f7f7]/90 whitespace-pre-wrap break-words ${it.type === "box" ? "border border-[#D8CA82]/60 bg-[#D8CA82]/5" : ""}`}>
-                  {it.text || <span className="text-[#c8c8c8] italic">Double-clic...</span>}
+                <div className={`min-h-[36px] p-2 text-sm text-foreground/90 whitespace-pre-wrap break-words ${it.type === "box" ? "border border-primary/60 bg-primary/5" : ""}`}>
+                  {it.text || <span className="text-muted-foreground italic">Double-clic...</span>}
                 </div>
               )}
             </div>

@@ -19,12 +19,12 @@ export const NewsletterConfirm = () => {
   }, [token]);
 
   return (
-    <div className="min-h-[70vh] bg-[#111111] flex items-center justify-center px-4">
-      <div className="max-w-lg border border-white/10 bg-[#1A1A1A] p-8 text-center" data-testid="newsletter-confirm-page">
-        {error ? <AlertCircle className="mx-auto text-red-300 mb-4" /> : <CheckCircle className="mx-auto text-[#D8CA82] mb-4" />}
-        <h1 className="font-display text-2xl uppercase tracking-widest text-[#f7f7f7] mb-3">Confirmation newsletter</h1>
-        <p className="text-sm text-[#c8c8c8] mb-6">{error || "Confirmation en cours…"}</p>
-        {error && <Link to="/newsletter" className="text-[#D8CA82] underline">Retour à la newsletter</Link>}
+    <div className="min-h-[70vh] bg-background flex items-center justify-center px-4">
+      <div className="max-w-lg panel clip-blade-sm p-8 text-center" data-testid="newsletter-confirm-page">
+        {error ? <AlertCircle className="mx-auto text-red-300 mb-4" /> : <CheckCircle className="mx-auto text-primary mb-4" />}
+        <h1 className="font-display text-2xl uppercase tracking-widest text-foreground mb-3">Confirmation newsletter</h1>
+        <p className="text-sm text-muted-foreground mb-6">{error || "Confirmation en cours…"}</p>
+        {error && <Link to="/newsletter" className="text-primary underline">Retour à la newsletter</Link>}
       </div>
     </div>
   );

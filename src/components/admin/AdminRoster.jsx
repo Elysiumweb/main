@@ -9,7 +9,7 @@ import { GAMES } from "../../lib/constants";
 import { useRosters } from "../../hooks/useRosters";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY = { accountUid: "", pseudo: "", game: "EVA", roster: "", status: "player" };
 
 /**
@@ -90,12 +90,12 @@ export const AdminRoster = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10">
-      <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6 h-fit" data-testid="admin-roster-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+      <form onSubmit={submit} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6 h-fit" data-testid="admin-roster-form">
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">
           {t("admin.roster.addMember")}
         </p>
         <div>
-          <label htmlFor="admin-roster-account" className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.roster.linkAccount")}</label>
+          <label htmlFor="admin-roster-account" className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.roster.linkAccount")}</label>
           <select id="admin-roster-account" value={form.accountUid} onChange={onAccountChange} className={inputCls} data-testid="admin-roster-account">
             <option value="">{t("admin.roster.noAccount")}</option>
             {sortedUsers.map((u) => (
@@ -123,24 +123,24 @@ export const AdminRoster = () => {
           )}
         </div>
         <button type="submit" data-testid="admin-roster-submit"
-          className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+          className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
           {t("admin.roster.createCard")}
         </button>
-        <p className="text-xs text-[#c8c8c8] leading-relaxed">{t("admin.roster.hint")}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">{t("admin.roster.hint")}</p>
       </form>
 
       <div className="lg:col-span-7 space-y-2" data-testid="admin-roster-list">
-        {members.length === 0 && <p className="text-[#c8c8c8]">{t("team.empty")}</p>}
+        {members.length === 0 && <p className="text-muted-foreground">{t("team.empty")}</p>}
         {members.map((m) => {
           const owner = m.uid ? usersById[m.uid] : null;
           return (
-            <div key={m.id} className="border border-white/10 bg-[#1A1A1A] px-4 py-3 space-y-2" data-testid={`admin-roster-row-${m.id}`}>
+            <div key={m.id} className="panel clip-blade-sm px-4 py-3 space-y-2" data-testid={`admin-roster-row-${m.id}`}>
               <div className="flex items-center gap-4">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#f7f7f7]">{m.pseudo}</p>
-                  <p className="text-xs text-[#c8c8c8]">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {t(`team.status.${m.status || "player"}`)}</p>
+                  <p className="text-sm font-semibold text-foreground">{m.pseudo}</p>
+                  <p className="text-xs text-muted-foreground">{m.game}{m.roster ? ` · ${m.roster}` : ""} · {t(`team.status.${m.status || "player"}`)}</p>
                   {Array.isArray(m.aliases) && m.aliases.length > 0 && (
-                    <p className="text-xs text-[#D8CA82]/80 mt-0.5 truncate" data-testid={`admin-roster-aliases-${m.id}`}>
+                    <p className="text-xs text-primary/80 mt-0.5 truncate" data-testid={`admin-roster-aliases-${m.id}`}>
                       Pseudos replays liés : {m.aliases.join(", ")}
                     </p>
                   )}
@@ -161,7 +161,7 @@ export const AdminRoster = () => {
                 </div>
                 <Link to={`/equipe/${m.id}`} target="_blank" title={t("admin.roster.viewCard")}
                   aria-label={`${t("admin.roster.viewCard")} — ${m.pseudo}`}
-                  className="text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid={`admin-roster-view-${m.id}`}>
+                  className="text-foreground/50 hover:text-primary" data-testid={`admin-roster-view-${m.id}`}>
                   <ExternalLink size={15} />
                 </Link>
                 <ConfirmAction
@@ -179,7 +179,7 @@ export const AdminRoster = () => {
               {!m.uid && (
                 <div className="flex gap-2">
                   <select value={linkSelections[m.id] || ""} onChange={(e) => setLinkSelections((s) => ({ ...s, [m.id]: e.target.value }))}
-                    className="flex-1 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                    className="flex-1 bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
                     data-testid={`admin-roster-link-select-${m.id}`}>
                     <option value="">{t("admin.roster.selectAccount")}</option>
                     {linkableUsers.map((u) => (
@@ -188,7 +188,7 @@ export const AdminRoster = () => {
                   </select>
                   <button type="button" onClick={() => linkLegacy(m.id)} disabled={!linkSelections[m.id]}
                     data-testid={`admin-roster-link-btn-${m.id}`}
-                    className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-4 py-1.5 disabled:opacity-40 hover:bg-[#D8CA82]/10">
+                    className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-4 py-1.5 disabled:opacity-40 hover:bg-primary/10">
                     {t("admin.roster.link")}
                   </button>
                 </div>

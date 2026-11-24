@@ -46,7 +46,7 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY_MATCH = { opponentName: "", opponentLogo: "", scoreUs: "", scoreThem: "", date: "", competition: "", game: "EVA", roster: "", status: "finished", time: "", timezone: "Europe/Paris", platform: "", watchUrl: "", vodUrl: "", mvp: "", maps: [], players: [], replays: [], replaySide: "" };
 const PAGE_SIZE = 12;
 
@@ -271,10 +271,10 @@ export default function Admin() {
   useEffect(() => { setUserPage(1); }, [userQuery]);
   useEffect(() => { setMatchPage(1); }, [matchQuery]);
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#c8c8c8]">{t("common.loading")}</div>;
+  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">{t("common.loading")}</div>;
   if (!isStaff) return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <p className="text-[#f7f7f7]/50" data-testid="admin-denied">{t("player.noAccess")}</p>
+      <p className="text-foreground/50" data-testid="admin-denied">{t("player.noAccess")}</p>
     </div>
   );
   const auditActor = { uid: user?.uid, name: displayName, email: user?.email };
@@ -576,23 +576,23 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-[80vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[80vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("nav.admin") }]} />
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("nav.admin") }]} />
           <div className="flex items-center gap-4">
-            <Shield className="text-[#D8CA82]" size={32} />
-            <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="admin-title">{t("admin.title")}</h1>
+            <Shield className="text-primary" size={32} />
+            <h1 className="font-display font-black text-4xl sm:text-5xl uppercase leading-[0.95] text-gold" data-testid="admin-title">{t("admin.title")}</h1>
           </div>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-        <div className="flex gap-1 border-b border-white/10 mb-10 flex-wrap" data-testid="admin-tabs">
+        <div className="flex gap-1 border-b border-border/25 mb-10 flex-wrap" data-testid="admin-tabs">
           {tabs.map((k) => (
             <button key={k} onClick={() => setTab(k)} data-testid={`admin-tab-${k}`}
-              className={`px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-5 py-3 text-xs uppercase tracking-[0.25em] border-b-2 -mb-px transition-colors ${tab === k ? "border-primary text-primary" : "border-transparent text-foreground/50 hover:text-foreground"}`}>
               {t(`admin.tab.${k}`)}
             </button>
           ))}
@@ -604,27 +604,27 @@ export default function Admin() {
         {tab === "users" && (
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Users className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.users")}</h2>
+            <Users className="text-primary" size={18} />
+            <h2 className="eyebrow">{t("admin.users")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("admin.users.sub")}</p>
+          <p className="text-sm text-foreground/50 mb-6">{t("admin.users.sub")}</p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <label className="relative w-full sm:max-w-md">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 placeholder={t("admin.search.users")}
-                className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                className="clip-blade-sm w-full bg-card border border-border/30 pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
                 data-testid="admin-users-search"
               />
             </label>
-            <p className="text-xs text-[#c8c8c8]">{filteredUsers.length} résultat(s)</p>
+            <p className="text-xs text-muted-foreground">{filteredUsers.length} résultat(s)</p>
           </div>
-          <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto" data-testid="admin-users-table">
+          <div className="panel clip-blade-sm overflow-x-auto bg-card" data-testid="admin-users-table">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#c8c8c8]">
+                <tr className="border-b border-border/25 text-left text-xs uppercase tracking-widest text-muted-foreground">
                   <th className="px-4 py-3">{t("admin.table.member")}</th>
                   <th className="px-4 py-3">{t("admin.table.email")}</th>
                   <th className="px-4 py-3">{t("admin.role")}</th>
@@ -634,22 +634,22 @@ export default function Admin() {
               </thead>
               <tbody>
                 {pagedUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-user-row-${u.id}`}>
-                    <td className="px-4 py-3 font-semibold text-[#f7f7f7]">
-                      {u.displayName} {u.id === OFFICIAL_UID && <span className="text-xs text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
+                  <tr key={u.id} className="border-b border-border/20 hover:bg-primary/5" data-testid={`admin-user-row-${u.id}`}>
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      {u.displayName} {u.id === OFFICIAL_UID && <span className="text-xs text-primary border border-primary/40 px-1.5 py-0.5 ml-2 uppercase">Officiel</span>}
                     </td>
-                    <td className="px-4 py-3 text-[#f7f7f7]/50">{u.email}</td>
+                    <td className="px-4 py-3 text-foreground/50">{u.email}</td>
                     <td className="px-4 py-3">
                       <select value={u.role || "visitor"} onChange={(e) => setRole(u.id, e.target.value)} disabled={u.id === OFFICIAL_UID}
                         data-testid={`admin-role-select-${u.id}`}
-                        className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                        className="bg-background border border-border/35 px-2 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary">
                         {ROLES.map((r) => <option key={r} value={r}>{t(`admin.role.${r}`)}</option>)}
                       </select>
                     </td>
                     <td className="px-4 py-3">
                       <select value={u.game || "none"} onChange={(e) => setGame(u.id, e.target.value)}
                         data-testid={`admin-game-select-${u.id}`}
-                        className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                        className="bg-background border border-border/35 px-2 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary">
                         <option value="none">—</option>
                         {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
                       </select>
@@ -658,12 +658,12 @@ export default function Admin() {
                       {gameHasRosters(u.game) ? (
                         <select value={u.roster || "none"} onChange={(e) => setRoster(u.id, e.target.value)}
                           data-testid={`admin-roster-select-${u.id}`}
-                          className="bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                          className="bg-background border border-border/35 px-2 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary">
                           <option value="none">{t("admin.roster.none")}</option>
                           {rostersForGame(u.game).map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
                       ) : (
-                        <span className="text-xs text-[#c8c8c8]">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>
@@ -674,10 +674,10 @@ export default function Admin() {
           {filteredUsers.length > PAGE_SIZE && (
             <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-users-pagination">
               <button onClick={() => setUserPage((p) => Math.max(1, p - 1))} disabled={userPage <= 1}
-                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
-              <span className="text-xs text-[#c8c8c8]">{t("admin.pagination.page")} {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
+                className="border border-border/30 text-foreground/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-primary hover:text-primary">{t("admin.pagination.prev")}</button>
+              <span className="text-xs text-muted-foreground">{t("admin.pagination.page")} {Math.min(userPage, userTotalPages)} / {userTotalPages}</span>
               <button onClick={() => setUserPage((p) => Math.min(userTotalPages, p + 1))} disabled={userPage >= userTotalPages}
-                className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
+                className="border border-border/30 text-foreground/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-primary hover:text-primary">{t("admin.pagination.next")}</button>
             </div>
           )}
         </div>
@@ -686,64 +686,64 @@ export default function Admin() {
         {tab === "matches" && (
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Trophy className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.matches")}</h2>
+            <Trophy className="text-primary" size={18} />
+            <h2 className="eyebrow">{t("admin.matches")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("admin.matches.sub")}</p>
+          <p className="text-sm text-foreground/50 mb-6">{t("admin.matches.sub")}</p>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
             <label className="relative w-full lg:max-w-md">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={matchQuery}
                 onChange={(e) => setMatchQuery(e.target.value)}
                 placeholder={t("admin.search.matches")}
-                className="w-full bg-[#1A1A1A] border border-white/15 pl-9 pr-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+                className="clip-blade-sm w-full bg-card border border-border/30 pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
                 data-testid="admin-matches-search"
               />
             </label>
             <div className="flex gap-2 flex-wrap">
               <input ref={importInputRef} type="file" accept=".csv,.json,application/json,text/csv" onChange={importMatches} className="sr-only" data-testid="admin-match-import-input" />
               <button type="button" onClick={() => importInputRef.current?.click()}
-                className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10" data-testid="admin-match-import-btn">
+                className="border border-primary/50 text-primary font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:bg-primary/10" data-testid="admin-match-import-btn">
                 <FileUp size={14} /> {t("admin.import.button")}
               </button>
             </div>
           </div>
           <div className="grid lg:grid-cols-12 gap-10">
-            <form onSubmit={addMatch} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-match-form">
+            <form onSubmit={addMatch} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6" data-testid="admin-match-form">
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("common.game")}</label>
+                <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("common.game")}</label>
                 <select value={form.game} onChange={onMatchGameChange} className={inputCls} data-testid="admin-match-game">
                   {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
               {matchRosters.length > 0 && (
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.roster")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.roster")}</label>
                   <select value={form.roster || ""} onChange={onMatchRosterChange} required className={inputCls} data-testid="admin-match-roster">
                     <option value="">{t("admin.roster.none")}</option>
                     {matchRosters.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
-                  <p className="text-xs text-[#c8c8c8] mt-2" data-testid="admin-match-roster-preview">
-                    {t("admin.match.rosterPreview")} <span className="text-[#D8CA82]">{getElysiumTeamName(form.roster)}</span>
+                  <p className="text-xs text-muted-foreground mt-2" data-testid="admin-match-roster-preview">
+                    {t("admin.match.rosterPreview")} <span className="text-primary">{getElysiumTeamName(form.roster)}</span>
                   </p>
                 </div>
               )}
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.opponent")}</label>
+                <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.opponent")}</label>
                 <input value={form.opponentName} onChange={onOpponentChange} required list="admin-opponents" className={inputCls} data-testid="admin-match-opponent" />
                 <datalist id="admin-opponents">
                   {opponents.map((o) => <option key={o.opponentName} value={o.opponentName} />)}
                 </datalist>
               </div>
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.logo")}</label>
+                <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.logo")}</label>
                 {/* Le logo se téléverse : plus de lien à coller. Choisir un adversaire
                     connu dans la liste remplit automatiquement le logo. */}
                 <ImageUpload value={form.opponentLogo} onChange={(url) => setForm((f) => ({ ...f, opponentLogo: url }))} folder="matches" maxWidth={800} testId="admin-match-logo-upload" />
               </div>
               {form.game === RL_GAME && (
-                <div className="border border-[#D8CA82]/20 bg-[#141414] p-4" data-testid="admin-match-replays-section">
+                <div className="border border-primary/20 bg-card/70 p-4" data-testid="admin-match-replays-section">
                   <AdminReplayImport
                     games={form.replays || []}
                     side={form.replaySide || ""}
@@ -754,51 +754,51 @@ export default function Admin() {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreUs")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.scoreUs")}</label>
                   <input type="number" min="0" value={form.scoreUs} onChange={set("scoreUs")} required={form.status === "finished"} className={inputCls} data-testid="admin-match-score-us" />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.scoreThem")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.scoreThem")}</label>
                   <input type="number" min="0" value={form.scoreThem} onChange={set("scoreThem")} required={form.status === "finished"} className={inputCls} data-testid="admin-match-score-them" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.date")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.date")}</label>
                   <input type="date" value={form.date} onChange={set("date")} required className={inputCls} data-testid="admin-match-date" />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.competition")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.competition")}</label>
                   <input value={form.competition} onChange={set("competition")} className={inputCls} data-testid="admin-match-competition" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.status")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.status")}</label>
                   <select value={form.status} onChange={set("status")} className={inputCls} data-testid="admin-match-status">
                     <option value="finished">{t("admin.match.finished")}</option>
                     <option value="upcoming">{t("admin.match.upcoming")}</option>
                     <option value="live">{t("admin.match.live")}</option>
                     <option value="cancelled">{t("admin.match.cancelled")}</option>
                   </select>
-                  {form.status === "live" && <p className="text-xs text-[#c8c8c8] mt-1">{t("admin.match.scoreHint")}</p>}
+                  {form.status === "live" && <p className="text-xs text-muted-foreground mt-1">{t("admin.match.scoreHint")}</p>}
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.time")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.time")}</label>
                   <input type="time" value={form.time} onChange={set("time")} className={inputCls} data-testid="admin-match-time" />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.timezone")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.timezone")}</label>
                   <input value={form.timezone} onChange={set("timezone")} className={inputCls} data-testid="admin-match-timezone" />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.platform")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.platform")}</label>
                   <input value={form.platform} onChange={set("platform")} placeholder="PC / Salle EVA..." className={inputCls} data-testid="admin-match-platform" />
                 </div>
               </div>
               {(form.status === "upcoming" || form.status === "live") && (
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.match.watch")}</label>
+                  <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.match.watch")}</label>
                   <input value={form.watchUrl} onChange={set("watchUrl")} placeholder="https://twitch.tv/..." className={inputCls} data-testid="admin-match-watch" />
                   {form.status === "live" && form.watchUrl && (
                     <p className="text-xs text-emerald-300/80 mt-1" data-testid="admin-match-live-hint">
@@ -809,11 +809,11 @@ export default function Admin() {
               )}
               {/* VOD - visible for finished (and also live/upcoming as fallback) */}
               <div>
-                <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block mb-2">{t("admin.match.vod")} — visible pour match terminé</label>
+                <label className="text-xs uppercase tracking-[0.2em] text-primary block mb-2">{t("admin.match.vod")} — visible pour match terminé</label>
                 <input value={form.vodUrl} onChange={set("vodUrl")} placeholder="https://youtube.com/... ou https://twitch.tv/videos/..." className={inputCls} data-testid="admin-match-vod" />
                 {mediaList.length>0 && (
                   <div className="mt-2">
-                    <label className="text-xs text-[#c8c8c8] block mb-1">Ou choisir un média existant (replay)</label>
+                    <label className="text-xs text-muted-foreground block mb-1">Ou choisir un média existant (replay)</label>
                     <select onChange={(e)=>{ if(e.target.value) setForm(f=>({...f, vodUrl:e.target.value})); }} className={inputCls} data-testid="admin-match-vod-media-select">
                       <option value="">— Sélectionner un replay —</option>
                       {mediaList.filter(m=>m.type==="video").slice(0,50).map(m=>(
@@ -825,31 +825,31 @@ export default function Admin() {
               </div>
 
               {/* Maps */}
-              <div className="border-t border-white/10 pt-4 space-y-3" data-testid="admin-match-maps-section">
+              <div className="border-t border-border/25 pt-4 space-y-3" data-testid="admin-match-maps-section">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">{t("admin.match.maps")}</label>
-                  <button type="button" onClick={addMapRow} className="text-xs border border-[#D8CA82]/40 text-[#D8CA82] px-2 py-1 hover:bg-[#D8CA82]/10">+ Manche</button>
+                  <label className="text-xs uppercase tracking-[0.2em] text-primary block">{t("admin.match.maps")}</label>
+                  <button type="button" onClick={addMapRow} className="text-xs border border-primary/40 text-primary px-2 py-1 hover:bg-primary/10">+ Manche</button>
                 </div>
-                <p className="text-xs text-[#c8c8c8]">Saisie structurée : Nom de la map + score Elysium + score adverse. Utilisé pour l'affichage détaillé et les stats par map.</p>
+                <p className="text-xs text-muted-foreground">Saisie structurée : Nom de la map + score Elysium + score adverse. Utilisé pour l'affichage détaillé et les stats par map.</p>
                 <div className="space-y-2">
                   {(form.maps||[]).map((m,i)=>(
                     <div key={i} className="grid grid-cols-12 gap-1 items-center">
-                      <input value={m.name} onChange={e=>updateMapRow(i,"name",e.target.value)} placeholder="Map (ex: Haven, DFH Stadium)" className="col-span-5 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-map-name-${i}`} />
-                      <input value={m.scoreUs} onChange={e=>updateMapRow(i,"scoreUs",e.target.value)} placeholder="Us" type="number" className="col-span-2 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-map-scoreUs-${i}`} />
-                      <input value={m.scoreThem} onChange={e=>updateMapRow(i,"scoreThem",e.target.value)} placeholder="Them" type="number" className="col-span-2 bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7]" data-testid={`admin-match-map-scoreThem-${i}`} />
+                      <input value={m.name} onChange={e=>updateMapRow(i,"name",e.target.value)} placeholder="Map (ex: Haven, DFH Stadium)" className="col-span-5 bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground" data-testid={`admin-match-map-name-${i}`} />
+                      <input value={m.scoreUs} onChange={e=>updateMapRow(i,"scoreUs",e.target.value)} placeholder="Us" type="number" className="col-span-2 bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground" data-testid={`admin-match-map-scoreUs-${i}`} />
+                      <input value={m.scoreThem} onChange={e=>updateMapRow(i,"scoreThem",e.target.value)} placeholder="Them" type="number" className="col-span-2 bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground" data-testid={`admin-match-map-scoreThem-${i}`} />
                       <button type="button" onClick={()=>removeMapRow(i)} className="col-span-3 text-red-400 text-xs border border-red-400/20 px-2 py-1">Supprimer</button>
                     </div>
                   ))}
-                  {(form.maps||[]).length===0 && <p className="text-xs text-[#c8c8c8] italic">Aucune manche — cliquez sur + Manche</p>}
+                  {(form.maps||[]).length===0 && <p className="text-xs text-muted-foreground italic">Aucune manche — cliquez sur + Manche</p>}
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
+              <div className="border-t border-border/25 pt-4 mt-4 space-y-3" data-testid="admin-match-players-section">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">
+                  <label className="text-xs uppercase tracking-[0.2em] text-primary block">
                     {t("admin.match.players")}
                   </label>
-                  <p className="text-xs text-[#c8c8c8] mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {t("admin.match.playersHint")}
                   </p>
                 </div>
@@ -872,25 +872,25 @@ export default function Admin() {
                     onClick={addPlayerToMatch}
                     disabled={!selectedRosterPlayer}
                     data-testid="admin-match-add-player-btn"
-                    className="bg-[#D8CA82]/20 border border-[#D8CA82] text-[#D8CA82] px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50 hover:bg-[#D8CA82] hover:text-[#111111] transition-colors whitespace-nowrap"
+                    className="bg-primary/20 border border-primary text-primary px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50 hover:bg-gold hover:text-primary-foreground transition-colors whitespace-nowrap"
                   >
                     +
                   </button>
                 </div>
                 {(form.players || []).length > 0 && (
                   <div className="space-y-2" data-testid="admin-match-players-list">
-                    <div className="hidden sm:grid grid-cols-[1fr_64px_64px_64px_64px_72px_64px_32px] gap-2 text-[10px] uppercase tracking-widest text-[#c8c8c8] px-2">
+                    <div className="hidden sm:grid grid-cols-[1fr_64px_64px_64px_64px_72px_64px_32px] gap-2 text-[10px] uppercase tracking-widest text-muted-foreground px-2">
                       <span>Joueur</span>
                       {MATCH_PLAYER_STAT_KEYS.map((key) => <span key={key}>{t(`stat.short.${key}`)}</span>)}
                       <span>MVP</span><span />
                     </div>
                     {(form.players || []).map((p, pIndex) => (
-                      <div key={p.playerId || `${p.pseudo}-${pIndex}`} className="grid grid-cols-2 sm:grid-cols-[1fr_64px_64px_64px_64px_72px_64px_32px] gap-2 items-center border border-white/15 bg-[#141414] p-2 text-xs text-[#f7f7f7]" data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}>
+                      <div key={p.playerId || `${p.pseudo}-${pIndex}`} className="grid grid-cols-2 sm:grid-cols-[1fr_64px_64px_64px_64px_72px_64px_32px] gap-2 items-center border border-border/30 bg-card/70 p-2 text-xs text-foreground" data-testid={`admin-match-player-chip-${p.playerId || pIndex}`}>
                         <span className="font-semibold col-span-2 sm:col-span-1">{p.pseudo || "Joueur"}</span>
                         {MATCH_PLAYER_STAT_KEYS.map((key) => (
-                          <input key={key} type="number" min="0" value={p[key] ?? ""} onChange={(e) => updatePlayerStat(pIndex, key, e.target.value)} placeholder={t(`stat.short.${key}`)} aria-label={`${p.pseudo} ${t(`stat.${key}`)}`} data-testid={`admin-match-player-${key}-${p.playerId || pIndex}`} className="w-full bg-[#111111] border border-white/15 px-2 py-1.5 text-xs focus:outline-none focus:border-[#D8CA82]" />
+                          <input key={key} type="number" min="0" value={p[key] ?? ""} onChange={(e) => updatePlayerStat(pIndex, key, e.target.value)} placeholder={t(`stat.short.${key}`)} aria-label={`${p.pseudo} ${t(`stat.${key}`)}`} data-testid={`admin-match-player-${key}-${p.playerId || pIndex}`} className="w-full bg-background border border-border/30 px-2 py-1.5 text-xs focus:outline-none focus:border-primary" />
                         ))}
-                        <span className="text-center text-[#D8CA82] font-bold" title="MVP (replays)" data-testid={`admin-match-player-mvp-${p.playerId || pIndex}`}>{mvpCount(p.mvp) ? `${mvpCount(p.mvp)}×` : "—"}</span>
+                        <span className="text-center text-primary font-bold" title="MVP (replays)" data-testid={`admin-match-player-mvp-${p.playerId || pIndex}`}>{mvpCount(p.mvp) ? `${mvpCount(p.mvp)}×` : "—"}</span>
                         <button type="button" onClick={() => removePlayerFromMatch(pIndex)} className="text-red-300/80 hover:text-red-300" aria-label={`${t("admin.match.removePlayer")} ${p.pseudo || "Joueur"}`}>×</button>
                       </div>
                     ))}
@@ -899,8 +899,8 @@ export default function Admin() {
               </div>
 
               {/* MVP */}
-              <div className="border-t border-white/10 pt-4 space-y-2" data-testid="admin-match-mvp-section">
-                <label className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] block">{t("admin.match.mvp")} — relié au line-up</label>
+              <div className="border-t border-border/25 pt-4 space-y-2" data-testid="admin-match-mvp-section">
+                <label className="text-xs uppercase tracking-[0.2em] text-primary block">{t("admin.match.mvp")} — relié au line-up</label>
                 <select value={form.mvp} onChange={set("mvp")} className={inputCls} data-testid="admin-match-mvp-select">
                   <option value="">— Aucun MVP —</option>
                   {(form.players||[]).map(p=>(
@@ -909,37 +909,37 @@ export default function Admin() {
                 </select>
                 <input value={form.mvp} onChange={set("mvp")} placeholder="Ou saisie libre (pseudo ou ID)" className={inputCls} data-testid="admin-match-mvp-input" />
                 {replaySeries.ready && (
-                  <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-3 py-2 flex flex-wrap items-center gap-3" data-testid="admin-match-replay-mvp">
+                  <div className="border border-primary/30 bg-primary/5 px-3 py-2 flex flex-wrap items-center gap-3" data-testid="admin-match-replay-mvp">
                     {replaySeries.mvp ? (
                       <>
-                        <span className="text-xs text-[#c8c8c8]">
-                          MVP détecté dans les replays : <span className="text-[#D8CA82] font-bold">{replaySeries.mvp.pseudo || replaySeries.mvp.name}</span> · {replaySeries.mvp.count}× élu(s) sur {replaySeries.games.length} game(s)
+                        <span className="text-xs text-muted-foreground">
+                          MVP détecté dans les replays : <span className="text-primary font-bold">{replaySeries.mvp.pseudo || replaySeries.mvp.name}</span> · {replaySeries.mvp.count}× élu(s) sur {replaySeries.games.length} game(s)
                         </span>
                         <button
                           type="button"
                           onClick={() => setForm((f) => ({ ...f, mvp: replaySeries.mvp.playerId || replaySeries.mvp.pseudo || replaySeries.mvp.name || "" }))}
-                          className="ml-auto border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-3 py-1 hover:bg-[#D8CA82]/10"
+                          className="ml-auto border border-primary/50 text-primary text-xs uppercase tracking-widest px-3 py-1 hover:bg-primary/10"
                           data-testid="admin-match-replay-mvp-apply"
                         >
                           Appliquer
                         </button>
                       </>
                     ) : (
-                      <span className="text-xs text-[#c8c8c8]">Aucun MVP détecté dans les replays de cette série.</span>
+                      <span className="text-xs text-muted-foreground">Aucun MVP détecté dans les replays de cette série.</span>
                     )}
                   </div>
                 )}
-                <p className="text-xs text-[#c8c8c8]">Le MVP alimente les statistiques par joueur (but, passe, arrêt, tir, score).</p>
+                <p className="text-xs text-muted-foreground">Le MVP alimente les statistiques par joueur (but, passe, arrêt, tir, score).</p>
               </div>
 
               <button type="submit" data-testid="admin-match-submit"
-                className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+                className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
                 {t("admin.match.add")}
               </button>
             </form>
             <div className="lg:col-span-7">
               {filteredMatches.length === 0 ? (
-                <p className="text-[#c8c8c8]" data-testid="admin-matches-empty">{t("results.empty")}</p>
+                <p className="text-muted-foreground" data-testid="admin-matches-empty">{t("results.empty")}</p>
               ) : (
                 <>
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -957,10 +957,10 @@ export default function Admin() {
                   {filteredMatches.length > PAGE_SIZE && (
                     <div className="flex items-center justify-end gap-2 mt-4" data-testid="admin-matches-pagination">
                       <button onClick={() => setMatchPage((p) => Math.max(1, p - 1))} disabled={matchPage <= 1}
-                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.prev")}</button>
-                      <span className="text-xs text-[#c8c8c8]">{t("admin.pagination.page")} {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
+                        className="border border-border/30 text-foreground/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-primary hover:text-primary">{t("admin.pagination.prev")}</button>
+                      <span className="text-xs text-muted-foreground">{t("admin.pagination.page")} {Math.min(matchPage, matchTotalPages)} / {matchTotalPages}</span>
                       <button onClick={() => setMatchPage((p) => Math.min(matchTotalPages, p + 1))} disabled={matchPage >= matchTotalPages}
-                        className="border border-white/15 text-[#f7f7f7]/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-[#D8CA82] hover:text-[#D8CA82]">{t("admin.pagination.next")}</button>
+                        className="border border-border/30 text-foreground/60 px-3 py-1.5 text-xs uppercase tracking-widest disabled:opacity-30 hover:border-primary hover:text-primary">{t("admin.pagination.next")}</button>
                     </div>
                   )}
                 </>
@@ -988,15 +988,15 @@ export default function Admin() {
       </section>
 
       <AlertDialog open={!!confirmMatch} onOpenChange={(open) => !open && setConfirmMatch(null)}>
-        <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+        <AlertDialogContent className="panel clip-blade border border-primary/30 rounded-none text-foreground shadow-deep">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">{t("admin.match.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-primary text-base">{t("admin.match.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-foreground/60 leading-relaxed">
               {t("admin.match.deleteDesc")} ({confirmMatch?.opponentName || t("common.adversary")})
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:space-x-0">
-            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel className="bg-transparent border border-border/35 text-foreground/70 hover:bg-primary/5 hover:text-foreground uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => { const target = confirmMatch; setConfirmMatch(null); delMatch(target); }}
               className="bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"

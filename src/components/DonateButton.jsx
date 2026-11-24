@@ -92,16 +92,16 @@ export const DonateButton = ({
 
       {status !== "ready" && status !== "error" && (
         <div
-          className="min-h-[52px] flex items-center gap-3 border border-white/10 bg-[#141414] px-4 py-3"
+          className="min-h-[52px] flex items-center gap-3 panel clip-blade-sm px-4 py-3"
           role="status"
           aria-live="polite"
           data-testid="donate-paypal-loading"
         >
           <span
-            className="w-4 h-4 border-2 border-[#D8CA82]/60 border-t-transparent rounded-full animate-spin motion-reduce:animate-none shrink-0"
+            className="w-4 h-4 border-2 border-primary/60 border-t-transparent rounded-full animate-spin motion-reduce:animate-none shrink-0"
             aria-hidden="true"
           />
-          <span className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{t("donate.loading")}</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("donate.loading")}</span>
         </div>
       )}
 
@@ -113,12 +113,12 @@ export const DonateButton = ({
             rel="noopener noreferrer"
             data-testid="donate-paypal-fallback-link"
             onClick={() => trackEvent(ANALYTICS_EVENTS.DONATE_CLICK, { source: "paypal_fallback" })}
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+            className="clip-blade-sm bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
             <Heart size={16} aria-hidden="true" /> {t("donate.cta")}
             <ExternalLink size={13} aria-hidden="true" />
           </a>
-          <p className="text-xs text-[#c8c8c8] mt-3 max-w-xs leading-relaxed">{t("donate.fallback")}</p>
+          <p className="text-xs text-muted-foreground mt-3 max-w-xs leading-relaxed">{t("donate.fallback")}</p>
         </div>
       )}
     </div>
@@ -135,9 +135,9 @@ export const DonateSubscriptionBlock = ({ testId = "donate-subscription" }) => {
   const { t } = useLang();
   if (!PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID) {
     return (
-      <div className="border border-white/15 bg-[#141414] px-4 py-3 text-xs text-[#c8c8c8] leading-relaxed" data-testid={testId}>
+      <div className="clip-blade-sm border border-border/30 bg-card/70 px-4 py-3 text-xs text-muted-foreground leading-relaxed" data-testid={testId}>
         {t("donate.monthly.notConfigured")}{" "}
-        <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline">{CONTACT_EMAIL}</a>
+        <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>
       </div>
     );
   }
@@ -152,14 +152,14 @@ export const DonateSubscriptionBlock = ({ testId = "donate-subscription" }) => {
 export const DonateSubscriptionCard = ({ testId = "donate-subscription-card" }) => {
   const { t } = useLang();
   return (
-    <div className="mt-6 pt-6 border-t border-white/10" data-testid={testId}>
+    <div className="mt-6 pt-6 border-t border-border/25" data-testid={testId}>
       <div className="flex items-center gap-3 mb-3">
-        <Repeat size={17} className="text-[#D8CA82]" aria-hidden="true" />
-        <p className="font-display text-xs tracking-[0.3em] uppercase text-[#D8CA82]">{t("donate.monthly.title")}</p>
+        <Repeat size={17} className="text-primary" aria-hidden="true" />
+        <p className="font-display text-xs tracking-[0.3em] uppercase text-primary">{t("donate.monthly.title")}</p>
       </div>
-      <p className="text-sm text-[#c8c8c8] leading-relaxed mb-4">{t("donate.monthly.text")}</p>
+      <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t("donate.monthly.text")}</p>
       <DonateSubscriptionBlock />
-      <p className="text-xs text-[#c8c8c8] mt-3">{t("donate.monthly.member.desc")}</p>
+      <p className="text-xs text-muted-foreground mt-3">{t("donate.monthly.member.desc")}</p>
     </div>
   );
 };
@@ -169,10 +169,10 @@ export const DonateSecureNote = ({ testId = "donate-secure-note" }) => {
   const { t } = useLang();
   return (
     <p
-      className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-[#c8c8c8]"
+      className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"
       data-testid={testId}
     >
-      <ShieldCheck size={14} className="text-[#D8CA82] shrink-0 mt-px" aria-hidden="true" />
+      <ShieldCheck size={14} className="text-primary shrink-0 mt-px" aria-hidden="true" />
       <span>{t("donate.secure")}</span>
     </p>
   );
@@ -186,7 +186,7 @@ export const DonateLink = ({ testId = "donate-link", compact = false, className 
       to="/soutenir"
       data-testid={testId}
       onClick={() => trackEvent(ANALYTICS_EVENTS.DONATE_CLICK, { source: "donate_link" })}
-      className={`bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest inline-flex items-center justify-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${
+      className={`bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest inline-flex items-center justify-center gap-2 hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
         compact ? "text-xs px-4 py-2.5 min-h-[44px]" : "text-sm px-8 py-4"
       } ${className}`}
     >
@@ -203,7 +203,7 @@ export const DonateBlock = ({ testId = "donate-block" }) => {
   const { t } = useLang();
   return (
     <div
-      className="relative border border-[#D8CA82]/30 bg-[#1A1A1A] p-8 sm:p-10 overflow-hidden"
+      className="relative panel clip-blade-sm border border-primary/30 p-8 sm:p-10 overflow-hidden"
       data-testid={testId}
     >
       <img
@@ -214,17 +214,17 @@ export const DonateBlock = ({ testId = "donate-block" }) => {
       />
       <div className="relative grid lg:grid-cols-12 gap-8 items-center">
         <div className="lg:col-span-7">
-          <p className="text-xs font-display uppercase tracking-[0.35em] text-[#D8CA82] mb-4">
+          <p className="text-xs eyebrow mb-4">
             {t("donate.badge")}
           </p>
-          <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-[#f7f7f7] leading-tight">
+          <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-foreground leading-tight">
             {t("donate.block.title")}
           </h3>
-          <p className="text-[#c8c8c8] mt-4 leading-relaxed max-w-xl">{t("donate.block.text")}</p>
+          <p className="text-muted-foreground mt-4 leading-relaxed max-w-xl">{t("donate.block.text")}</p>
           <Link
             to="/soutenir"
             data-testid="donate-block-more-link"
-            className="mt-5 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+            className="mt-5 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
             {t("donate.block.more")}
           </Link>

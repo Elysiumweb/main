@@ -27,7 +27,7 @@ const renderText = (text, members) => {
       const pseudo = part.slice(1);
       const found = members.find((m) => (m.displayName || "").toLowerCase() === pseudo.toLowerCase());
       return (
-        <span key={i} className="text-[#D8CA82] font-medium bg-[#D8CA82]/10 px-0.5 rounded-sm" data-testid={`mention-${i}`}>
+        <span key={i} className="text-primary font-medium bg-primary/10 px-0.5 rounded-sm" data-testid={`mention-${i}`}>
           {part}{found ? "" : ""}
         </span>
       );
@@ -223,7 +223,7 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0" data-testid={`${testId}-messages`}>
         {messages.length === 0 && (
-          <p className="text-sm text-[#c8c8c8] tracking-wide" data-testid={`${testId}-empty`}>{t("chat.empty")}</p>
+          <p className="text-sm text-muted-foreground tracking-wide" data-testid={`${testId}-empty`}>{t("chat.empty")}</p>
         )}
         {messages.map((m) => {
           const mine = m.uid === user?.uid;
@@ -231,34 +231,34 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
           const isEditing = editingId === m.id;
           return (
             <div key={m.id} className={`group flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] px-3 py-2 border relative ${mine ? "bg-[#D8CA82]/10 border-[#D8CA82]/40" : "bg-[#1A1A1A] border-white/10"}`}>
+              <div className={`max-w-[75%] px-3 py-2 border relative ${mine ? "bg-primary/10 border-primary/40" : "bg-card border-border/25"}`}>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-display font-bold text-[#D8CA82]">{m.name}</span>
-                  {m.createdAt && <span className="text-xs text-[#c8c8c8]">{fmtDate(m.createdAt)}</span>}
-                  {m.editedAt && <span className="text-xs italic text-[#c8c8c8]">({t("chat.edited")})</span>}
+                  <span className="text-xs font-display font-bold text-primary">{m.name}</span>
+                  {m.createdAt && <span className="text-xs text-muted-foreground">{fmtDate(m.createdAt)}</span>}
+                  {m.editedAt && <span className="text-xs italic text-muted-foreground">({t("chat.edited")})</span>}
                   {/* Actions : édition personnelle + suppression personnelle/modération */}
                   {canDeleteMessage && !isEditing && (
                     <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`msg-actions-${m.id}`}>
-                      {mine && <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-[#c8c8c8] hover:text-[#D8CA82]"><Pencil size={11} /></button>}
-                      <button onClick={() => setMessageToDelete(m)} title={mine ? t("chat.delete") : "Modérer"} data-testid={`msg-delete-${m.id}`} className="text-[#c8c8c8] hover:text-red-400"><Trash2 size={11} /></button>
+                      {mine && <button onClick={() => startEdit(m)} title={t("chat.edit")} data-testid={`msg-edit-${m.id}`} className="text-muted-foreground hover:text-primary"><Pencil size={11} /></button>}
+                      <button onClick={() => setMessageToDelete(m)} title={mine ? t("chat.delete") : "Modérer"} data-testid={`msg-delete-${m.id}`} className="text-muted-foreground hover:text-red-400"><Trash2 size={11} /></button>
                     </span>
                   )}
                 </div>
                 {isEditing ? (
                   <div className="mt-1" data-testid={`msg-edit-form-${m.id}`}>
                     <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={2} autoFocus
-                      className="w-full bg-[#111111] border border-white/20 px-2 py-1.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] resize-none" />
+                      className="w-full bg-background border border-border/35 px-2 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary resize-none" />
                     <div className="flex justify-end gap-2 mt-1.5">
-                      <button onClick={cancelEdit} className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#f7f7f7] px-2 py-1">{t("chat.cancel")}</button>
-                      <button onClick={() => saveEdit(m.id)} className="text-xs uppercase tracking-widest bg-[#D8CA82] text-[#111111] px-2 py-1 font-bold flex items-center gap-1"><Check size={11} /> {t("chat.save")}</button>
+                      <button onClick={cancelEdit} className="text-xs uppercase tracking-widest text-foreground/50 hover:text-foreground px-2 py-1">{t("chat.cancel")}</button>
+                      <button onClick={() => saveEdit(m.id)} className="text-xs uppercase tracking-widest bg-gold text-primary-foreground px-2 py-1 font-bold flex items-center gap-1"><Check size={11} /> {t("chat.save")}</button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    {m.text && <p className="text-sm text-[#f7f7f7]/90 whitespace-pre-wrap break-words">{renderText(m.text, members)}</p>}
+                    {m.text && <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{renderText(m.text, members)}</p>}
                     {m.image && (
                       <a href={m.image} target="_blank" rel="noopener noreferrer" className="block mt-1" data-testid={`msg-image-${m.id}`}>
-                        <img src={m.image} alt="" className="max-h-60 max-w-full border border-white/10" />
+                        <img src={m.image} alt="" className="max-h-60 max-w-full border border-border/25" />
                       </a>
                     )}
                   </>
@@ -272,54 +272,54 @@ export const ChatMessages = ({ path, channelId = "", testId = "chat", onSent = n
 
       {/* Aperçu image avant envoi */}
       {pendingImage && (
-        <div className="px-3 py-2 border-t border-white/10 bg-[#141414] flex items-center gap-3" data-testid={`${testId}-image-preview`}>
-          <img src={pendingImage} alt="" className="h-16 border border-white/10" />
-          <button onClick={() => setPendingImage(null)} className="text-[#f7f7f7]/50 hover:text-red-400" aria-label={t("common.delete")}><X size={16} /></button>
+        <div className="px-3 py-2 border-t border-border/25 bg-card/70 flex items-center gap-3" data-testid={`${testId}-image-preview`}>
+          <img src={pendingImage} alt="" className="h-16 border border-border/25" />
+          <button onClick={() => setPendingImage(null)} className="text-foreground/50 hover:text-red-400" aria-label={t("common.delete")}><X size={16} /></button>
         </div>
       )}
 
       {/* Liste d'autocomplétion @mention */}
       {mentionQuery && matchedMentions.length > 0 && (
-        <div className="mx-3 mb-1 border border-white/15 bg-[#161616] shadow-lg" data-testid={`${testId}-mention-list`}>
+        <div className="mx-3 mb-1 border border-border/30 bg-card shadow-lg" data-testid={`${testId}-mention-list`}>
           {matchedMentions.map((m, i) => (
             <button key={m.id} type="button" onMouseDown={(e) => { e.preventDefault(); insertMention(m); }}
               onMouseEnter={() => setMentionIndex(i)}
-              className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left ${i === mentionIndex ? "bg-[#D8CA82]/10 text-[#D8CA82]" : "text-[#f7f7f7]/80 hover:bg-white/5"}`}>
+              className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left ${i === mentionIndex ? "bg-primary/10 text-primary" : "text-foreground/80 hover:bg-primary/5"}`}>
               <AtSign size={12} className="opacity-50" /> {m.displayName}
             </button>
           ))}
         </div>
       )}
 
-      <form onSubmit={send} className="border-t border-white/10 p-3 flex gap-2 shrink-0 items-center">
+      <form onSubmit={send} className="border-t border-border/25 p-3 flex gap-2 shrink-0 items-center">
         <input ref={fileRef} type="file" accept="image/*" onChange={onFileChange} className="sr-only" data-testid={`${testId}-file-input`} />
         <button type="button" onClick={() => fileRef.current?.click()} title={t("chat.attach")} data-testid={`${testId}-attach-btn`}
-          className="p-2 text-[#f7f7f7]/50 hover:text-[#D8CA82] border border-white/15 hover:border-[#D8CA82]/50 transition-colors shrink-0">
+          className="p-2 text-foreground/50 hover:text-primary border border-border/30 hover:border-primary/50 transition-colors shrink-0">
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
         </button>
         <input ref={inputRef} value={text} onChange={onTextChange} onKeyDown={onTextKeyDown} placeholder={t("chat.placeholder")}
           data-testid={`${testId}-input`}
-          className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] placeholder:text-[#c8c8c8] focus:outline-none focus:border-[#D8CA82]" />
+          className="flex-1 bg-card border border-border/35 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary" />
         <button type="submit" disabled={uploading} data-testid={`${testId}-send-btn`}
-          className="bg-[#D8CA82] text-[#111111] px-4 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50">
+          className="bg-gold text-primary-foreground px-4 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow disabled:opacity-50">
           <Send size={16} />
         </button>
       </form>
 
       <AlertDialog open={!!messageToDelete} onOpenChange={(open) => !open && setMessageToDelete(null)}>
-        <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+        <AlertDialogContent className="panel clip-blade border border-primary/30 rounded-none text-foreground shadow-deep">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-primary text-base">
               {messageToDelete?.uid === user?.uid ? t("chat.deleteConfirm") : "Modérer ce message ?"}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+            <AlertDialogDescription className="text-foreground/60 leading-relaxed">
               {messageToDelete?.uid === user?.uid
                 ? "Ton message sera supprimé définitivement."
                 : `Le message de ${messageToDelete?.name || "ce membre"} sera supprimé et l'action sera inscrite au journal d'audit.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:space-x-0">
-            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">
+            <AlertDialogCancel className="bg-transparent border border-border/35 text-foreground/70 hover:bg-primary/5 hover:text-foreground uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">
               {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction

@@ -20,8 +20,8 @@ import { SocialIcon } from "../components/SocialIcon";
 const CATS = ["account", "technical", "team", "other"];
 const PRIOS = ["low", "normal", "high"];
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const selectCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
+const selectCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 
 /* Recherche insensible aux accents et à la casse (« don » trouve « dons »). */
 const fold = (s) =>
@@ -148,22 +148,22 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("support.title") }]} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="support-title">{t("support.title")}</h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("support.sub")}</p>
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("support.title") }]} />
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="support-title">{t("support.title")}</h1>
+          <p className="text-muted-foreground mt-4 tracking-wide">{t("support.sub")}</p>
         </div>
       </section>
 
       {/* DISCORD MIS EN AVANT — réponse la plus rapide, sans compte ni formulaire */}
-      <section className="border-b border-white/10 bg-[#0c0c0c]" data-testid="support-discord-cta" aria-label={t("support.discord.title")}>
+      <section className="border-b border-border/25 bg-background/70" data-testid="support-discord-cta" aria-label={t("support.discord.title")}>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
           <div className="flex-1">
-            <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("support.discord.title")}</p>
-            <p className="text-sm text-[#c8c8c8] mt-1">{t("support.discord.sub")}</p>
+            <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{t("support.discord.title")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("support.discord.sub")}</p>
           </div>
           <Button variant="gold" size="md" asChild>
             <a href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" data-testid="support-discord-btn">
@@ -176,10 +176,10 @@ export default function Support() {
       {/* CENTRE D'AIDE — base de connaissances éditable, structurée par jeu */}
       <section className="max-w-5xl mx-auto px-4 sm:px-8 py-16" aria-labelledby="support-faq-h2" data-testid="support-faq">
         <div className="flex items-center gap-3 mb-3">
-          <HelpCircle className="text-[#D8CA82]" size={20} aria-hidden="true" />
-          <h2 id="support-faq-h2" className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("support.faq.title")}</h2>
+          <HelpCircle className="text-primary" size={20} aria-hidden="true" />
+          <h2 id="support-faq-h2" className="eyebrow">{t("support.faq.title")}</h2>
         </div>
-        <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("support.faq.sub")}</p>
+        <p className="text-sm text-foreground/50 mb-6">{t("support.faq.sub")}</p>
 
         {/* Filtres : par jeu + recherche */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between mb-8">
@@ -191,10 +191,10 @@ export default function Support() {
                 onClick={() => setGameFilter(g)}
                 aria-pressed={gameFilter === g}
                 data-testid={`support-help-game-${g.replace(/\s+/g, "-")}`}
-                className={`focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] text-xs font-display uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${
+                className={`focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary text-xs font-display uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${
                   gameFilter === g
-                    ? "border-[#D8CA82] bg-[#D8CA82]/10 text-[#D8CA82]"
-                    : "border-white/15 text-[#c8c8c8] hover:border-[#D8CA82]/50 hover:text-[#f7f7f7]"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/30 text-muted-foreground hover:border-primary/50 hover:text-foreground"
                 }`}
               >
                 {g === "all" ? t("support.help.allGames") : g}
@@ -203,7 +203,7 @@ export default function Support() {
           </div>
           <div className="relative sm:w-72">
             <label htmlFor="support-help-search" className="sr-only">{t("support.help.search")}</label>
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]/60" aria-hidden="true" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" aria-hidden="true" />
             <input
               id="support-help-search"
               type="search"
@@ -216,29 +216,29 @@ export default function Support() {
           </div>
         </div>
 
-        <p className="text-xs text-[#c8c8c8]/50 mb-6" data-testid="support-help-count">
+        <p className="text-xs text-muted-foreground/50 mb-6" data-testid="support-help-count">
           {filtered.length} {t("support.help.results")}
           {isFallback && ` · ${t("support.help.fallbackHint")}`}
         </p>
 
         {grouped.length === 0 ? (
-          <p className="text-[#c8c8c8] py-6" data-testid="support-help-empty">{t("support.help.noResults")}</p>
+          <p className="text-muted-foreground py-6" data-testid="support-help-empty">{t("support.help.noResults")}</p>
         ) : (
           <div className="grid md:grid-cols-2 gap-x-10 gap-y-8">
             {grouped.map((group) => (
               <div key={group.id} data-testid={`support-faq-group-${group.id}`}>
-                <h3 className="text-xs font-display uppercase tracking-[0.3em] text-[#D8CA82] border-b border-white/10 pb-3 mb-2">
+                <h3 className="text-xs font-display uppercase tracking-[0.3em] text-primary border-b border-border/25 pb-3 mb-2">
                   {t(group.labelKey)}
                 </h3>
                 <Accordion type="single" collapsible className="w-full">
                   {group.items.map((a) => {
                     const { question, answer } = helpArticleText(a, lang);
                     return (
-                      <AccordionItem key={a.id} value={`a-${a.id}`} className="border-white/10" data-testid={`support-faq-item-${a.id}`}>
-                        <AccordionTrigger className="text-sm text-[#f7f7f7]/90 hover:text-[#D8CA82] hover:no-underline text-left">
+                      <AccordionItem key={a.id} value={`a-${a.id}`} className="border-border/25" data-testid={`support-faq-item-${a.id}`}>
+                        <AccordionTrigger className="text-sm text-foreground/90 hover:text-primary hover:no-underline text-left">
                           {question}
                         </AccordionTrigger>
-                        <AccordionContent className="text-sm text-[#c8c8c8] leading-relaxed whitespace-pre-line">
+                        <AccordionContent className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                           {answer}
                         </AccordionContent>
                       </AccordionItem>
@@ -250,17 +250,17 @@ export default function Support() {
           </div>
         )}
 
-        <div className="mt-10 border border-[#D8CA82]/25 bg-[#D8CA82]/5 px-6 py-4 flex items-center gap-3">
-          <LifeBuoy size={18} className="text-[#D8CA82] shrink-0" aria-hidden="true" />
-          <p className="text-sm text-[#c8c8c8]">
-            {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline">{CONTACT_EMAIL}</a>
+        <div className="mt-10 border border-primary/25 bg-primary/5 px-6 py-4 flex items-center gap-3">
+          <LifeBuoy size={18} className="text-primary shrink-0" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">
+            {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>
           </p>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12">
         <div className="lg:col-span-5">
-          <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6">{t("support.newTicket")}</h2>
+          <h2 className="eyebrow mb-6">{t("support.newTicket")}</h2>
 
           {!user ? (
             <>
@@ -271,23 +271,23 @@ export default function Support() {
                 <LoginPrompt messageKey="support.loginRequired" prefix="support" />
               </div>
 
-              <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6" data-testid="support-guest-block">
-                <p className="font-display text-sm uppercase tracking-[0.25em] text-[#D8CA82] mb-3">{t("support.guest.title")}</p>
-                <p className="text-sm text-[#c8c8c8] mb-5 leading-relaxed">{t("support.guest.sub")}</p>
+              <div className="panel clip-blade-sm border border-primary/30 p-6" data-testid="support-guest-block">
+                <p className="font-display text-sm uppercase tracking-[0.25em] text-primary mb-3">{t("support.guest.title")}</p>
+                <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{t("support.guest.sub")}</p>
 
                 {guestResult ? (
                   <div className="border border-emerald-300/40 bg-emerald-300/5 p-5" role="status" data-testid="support-guest-confirm">
                     <p className="font-display text-sm uppercase tracking-[0.2em] text-emerald-300 flex items-center gap-2">
                       <ClipboardCheck size={16} aria-hidden="true" /> {t("support.guest.sent")}
                     </p>
-                    <p className="text-xs text-[#c8c8c8] mt-2 leading-relaxed">
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                       {guestResult.emailSent ? t("support.guest.sentSub") : t("support.guest.emailNotSent")}
                     </p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.2em] text-[#c8c8c8]/60">
-                      {t("support.track.reference")} : <span className="text-[#f7f7f7] font-display">{guestResult.reference}</span>
+                    <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted-foreground/60">
+                      {t("support.track.reference")} : <span className="text-foreground font-display">{guestResult.reference}</span>
                     </p>
                     <div className="mt-3 flex flex-col gap-2">
-                      <code className="text-[11px] text-[#f7f7f7]/70 bg-[#111111] border border-white/10 px-3 py-2 break-all" data-testid="support-guest-track-url">
+                      <code className="text-[11px] text-foreground/70 bg-background border border-border/25 px-3 py-2 break-all" data-testid="support-guest-track-url">
                         {trackUrl(guestResult.trackToken)}
                       </code>
                       <div className="flex flex-wrap gap-2">
@@ -295,11 +295,11 @@ export default function Support() {
                           {t("support.guest.copy")}
                         </Button>
                         <Link to={`/suivi-demande?token=${encodeURIComponent(guestResult.trackToken)}`}
-                          className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid="support-guest-track-link">
+                          className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-widest text-primary hover:underline" data-testid="support-guest-track-link">
                           {t("support.guest.tracking")} <ArrowRight size={12} aria-hidden="true" />
                         </Link>
                         <button type="button" onClick={() => setGuestResult(null)}
-                          className="focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] text-xs font-display uppercase tracking-widest text-[#c8c8c8]/70 hover:text-[#f7f7f7]">
+                          className="focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary text-xs font-display uppercase tracking-widest text-muted-foreground/70 hover:text-foreground">
                           {t("support.guest.another")}
                         </button>
                       </div>
@@ -310,8 +310,8 @@ export default function Support() {
                     <label htmlFor="support-guest-website" className="sr-only">Site web</label>
                     <input id="support-guest-website" type="text" {...getHoneypotProps("website")} data-testid="support-guest-honeypot" />
                     <div>
-                      <label htmlFor="support-guest-email" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">
-                        {t("support.guest.form.email")} <span className="text-[#D8CA82]">*</span>
+                      <label htmlFor="support-guest-email" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">
+                        {t("support.guest.form.email")} <span className="text-primary">*</span>
                       </label>
                       <input id="support-guest-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
                         placeholder="vous@exemple.fr" data-testid="support-guest-email"
@@ -319,14 +319,14 @@ export default function Support() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label htmlFor="support-guest-category" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.category")}</label>
+                        <label htmlFor="support-guest-category" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.category")}</label>
                         <select id="support-guest-category" value={category} onChange={(e) => setCategory(e.target.value)} data-testid="support-guest-category"
                           className={selectCls}>
                           {CATS.map((c) => <option key={c} value={c}>{t(`support.cat.${c}`)}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="support-guest-priority" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.priority")}</label>
+                        <label htmlFor="support-guest-priority" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.priority")}</label>
                         <select id="support-guest-priority" value={priority} onChange={(e) => setPriority(e.target.value)} data-testid="support-guest-priority"
                           className={selectCls}>
                           {PRIOS.map((p) => <option key={p} value={p}>{t(`support.prio.${p}`)}</option>)}
@@ -334,17 +334,17 @@ export default function Support() {
                       </div>
                     </div>
                     <div>
-                      <label htmlFor="support-guest-subject" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.subject")}</label>
+                      <label htmlFor="support-guest-subject" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.subject")}</label>
                       <input id="support-guest-subject" value={subject} onChange={(e) => setSubject(e.target.value)} required data-testid="support-guest-subject"
                         className={inputCls} />
                     </div>
                     <div>
-                      <label htmlFor="support-guest-desc" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.desc")}</label>
+                      <label htmlFor="support-guest-desc" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.desc")}</label>
                       <textarea id="support-guest-desc" value={description} onChange={(e) => setDescription(e.target.value)} required rows={5} data-testid="support-guest-desc"
                         className={inputCls} />
                     </div>
                     <div>
-                      <label htmlFor="support-guest-attachment" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">
+                      <label htmlFor="support-guest-attachment" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">
                         {t("support.form.attachment")}
                       </label>
                       <input id="support-guest-attachment" type="url" value={attachment} onChange={(e) => setAttachment(e.target.value)} placeholder="https://..." data-testid="support-guest-attachment"
@@ -358,41 +358,41 @@ export default function Support() {
               </div>
             </>
           ) : (
-            <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="support-form" noValidate>
+            <form onSubmit={submit} className="space-y-5 panel clip-blade-sm p-6" data-testid="support-form" noValidate>
               <label htmlFor="support-website" className="sr-only">Site web</label>
               <input id="support-website" type="text" {...getHoneypotProps("website")} data-testid="support-honeypot" />
               <p id="support-form-error" role="alert" aria-live="polite" className="sr-only" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="support-category" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.category")}</label>
+                  <label htmlFor="support-category" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.category")}</label>
                   <select id="support-category" value={category} onChange={(e) => setCategory(e.target.value)} data-testid="support-category-select" className={selectCls}>
                     {CATS.map((c) => <option key={c} value={c}>{t(`support.cat.${c}`)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="support-priority" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.priority")}</label>
+                  <label htmlFor="support-priority" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.priority")}</label>
                   <select id="support-priority" value={priority} onChange={(e) => setPriority(e.target.value)} data-testid="support-priority-select" className={selectCls}>
                     {PRIOS.map((p) => <option key={p} value={p}>{t(`support.prio.${p}`)}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label htmlFor="support-subject" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.subject")}</label>
+                <label htmlFor="support-subject" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.subject")}</label>
                 <input id="support-subject" value={subject} onChange={(e) => setSubject(e.target.value)} required data-testid="support-subject-input" className={inputCls} />
               </div>
               <div>
-                <label htmlFor="support-desc" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.desc")}</label>
+                <label htmlFor="support-desc" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.desc")}</label>
                 <textarea id="support-desc" value={description} onChange={(e) => setDescription(e.target.value)} required rows={5} data-testid="support-desc-input" className={inputCls} />
               </div>
               <div>
-                <label htmlFor="support-attachment" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("support.form.attachment")}</label>
+                <label htmlFor="support-attachment" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("support.form.attachment")}</label>
                 <input id="support-attachment" type="url" value={attachment} onChange={(e) => setAttachment(e.target.value)} placeholder="https://..." data-testid="support-attachment-input" className={inputCls} />
               </div>
               <Button type="submit" disabled={sending} data-testid="support-submit-btn" variant="gold" size="md">
                 {t("support.form.submit")}
               </Button>
-              <p className="text-xs text-[#c8c8c8]">
-                {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="support-contact-email">{CONTACT_EMAIL}</a>
+              <p className="text-xs text-muted-foreground">
+                {t("support.contact")} <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" data-testid="support-contact-email">{CONTACT_EMAIL}</a>
               </p>
             </form>
           )}
@@ -401,12 +401,12 @@ export default function Support() {
           {user && (
             <>
               <div className="flex items-center justify-between gap-3 mb-6">
-                <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82]" data-testid="support-threads-title">
+                <h2 className="eyebrow" data-testid="support-threads-title">
                   {canSeeSupport ? t("support.allTickets") : t("support.myTickets")}
                 </h2>
                 {canSeeSupport && (
                   <Link to="/admin?tab=inbox" data-testid="support-inbox-link"
-                    className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+                    className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">
                     {tx("inbox.title")} →
                   </Link>
                 )}

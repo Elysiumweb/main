@@ -54,8 +54,8 @@ import {
  * ------------------------------------------------------------------------- */
 
 const inputCls =
-  "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
-const labelCls = "text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2";
+  "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
+const labelCls = "text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2";
 
 const EMPTY = {
   name: "",
@@ -250,21 +250,21 @@ export const AdminPartners = () => {
     <div className="space-y-8" data-testid="admin-partners">
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <Handshake className="text-[#D8CA82]" size={18} aria-hidden="true" />
-          <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">
+          <Handshake className="text-primary" size={18} aria-hidden="true" />
+          <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-foreground">
             {tx("partnerAdmin.title")}
           </h2>
         </div>
-        <p className="text-sm text-[#f7f7f7]/50 max-w-3xl">{tx("partnerAdmin.sub")}</p>
+        <p className="text-sm text-foreground/50 max-w-3xl">{tx("partnerAdmin.sub")}</p>
       </div>
 
       <div className="grid lg:grid-cols-12 gap-10">
         <form
           onSubmit={submit}
-          className="lg:col-span-5 space-y-5 border border-white/10 bg-[#1A1A1A] p-6"
+          className="lg:col-span-5 space-y-5 panel clip-blade-sm p-6"
           data-testid="admin-partners-form"
         >
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">
             {editId ? tx("partnerAdmin.edit") : tx("partnerAdmin.add")}
           </p>
 
@@ -295,8 +295,8 @@ export const AdminPartners = () => {
               className={inputCls}
               data-testid="admin-partner-slug"
             />
-            <p className="text-xs text-[#a0a0a0] mt-2 break-all">
-              {tx("partnerAdmin.slugPreview")} <span className="text-[#D8CA82]">/partenaires/{slugPreview}</span>
+            <p className="text-xs text-muted-foreground mt-2 break-all">
+              {tx("partnerAdmin.slugPreview")} <span className="text-primary">/partenaires/{slugPreview}</span>
             </p>
           </div>
 
@@ -332,19 +332,19 @@ export const AdminPartners = () => {
                 className={inputCls}
                 data-testid="admin-partner-order"
               />
-              <p className="text-[11px] text-[#a0a0a0] mt-2">{tx("partnerAdmin.orderHint")}</p>
+              <p className="text-[11px] text-muted-foreground mt-2">{tx("partnerAdmin.orderHint")}</p>
             </div>
           </div>
 
-          <label className="flex items-center gap-3 border border-white/10 bg-[#111111] px-3 py-2.5 cursor-pointer">
+          <label className="flex items-center gap-3 border border-border/25 bg-background px-3 py-2.5 cursor-pointer">
             <input
               type="checkbox"
               checked={form.active}
               onChange={set("active")}
-              className="accent-[#D8CA82]"
+              className="accent-primary"
               data-testid="admin-partner-active"
             />
-            <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/70">
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/70">
               {form.active ? tx("partnerAdmin.visible") : tx("partnerAdmin.hidden")}
             </span>
           </label>
@@ -359,7 +359,7 @@ export const AdminPartners = () => {
               label={tx("partnerAdmin.logoUpload")}
               testId="admin-partner-logo-upload"
             />
-            <p className="text-xs text-[#a0a0a0] mt-2">{tx("partnerAdmin.logoHint")}</p>
+            <p className="text-xs text-muted-foreground mt-2">{tx("partnerAdmin.logoHint")}</p>
           </div>
 
           <div>
@@ -372,7 +372,7 @@ export const AdminPartners = () => {
               label={tx("partnerAdmin.bannerUpload")}
               testId="admin-partner-banner-upload"
             />
-            <p className="text-xs text-[#a0a0a0] mt-2">{tx("partnerAdmin.bannerHint")}</p>
+            <p className="text-xs text-muted-foreground mt-2">{tx("partnerAdmin.bannerHint")}</p>
           </div>
 
           <div>
@@ -383,7 +383,7 @@ export const AdminPartners = () => {
               <button
                 type="button"
                 onClick={() => setShowPreview((v) => !v)}
-                className="text-[11px] uppercase tracking-widest text-[#D8CA82] hover:underline"
+                className="text-[11px] uppercase tracking-widest text-primary hover:underline"
                 data-testid="admin-partner-preview-toggle"
               >
                 {showPreview ? tx("partnerAdmin.hidePreview") : tx("partnerAdmin.showPreview")}
@@ -398,15 +398,15 @@ export const AdminPartners = () => {
               className={`${inputCls} resize-y font-mono text-[13px]`}
               data-testid="admin-partner-description"
             />
-            <p className="text-xs text-[#a0a0a0] mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               {tx("partnerAdmin.markdownHint")} · {descriptionLength} {tx("partnerAdmin.chars")}
             </p>
             {showPreview && descriptionLength > 0 && (
               <div
-                className="mt-3 border border-white/10 bg-[#0c0c0c] p-4 text-sm text-[#c8c8c8]"
+                className="mt-3 border border-border/25 bg-background/70 p-4 text-sm text-muted-foreground"
                 data-testid="admin-partner-description-preview"
               >
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#D8CA82] mb-3">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-primary mb-3">
                   {tx("partnerAdmin.preview")}
                 </p>
                 <Markdown source={form.description} />
@@ -442,7 +442,7 @@ export const AdminPartners = () => {
               />
             </div>
           </div>
-          <p className="text-xs text-[#a0a0a0] -mt-3">{tx("partnerAdmin.ctaHint")}</p>
+          <p className="text-xs text-muted-foreground -mt-3">{tx("partnerAdmin.ctaHint")}</p>
 
           <div>
             <label htmlFor="partner-admin-website" className={labelCls}>
@@ -462,7 +462,7 @@ export const AdminPartners = () => {
             <button
               type="submit"
               data-testid="admin-partner-submit"
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow inline-flex items-center gap-2"
+              className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow inline-flex items-center gap-2"
             >
               {editId ? <Pencil size={14} aria-hidden="true" /> : <Plus size={14} aria-hidden="true" />}
               {editId ? tx("partnerAdmin.save") : tx("partnerAdmin.create")}
@@ -472,7 +472,7 @@ export const AdminPartners = () => {
                 type="button"
                 onClick={reset}
                 data-testid="admin-partner-cancel"
-                className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-5"
+                className="border border-border/40 text-foreground/70 text-xs uppercase tracking-widest px-5"
               >
                 {t("common.cancel")}
               </button>
@@ -482,23 +482,23 @@ export const AdminPartners = () => {
 
         <div className="lg:col-span-7 space-y-3" data-testid="admin-partners-list">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50">
+            <p className="text-xs uppercase tracking-[0.25em] text-foreground/50">
               {tx("partnerAdmin.count")} · {items.length}
             </p>
             <Link
               to="/partenaires"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline inline-flex items-center gap-1"
+              className="text-xs uppercase tracking-widest text-primary hover:underline inline-flex items-center gap-1"
             >
               {tx("partnerAdmin.viewPage")} <ExternalLink size={11} aria-hidden="true" />
             </Link>
           </div>
 
           {items.length === 0 && (
-            <div className="border border-white/10 bg-[#1A1A1A] p-8 text-center" data-testid="admin-partners-empty">
-              <Handshake className="text-[#D8CA82]/50 mx-auto mb-3" size={28} aria-hidden="true" />
-              <p className="text-sm text-[#c8c8c8]">{tx("partnerAdmin.empty")}</p>
+            <div className="panel clip-blade-sm p-8 text-center" data-testid="admin-partners-empty">
+              <Handshake className="text-primary/50 mx-auto mb-3" size={28} aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">{tx("partnerAdmin.empty")}</p>
             </div>
           )}
 
@@ -508,40 +508,40 @@ export const AdminPartners = () => {
             return (
               <div
                 key={partner.id}
-                className="flex items-start gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3"
+                className="flex items-start gap-4 panel clip-blade-sm px-4 py-3"
                 data-testid={`admin-partner-row-${partner.id}`}
               >
-                <div className="w-14 h-14 shrink-0 border border-white/10 bg-[#0c0c0c] flex items-center justify-center overflow-hidden">
+                <div className="w-14 h-14 shrink-0 border border-border/25 bg-background/70 flex items-center justify-center overflow-hidden">
                   {logo ? (
                     <img src={logo} alt="" className="w-full h-full object-contain" />
                   ) : (
-                    <ImageIcon className="text-[#a0a0a0]" size={18} aria-hidden="true" />
+                    <ImageIcon className="text-muted-foreground" size={18} aria-hidden="true" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#f7f7f7] truncate">
+                  <p className="text-sm font-semibold text-foreground truncate">
                     {partner.name || tx("partnerAdmin.untitled")}{" "}
-                    <span className="text-xs text-[#a0a0a0]">/{partnerSlug(partner)}</span>
+                    <span className="text-xs text-muted-foreground">/{partnerSlug(partner)}</span>
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-[10px] uppercase tracking-widest border border-white/15 px-2 py-0.5 text-[#c8c8c8]">
+                    <span className="text-[10px] uppercase tracking-widest border border-border/30 px-2 py-0.5 text-muted-foreground">
                       {t(`partners.tiers.${partnerTier(partner)}`)}
                     </span>
                     <span
                       className={`text-[10px] uppercase tracking-widest border px-2 py-0.5 ${
                         active
                           ? "text-emerald-300 border-emerald-300/40"
-                          : "text-[#a0a0a0] border-white/15"
+                          : "text-muted-foreground border-border/30"
                       }`}
                     >
                       {active ? tx("partnerAdmin.visible") : tx("partnerAdmin.hidden")}
                     </span>
-                    <span className="text-[11px] text-[#a0a0a0]">
+                    <span className="text-[11px] text-muted-foreground">
                       #{partner.order ?? 0}
                     </span>
                   </div>
                   {partner.description && (
-                    <p className="text-xs text-[#a0a0a0] truncate mt-1">
+                    <p className="text-xs text-muted-foreground truncate mt-1">
                       {partner.description.replace(/[#*_>`~\[\]()!]/g, " ").replace(/\s+/g, " ").trim()}
                     </p>
                   )}
@@ -553,7 +553,7 @@ export const AdminPartners = () => {
                     rel="noopener noreferrer"
                     title={tx("partnerAdmin.openFiche")}
                     aria-label={`${tx("partnerAdmin.openFiche")} ${partner.name || ""}`}
-                    className="text-[#D8CA82]/70 hover:text-[#D8CA82]"
+                    className="text-primary/70 hover:text-primary"
                     data-testid={`admin-partner-open-${partner.id}`}
                   >
                     <ExternalLink size={15} />
@@ -563,7 +563,7 @@ export const AdminPartners = () => {
                     onClick={() => toggleActive(partner)}
                     title={active ? tx("partnerAdmin.hide") : tx("partnerAdmin.show")}
                     aria-label={`${active ? tx("partnerAdmin.hide") : tx("partnerAdmin.show")} ${partner.name || ""}`}
-                    className="text-[#f7f7f7]/60 hover:text-[#D8CA82]"
+                    className="text-foreground/60 hover:text-primary"
                     data-testid={`admin-partner-toggle-${partner.id}`}
                   >
                     {active ? <Eye size={15} /> : <EyeOff size={15} />}
@@ -573,7 +573,7 @@ export const AdminPartners = () => {
                     onClick={() => edit(partner)}
                     title={t("admin.edit")}
                     aria-label={`${t("admin.edit")} ${partner.name || ""}`}
-                    className="text-[#D8CA82]/70 hover:text-[#D8CA82]"
+                    className="text-primary/70 hover:text-primary"
                     data-testid={`admin-partner-edit-${partner.id}`}
                   >
                     <Pencil size={15} />

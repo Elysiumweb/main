@@ -8,20 +8,20 @@ export default function NotFound() {
   const { t } = useLang();
 
   return (
-    <div className="min-h-[70vh] bg-[#111111] flex flex-col justify-center">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent flex flex-col justify-center">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("notfound.badge") }]} />
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("notfound.badge") }]} />
           <div className="max-w-3xl mx-auto text-center" data-testid="not-found-page">
-            <SearchX className="mx-auto text-[#D8CA82] mb-6" size={48} aria-hidden="true" />
-            <p className="font-display text-[#D8CA82] text-xs uppercase tracking-[0.5em] mb-4">
+            <SearchX className="mx-auto text-primary mb-6" size={48} aria-hidden="true" />
+            <p className="font-display text-primary text-xs uppercase tracking-[0.5em] mb-4">
               {t("notfound.badge")}
             </p>
-            <h1 className="font-display font-black text-4xl sm:text-6xl text-[#f7f7f7] uppercase">
+            <h1 className="font-display font-black text-4xl sm:text-6xl text-foreground uppercase">
               {t("notfound.title")}
             </h1>
-            <p className="text-[#c8c8c8] mt-6 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed">
               {t("notfound.desc")}
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-4">

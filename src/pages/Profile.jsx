@@ -19,7 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 
 export default function Profile() {
   const { user, profile, loading, role, game, roster, isOfficial } = useAuth();
@@ -35,7 +35,7 @@ export default function Profile() {
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-[#c8c8c8]">{t("common.loading")}</div>;
+  if (loading) return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">{t("common.loading")}</div>;
   if (!user && deleting) return <Navigate to="/" replace />;
   if (!user) return <Navigate to="/connexion" replace state={{ from: location }} />;
 
@@ -159,89 +159,89 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-[#111111] py-16 px-4">
+    <div className="min-h-[70vh] bg-transparent py-16 px-4">
       <div className="max-w-2xl mx-auto space-y-10">
-        <PageBreadcrumb items={[{ label: t("nav.profile") }]} />
+        <PageBreadcrumb className="opacity-80" items={[{ label: t("nav.profile") }]} />
         <div>
-          <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="profile-title">{t("profile.title")}</h1>
-          <p className="text-[#D8CA82] text-sm uppercase tracking-[0.3em] mt-3" data-testid="profile-role">
+          <h1 className="font-display font-black text-4xl sm:text-5xl uppercase leading-[0.95] text-gold" data-testid="profile-title">{t("profile.title")}</h1>
+          <p className="text-primary text-sm uppercase tracking-[0.3em] mt-3" data-testid="profile-role">
             {isOfficial ? "Compte officiel" : t(`admin.role.${role}`)}{game ? ` · ${game}` : ""}{roster ? ` · ${roster}` : ""}
           </p>
           {gameHasRosters(game) && (
-            <p className="text-[#c8c8c8] text-xs uppercase tracking-[0.2em] mt-1" data-testid="profile-roster">
+            <p className="text-muted-foreground text-xs uppercase tracking-[0.2em] mt-1" data-testid="profile-roster">
               {t("profile.roster")} : {roster || t("profile.roster.none")}
             </p>
           )}
         </div>
 
-        <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-3" data-testid="profile-email-status">
-          <p className="text-sm text-[#c8c8c8]">{user.email}</p>
+        <div className="panel clip-blade-sm p-6 space-y-3" data-testid="profile-email-status">
+          <p className="text-sm text-muted-foreground">{user.email}</p>
           {isPassword && (user.emailVerified ? (
             <p className="text-sm text-emerald-300 flex items-center gap-2"><BadgeCheck size={15} aria-hidden="true" /> {t("profile.emailVerified")}</p>
           ) : (
             <div className="flex items-center gap-3 flex-wrap">
               <p className="text-sm text-orange-300 flex items-center gap-2"><MailWarning size={15} aria-hidden="true" /> {t("profile.emailNotVerified")}</p>
-              <button onClick={resendVerify} className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="profile-resend-btn">
+              <button onClick={resendVerify} className="text-xs uppercase tracking-widest text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" data-testid="profile-resend-btn">
                 {t("profile.resend")}
               </button>
             </div>
           ))}
         </div>
 
-        <form onSubmit={save} className="border border-white/10 bg-[#1A1A1A] p-6 space-y-5" data-testid="profile-form">
+        <form onSubmit={save} className="panel clip-blade-sm p-6 space-y-5" data-testid="profile-form">
           <div>
-            <label htmlFor="profile-pseudo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("login.pseudo")}</label>
+            <label htmlFor="profile-pseudo" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("login.pseudo")}</label>
             <input id="profile-pseudo" value={pseudo} onChange={(e) => setPseudo(e.target.value)} required autoComplete="username" className={inputCls} data-testid="profile-pseudo-input" />
           </div>
           <div>
-            <label htmlFor="profile-photo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("profile.photo")}</label>
+            <label htmlFor="profile-photo" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("profile.photo")}</label>
             <ImageUpload value={photo} onChange={setPhoto} folder="avatars" maxWidth={800} testId="profile-photo-upload" />
             {photo && (
-              <img src={photo} alt="" className="mt-3 h-20 w-20 object-cover border border-[#D8CA82]/40" data-testid="profile-photo-preview" />
+              <img src={photo} alt="" className="mt-3 h-20 w-20 object-cover border border-primary/40" data-testid="profile-photo-preview" />
             )}
           </div>
           <button type="submit" disabled={busy} data-testid="profile-save-btn"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none">
+            className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 disabled:opacity-50 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow motion-reduce:transition-none">
             {t("notes.save")}
           </button>
         </form>
 
         <PlayerCardEditor />
 
-        <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-4" data-testid="profile-export-panel">
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Exporter mes données</p>
-          <p className="text-xs text-[#c8c8c8] leading-relaxed">Téléchargez une archive JSON complète générée côté serveur : profil, tickets support, candidatures, notes, messages, tableaux, disponibilités, absences, notifications et journaux liés à votre compte.</p>
+        <div className="panel clip-blade-sm p-6 space-y-4" data-testid="profile-export-panel">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">Exporter mes données</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Téléchargez une archive JSON complète générée côté serveur : profil, tickets support, candidatures, notes, messages, tableaux, disponibilités, absences, notifications et journaux liés à votre compte.</p>
           <button type="button" onClick={exportAccountData} disabled={exporting} data-testid="profile-export-data-btn"
-            className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 inline-flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors disabled:opacity-50">
+            className="border border-border/40 text-muted-foreground text-xs uppercase tracking-widest px-5 py-3 inline-flex items-center gap-2 hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
             <Download size={14} aria-hidden="true" /> Exporter en JSON
           </button>
         </div>
 
         {isPassword && (
-          <div className="border border-white/10 bg-[#1A1A1A] p-6 space-y-5" data-testid="profile-password-panel">
-            <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">Changer mon mot de passe</p>
+          <div className="panel clip-blade-sm p-6 space-y-5" data-testid="profile-password-panel">
+            <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">Changer mon mot de passe</p>
             <form onSubmit={changePassword} className="space-y-4" data-testid="profile-password-form">
               <div>
-                <label htmlFor="profile-current-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Ancien mot de passe</label>
+                <label htmlFor="profile-current-password" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">Ancien mot de passe</label>
                 <input id="profile-current-password" type="password" value={passwordForm.current} onChange={(e) => setPasswordForm((f) => ({ ...f, current: e.target.value }))} required autoComplete="current-password" className={inputCls} data-testid="profile-current-password" />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="profile-new-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Nouveau mot de passe</label>
+                  <label htmlFor="profile-new-password" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">Nouveau mot de passe</label>
                   <input id="profile-new-password" type="password" value={passwordForm.next} onChange={(e) => setPasswordForm((f) => ({ ...f, next: e.target.value }))} required minLength={PASSWORD_MIN_LENGTH} autoComplete="new-password" aria-describedby="profile-password-strength" className={inputCls} data-testid="profile-new-password" />
                   <PasswordStrengthMeter password={passwordForm.next} id="profile-password-strength" testId="profile-password-strength" />
                 </div>
                 <div>
-                  <label htmlFor="profile-confirm-password" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Confirmer</label>
+                  <label htmlFor="profile-confirm-password" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">Confirmer</label>
                   <input id="profile-confirm-password" type="password" value={passwordForm.confirm} onChange={(e) => setPasswordForm((f) => ({ ...f, confirm: e.target.value }))} required minLength={PASSWORD_MIN_LENGTH} autoComplete="new-password" className={inputCls} data-testid="profile-confirm-password" />
                 </div>
               </div>
               <div className="flex gap-3 flex-wrap">
-                <button type="submit" disabled={passwordBusy} data-testid="profile-change-password-btn" className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50 inline-flex items-center gap-2">
+                <button type="submit" disabled={passwordBusy} data-testid="profile-change-password-btn" className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50 inline-flex items-center gap-2">
                   <KeyRound size={14} aria-hidden="true" /> Mettre à jour
                 </button>
                 <button type="button" onClick={resetPassword} data-testid="profile-reset-password-btn"
-                  className="border border-white/25 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                  className="border border-border/40 text-muted-foreground text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:border-primary hover:text-primary transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
                   Envoyer un lien de réinitialisation
                 </button>
               </div>
@@ -252,27 +252,27 @@ export default function Profile() {
         {deleting && (
           <div className="border border-orange-300/40 bg-orange-300/5 p-6" data-testid="profile-deletion-pending">
             <p className="font-display text-sm uppercase tracking-[0.3em] text-orange-200 mb-2">Suppression en cours</p>
-            <p className="text-xs text-[#c8c8c8]">Votre compte Auth est en cours de suppression. Une Cloud Function purge ensuite les tickets, candidatures, notes, notifications et messages associés.</p>
+            <p className="text-xs text-muted-foreground">Votre compte Auth est en cours de suppression. Une Cloud Function purge ensuite les tickets, candidatures, notes, notifications et messages associés.</p>
           </div>
         )}
 
-        <div className="border border-red-300/40 bg-[#1A1A1A] p-6">
+        <div className="border border-red-300/40 bg-card p-6">
           <p className="font-display text-sm uppercase tracking-[0.3em] text-red-300 mb-4">{t("profile.danger")}</p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button data-testid="profile-delete-btn"
-                className="border border-red-300/50 text-red-300 text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:bg-red-300/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]">
+                className="border border-red-300/50 text-red-300 text-xs uppercase tracking-widest px-5 py-3 flex items-center gap-2 hover:bg-red-300/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
                 <Trash2 size={14} aria-hidden="true" /> {t("profile.delete")}
               </button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-[#1A1A1A] border border-white/10 rounded-none" data-testid="profile-delete-dialog">
+            <AlertDialogContent className="bg-card border border-border/25 rounded-none" data-testid="profile-delete-dialog">
               <AlertDialogHeader>
-                <AlertDialogTitle className="font-display text-[#f7f7f7]">{t("profile.deleteTitle")}</AlertDialogTitle>
-                <AlertDialogDescription className="text-[#f7f7f7]/60">{t("profile.deleteText")}</AlertDialogDescription>
+                <AlertDialogTitle className="font-display text-foreground">{t("profile.deleteTitle")}</AlertDialogTitle>
+                <AlertDialogDescription className="text-foreground/60">{t("profile.deleteText")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-none bg-transparent border-white/25 text-[#f7f7f7]" data-testid="profile-delete-cancel">{t("common.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={deleteAccount} className="rounded-none bg-red-500 hover:bg-red-600 text-white" data-testid="profile-delete-confirm">
+                <AlertDialogCancel className="rounded-none bg-transparent border-border/40 text-foreground" data-testid="profile-delete-cancel">{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteAccount} className="rounded-none bg-red-500 hover:bg-red-600 text-foreground" data-testid="profile-delete-confirm">
                   {t("common.delete")}
                 </AlertDialogAction>
               </AlertDialogFooter>

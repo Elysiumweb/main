@@ -33,7 +33,7 @@ const errMsg = (code) => {
 };
 
 const inputCls =
-  "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+  "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 
 export default function Login() {
   const { t } = useLang();
@@ -131,15 +131,15 @@ export default function Login() {
   const passwordHintId = "login-password-hint";
 
   return (
-    <div className="min-h-[80vh] bg-[#111111] relative flex items-center justify-center px-4 py-16 overflow-hidden">
+    <div className="min-h-[80vh] bg-transparent relative flex items-center justify-center px-4 py-16 overflow-hidden">
       <div className="pattern-overlay" />
       <div
-        className="w-full max-w-md border border-white/10 bg-[#1A1A1A] p-8 relative anim-fade-up motion-reduce:animate-none"
+        className="w-full max-w-md panel clip-blade shadow-gold p-8 relative anim-fade-up motion-reduce:animate-none"
         data-testid="login-card"
       >
         <img src="/brand/logo-icon-gold.png" alt="Logo Elysium" className="h-14 mx-auto mb-6 gold-glow" />
         <h1
-          className="font-display font-bold text-2xl text-[#f7f7f7] text-center uppercase tracking-widest mb-8"
+          className="font-display text-2xl font-black uppercase tracking-widest text-center mb-8"
           data-testid="login-title"
         >
           {mode === "login" ? t("login.title") : t("login.register")}
@@ -160,7 +160,7 @@ export default function Login() {
             <div>
               <label
                 htmlFor={pseudoId}
-                className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2"
+                className="font-label text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground block mb-2"
               >
                 {t("login.pseudo")}
               </label>
@@ -179,7 +179,7 @@ export default function Login() {
           <div>
             <label
               htmlFor={emailId}
-              className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2"
+              className="font-label text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground block mb-2"
             >
               {t("login.email")}
             </label>
@@ -198,7 +198,7 @@ export default function Login() {
           <div>
             <label
               htmlFor={passwordId}
-              className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2"
+              className="font-label text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground block mb-2"
             >
               {t("login.password")}
             </label>
@@ -226,15 +226,15 @@ export default function Login() {
             type="submit"
             disabled={busy}
             data-testid="login-submit-btn"
-            className="w-full bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm py-3 disabled:opacity-50 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow motion-reduce:transition-none"
+            className="w-full bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm py-3 disabled:opacity-50 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow motion-reduce:transition-none"
           >
             {mode === "login" ? t("login.submit") : t("login.submitRegister")}
           </button>
         </form>
         <div className="flex items-center gap-4 my-6" role="separator" aria-orientation="horizontal">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-xs uppercase tracking-widest text-[#c8c8c8]">{t("login.or")}</span>
-          <div className="flex-1 h-px bg-white/10" />
+          <div className="flex-1 gold-line opacity-50" />
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">{t("login.or")}</span>
+          <div className="flex-1 gold-line opacity-50" />
         </div>
 
         <button
@@ -242,7 +242,7 @@ export default function Login() {
           disabled={busy}
           data-testid="login-google-btn"
           aria-label={t("login.google")}
-          className="w-full border border-white/25 text-[#f7f7f7] text-sm py-3 flex items-center justify-center gap-3 hover:border-[#D8CA82] transition-colors motion-reduce:transition-none"
+          className="clip-blade-sm w-full border border-border/40 text-foreground text-sm py-3 flex items-center justify-center gap-3 hover:border-primary hover:text-primary transition-colors motion-reduce:transition-none"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -257,14 +257,14 @@ export default function Login() {
           <button
             onClick={() => setMode(mode === "login" ? "register" : "login")}
             data-testid="login-toggle-mode-btn"
-            className="text-[#D8CA82] hover:underline uppercase tracking-wider focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+            className="text-primary hover:underline uppercase tracking-wider focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
             {mode === "login" ? t("login.noAccount") : t("login.haveAccount")}
           </button>
           {mode === "login" && (
             <button
               onClick={forgot}
-              className="text-[#c8c8c8] hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+              className="text-muted-foreground hover:text-primary transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               data-testid="login-forgot-btn"
             >
               {t("login.forgot")}

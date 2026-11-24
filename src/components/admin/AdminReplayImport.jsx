@@ -16,7 +16,7 @@ import {
   unlinkPlayersOutsideSide,
 } from "../../lib/rocketLeagueReplay";
 
-const selectCls = "bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] max-w-[160px]";
+const selectCls = "bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary max-w-[160px]";
 const SIDE_STYLES = {
   blue: "border-sky-400 text-sky-200 bg-sky-500/10",
   orange: "border-orange-400 text-orange-200 bg-orange-500/10",
@@ -24,7 +24,7 @@ const SIDE_STYLES = {
 const RESULT_STYLES = {
   W: "text-emerald-300 border-emerald-300/50",
   L: "text-red-300 border-red-300/50",
-  D: "text-[#c8c8c8] border-white/20",
+  D: "text-muted-foreground border-border/35",
 };
 const RESULT_LABELS = { W: "Victoire", L: "Défaite", D: "Égalité" };
 
@@ -84,8 +84,8 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
     <div className="space-y-5" data-testid="admin-replay-import">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#D8CA82]">Replays Rocket League</p>
-          <p className="text-xs text-[#c8c8c8] mt-1">
+          <p className="text-xs uppercase tracking-[0.2em] text-primary">Replays Rocket League</p>
+          <p className="text-xs text-muted-foreground mt-1">
             Un fichier par game. Le score, les manches et les stats de nos joueurs sont calculés depuis les replays
             et remplacent les valeurs saisies dans le formulaire.
           </p>
@@ -103,7 +103,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2 flex items-center gap-2 hover:bg-[#D8CA82]/10"
+            className="border border-primary/50 text-primary font-display font-bold uppercase tracking-widest text-xs px-4 py-2 flex items-center gap-2 hover:bg-primary/10"
             data-testid="admin-replay-add-btn"
           >
             <FileUp size={14} /> Ajouter des .replay
@@ -122,11 +122,11 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
       </div>
 
       {games.length === 0 ? (
-        <p className="text-xs text-[#c8c8c8] italic" data-testid="admin-replay-empty">Aucun replay importé pour ce match.</p>
+        <p className="text-xs text-muted-foreground italic" data-testid="admin-replay-empty">Aucun replay importé pour ce match.</p>
       ) : (
         <>
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 mb-2">Couleur de notre équipe (pour tous les replays)</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-foreground/60 mb-2">Couleur de notre équipe (pour tous les replays)</p>
             <div className="flex gap-2" role="radiogroup" aria-label="Couleur de notre équipe">
               {["blue", "orange"].map((s) => (
                 <button
@@ -136,7 +136,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                   aria-checked={side === s}
                   onClick={() => chooseSide(s)}
                   data-testid={`admin-replay-side-${s}`}
-                  className={`flex-1 border px-3 py-2 text-xs uppercase tracking-widest transition-colors ${side === s ? SIDE_STYLES[s] : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}
+                  className={`flex-1 border px-3 py-2 text-xs uppercase tracking-widest transition-colors ${side === s ? SIDE_STYLES[s] : "border-border/30 text-foreground/50 hover:text-foreground"}`}
                 >
                   {REPLAY_SIDE_LABELS[s]}
                 </button>
@@ -150,11 +150,11 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
           </div>
 
           {series.ready && (
-            <div className="border border-[#D8CA82]/30 bg-[#111111] p-4" data-testid="admin-replay-series">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">Série · {sideLabel}</p>
-              <p className="font-display font-black text-3xl text-[#f7f7f7] mt-1">
-                <span className="text-[#D8CA82]" data-testid="admin-replay-score-us">{series.scoreUs}</span>
-                <span className="text-[#f7f7f7]/40 mx-2">–</span>
+            <div className="border border-primary/30 bg-background p-4" data-testid="admin-replay-series">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Série · {sideLabel}</p>
+              <p className="font-display font-black text-3xl text-foreground mt-1">
+                <span className="text-primary" data-testid="admin-replay-score-us">{series.scoreUs}</span>
+                <span className="text-foreground/40 mx-2">–</span>
                 <span data-testid="admin-replay-score-them">{series.scoreThem}</span>
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
@@ -164,9 +164,9 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                   </span>
                 ))}
               </div>
-              <p className="text-xs text-[#c8c8c8] mt-3" data-testid="admin-replay-series-mvp">
+              <p className="text-xs text-muted-foreground mt-3" data-testid="admin-replay-series-mvp">
                 {series.mvp
-                  ? <>MVP de la série : <span className="text-[#D8CA82] font-bold">{series.mvp.pseudo || series.mvp.name}</span> · {series.mvp.count}× MVP sur {series.games.length} game(s)</>
+                  ? <>MVP de la série : <span className="text-primary font-bold">{series.mvp.pseudo || series.mvp.name}</span> · {series.mvp.count}× MVP sur {series.games.length} game(s)</>
                   : "Aucun MVP identifiable dans ces replays (stats joueurs manquantes ou games nulles)."}
               </p>
             </div>
@@ -185,14 +185,14 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
 
           {side && players.length > 0 && (
             <div data-testid="admin-replay-link-section">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#D8CA82] mb-1">Liaison avec les joueurs du site</p>
-              <p className="text-xs text-[#c8c8c8] mb-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-primary mb-1">Liaison avec les joueurs du site</p>
+              <p className="text-xs text-muted-foreground mb-3">
                 Associez chaque joueur du replay à un joueur du site. Le lien s'applique à toutes les games.
               </p>
-              <div className="overflow-x-auto border border-white/15">
+              <div className="overflow-x-auto border border-border/30">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-white/10 text-left uppercase tracking-widest text-[10px] text-[#c8c8c8]">
+                    <tr className="border-b border-border/25 text-left uppercase tracking-widest text-[10px] text-muted-foreground">
                       <th className="px-2 py-2">Pseudo replay</th>
                       <th className="px-2 py-2 text-right">Games</th>
                       <th className="px-2 py-2 text-right">Buts</th>
@@ -206,15 +206,15 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                   </thead>
                   <tbody>
                     {players.map((p, index) => (
-                      <tr key={p.key} className="border-b border-white/5" data-testid={`admin-replay-player-${index}`}>
-                        <td className="px-2 py-2 text-[#f7f7f7] font-semibold">{p.name || "—"}</td>
-                        <td className="px-2 py-2 text-right text-[#c8c8c8]">{p.games}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]" data-testid={`admin-replay-player-goals-${index}`}>{p.goals}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.assists}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.saves}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.shots}</td>
-                        <td className="px-2 py-2 text-right text-[#f7f7f7]">{p.score}</td>
-                        <td className="px-2 py-2 text-right text-[#D8CA82]" data-testid={`admin-replay-player-mvp-${index}`}>{p.mvp > 0 ? `${p.mvp}×` : "—"}</td>
+                      <tr key={p.key} className="border-b border-border/20" data-testid={`admin-replay-player-${index}`}>
+                        <td className="px-2 py-2 text-foreground font-semibold">{p.name || "—"}</td>
+                        <td className="px-2 py-2 text-right text-muted-foreground">{p.games}</td>
+                        <td className="px-2 py-2 text-right text-foreground" data-testid={`admin-replay-player-goals-${index}`}>{p.goals}</td>
+                        <td className="px-2 py-2 text-right text-foreground">{p.assists}</td>
+                        <td className="px-2 py-2 text-right text-foreground">{p.saves}</td>
+                        <td className="px-2 py-2 text-right text-foreground">{p.shots}</td>
+                        <td className="px-2 py-2 text-right text-foreground">{p.score}</td>
+                        <td className="px-2 py-2 text-right text-primary" data-testid={`admin-replay-player-mvp-${index}`}>{p.mvp > 0 ? `${p.mvp}×` : "—"}</td>
                         <td className="px-2 py-2">
                           <select
                             value={p.playerId || ""}
@@ -238,7 +238,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
           )}
 
           <div className="space-y-3" data-testid="admin-replay-games">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#D8CA82]">Détail par game</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">Détail par game</p>
             {games.map((game, gi) => {
               const summary = series.games[gi];
               const label = `Game ${gi + 1}`;
@@ -246,15 +246,15 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
               // Le MVP est recalculé pour les replays enregistrés avant cette version.
               const gameMvp = summary?.mvp || replayGameMvp(game);
               return (
-                <details key={game.replayId} className="border border-white/15 bg-[#111111]" data-testid={`admin-replay-game-${gi + 1}`}>
-                  <summary className="flex flex-wrap items-center gap-3 px-3 py-2 cursor-pointer text-xs text-[#f7f7f7]">
-                    <span className="font-display uppercase tracking-widest text-[#D8CA82]">{label}</span>
-                    <span className="text-[#c8c8c8]">{game.map || "Carte inconnue"}</span>
-                    <span className="text-[#c8c8c8]">{game.date || "date inconnue"}</span>
-                    <span className="text-[#c8c8c8]">{formatReplayDuration(game.durationSeconds)}</span>
+                <details key={game.replayId} className="border border-border/30 bg-background" data-testid={`admin-replay-game-${gi + 1}`}>
+                  <summary className="flex flex-wrap items-center gap-3 px-3 py-2 cursor-pointer text-xs text-foreground">
+                    <span className="font-display uppercase tracking-widest text-primary">{label}</span>
+                    <span className="text-muted-foreground">{game.map || "Carte inconnue"}</span>
+                    <span className="text-muted-foreground">{game.date || "date inconnue"}</span>
+                    <span className="text-muted-foreground">{formatReplayDuration(game.durationSeconds)}</span>
                     <span className="font-semibold">
                       <span className={blueWon ? "text-sky-200" : ""}>Bleu {game.blueScore}</span>
-                      <span className="text-[#f7f7f7]/40 mx-1">–</span>
+                      <span className="text-foreground/40 mx-1">–</span>
                       <span className={!blueWon && game.orangeScore > game.blueScore ? "text-orange-200" : ""}>{game.orangeScore} Orange</span>
                     </span>
                     {summary && side && (
@@ -276,7 +276,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                     {game.hasStats ? (
                       <table className="w-full text-xs mt-2">
                         <thead>
-                          <tr className="border-b border-white/10 text-left uppercase tracking-widest text-[10px] text-[#c8c8c8]">
+                          <tr className="border-b border-border/25 text-left uppercase tracking-widest text-[10px] text-muted-foreground">
                             <th className="py-2 pr-2">Équipe</th>
                             <th className="py-2 pr-2">Joueur</th>
                             <th className="py-2 pr-2 text-right">Buts</th>
@@ -292,12 +292,12 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                             const isOurs = side && p.side === side;
                             const isMvp = p.mvp === true || (!!gameMvp && gameMvp.key === replayPlayerKey(p));
                             return (
-                              <tr key={`${p.name}-${pi}`} className={`border-b border-white/5 ${isOurs ? "text-[#f7f7f7]" : "text-[#f7f7f7]/60"}`}>
+                              <tr key={`${p.name}-${pi}`} className={`border-b border-border/20 ${isOurs ? "text-foreground" : "text-foreground/60"}`}>
                                 <td className="py-1.5 pr-2">
                                   <span className={p.side === "blue" ? "text-sky-200" : "text-orange-200"}>
                                     {p.side === "blue" ? "Bleu" : "Orange"}
                                   </span>
-                                  {isOurs && <span className="ml-1 text-[#D8CA82]">· nous</span>}
+                                  {isOurs && <span className="ml-1 text-primary">· nous</span>}
                                 </td>
                                 <td className={`py-1.5 pr-2 ${isOurs ? "font-semibold" : ""}`}>
                                   {p.name || "—"}{p.bot ? " (bot)" : ""}
@@ -307,7 +307,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                                 <td className="py-1.5 pr-2 text-right">{p.saves}</td>
                                 <td className="py-1.5 pr-2 text-right">{p.shots}</td>
                                 <td className="py-1.5 pr-2 text-right">{p.score}</td>
-                                <td className="py-1.5 text-right text-[#D8CA82]" data-testid={`admin-replay-game-mvp-${gi + 1}-${pi}`}>
+                                <td className="py-1.5 text-right text-primary" data-testid={`admin-replay-game-mvp-${gi + 1}-${pi}`}>
                                   {isMvp ? <Award size={12} className="inline" aria-label="MVP" /> : ""}
                                 </td>
                               </tr>
@@ -316,7 +316,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
                         </tbody>
                       </table>
                     ) : (
-                      <p className="text-xs text-[#c8c8c8] italic mt-2">Pas de statistiques joueurs dans ce replay.</p>
+                      <p className="text-xs text-muted-foreground italic mt-2">Pas de statistiques joueurs dans ce replay.</p>
                     )}
                   </div>
                 </details>
@@ -324,7 +324,7 @@ export function AdminReplayImport({ games = [], side = "", members = [], onChang
             })}
           </div>
           {side && players.length === 0 && (
-            <p className="text-xs text-[#c8c8c8]" data-testid="admin-replay-no-players">Aucun joueur de notre équipe trouvé dans les replays.</p>
+            <p className="text-xs text-muted-foreground" data-testid="admin-replay-no-players">Aucun joueur de notre équipe trouvé dans les replays.</p>
           )}
         </>
       )}

@@ -9,10 +9,10 @@ import { useAdminT } from "../lib/adminI18n";
 import { ANALYTICS_EVENTS, trackEvent } from "../lib/analytics";
 
 const LEVELS = {
-  info: { cls: "border-[#D8CA82]/40 bg-[#D8CA82]/10 text-[#f7f7f7]", Icon: Info, accent: "text-[#D8CA82]" },
-  success: { cls: "border-emerald-400/40 bg-emerald-400/10 text-[#f7f7f7]", Icon: CheckCircle2, accent: "text-emerald-300" },
-  warning: { cls: "border-amber-400/40 bg-amber-400/10 text-[#f7f7f7]", Icon: AlertTriangle, accent: "text-amber-300" },
-  critical: { cls: "border-red-400/50 bg-red-400/10 text-[#f7f7f7]", Icon: Megaphone, accent: "text-red-300" },
+  info: { cls: "border-primary/40 bg-primary/10 text-foreground", Icon: Info, accent: "text-primary" },
+  success: { cls: "border-emerald-400/40 bg-emerald-400/10 text-foreground", Icon: CheckCircle2, accent: "text-emerald-300" },
+  warning: { cls: "border-amber-400/40 bg-amber-400/10 text-foreground", Icon: AlertTriangle, accent: "text-amber-300" },
+  critical: { cls: "border-red-400/50 bg-red-400/10 text-foreground", Icon: Megaphone, accent: "text-red-300" },
 };
 
 const DISMISS_KEY = "elysium_announcement_dismissed";
@@ -89,21 +89,21 @@ export const AnnouncementBanner = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 flex items-start sm:items-center gap-3">
         <Icon size={16} className={`${level.accent} shrink-0 mt-0.5 sm:mt-0`} aria-hidden="true" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[#f7f7f7]">
-            <span className="font-display uppercase tracking-widest text-xs text-[#D8CA82] mr-2">{candidate.title}</span>
-            <span className="text-[#c8c8c8]">{candidate.body}</span>
+          <p className="text-sm text-foreground">
+            <span className="font-display uppercase tracking-widest text-xs text-primary mr-2">{candidate.title}</span>
+            <span className="text-muted-foreground">{candidate.body}</span>
           </p>
         </div>
         {candidate.link && (
           <Link to={candidate.link} onClick={() => trackEvent(ANALYTICS_EVENTS.ANNOUNCEMENT_CLICK, { announcementId: candidate.id })}
             data-testid="announcement-banner-link"
-            className="text-xs font-display font-bold uppercase tracking-widest text-[#D8CA82] hover:underline shrink-0">
+            className="text-xs font-display font-bold uppercase tracking-widest text-primary hover:underline shrink-0">
             {lang === "en" ? "Learn more" : "En savoir plus"} →
           </Link>
         )}
         <button type="button" onClick={close} data-testid="announcement-banner-close"
           aria-label={tx("ann.banner.dismiss")} title={tx("ann.banner.dismiss")}
-          className="text-[#c8c8c8] hover:text-[#f7f7f7] shrink-0">
+          className="text-muted-foreground hover:text-foreground shrink-0">
           <X size={16} />
         </button>
       </div>

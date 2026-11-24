@@ -12,7 +12,7 @@ import { logAdminAction } from "../../lib/notify";
 import { ImageUpload } from "../ImageUpload";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY = { title: "", category: "announcement", coverUrl: "", excerpt: "", content: "", featured: false };
 
 export const AdminArticles = () => {
@@ -96,8 +96,8 @@ export const AdminArticles = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10">
-      <div className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-articles-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+      <div className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6" data-testid="admin-articles-form">
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">
           {editId ? t("admin.article.edit") : t("admin.article.new")}
         </p>
         <input value={form.title} onChange={set("title")} placeholder={t("admin.article.title")} className={inputCls} data-testid="admin-article-title" />
@@ -105,19 +105,19 @@ export const AdminArticles = () => {
           <select value={form.category} onChange={set("category")} className={inputCls} data-testid="admin-article-category">
             {CATEGORIES.map((c) => <option key={c} value={c}>{t(`news.cat.${c}`)}</option>)}
           </select>
-          <label className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer border border-white/15 px-3 py-2.5 bg-[#111111]" title={t("admin.article.featuredHint")}>
+          <label className="flex items-center gap-2 text-xs text-foreground/70 cursor-pointer border border-border/30 px-3 py-2.5 bg-background" title={t("admin.article.featuredHint")}>
             <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
-              className="accent-[#D8CA82] h-4 w-4" data-testid="admin-article-featured" />
-            <Star size={12} className={form.featured ? "text-[#D8CA82] fill-[#D8CA82]" : "text-[#c8c8c8]"} aria-hidden="true" />
+              className="accent-primary h-4 w-4" data-testid="admin-article-featured" />
+            <Star size={12} className={form.featured ? "text-primary fill-primary" : "text-muted-foreground"} aria-hidden="true" />
             {t("admin.article.featured")}
           </label>
         </div>
         <div>
-          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.cover")}</label>
+          <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.article.cover")}</label>
           <ImageUpload value={form.coverUrl} onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))} folder="articles" maxWidth={1600} testId="admin-article-cover-upload" />
         </div>
         <div>
-          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.article.excerpt")}</label>
+          <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.article.excerpt")}</label>
           <textarea
             value={form.excerpt}
             onChange={set("excerpt")}
@@ -127,48 +127,48 @@ export const AdminArticles = () => {
             className={inputCls}
             data-testid="admin-article-excerpt"
           />
-          <p className="text-xs text-[#f7f7f7]/35 mt-1">{form.excerpt.length}/220</p>
+          <p className="text-xs text-foreground/35 mt-1">{form.excerpt.length}/220</p>
         </div>
 
         {/* Onglets éditeur / aperçu markdown */}
-        <div className="flex items-center gap-1 border-b border-white/10 pb-2" role="tablist" aria-label={t("admin.article.title")}>
+        <div className="flex items-center gap-1 border-b border-border/25 pb-2" role="tablist" aria-label={t("admin.article.title")}>
           <button onClick={() => setEditorTab("write")} data-testid="admin-article-tab-write" role="tab" aria-selected={editorTab === "write"}
-            className={`text-xs uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            className={`text-xs uppercase tracking-widest px-3 py-1.5 ${editorTab === "write" ? "text-primary border-b-2 border-primary" : "text-foreground/50 hover:text-foreground"}`}>
             {t("admin.article.write")}
           </button>
           <button onClick={() => setEditorTab("preview")} data-testid="admin-article-tab-preview" role="tab" aria-selected={editorTab === "preview"}
-            className={`text-xs uppercase tracking-widest px-3 py-1.5 ${editorTab === "preview" ? "text-[#D8CA82] border-b-2 border-[#D8CA82]" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            className={`text-xs uppercase tracking-widest px-3 py-1.5 ${editorTab === "preview" ? "text-primary border-b-2 border-primary" : "text-foreground/50 hover:text-foreground"}`}>
             {t("admin.article.preview")}
           </button>
-          <span className="ml-auto text-xs text-[#c8c8c8]">{t("admin.article.markdownHint")}</span>
+          <span className="ml-auto text-xs text-muted-foreground">{t("admin.article.markdownHint")}</span>
         </div>
         {editorTab === "write" ? (
           <textarea value={form.content} onChange={set("content")} placeholder={t("admin.article.contentPlaceholder")} rows={12} className={inputCls} data-testid="admin-article-content" />
         ) : (
-          <div className="border border-white/10 bg-[#141414] p-4 max-h-96 overflow-y-auto" data-testid="admin-article-preview">
+          <div className="panel clip-blade-sm p-4 max-h-96 overflow-y-auto" data-testid="admin-article-preview">
             <Markdown source={form.content || `*${t("admin.article.previewEmpty")}*`} className="text-sm" />
           </div>
         )}
 
         <div className="flex gap-3 flex-wrap">
           <button onClick={() => save("draft")} data-testid="admin-article-draft-btn"
-            className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-5 py-3 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+            className="border border-border/40 text-foreground/70 text-xs uppercase tracking-widest px-5 py-3 hover:border-primary hover:text-primary transition-colors">
             {t("notes.draft")}
           </button>
           <button onClick={() => save("published")} data-testid="admin-article-publish-btn"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-3 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+            className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-6 py-3 flex items-center gap-2 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
             <Send size={13} /> {t("admin.publish")}
           </button>
           {editId && (
             <button onClick={() => { setEditId(null); setForm(EMPTY); }} data-testid="admin-article-cancel"
-              className="text-[#f7f7f7]/50 text-xs uppercase tracking-widest px-3">{t("common.cancel")}</button>
+              className="text-foreground/50 text-xs uppercase tracking-widest px-3">{t("common.cancel")}</button>
           )}
         </div>
       </div>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-articles-list">
-        {articles.length === 0 && <p className="text-[#c8c8c8]">{t("news.empty")}</p>}
+        {articles.length === 0 && <p className="text-muted-foreground">{t("news.empty")}</p>}
         {articles.map((a) => (
-          <div key={a.id} className="flex items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3">
+          <div key={a.id} className="flex items-center gap-3 panel clip-blade-sm px-4 py-3">
             <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_BADGE[a.status] || ""}`}>
               {a.status === "published" ? t("admin.published") : a.status === "deleted" ? t("admin.deleted") : t("notes.draft")}
             </span>
@@ -179,20 +179,20 @@ export const AdminArticles = () => {
               aria-label={t("admin.article.featured")}
               aria-pressed={!!a.featured}
               data-testid={`admin-article-featured-${a.id}`}
-              className={`shrink-0 transition-colors ${a.featured ? "text-[#D8CA82]" : "text-[#c8c8c8] hover:text-[#f7f7f7]/60"} disabled:opacity-30 disabled:cursor-not-allowed`}
+              className={`shrink-0 transition-colors ${a.featured ? "text-primary" : "text-muted-foreground hover:text-foreground/60"} disabled:opacity-30 disabled:cursor-not-allowed`}
             >
-              <Star size={15} className={a.featured ? "fill-[#D8CA82]" : ""} aria-hidden="true" />
+              <Star size={15} className={a.featured ? "fill-primary" : ""} aria-hidden="true" />
             </button>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#f7f7f7] truncate">{a.title}</p>
-              <p className="text-xs text-[#c8c8c8]">{t(`news.cat.${a.category}`)}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{a.title}</p>
+              <p className="text-xs text-muted-foreground">{t(`news.cat.${a.category}`)}</p>
             </div>
-            <Link to={`/actus/${a.id}`} target="_blank" title={t("admin.article.previewLink")} aria-label={t("admin.article.previewLink")} className="text-[#f7f7f7]/50 hover:text-[#D8CA82]" data-testid={`admin-article-preview-${a.id}`}>
+            <Link to={`/actus/${a.id}`} target="_blank" title={t("admin.article.previewLink")} aria-label={t("admin.article.previewLink")} className="text-foreground/50 hover:text-primary" data-testid={`admin-article-preview-${a.id}`}>
               <Eye size={15} />
             </Link>
             {a.status !== "deleted" ? (
               <>
-                <button onClick={() => edit(a)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${a.title}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-article-edit-${a.id}`}><Pencil size={15} /></button>
+                <button onClick={() => edit(a)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${a.title}`} className="text-primary/70 hover:text-primary" data-testid={`admin-article-edit-${a.id}`}><Pencil size={15} /></button>
                 {a.status === "published" ? (
                   <button onClick={() => setStatus(a.id, "draft")} title={t("admin.unpublish")} aria-label={`${t("admin.unpublish")} ${a.title}`} className="text-orange-300/70 hover:text-orange-300 text-xs uppercase tracking-wider" data-testid={`admin-article-unpublish-${a.id}`}>{t("admin.unpublish")}</button>
                 ) : (

@@ -186,16 +186,16 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
   return (
     <div className="flex flex-col gap-3" data-testid={testId}>
       <div className="flex items-center flex-wrap gap-3">
-        <div className="flex items-center gap-1.5 text-[#c8c8c8]">
-          <Clock size={13} className="text-[#D8CA82]" aria-hidden="true" />
-          <span className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50 mr-1">{t("countdown.before")}</span>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Clock size={13} className="text-primary" aria-hidden="true" />
+          <span className="text-xs uppercase tracking-[0.25em] text-foreground/50 mr-1">{t("countdown.before")}</span>
           {parts.map((p, i) => (
             <span key={p.label} className="flex items-center gap-1.5">
-              <span className="font-display font-black text-lg text-[#f7f7f7] min-w-[2ch] text-center tabular-nums" title={p.label}>
+              <span className="font-display font-black text-lg text-foreground min-w-[2ch] text-center tabular-nums" title={p.label}>
                 {String(p.value).padStart(2, "0")}
               </span>
-              <span className="text-xs uppercase tracking-widest text-[#c8c8c8]">{p.label}</span>
-              {i < parts.length - 1 && <span className="text-[#c8c8c8]">:</span>}
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">{p.label}</span>
+              {i < parts.length - 1 && <span className="text-muted-foreground">:</span>}
             </span>
           ))}
         </div>
@@ -205,34 +205,34 @@ export const MatchCountdown = ({ match, testId = "match-countdown" }) => {
           aria-pressed={reminded}
           className={`text-xs uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 transition-colors ${
             reminded
-              ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10"
-              : "border-white/20 text-[#f7f7f7]/60 hover:border-[#D8CA82] hover:text-[#D8CA82]"
+              ? "border-primary text-primary bg-primary/10"
+              : "border-border/35 text-foreground/60 hover:border-primary hover:text-primary"
           }`}
         >
           {reminded ? <BellRing size={11} aria-hidden="true" /> : <Bell size={11} aria-hidden="true" />}
           {reminded ? t("reminder.active") : t("reminder.set")}
         </button>
         {!user && pushSupported && (
-          <button onClick={handleAnonymousPush} data-testid={`${testId}-push-anon`} className={`text-xs uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 ${pushEnabled ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#c8c8c8] hover:text-[#D8CA82]"}`}>
+          <button onClick={handleAnonymousPush} data-testid={`${testId}-push-anon`} className={`text-xs uppercase tracking-widest border px-2.5 py-1.5 flex items-center gap-1.5 ${pushEnabled ? "border-primary text-primary bg-primary/10" : "border-border/30 text-muted-foreground hover:text-primary"}`}>
             <Smartphone size={11}/> Push anonyme
           </button>
         )}
       </div>
 
       {showEmail && !user && (
-        <form onSubmit={handleEmailSubscribe} className="flex flex-wrap items-center gap-2 border border-[#D8CA82]/20 bg-[#D8CA82]/5 px-3 py-2" data-testid={`${testId}-email-form`}>
-          <Mail size={12} className="text-[#D8CA82]"/>
-          <span className="text-xs text-[#D8CA82]">Recevoir l'alerte par email (visiteur) :</span>
-          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="votre@email.fr" required className="bg-[#111111] border border-white/20 px-2 py-1 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" data-testid={`${testId}-email-input`} />
-          <button type="submit" className="bg-[#D8CA82] text-[#111111] text-xs uppercase tracking-widest px-3 py-1 font-bold">Activer</button>
-          <button type="button" onClick={()=> setShowEmail(false)} className="text-xs text-[#c8c8c8] hover:text-[#f7f7f7]">Fermer</button>
+        <form onSubmit={handleEmailSubscribe} className="flex flex-wrap items-center gap-2 border border-primary/20 bg-primary/5 px-3 py-2" data-testid={`${testId}-email-form`}>
+          <Mail size={12} className="text-primary"/>
+          <span className="text-xs text-primary">Recevoir l'alerte par email (visiteur) :</span>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="votre@email.fr" required className="bg-background border border-border/35 px-2 py-1 text-xs text-foreground focus:outline-none focus:border-primary" data-testid={`${testId}-email-input`} />
+          <button type="submit" className="bg-gold text-primary-foreground text-xs uppercase tracking-widest px-3 py-1 font-bold">Activer</button>
+          <button type="button" onClick={()=> setShowEmail(false)} className="text-xs text-muted-foreground hover:text-foreground">Fermer</button>
         </form>
       )}
       {hasEmailAlert && (
-        <p className="text-xs text-[#D8CA82]/80">✓ Alerte email active pour ce match : {emailAlerts[match.id]?.email || "enregistrée"}</p>
+        <p className="text-xs text-primary/80">✓ Alerte email active pour ce match : {emailAlerts[match.id]?.email || "enregistrée"}</p>
       )}
       {!user && reminded && !hasEmailAlert && (
-        <p className="text-xs text-[#c8c8c8]">{t("reminder.loginHint")} Vous pouvez aussi ajouter une alerte par email ci-dessus (infrastructure newsletter existante) ou push anonyme.</p>
+        <p className="text-xs text-muted-foreground">{t("reminder.loginHint")} Vous pouvez aussi ajouter une alerte par email ci-dessus (infrastructure newsletter existante) ou push anonyme.</p>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../lib/i18n";
 import { logAdminAction } from "../../lib/notify";
 
-const inputCls = "bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "bg-background border border-border/35 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary";
 
 export const AdminPartnerRequests = () => {
   const { user, displayName } = useAuth();
@@ -17,7 +17,7 @@ export const AdminPartnerRequests = () => {
 
   const STATUSES = [
     { id: "new", label: t("admin.partnerRequests.statusNew"), cls: "text-sky-300 border-sky-300/40" },
-    { id: "contacted", label: t("admin.partnerRequests.statusContacted"), cls: "text-[#D8CA82] border-[#D8CA82]/40" },
+    { id: "contacted", label: t("admin.partnerRequests.statusContacted"), cls: "text-primary border-primary/40" },
     { id: "won", label: t("admin.partnerRequests.statusWon"), cls: "text-emerald-300 border-emerald-300/40" },
   ];
 
@@ -64,10 +64,10 @@ export const AdminPartnerRequests = () => {
       <div className="flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Handshake className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.partnerRequests.title")}</h2>
+            <Handshake className="text-primary" size={18} />
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-foreground">{t("admin.partnerRequests.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50">{t("admin.partnerRequests.sub")}</p>
+          <p className="text-sm text-foreground/50">{t("admin.partnerRequests.sub")}</p>
         </div>
         <input
           value={query}
@@ -79,23 +79,23 @@ export const AdminPartnerRequests = () => {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-[#c8c8c8] border border-white/10 bg-[#1A1A1A] p-6">{t("admin.partnerRequests.empty")}</p>
+        <p className="text-muted-foreground panel clip-blade-sm p-6">{t("admin.partnerRequests.empty")}</p>
       ) : (
         <div className="grid gap-4">
           {filtered.map((r) => {
             const subject = encodeURIComponent(`Partenariat Elysium × ${r.company || "votre entreprise"}`);
             const body = encodeURIComponent(`Bonjour ${r.name || ""},\n\nMerci pour votre demande de partenariat avec Elysium.\n\n`);
             return (
-              <article key={r.id} className="border border-white/10 bg-[#1A1A1A] p-5" data-testid={`admin-partner-request-${r.id}`}>
+              <article key={r.id} className="panel clip-blade-sm p-5" data-testid={`admin-partner-request-${r.id}`}>
                 <div className="flex flex-col lg:flex-row lg:items-start gap-4 justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${statusCls(r.status)}`}>{statusLabel(r.status)}</span>
-                      <span className="text-xs text-[#f7f7f7]/35">{fmtReqDate(r.createdAt)}</span>
+                      <span className="text-xs text-foreground/35">{fmtReqDate(r.createdAt)}</span>
                     </div>
-                    <h3 className="font-display font-bold text-[#f7f7f7] mt-3 text-lg truncate">{r.company || "Entreprise"}</h3>
-                    <p className="text-sm text-[#f7f7f7]/55 mt-1">
-                      {r.name || "Contact"} · <a className="text-[#D8CA82] hover:underline" href={`mailto:${r.email}`}>{r.email}</a>
+                    <h3 className="font-display font-bold text-foreground mt-3 text-lg truncate">{r.company || "Entreprise"}</h3>
+                    <p className="text-sm text-foreground/55 mt-1">
+                      {r.name || "Contact"} · <a className="text-primary hover:underline" href={`mailto:${r.email}`}>{r.email}</a>
                       {r.budget ? ` · Budget : ${r.budget}` : ""}
                     </p>
                   </div>
@@ -111,14 +111,14 @@ export const AdminPartnerRequests = () => {
                     <a
                       href={`mailto:${r.email}?subject=${subject}&body=${body}`}
                       onClick={() => r.status !== "contacted" && setStatus(r, "contacted")}
-                      className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.35)]"
+                      className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.35)]"
                       data-testid={`admin-partner-reply-${r.id}`}
                     >
                       <Mail size={14} /> {t("admin.partnerRequests.replyEmail")}
                     </a>
                   </div>
                 </div>
-                {r.message && <p className="mt-4 text-sm text-[#f7f7f7]/70 whitespace-pre-wrap border-t border-white/10 pt-4">{r.message}</p>}
+                {r.message && <p className="mt-4 text-sm text-foreground/70 whitespace-pre-wrap border-t border-border/25 pt-4">{r.message}</p>}
               </article>
             );
           })}

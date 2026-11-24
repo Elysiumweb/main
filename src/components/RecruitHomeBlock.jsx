@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { TiltCard } from "./site/TiltCard";
 import { collection, onSnapshot } from "firebase/firestore";
 import { ArrowRight, Briefcase, Sparkles } from "lucide-react";
 import { db } from "../lib/firebase";
@@ -57,49 +58,49 @@ export const RecruitHomeBlock = () => {
   if (!loaded || positions.length === 0) return null;
 
   return (
-    <section className="border-y border-white/10 bg-[#141414]" data-testid="home-recruit" aria-labelledby="home-recruit-h2">
+    <section className="border-y border-border/25 bg-card/40" data-testid="home-recruit" aria-labelledby="home-recruit-h2">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         <div className="flex items-center gap-4 mb-4 flex-wrap">
-          <Briefcase className="text-[#D8CA82]" size={20} aria-hidden="true" />
-          <h2 id="home-recruit-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">
+          <Briefcase className="text-primary" size={20} aria-hidden="true" />
+          <h2 id="home-recruit-h2" className="eyebrow">
             {t("home.recruit.title")}
           </h2>
-          <span className="text-xs font-display uppercase tracking-[0.2em] text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5" data-testid="home-recruit-count">
+          <span className="clip-blade-sm font-label text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-primary border border-primary/40 px-2 py-0.5" data-testid="home-recruit-count">
             {positions.length} {t("home.recruit.more")}
           </span>
-          <div className="flex-1 h-px bg-white/10" />
+          <div className="flex-1 gold-line opacity-50" />
           <Link
             to="/recrutement"
             data-testid="home-recruit-cta"
             onClick={() => trackEvent(ANALYTICS_EVENTS.RECRUIT_CLICK, { source: "home_recruit_block" })}
-            className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+            className="inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
             {t("home.recruit.cta")} <ArrowRight size={12} aria-hidden="true" />
           </Link>
         </div>
 
-        <p className="text-[#c8c8c8] mb-8 max-w-2xl">{t("home.recruit.sub")}</p>
+        <p className="text-muted-foreground mb-8 max-w-2xl">{t("home.recruit.sub")}</p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="home-recruit-grid">
           {visible.map((p) => (
-            <article key={p.id} className="border border-white/10 bg-[#111111] p-6 flex flex-col gap-3 hover:border-[#D8CA82]/50 transition-colors" data-testid={`home-recruit-position-${p.id}`}>
+            <TiltCard key={p.id} max={6} className="panel clip-blade-sm p-6 flex flex-col gap-3 hover:border-primary/50 transition-colors" data-testid={`home-recruit-position-${p.id}`}>
               <div className="flex items-start justify-between gap-3">
-                <h3 className="font-display font-bold text-[#f7f7f7]">{p.title}</h3>
+                <h3 className="font-display font-bold text-foreground">{p.title}</h3>
                 {p.game && (
-                  <span className="text-[10px] font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-1.5 py-0.5 shrink-0">
+                  <span className="clip-blade-sm text-[0.6rem] font-label font-semibold tracking-[0.2em] uppercase text-primary border border-primary/40 px-1.5 py-0.5 shrink-0">
                     {p.game}
                   </span>
                 )}
               </div>
-              {p.prerequisites && <p className="text-sm text-[#c8c8c8]/70 line-clamp-3">{String(p.prerequisites).replace(/[#*_>`-]/g, " ").slice(0, 160)}</p>}
-              <p className="text-xs text-[#c8c8c8] mt-auto pt-3 border-t border-white/10">{fmtDeadline(p.deadline)}</p>
-            </article>
+              {p.prerequisites && <p className="text-sm text-muted-foreground/70 line-clamp-3">{String(p.prerequisites).replace(/[#*_>`-]/g, " ").slice(0, 160)}</p>}
+              <p className="text-xs text-muted-foreground mt-auto pt-3 border-t border-border/25">{fmtDeadline(p.deadline)}</p>
+            </TiltCard>
           ))}
         </div>
 
-        <p className="mt-6 flex items-center gap-2 text-xs text-[#c8c8c8]/70">
-          <Sparkles size={13} className="text-[#D8CA82]" aria-hidden="true" />
-          <Link to="/recrutement" className="text-[#D8CA82] hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]" data-testid="home-recruit-spontaneous">
+        <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground/70">
+          <Sparkles size={13} className="text-primary" aria-hidden="true" />
+          <Link to="/recrutement" className="text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" data-testid="home-recruit-spontaneous">
             {t("recruit.mode.spontaneous.hint")}
           </Link>
         </p>

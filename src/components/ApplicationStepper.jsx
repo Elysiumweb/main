@@ -61,7 +61,7 @@ export const ApplicationStepper = ({
             className={
               variant === "thread"
                 ? "flex gap-3"
-                : "border border-white/10 bg-[#141414] p-5 flex flex-col gap-2 relative"
+                : "panel clip-blade-sm p-5 flex flex-col gap-2 relative"
             }
             aria-current={current ? "step" : undefined}
             data-testid={`recruit-step-${step.id}`}
@@ -70,12 +70,12 @@ export const ApplicationStepper = ({
             {variant === "thread" && (
               <span
                 aria-hidden="true"
-                className={`mt-0.5 h-6 w-6 shrink-0 border flex items-center justify-center ${
+                className={`clip-blade-sm mt-0.5 h-6 w-6 shrink-0 border flex items-center justify-center ${
                   done
-                    ? "border-[#D8CA82] bg-[#D8CA82] text-[#111111]"
+                    ? "border-primary bg-gold text-primary-foreground"
                     : current
-                      ? "border-[#D8CA82] text-[#D8CA82]"
-                      : "border-white/20 text-[#c8c8c8]/40"
+                      ? "border-primary text-primary"
+                      : "border-border/35 text-muted-foreground/40"
                 }`}
               >
                 {done ? <Check size={13} /> : <span className="text-[10px] font-display">{i + 1}</span>}
@@ -85,22 +85,22 @@ export const ApplicationStepper = ({
             <div className={variant === "thread" ? "flex-1 pb-4" : "flex-1"}>
               <div className="flex items-center gap-2 flex-wrap">
                 <p
-                  className={`font-display text-xs uppercase tracking-[0.2em] ${
-                    current ? "text-[#D8CA82]" : done ? "text-[#f7f7f7]/80" : "text-[#c8c8c8]/50"
+                  className={`font-label text-[0.68rem] font-semibold uppercase tracking-[0.16em] ${
+                    current ? "text-primary" : done ? "text-foreground/80" : "text-muted-foreground/50"
                   }`}
                 >
                   {t(step.labelKey)}
                 </p>
                 {current && (
-                  <span className="text-[10px] uppercase tracking-widest border border-[#D8CA82]/50 text-[#D8CA82] px-1.5 py-0.5">
+                  <span className="text-[10px] uppercase tracking-widest border border-primary/50 text-primary px-1.5 py-0.5">
                     {terminal ? t("recruit.steps.done") : t("recruit.steps.current")}
                   </span>
                 )}
               </div>
 
-              <p className="text-xs text-[#c8c8c8]/70 mt-1 leading-relaxed">{t(step.hintKey)}</p>
+              <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{t(step.hintKey)}</p>
 
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[#c8c8c8]/50 mt-2 flex items-center gap-1.5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/50 mt-2 flex items-center gap-1.5">
                 <Clock size={11} aria-hidden="true" /> {dayLabel(delay)} {t("recruit.steps.avgDelay")}
               </p>
 
@@ -115,11 +115,11 @@ export const ApplicationStepper = ({
       })}
 
       {variant === "thread" && elapsed !== null && (
-        <li className="pt-1 text-xs text-[#c8c8c8]/60" data-testid="recruit-step-elapsed">
+        <li className="pt-1 text-xs text-muted-foreground/60" data-testid="recruit-step-elapsed">
           {t("recruit.steps.elapsed")} {dayLabel(elapsed)}
           {status === "pending_parental_consent" && ` — ${t("recruit.steps.pendingParental")}`}
           {tryout?.start && (
-            <span className="block text-[#D8CA82]">
+            <span className="block text-primary">
               {t("recruit.tryout.bookedOn")}{" "}
               {new Date(tryout.start).toLocaleString(lang === "en" ? "en-GB" : "fr-FR", {
                 weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",

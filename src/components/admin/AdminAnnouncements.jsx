@@ -10,10 +10,10 @@ import { GAMES } from "../../lib/constants";
 import { createNotification } from "../../lib/notify";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 
 const LEVEL_CLS = {
-  info: "border-[#D8CA82]/40 text-[#D8CA82]",
+  info: "border-primary/40 text-primary",
   success: "border-emerald-400/40 text-emerald-300",
   warning: "border-amber-400/40 text-amber-300",
   critical: "border-red-400/50 text-red-300",
@@ -133,31 +133,31 @@ export const AdminAnnouncements = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10" data-testid="admin-announcements">
-      <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6 self-start" data-testid="admin-announcements-form">
+      <form onSubmit={submit} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6 self-start" data-testid="admin-announcements-form">
         <div className="flex items-center gap-3">
-          <Megaphone size={18} className="text-[#D8CA82]" />
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{tx("ann.new")}</p>
+          <Megaphone size={18} className="text-primary" />
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{tx("ann.new")}</p>
         </div>
         <div>
-          <label htmlFor="ann-title" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.title")}</label>
+          <label htmlFor="ann-title" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.title")}</label>
           <input id="ann-title" value={form.title} onChange={set("title")} required maxLength={120}
             className={inputCls} data-testid="admin-announcement-title" />
         </div>
         <div>
-          <label htmlFor="ann-body" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.body")}</label>
+          <label htmlFor="ann-body" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.body")}</label>
           <textarea id="ann-body" value={form.body} onChange={set("body")} rows={4} required maxLength={600}
             className={inputCls} data-testid="admin-announcement-body" />
-          <p className="text-xs text-[#c8c8c8]/60 mt-1">{form.body.length}/600</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{form.body.length}/600</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="ann-level" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.level")}</label>
+            <label htmlFor="ann-level" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.level")}</label>
             <select id="ann-level" value={form.level} onChange={set("level")} className={inputCls} data-testid="admin-announcement-level">
               {ANNOUNCEMENT_LEVELS.map((l) => <option key={l} value={l}>{tx(`ann.level.${l}`)}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="ann-audience" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.audience")}</label>
+            <label htmlFor="ann-audience" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.audience")}</label>
             <select id="ann-audience" value={form.audience} onChange={set("audience")} className={inputCls} data-testid="admin-announcement-audience">
               {ANNOUNCEMENT_AUDIENCES.map((a) => <option key={a} value={a}>{tx(`ann.audience.${a}`)}</option>)}
             </select>
@@ -165,67 +165,67 @@ export const AdminAnnouncements = () => {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="ann-game" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.game")}</label>
+            <label htmlFor="ann-game" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.game")}</label>
             <select id="ann-game" value={form.targetGame} onChange={set("targetGame")} className={inputCls} data-testid="admin-announcement-game">
               <option value="all">{tx("ann.game.all")}</option>
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="ann-expires" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.expiresAt")}</label>
+            <label htmlFor="ann-expires" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.expiresAt")}</label>
             <input id="ann-expires" type="datetime-local" value={form.expiresAt} onChange={set("expiresAt")}
               className={inputCls} data-testid="admin-announcement-expires" />
           </div>
         </div>
         <div>
-          <label htmlFor="ann-link" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("ann.field.link")}</label>
+          <label htmlFor="ann-link" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("ann.field.link")}</label>
           <input id="ann-link" value={form.link} onChange={set("link")} placeholder="/recrutement"
             className={inputCls} data-testid="admin-announcement-link" />
         </div>
-        <label className="flex items-center gap-2 text-sm text-[#c8c8c8]">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={form.banner} onChange={set("banner")} data-testid="admin-announcement-banner" />
           {tx("ann.field.banner")}
         </label>
-        <label className="flex items-center gap-2 text-sm text-[#c8c8c8]">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={form.notify} onChange={set("notify")} data-testid="admin-announcement-notify" />
           {tx("ann.field.notify")}
         </label>
-        <label className="flex items-center gap-2 text-sm text-[#c8c8c8]">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input type="checkbox" checked={form.active} onChange={set("active")} data-testid="admin-announcement-active" />
           {tx("ann.field.active")}
         </label>
         <button type="submit" disabled={sending} data-testid="admin-announcement-submit"
-          className="inline-flex items-center gap-2 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-60">
+          className="inline-flex items-center gap-2 bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow disabled:opacity-60">
           <Send size={14} /> {tx("ann.publish")}
         </button>
       </form>
 
       <div className="lg:col-span-7" data-testid="admin-announcements-list">
         <div className="flex items-center gap-3 mb-4">
-          <Bell size={16} className="text-[#D8CA82]" />
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{tx("ann.list")}</p>
+          <Bell size={16} className="text-primary" />
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-foreground">{tx("ann.list")}</p>
         </div>
-        {items.length === 0 && <p className="text-sm text-[#c8c8c8]">{tx("ann.empty")}</p>}
+        {items.length === 0 && <p className="text-sm text-muted-foreground">{tx("ann.empty")}</p>}
         <div className="space-y-3">
           {items.map((item) => {
             const status = statusOf(item);
             return (
-              <div key={item.id} className="border border-white/10 bg-[#1A1A1A] p-4" data-testid={`admin-announcement-${item.id}`}>
+              <div key={item.id} className="panel clip-blade-sm p-4" data-testid={`admin-announcement-${item.id}`}>
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-[#f7f7f7]">{item.title}</p>
+                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
                       <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 ${LEVEL_CLS[item.level] || LEVEL_CLS.info}`}>
                         {tx(`ann.level.${item.level || "info"}`)}
                       </span>
                       <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 ${
                         status === "active" ? "border-emerald-400/40 text-emerald-300"
                           : status === "expired" ? "border-red-400/40 text-red-300"
-                            : "border-white/20 text-[#c8c8c8]"
+                            : "border-border/35 text-muted-foreground"
                       }`}>{tx(`ann.status.${status}`)}</span>
                     </div>
-                    <p className="text-sm text-[#c8c8c8] mt-1 whitespace-pre-wrap">{item.body}</p>
-                    <p className="text-xs text-[#c8c8c8]/60 mt-2">
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{item.body}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-2">
                       {tx(`ann.audience.${item.audience || "all"}`)}
                       {item.targetGame && item.targetGame !== "all" ? ` · ${item.targetGame}` : ""}
                       {item.expiresAt ? ` · ${tx("ann.field.expiresAt")} ${formatDate(item.expiresAt)}` : ""}
@@ -234,7 +234,7 @@ export const AdminAnnouncements = () => {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <button type="button" onClick={() => toggleActive(item)} data-testid={`admin-announcement-toggle-${item.id}`}
-                      className={`text-[10px] uppercase tracking-widest border px-2 py-1 ${item.active ? "border-[#D8CA82]/50 text-[#D8CA82]" : "border-white/20 text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+                      className={`text-[10px] uppercase tracking-widest border px-2 py-1 ${item.active ? "border-primary/50 text-primary" : "border-border/35 text-muted-foreground hover:text-foreground"}`}>
                       {item.active ? tx("ann.status.active") : tx("ann.status.inactive")}
                     </button>
                     <ConfirmAction title={tx("ann.confirmTitle")} description={tx("ann.confirmDesc")}
@@ -247,7 +247,7 @@ export const AdminAnnouncements = () => {
                   </div>
                 </div>
                 {item.link && (
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#D8CA82] hover:underline mt-2">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2">
                     <Plus size={11} /> {item.link}
                   </a>
                 )}

@@ -35,10 +35,10 @@ export default function ChatSpace() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-white/10 bg-[#141414] px-4 flex gap-1 shrink-0 overflow-x-auto" data-testid="chat-channel-tabs">
+      <div className="border-b border-border/25 bg-card/70 px-4 flex gap-1 shrink-0 overflow-x-auto" data-testid="chat-channel-tabs">
         {channels.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setChannel(id)} data-testid={`chat-channel-${id}`}
-            className={`flex items-center gap-2 px-4 py-3 text-xs uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${channel === id ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+            className={`flex items-center gap-2 px-4 py-3 text-xs uppercase tracking-wider border-b-2 transition-colors whitespace-nowrap ${channel === id ? "border-primary text-primary" : "border-transparent text-foreground/50 hover:text-foreground"}`}>
             <Icon size={14} /> {label}
           </button>
         ))}

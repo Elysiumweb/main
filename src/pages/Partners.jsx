@@ -37,7 +37,7 @@ const PartnerLogo = ({ src, name, className }) => {
       <div
         role="img"
         aria-label={`Logo du partenaire indisponible : ${safeName}`}
-        className={`${className} bg-[#0c0c0c] flex items-center justify-center text-[#a0a0a0] font-display tracking-widest text-sm uppercase border border-white/10`}
+        className={`${className} bg-background/70 flex items-center justify-center text-muted-foreground font-display tracking-widest text-sm uppercase border border-border/25`}
       >
         <span aria-hidden="true">{initials}</span>
       </div>
@@ -250,17 +250,17 @@ export default function Partners() {
     }
     if (row.type === "bool") {
       const val = g[row.key];
-      return val ? <Check size={16} className="text-emerald-400 mx-auto" /> : <X size={14} className="text-[#a0a0a0] mx-auto" />;
+      return val ? <Check size={16} className="text-emerald-400 mx-auto" /> : <X size={14} className="text-muted-foreground mx-auto" />;
     }
     if (row.type === "boolDetail") {
       const val = g[row.key];
       const detailKey = row.key + "Detail";
       const detail = g[detailKey];
-      if (!val) return <X size={14} className="text-[#a0a0a0] mx-auto" />;
+      if (!val) return <X size={14} className="text-muted-foreground mx-auto" />;
       return (
         <span className="inline-flex flex-col items-center">
           <Check size={16} className="text-emerald-400" />
-          {detail && <span className="text-[11px] text-[#c8c8c8] mt-1 text-center leading-tight">{detail}</span>}
+          {detail && <span className="text-[11px] text-muted-foreground mt-1 text-center leading-tight">{detail}</span>}
         </span>
       );
     }
@@ -270,11 +270,11 @@ export default function Partners() {
       // pas — l'absence n'est pas un refus.
       const val = g[row.key];
       const detail = g[row.key + "Detail"];
-      if (!val) return <span className="text-[#a0a0a0]">—</span>;
+      if (!val) return <span className="text-muted-foreground">—</span>;
       return (
         <span className="inline-flex flex-col items-center">
           <Check size={16} className="text-emerald-400" />
-          {detail && <span className="text-[11px] text-[#c8c8c8] mt-1 text-center leading-tight">{detail}</span>}
+          {detail && <span className="text-[11px] text-muted-foreground mt-1 text-center leading-tight">{detail}</span>}
         </span>
       );
     }
@@ -282,27 +282,27 @@ export default function Partners() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
+    <div className="min-h-[70vh] bg-transparent">
       {/* HERO */}
-      <section className="relative border-b border-white/10 overflow-hidden">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("partners.title") }]} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="partners-title">{t("partners.title")}</h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("partners.title") }]} />
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="partners-title">{t("partners.title")}</h1>
+          <p className="text-muted-foreground mt-4 tracking-wide max-w-2xl">{t("partners.sub")}</p>
         </div>
       </section>
 
       {/* VALUES */}
-      <section className="border-b border-white/10 bg-[#0c0c0c]">
+      <section className="border-b border-border/25 bg-background/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-values">
-          <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-10">{t("partners.values.title")}</h2>
+          <h2 className="eyebrow mb-10">{t("partners.values.title")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {values.map(({ key, icon: Icon }) => (
-              <div key={key} className="border border-white/10 bg-[#1A1A1A] p-6 hover:border-[#D8CA82]/50 transition-colors">
-                <Icon className="text-[#D8CA82] mb-4" size={24} />
-                <h3 className="font-display font-bold text-[#f7f7f7] mb-2">{t(`partners.values.${key}`)}</h3>
-                <p className="text-sm text-[#f7f7f7]/50 leading-relaxed">{t(`partners.values.${key}.desc`)}</p>
+              <div key={key} className="panel clip-blade-sm p-6 hover:border-primary/50 transition-colors">
+                <Icon className="text-primary mb-4" size={24} />
+                <h3 className="font-display font-bold text-foreground mb-2">{t(`partners.values.${key}`)}</h3>
+                <p className="text-sm text-foreground/50 leading-relaxed">{t(`partners.values.${key}.desc`)}</p>
               </div>
             ))}
           </div>
@@ -312,8 +312,8 @@ export default function Partners() {
       {/* OFFRES PARTENAIRE - GRILLE COMMERCIALE ELYWALK */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-offers">
         <div className="flex items-center gap-4 mb-10">
-          <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82]">{t("partners.offers.title")}</h2>
-          <div className="flex-1 h-px bg-white/10" />
+          <h2 className="eyebrow">{t("partners.offers.title")}</h2>
+          <div className="flex-1 gold-line opacity-50" />
         </div>
 
         {/* CARTES TARIFS */}
@@ -321,22 +321,22 @@ export default function Partners() {
           {[
             { key: "bronze", color: "border-[#CD7F32]/30 bg-[#CD7F32]/5", text: "text-[#CD7F32]" },
             { key: "argent", color: "border-[#C0C0C0]/30 bg-[#C0C0C0]/5", text: "text-[#C0C0C0]" },
-            { key: "gold", color: "border-[#D8CA82]/50 bg-[#D8CA82]/5", text: "text-[#D8CA82]", popular: true },
+            { key: "gold", color: "border-primary/50 bg-primary/5", text: "text-primary", popular: true },
           ].map(({ key, color, text, popular }) => {
             const g = grille[key];
             return (
               <div key={key} className={`relative border ${color} p-6 flex flex-col`} data-testid={`partners-offer-${key}`}>
-                {popular && <div className="absolute -top-3 left-6 bg-[#D8CA82] text-[#111111] text-[10px] font-display font-bold uppercase tracking-[0.2em] px-3 py-1">Recommandé</div>}
+                {popular && <div className="absolute -top-3 left-6 bg-gold text-primary-foreground text-[10px] font-display font-bold uppercase tracking-[0.2em] px-3 py-1">Recommandé</div>}
                 <p className={`font-display font-black text-2xl uppercase mb-2 ${text}`}>{g.label}</p>
                 <div className="space-y-1 mb-4 text-sm">
-                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Référence :</span> <span className="font-bold">{g.tarifRef}</span> / mois</p>
-                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">12 mois :</span> <span className="font-bold">{g.tarif12}</span> / mois</p>
-                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Engagement :</span> {g.engagement}</p>
-                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Renouvellement :</span> {g.renouvellement}</p>
-                  <p className="text-[#f7f7f7]"><span className="text-[#a0a0a0]">Résiliation :</span> {g.resiliation}</p>
+                  <p className="text-foreground"><span className="text-muted-foreground">Référence :</span> <span className="font-bold">{g.tarifRef}</span> / mois</p>
+                  <p className="text-foreground"><span className="text-muted-foreground">12 mois :</span> <span className="font-bold">{g.tarif12}</span> / mois</p>
+                  <p className="text-foreground"><span className="text-muted-foreground">Engagement :</span> {g.engagement}</p>
+                  <p className="text-foreground"><span className="text-muted-foreground">Renouvellement :</span> {g.renouvellement}</p>
+                  <p className="text-foreground"><span className="text-muted-foreground">Résiliation :</span> {g.resiliation}</p>
                 </div>
-                <div className="border-t border-white/10 pt-4 mt-auto">
-                  <Button onClick={() => scrollToContact(key)} variant={key === "gold" ? "gold" : "outline"} size="md" className={`w-full ${key !== "gold" ? "border-white/20 text-[#f7f7f7] hover:border-[#D8CA82] hover:text-[#D8CA82]" : ""}`} data-testid={`partners-offer-cta-${key}`}>
+                <div className="border-t border-border/25 pt-4 mt-auto">
+                  <Button onClick={() => scrollToContact(key)} variant={key === "gold" ? "gold" : "outline"} size="md" className={`w-full ${key !== "gold" ? "border-border/35 text-foreground hover:border-primary hover:text-primary" : ""}`} data-testid={`partners-offer-cta-${key}`}>
                     Choisir {g.label}
                   </Button>
                 </div>
@@ -346,27 +346,27 @@ export default function Partners() {
         </div>
 
         {/* TABLEAU DETAILLE */}
-        <div className="border border-white/10 overflow-hidden">
-          <div className="bg-[#1A1A1A] p-4 border-b border-white/10">
-            <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">Détail des offres par palier</h4>
+        <div className="border border-border/25 overflow-hidden">
+          <div className="bg-card p-4 border-b border-border/25">
+            <h4 className="font-display text-sm uppercase tracking-[0.3em] text-foreground">Détail des offres par palier</h4>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#0c0c0c] border-b border-white/10">
-                  <th className="text-left p-3 font-display uppercase tracking-widest text-[11px] text-[#c8c8c8] min-w-[280px]">Prestation / Condition</th>
-                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#CD7F32] min-w-[160px]">BRONZE<br /><span className="text-[10px] normal-case tracking-normal text-[#a0a0a0]">196€ HT/mois</span></th>
-                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#C0C0C0] min-w-[160px]">ARGENT<br /><span className="text-[10px] normal-case tracking-normal text-[#a0a0a0]">356€ HT/mois</span></th>
-                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#D8CA82] min-w-[220px]">GOLD<br /><span className="text-[10px] normal-case tracking-normal text-[#a0a0a0]">676€ HT/mois</span></th>
+                <tr className="bg-background/70 border-b border-border/25">
+                  <th className="text-left p-3 font-display uppercase tracking-widest text-[11px] text-muted-foreground min-w-[280px]">Prestation / Condition</th>
+                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#CD7F32] min-w-[160px]">BRONZE<br /><span className="text-[10px] normal-case tracking-normal text-muted-foreground">196€ HT/mois</span></th>
+                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-[#C0C0C0] min-w-[160px]">ARGENT<br /><span className="text-[10px] normal-case tracking-normal text-muted-foreground">356€ HT/mois</span></th>
+                  <th className="text-center p-3 font-display uppercase tracking-widest text-xs text-primary min-w-[220px]">GOLD<br /><span className="text-[10px] normal-case tracking-normal text-muted-foreground">676€ HT/mois</span></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
-                  <tr key={row.key} className={`${idx % 2 === 0 ? "bg-[#111111]" : "bg-[#1A1A1A]/50"} border-b border-white/5`}>
-                    <td className="p-3 text-[#f7f7f7]/80 font-medium">{row.label}</td>
-                    <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("bronze", row)}</td>
-                    <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("argent", row)}</td>
-                    <td className="p-3 text-center text-[#f7f7f7]/70">{renderCell("gold", row)}</td>
+                  <tr key={row.key} className={`${idx % 2 === 0 ? "bg-background" : "bg-card/50"} border-b border-border/20`}>
+                    <td className="p-3 text-foreground/80 font-medium">{row.label}</td>
+                    <td className="p-3 text-center text-foreground/70">{renderCell("bronze", row)}</td>
+                    <td className="p-3 text-center text-foreground/70">{renderCell("argent", row)}</td>
+                    <td className="p-3 text-center text-foreground/70">{renderCell("gold", row)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -375,9 +375,9 @@ export default function Partners() {
         </div>
 
         {/* CONDITIONS COMMUNES - sans mention de convention confidentielle */}
-        <div className="mt-8 border border-white/10 bg-[#0c0c0c] p-6" data-testid="partners-conditions">
-          <h4 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7] mb-6">Conditions communes applicables aux trois paliers</h4>
-          <ol className="space-y-4 text-sm text-[#c8c8c8] leading-relaxed list-decimal list-inside">
+        <div className="mt-8 border border-border/25 bg-background/70 p-6" data-testid="partners-conditions">
+          <h4 className="font-display text-sm uppercase tracking-[0.3em] text-foreground mb-6">Conditions communes applicables aux trois paliers</h4>
+          <ol className="space-y-4 text-sm text-muted-foreground leading-relaxed list-decimal list-inside">
             <li>Tarifs mensuels hors taxes, sans garantie de volume d'impressions, de clics, de visiteurs ni de remplissage des offres.</li>
             <li>Règlement mensuel à terme à échoir ; option de règlement anticipé de la période d'engagement ou de douze (12) mois avec maintien du tarif souscrit jusqu'au terme.</li>
             <li>Révision tarifaire à la reconduction selon la grille en vigueur, notifiée trois (3) mois avant le terme.</li>
@@ -393,14 +393,14 @@ export default function Partners() {
       </section>
 
       {/* PARTNER LOGOS */}
-      <section className="border-t border-white/10 bg-[#0c0c0c]">
+      <section className="border-t border-border/25 bg-background/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-logos">
           <div className="flex items-center gap-4 mb-10">
-            <Handshake className="text-[#D8CA82]" size={20} aria-hidden="true" />
-            <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("partners.logos.title")}</h2>
-            <div className="flex-1 h-px bg-white/10" />
+            <Handshake className="text-primary" size={20} aria-hidden="true" />
+            <h2 className="eyebrow">{t("partners.logos.title")}</h2>
+            <div className="flex-1 gold-line opacity-50" />
           </div>
-          <p className="text-sm text-[#c8c8c8] max-w-2xl mb-8">{t("partners.logos.sub")}</p>
+          <p className="text-sm text-muted-foreground max-w-2xl mb-8">{t("partners.logos.sub")}</p>
           {error ? (
             <ErrorState onRetry={() => setRetryKey((k) => k + 1)} testId="partners-error" />
           ) : partners === null ? (
@@ -412,10 +412,10 @@ export default function Partners() {
               {grouped.map(({ tier, list }) => (
                 <div key={tier}>
                   <div className="flex items-center gap-4 mb-6">
-                    <h3 className={`font-display text-sm tracking-[0.3em] uppercase ${tier === "gold" ? "text-[#D8CA82]" : tier === "silver" ? "text-[#C0C0C0]" : "text-[#CD7F32]"}`}>
+                    <h3 className={`font-display text-sm tracking-[0.3em] uppercase ${tier === "gold" ? "text-primary" : tier === "silver" ? "text-[#C0C0C0]" : "text-[#CD7F32]"}`}>
                       {t(`partners.tiers.${tier}`)}
                     </h3>
-                    <div className="flex-1 h-px bg-white/10" />
+                    <div className="flex-1 gold-line opacity-50" />
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                     {list.map((p) => (
@@ -425,11 +425,11 @@ export default function Partners() {
                         onClick={() => trackEvent(ANALYTICS_EVENTS.PARTNER_CLICK, { partnerId: p.id, tier: partnerTier(p), source: "partners_page" })}
                         data-testid={`partner-link-${p.id}`}
                         aria-label={`${p.name} — ${t("partners.logos.cta")}`}
-                        className="group border border-white/10 bg-[#1A1A1A] p-6 flex flex-col items-center gap-3 hover:border-[#D8CA82]/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+                        className="group panel clip-blade-sm p-6 flex flex-col items-center gap-3 hover:border-primary/50 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                       >
                         <PartnerLogo src={partnerLogoSrc(p)} name={p.name} className="w-full h-20" />
-                        <p className="font-display font-bold text-sm text-[#f7f7f7] group-hover:text-[#D8CA82] transition-colors text-center">{p.name}</p>
-                        <span className="mt-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-[#c8c8c8] group-hover:text-[#D8CA82] transition-colors">
+                        <p className="font-display font-bold text-sm text-foreground group-hover:text-primary transition-colors text-center">{p.name}</p>
+                        <span className="mt-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground group-hover:text-primary transition-colors">
                           {t("partners.logos.cta")} <ArrowRight size={11} className="u-micro group-hover:translate-x-0.5" aria-hidden="true" />
                         </span>
                       </Link>
@@ -443,12 +443,12 @@ export default function Partners() {
       </section>
 
       {/* DON */}
-      <section className="border-t border-white/10 bg-[#0c0c0c]" aria-labelledby="partners-donate-h2">
+      <section className="border-t border-border/25 bg-background/70" aria-labelledby="partners-donate-h2">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-donate">
           <div className="flex items-center gap-4 mb-10">
-            <Heart className="text-[#D8CA82]" size={20} aria-hidden="true" />
-            <h2 id="partners-donate-h2" className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#f7f7f7]">{t("donate.title")}</h2>
-            <div className="flex-1 h-px bg-white/10" />
+            <Heart className="text-primary" size={20} aria-hidden="true" />
+            <h2 id="partners-donate-h2" className="eyebrow">{t("donate.title")}</h2>
+            <div className="flex-1 gold-line opacity-50" />
           </div>
           <DonateBlock testId="partners-donate-block" />
         </div>
@@ -456,39 +456,39 @@ export default function Partners() {
 
       {/* CONTACT FORM */}
       <section ref={contactSectionRef} className="max-w-3xl mx-auto px-4 sm:px-8 py-16" data-testid="partners-contact">
-        <h2 className="font-display text-base md:text-lg tracking-[0.4em] uppercase text-[#D8CA82] mb-3">{t("partners.contact.title")}</h2>
-        <p className="text-[#f7f7f7]/50 mb-10">{t("partners.contact.sub")}</p>
+        <h2 className="eyebrow mb-3">{t("partners.contact.title")}</h2>
+        <p className="text-foreground/50 mb-10">{t("partners.contact.sub")}</p>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6" data-testid="partners-contact-form">
           <label htmlFor="partner-website" className="sr-only">Site web</label>
           <input id="partner-website" type="text" {...getHoneypotProps("website")} data-testid="partner-form-honeypot" />
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="partner-name" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.name")}</label>
+              <label htmlFor="partner-name" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-2">{t("partners.contact.name")}</label>
               <input id="partner-name" name="name" required data-testid="partner-form-name"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+                className="w-full bg-card border border-border/35 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
-              <label htmlFor="partner-company" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.company")}</label>
+              <label htmlFor="partner-company" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-2">{t("partners.contact.company")}</label>
               <input id="partner-company" name="company" required data-testid="partner-form-company"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+                className="w-full bg-card border border-border/35 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="partner-email" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.email")}</label>
+              <label htmlFor="partner-email" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-2">{t("partners.contact.email")}</label>
               <input id="partner-email" name="email" type="email" required data-testid="partner-form-email"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+                className="w-full bg-card border border-border/35 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary" />
             </div>
             <div>
-              <label htmlFor="partner-budget" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.budget")}</label>
+              <label htmlFor="partner-budget" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-2">{t("partners.contact.budget")}</label>
               <input id="partner-budget" name="budget" value={prefilled.budget} onChange={(e) => setPrefilled((p) => ({ ...p, budget: e.target.value }))} placeholder={t("partners.contact.budget.placeholder")} data-testid="partner-form-budget"
-                className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0]" />
+                className="w-full bg-card border border-border/35 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground" />
             </div>
           </div>
           <div>
-            <label htmlFor="partner-message" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">{t("partners.contact.message")}</label>
+            <label htmlFor="partner-message" className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-2">{t("partners.contact.message")}</label>
             <textarea id="partner-message" name="message" value={prefilled.message} onChange={(e) => setPrefilled((p) => ({ ...p, message: e.target.value }))} rows={6} required placeholder={t("partners.contact.message.placeholder")} data-testid="partner-form-message"
-              className="w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0] resize-none" />
+              className="w-full bg-card border border-border/35 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground resize-none" />
           </div>
           <Button type="submit" data-testid="partner-form-submit" variant="gold" size="lg" className="flex items-center gap-2">
             <Mail size={16} aria-hidden="true" /> {t("partners.contact.submit")}

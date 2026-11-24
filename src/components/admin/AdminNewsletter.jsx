@@ -9,7 +9,7 @@ import { useLang } from "../../lib/i18n";
 import { logAdminAction } from "../../lib/notify";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "bg-[#111111] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "bg-background border border-border/35 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary";
 const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
 export const AdminNewsletter = () => {
@@ -96,10 +96,10 @@ export const AdminNewsletter = () => {
       <div className="flex flex-col lg:flex-row lg:items-end gap-4 justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Mail className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("admin.newsletter.title")}</h2>
+            <Mail className="text-primary" size={18} />
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-foreground">{t("admin.newsletter.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50">
+          <p className="text-sm text-foreground/50">
             {subs.length} {t("admin.newsletter.subCount")} {subs.filter((s) => s.confirmed).length} {t("admin.newsletter.confirmedCount")}
           </p>
         </div>
@@ -114,7 +114,7 @@ export const AdminNewsletter = () => {
           <button
             type="button"
             onClick={exportCsv}
-            className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-[#D8CA82]/10"
+            className="border border-primary/50 text-primary font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center justify-center gap-2 hover:bg-primary/10"
             data-testid="admin-newsletter-export"
           >
             <Download size={14} /> {t("admin.newsletter.exportCsv")}
@@ -122,10 +122,10 @@ export const AdminNewsletter = () => {
         </div>
       </div>
 
-      <form onSubmit={sendDigest} className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 space-y-4" data-testid="admin-newsletter-digest-form">
+      <form onSubmit={sendDigest} className="panel clip-blade-sm border border-primary/30 p-6 space-y-4" data-testid="admin-newsletter-digest-form">
         <div>
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.newsletter.sendDigest")}</p>
-          <p className="text-xs text-[#c8c8c8] mt-2">{t("admin.newsletter.sendDigestSub")}</p>
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{t("admin.newsletter.sendDigest")}</p>
+          <p className="text-xs text-muted-foreground mt-2">{t("admin.newsletter.sendDigestSub")}</p>
         </div>
         <input
           value={digest.subject}
@@ -145,15 +145,15 @@ export const AdminNewsletter = () => {
           data-testid="admin-newsletter-digest-body"
         />
         <button type="submit" disabled={sendingDigest} data-testid="admin-newsletter-digest-send"
-          className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
+          className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-5 py-3 disabled:opacity-50">
           {t("admin.newsletter.sendBtn")}
         </button>
       </form>
 
-      <div className="border border-white/10 bg-[#1A1A1A] overflow-x-auto">
+      <div className="panel clip-blade-sm overflow-x-auto bg-card">
         <table className="w-full text-sm" data-testid="admin-newsletter-table">
           <thead>
-            <tr className="border-b border-white/10 text-left text-xs uppercase tracking-widest text-[#c8c8c8]">
+            <tr className="border-b border-border/25 text-left text-xs uppercase tracking-widest text-muted-foreground">
               <th className="px-4 py-3">{t("admin.table.email")}</th>
               <th className="px-4 py-3">{t("admin.table.language")}</th>
               <th className="px-4 py-3">{t("admin.table.confirmed")}</th>
@@ -163,17 +163,17 @@ export const AdminNewsletter = () => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-[#c8c8c8] text-center">{t("admin.newsletter.empty")}</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-muted-foreground text-center">{t("admin.newsletter.empty")}</td></tr>
             ) : filtered.map((s) => (
-              <tr key={s.id} className="border-b border-white/5 hover:bg-white/5" data-testid={`admin-newsletter-row-${s.id}`}>
-                <td className="px-4 py-3 text-[#f7f7f7] font-medium">{s.email}</td>
-                <td className="px-4 py-3 text-[#f7f7f7]/60 uppercase">{s.lang || "fr"}</td>
+              <tr key={s.id} className="border-b border-border/20 hover:bg-primary/5" data-testid={`admin-newsletter-row-${s.id}`}>
+                <td className="px-4 py-3 text-foreground font-medium">{s.email}</td>
+                <td className="px-4 py-3 text-foreground/60 uppercase">{s.lang || "fr"}</td>
                 <td className="px-4 py-3">
                   <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${s.confirmed ? "text-emerald-300 border-emerald-300/40" : "text-orange-300 border-orange-300/40"}`}>
                     {s.confirmed ? t("common.yes") : t("common.no")}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-[#f7f7f7]/50">{fmtDate(s.subscribedAt)}</td>
+                <td className="px-4 py-3 text-foreground/50">{fmtDate(s.subscribedAt)}</td>
                 <td className="px-4 py-3 text-right">
                   <ConfirmAction
                     title={t("admin.newsletter.unsubscribeTitle")}

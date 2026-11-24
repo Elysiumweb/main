@@ -14,7 +14,7 @@ export const confirmDangerBtn =
   "bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none";
 
 export const cancelBtn =
-  "bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0";
+  "bg-transparent border border-border/35 text-foreground/70 hover:bg-primary/5 hover:text-foreground uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0";
 
 export const ConfirmAction = ({
   children,
@@ -27,12 +27,12 @@ export const ConfirmAction = ({
 }) => (
   <AlertDialog>
     <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
-    <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+    <AlertDialogContent className="panel clip-blade border border-primary/30 rounded-none text-foreground shadow-deep">
       <AlertDialogHeader>
-        <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">
+        <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-primary text-base">
           {title}
         </AlertDialogTitle>
-        <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+        <AlertDialogDescription className="text-foreground/60 leading-relaxed">
           {description}
         </AlertDialogDescription>
       </AlertDialogHeader>
@@ -42,7 +42,7 @@ export const ConfirmAction = ({
           onClick={onConfirm}
           className={destructive
             ? confirmDangerBtn
-            : "bg-[#D8CA82] text-[#111111] hover:bg-[#D8CA82]/90 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"}
+            : "bg-gold text-primary-foreground hover:bg-primary/90 font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 rounded-none"}
         >
           {confirmLabel}
         </AlertDialogAction>

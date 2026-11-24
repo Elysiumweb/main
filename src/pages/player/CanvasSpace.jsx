@@ -114,26 +114,26 @@ export default function CanvasSpace() {
     <div className="h-full overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <LayoutDashboard size={16} className="text-[#D8CA82]" />
-          <h2 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("player.canvas")}</h2>
+          <LayoutDashboard size={16} className="text-primary" />
+          <h2 className="font-display text-sm uppercase tracking-[0.3em] text-foreground">{t("player.canvas")}</h2>
         </div>
         <form onSubmit={create} className="flex gap-3 mb-8" data-testid="canvas-create-form">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("canvas.name")} data-testid="canvas-name-input"
-            className="flex-1 bg-[#1A1A1A] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+            className="flex-1 bg-card border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary" />
           <button type="submit" data-testid="canvas-create-btn"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 flex items-center gap-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
+            className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-5 flex items-center gap-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow">
             <Plus size={14} /> {t("canvas.new")}
           </button>
         </form>
         {canvases.length === 0 ? (
-          <p className="text-[#c8c8c8]" data-testid="canvas-list-empty">{t("canvas.empty")}</p>
+          <p className="text-muted-foreground" data-testid="canvas-list-empty">{t("canvas.empty")}</p>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="canvas-list">
             {canvases.map((c) => (
-              <div key={c.id} className="group border border-white/10 bg-[#1A1A1A] p-5 hover:border-[#D8CA82]/50 transition-colors relative">
+              <div key={c.id} className="group panel clip-blade-sm p-5 hover:border-primary/50 transition-colors relative">
                 <button onClick={() => setOpenId(c.id)} className="text-left w-full" data-testid={`canvas-open-${c.id}`}>
-                  <p className="font-display text-[#f7f7f7] truncate">{c.title}</p>
-                  <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mt-2">
+                  <p className="font-display text-foreground truncate">{c.title}</p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground mt-2">
                     {c.status === "draft" ? t("canvas.draft") : t("common.saved")} · {c.game} · {(c.items || []).length} él.
                   </p>
                 </button>

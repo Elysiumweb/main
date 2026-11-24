@@ -62,13 +62,13 @@ const isToday = (d)=> isSameDay(d, new Date());
 const weekdayKey = (dateKey) => { const g = fromDateKey(dateKey).getDay(); return g===0 ? 7 : g; };
 
 const COLORS = [
-  { id: "#D8CA82", name: "Gold", bg: "bg-[#D8CA82]", text: "text-[#111111]" },
-  { id: "#4285F4", name: "Blue", bg: "bg-[#4285F4]", text: "text-white" },
-  { id: "#0B8043", name: "Green", bg: "bg-[#0B8043]", text: "text-white" },
-  { id: "#D50000", name: "Red", bg: "bg-[#D50000]", text: "text-white" },
-  { id: "#8E24AA", name: "Purple", bg: "bg-[#8E24AA]", text: "text-white" },
-  { id: "#F4511E", name: "Orange", bg: "bg-[#F4511E]", text: "text-white" },
-  { id: "#616161", name: "Grey", bg: "bg-[#616161]", text: "text-white" },
+  { id: "oklch(0.84 0.095 98)", name: "Gold", bg: "bg-gold", text: "text-primary-foreground" },
+  { id: "#4285F4", name: "Blue", bg: "bg-[#4285F4]", text: "text-foreground" },
+  { id: "#0B8043", name: "Green", bg: "bg-[#0B8043]", text: "text-foreground" },
+  { id: "#D50000", name: "Red", bg: "bg-[#D50000]", text: "text-foreground" },
+  { id: "#8E24AA", name: "Purple", bg: "bg-[#8E24AA]", text: "text-foreground" },
+  { id: "#F4511E", name: "Orange", bg: "bg-[#F4511E]", text: "text-foreground" },
+  { id: "#616161", name: "Grey", bg: "bg-[#616161]", text: "text-foreground" },
 ];
 
 const HOURS = Array.from({length: 18}, (_,i)=> i+6); // 6h -> 00h (dernière case : 23h-00h)
@@ -84,7 +84,7 @@ function normalizeEvent(ev){
     const s = new Date(ev.date);
     if(!isNaN(s.getTime())){
       const e = new Date(s); e.setHours(e.getHours()+1);
-      return { ...ev, start: s.toISOString(), end: e.toISOString(), color: ev.color || "#D8CA82" };
+      return { ...ev, start: s.toISOString(), end: e.toISOString(), color: ev.color || "oklch(0.84 0.095 98)" };
     }
   }
   return ev;
@@ -139,7 +139,7 @@ export default function Planning(){
   const [rosterFilter, setRosterFilter] = useState(roster || "all");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title:"", description:"", color:"#D8CA82", game: game || "EVA", roster: null, start:"", end:"", allDay:false });
+  const [form, setForm] = useState({ title:"", description:"", color:"oklch(0.84 0.095 98)", game: game || "EVA", roster: null, start:"", end:"", allDay:false });
   const [absenceModal, setAbsenceModal] = useState(null); // dateKey | null
   const [absenceReason, setAbsenceReason] = useState("");
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -149,7 +149,7 @@ export default function Planning(){
   const [importParsed, setImportParsed] = useState(null); // résultat de parseICS
   const [importTargetGame, setImportTargetGame] = useState(game || "EVA");
   const [importTargetRoster, setImportTargetRoster] = useState(roster || "");
-  const [importColor, setImportColor] = useState("#D8CA82"); // couleur par défaut des séances
+  const [importColor, setImportColor] = useState("oklch(0.84 0.095 98)"); // couleur par défaut des séances
   const [importUseFileColors, setImportUseFileColors] = useState(true); // reprendre les COLOR du .ics
   const [importHorizon, setImportHorizon] = useState(DEFAULT_IMPORT_HORIZON_DAYS);
   const [importBusy, setImportBusy] = useState(false);
@@ -490,7 +490,7 @@ export default function Planning(){
     setForm({
       title: ev.title||"",
       description: ev.description||"",
-      color: ev.color||"#D8CA82",
+      color: ev.color||"oklch(0.84 0.095 98)",
       game: ev.game||"EVA",
       roster: ev.roster||null,
       start: !isNaN(s.getTime()) ? toLocalInput(s) : "",
@@ -800,21 +800,21 @@ export default function Planning(){
     const present = entries.filter(([,v]) => v === "yes").map(([uid]) => uid);
     const absent = entries.filter(([,v]) => v === "no").map(([uid]) => uid);
     return (
-      <div className="border border-white/10 bg-[#111111] p-4" data-testid="attendance-block">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-1">{t("planning.attend.title")}</p>
-        <p className="text-xs text-[#f7f7f7]/50 mb-3">{t("planning.attend.subtitle")}</p>
+      <div className="border border-border/25 bg-background p-4" data-testid="attendance-block">
+        <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-1">{t("planning.attend.title")}</p>
+        <p className="text-xs text-foreground/50 mb-3">{t("planning.attend.subtitle")}</p>
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" onClick={() => setAttendance("yes")} data-testid="attend-yes"
-            className={`flex items-center gap-1.5 text-xs uppercase tracking-widest px-4 py-2.5 border u-micro ${mine==="yes" ? "border-emerald-400 bg-emerald-500/15 text-emerald-200" : "border-white/15 text-[#f7f7f7]/60 hover:border-emerald-400/60 hover:text-emerald-200"}`}>
+            className={`flex items-center gap-1.5 text-xs uppercase tracking-widest px-4 py-2.5 border u-micro ${mine==="yes" ? "border-emerald-400 bg-emerald-500/15 text-emerald-200" : "border-border/30 text-foreground/60 hover:border-emerald-400/60 hover:text-emerald-200"}`}>
             <Check size={13} aria-hidden="true" /> {t("planning.attend.present")}
           </button>
           <button type="button" onClick={() => setAttendance("no")} data-testid="attend-no"
-            className={`flex items-center gap-1.5 text-xs uppercase tracking-widest px-4 py-2.5 border u-micro ${mine==="no" ? "border-red-400 bg-red-500/15 text-red-200" : "border-white/15 text-[#f7f7f7]/60 hover:border-red-400/60 hover:text-red-200"}`}>
+            className={`flex items-center gap-1.5 text-xs uppercase tracking-widest px-4 py-2.5 border u-micro ${mine==="no" ? "border-red-400 bg-red-500/15 text-red-200" : "border-border/30 text-foreground/60 hover:border-red-400/60 hover:text-red-200"}`}>
             <X size={13} aria-hidden="true" /> {t("planning.attend.absent")}
           </button>
           {mine && (
             <button type="button" onClick={() => setAttendance(null)} data-testid="attend-clear"
-              className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#f7f7f7] u-micro px-2">
+              className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground u-micro px-2">
               {t("planning.attend.clear")}
             </button>
           )}
@@ -826,17 +826,17 @@ export default function Planning(){
         </div>
         {/* Détail nominatif (staff) */}
         {canManage && (present.length>0 || absent.length>0) && (
-          <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+          <div className="mt-3 pt-3 border-t border-border/25 space-y-1.5">
             {present.length>0 && (
               <p className="text-xs text-emerald-200/80 flex items-start gap-1.5">
                 <UserCheck size={11} className="mt-0.5 shrink-0" aria-hidden="true" />
-                <span className="flex flex-wrap gap-x-2">{present.map((uid) => <span key={uid} className="text-[#f7f7f7]/70">{uid===user.uid ? t("planning.attend.you") : (usersByUid[uid]?.displayName || "?")}</span>)}</span>
+                <span className="flex flex-wrap gap-x-2">{present.map((uid) => <span key={uid} className="text-foreground/70">{uid===user.uid ? t("planning.attend.you") : (usersByUid[uid]?.displayName || "?")}</span>)}</span>
               </p>
             )}
             {absent.length>0 && (
               <p className="text-xs text-red-200/80 flex items-start gap-1.5">
                 <UserX size={11} className="mt-0.5 shrink-0" aria-hidden="true" />
-                <span className="flex flex-wrap gap-x-2">{absent.map((uid) => <span key={uid} className="text-[#f7f7f7]/70">{uid===user.uid ? t("planning.attend.you") : (usersByUid[uid]?.displayName || "?")}</span>)}</span>
+                <span className="flex flex-wrap gap-x-2">{absent.map((uid) => <span key={uid} className="text-foreground/70">{uid===user.uid ? t("planning.attend.you") : (usersByUid[uid]?.displayName || "?")}</span>)}</span>
               </p>
             )}
           </div>
@@ -1092,16 +1092,16 @@ export default function Planning(){
   const renderMiniMonth = ()=>{
     const grid = monthGrid(currentDate);
     return (
-      <div className="border border-white/10 bg-[#141414] p-3">
+      <div className="panel clip-blade-sm p-3">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-display uppercase tracking-[0.2em] text-[#f7f7f7]">{monthLabel}</p>
+          <p className="text-xs font-display uppercase tracking-[0.2em] text-foreground">{monthLabel}</p>
           <div className="flex gap-1">
-            <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-[#f7f7f7]/60 u-micro"><ChevronLeft size={14}/></button>
-            <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-6 h-6 flex items-center justify-center hover:bg-white/10 text-[#f7f7f7]/60 u-micro"><ChevronRight size={14}/></button>
+            <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-6 h-6 flex items-center justify-center hover:bg-primary/10 text-foreground/60 u-micro"><ChevronLeft size={14}/></button>
+            <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-6 h-6 flex items-center justify-center hover:bg-primary/10 text-foreground/60 u-micro"><ChevronRight size={14}/></button>
           </div>
         </div>
         <div className="grid grid-cols-7 gap-px">
-          {["L","M","M","J","V","S","D"].map((l,i)=><div key={i} className="text-xs text-[#c8c8c8] text-center py-1">{l}</div>)}
+          {["L","M","M","J","V","S","D"].map((l,i)=><div key={i} className="text-xs text-muted-foreground text-center py-1">{l}</div>)}
           {grid.slice(0,35).map((d,i)=>{
             const key = toDateKey(d);
             const isCurMonth = d.getMonth()===currentDate.getMonth();
@@ -1109,9 +1109,9 @@ export default function Planning(){
             const hasEv = (eventsByDate[key]?.length||0)>0;
             return (
               <button key={i} onClick={()=> setCurrentDate(d)}
-                className={`aspect-square text-xs flex flex-col items-center justify-center relative u-micro ${isCurMonth?"text-[#f7f7f7]/80":"text-[#c8c8c8]"} ${isSameDay(d,currentDate)?"bg-[#D8CA82] text-[#111111] font-bold":"hover:bg-white/10"} ${today && !isSameDay(d,currentDate) ? "ring-1 ring-[#D8CA82]/60":""}`}>
+                className={`aspect-square text-xs flex flex-col items-center justify-center relative u-micro ${isCurMonth?"text-foreground/80":"text-muted-foreground"} ${isSameDay(d,currentDate)?"bg-gold text-primary-foreground font-bold":"hover:bg-primary/10"} ${today && !isSameDay(d,currentDate) ? "ring-1 ring-primary/60":""}`}>
                 {d.getDate()}
-                {hasEv && <span className="w-1 h-1 rounded-full bg-[#D8CA82] mt-0.5" />}
+                {hasEv && <span className="w-1 h-1 rounded-full bg-gold mt-0.5" />}
               </button>
             );
           })}
@@ -1124,7 +1124,7 @@ export default function Planning(){
   const renderDayStrip = (days, renderMeta, testId)=>{
     const selectedKey = toDateKey(currentDate);
     return (
-      <div className="grid grid-cols-7 border-b border-white/10 bg-[#141414] shrink-0" data-testid={testId}>
+      <div className="grid grid-cols-7 border-b border-border/25 bg-card/70 shrink-0" data-testid={testId}>
         {days.map(d=>{
           const key = toDateKey(d);
           const selected = key===selectedKey;
@@ -1133,8 +1133,8 @@ export default function Planning(){
             <button key={key} type="button" onClick={()=> setCurrentDate(d)} aria-pressed={selected}
               aria-label={d.toLocaleDateString(locale,{weekday:"long", day:"numeric", month:"long"})}
               data-testid={`${testId}-${key}`}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] border-r border-white/5 last:border-0 u-micro touch-manipulation ${selected ? "bg-[#D8CA82] text-[#111111]" : today ? "bg-[#D8CA82]/10 text-[#f7f7f7]" : "text-[#f7f7f7]/80"}`}>
-              <span className={`text-[10px] uppercase tracking-wider ${selected ? "text-[#111111]/80" : "text-[#c8c8c8]"}`}>{d.toLocaleDateString(locale,{weekday:"short"})}</span>
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] border-r border-border/20 last:border-0 u-micro touch-manipulation ${selected ? "bg-gold text-primary-foreground" : today ? "bg-primary/10 text-foreground" : "text-foreground/80"}`}>
+              <span className={`text-[10px] uppercase tracking-wider ${selected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{d.toLocaleDateString(locale,{weekday:"short"})}</span>
               <span className="font-display font-bold text-sm">{d.getDate()}</span>
               <span className="h-3 flex items-center justify-center text-[10px] leading-none">{renderMeta(d, key)}</span>
             </button>
@@ -1157,14 +1157,14 @@ export default function Planning(){
         title={`${ev.title}\n${time} – ${ev.description||""}`}>
         <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: ev.color}} />
         {!compact && <span className="opacity-70 shrink-0">{time}</span>}
-        <span className="truncate font-medium text-[#f7f7f7]">{ev.title}</span>
+        <span className="truncate font-medium text-foreground">{ev.title}</span>
         {(present>0 || absent>0) && (
           <span className="flex items-center gap-0.5 shrink-0 text-xs" data-testid={`pill-attendance-${ev.id}`}>
             {present>0 && <span className="text-emerald-300">✓{present}</span>}
             {absent>0 && <span className="text-red-300">✗{absent}</span>}
           </span>
         )}
-        {ev.roster && <span className="text-[8px] uppercase tracking-widest opacity-50 shrink-0 border border-white/15 px-1">{ev.roster}</span>}
+        {ev.roster && <span className="text-[8px] uppercase tracking-widest opacity-50 shrink-0 border border-border/30 px-1">{ev.roster}</span>}
         {ev.game && <span className="ml-auto text-xs uppercase tracking-widest opacity-50 shrink-0">{getGameShortLabel(ev.game)}</span>}
       </div>
     );
@@ -1174,9 +1174,9 @@ export default function Planning(){
     const grid = monthGrid(currentDate);
     const daysOfWeek = lang==="en" ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] : ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
     return (
-      <div className="flex-1 flex flex-col bg-[#0e0e0e] border border-white/10 overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-white/10 bg-[#141414]">
-          {daysOfWeek.map(d=> <div key={d} className="text-center md:text-left text-[10px] md:text-xs uppercase tracking-[0.1em] md:tracking-[0.3em] text-[#c8c8c8] px-1 md:px-3 py-2 border-r border-white/5 last:border-0">{d}</div>)}
+      <div className="flex-1 flex flex-col bg-background/70 border border-border/25 overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-border/25 bg-card/70">
+          {daysOfWeek.map(d=> <div key={d} className="text-center md:text-left text-[10px] md:text-xs uppercase tracking-[0.1em] md:tracking-[0.3em] text-muted-foreground px-1 md:px-3 py-2 border-r border-border/20 last:border-0">{d}</div>)}
         </div>
         <div className="grid grid-cols-7 grid-rows-6 flex-1 auto-rows-fr">
           {grid.map((d,i)=>{
@@ -1192,10 +1192,10 @@ export default function Planning(){
             };
             return (
               <div key={i} onClick={onDayClick}
-                className={`relative border-r border-b border-white/[0.07] p-1 md:p-1.5 flex flex-col min-h-[56px] md:min-h-[110px] cursor-pointer hover:bg-white/[0.02] u-micro ${!isCurMonth?"bg-[#0c0c0c]/60":"bg-[#111111]"} ${today?"ring-1 ring-inset ring-[#D8CA82]/40":""}`}>
+                className={`relative border-r border-b border-border/10 p-1 md:p-1.5 flex flex-col min-h-[56px] md:min-h-[110px] cursor-pointer hover:bg-primary/[0.03] u-micro ${!isCurMonth?"bg-background/60":"bg-background"} ${today?"ring-1 ring-inset ring-primary/40":""}`}>
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111] font-bold": isCurMonth?"text-[#f7f7f7]/80":"text-[#f7f7f7]/25"}`}>{d.getDate()}</span>
-                  {dayEvents.length>3 && <span className="hidden md:inline text-xs text-[#c8c8c8]">+{dayEvents.length-3}</span>}
+                  <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${today?"bg-gold text-primary-foreground font-bold": isCurMonth?"text-foreground/80":"text-foreground/25"}`}>{d.getDate()}</span>
+                  {dayEvents.length>3 && <span className="hidden md:inline text-xs text-muted-foreground">+{dayEvents.length-3}</span>}
                 </div>
                 {dayEvents.length>0 && (
                   <div className="flex flex-wrap gap-0.5 mt-1 md:hidden" aria-hidden="true">
@@ -1250,7 +1250,7 @@ export default function Planning(){
           width: `calc(${item.widthPercent}% - 4px)`,
           backgroundColor: `${ev.color}26`,
           borderLeftColor: ev.color,
-          color: "#f7f7f7",
+          color: "oklch(0.95 0.012 95)",
         }}>
         <p className={`font-semibold leading-tight truncate ${isDay ? (tight ? "text-xs" : "font-display font-bold text-sm") : tight ? "text-[11px]" : "text-xs"}`}
           style={{ color: ev.color }}>{ev.title}</p>
@@ -1269,25 +1269,25 @@ export default function Planning(){
     // Mobile : 7 colonnes illisibles sur un téléphone → bandeau de jours + journée
     if(isMobile){
       return (
-        <div className="flex flex-col bg-[#0e0e0e] border border-white/10" data-testid="mobile-week">
+        <div className="flex flex-col bg-background/70 border border-border/25" data-testid="mobile-week">
           {renderDayStrip(days, (d,key)=> (eventsByDate[key]||[]).length>0
-            ? <span className="w-1.5 h-1.5 rounded-full bg-[#D8CA82]" aria-hidden="true" />
+            ? <span className="w-1.5 h-1.5 rounded-full bg-gold" aria-hidden="true" />
             : null, "mobile-week-strip")}
           {renderDayView()}
         </div>
       );
     }
     return (
-      <div className="flex-1 flex flex-col bg-[#0e0e0e] border border-white/10 overflow-hidden">
-        <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
-          <div className="w-14 shrink-0 border-r border-white/10" />
+      <div className="flex-1 flex flex-col bg-background/70 border border-border/25 overflow-hidden">
+        <div className="flex border-b border-border/25 bg-card/70 shrink-0">
+          <div className="w-14 shrink-0 border-r border-border/25" />
           {days.map(d=>{
             const key = toDateKey(d);
             const today = isToday(d);
             return (
-              <div key={key} className={`flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center ${today?"bg-[#D8CA82]/10":""}`}>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
-                <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111]":"text-[#f7f7f7]"}`}>{d.getDate()}</p>
+              <div key={key} className={`flex-1 px-2 py-3 border-r border-border/20 last:border-0 text-center ${today?"bg-primary/10":""}`}>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
+                <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-gold text-primary-foreground":"text-foreground"}`}>{d.getDate()}</p>
               </div>
             );
           })}
@@ -1297,7 +1297,7 @@ export default function Planning(){
             <div className="w-14 shrink-0">
               {HOURS.map(h=>(
                 <div key={h} style={{ height: hourHeight }}
-                  className="border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1 tabular-nums">{pad(h)}:00</div>
+                  className="border-b border-border/10 text-xs text-muted-foreground pr-2 text-right pt-1 tabular-nums">{pad(h)}:00</div>
               ))}
             </div>
             <div className="flex-1 grid grid-cols-7">
@@ -1305,7 +1305,7 @@ export default function Planning(){
                 const key = toDateKey(d);
                 const dayItems = layoutDayEvents(eventsByDate[key]||[], gridOptions);
                 return (
-                  <div key={key} className="relative border-r border-white/5 last:border-0">
+                  <div key={key} className="relative border-r border-border/20 last:border-0">
                     {HOURS.map(h=>(
                       <div key={h} style={{ height: hourHeight }}
                         onClick={(e)=> {
@@ -1315,10 +1315,10 @@ export default function Planning(){
                           openNew(d, h, minute);
                         }}
                         data-testid={`week-cell-${key}-${h}`}
-                        className="border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer relative group u-micro">
+                        className="border-b border-border/10 hover:bg-primary/[0.03] cursor-pointer relative group u-micro">
                         {/* repères des quarts d'heure : on peut viser un créneau de 15 min */}
                         {[25, 50, 75].map(pct=>(
-                          <div key={pct} className="absolute inset-x-0 border-t border-dashed border-white/[0.05] group-hover:border-white/[0.12] pointer-events-none" style={{ top: `${pct}%` }} aria-hidden="true" />
+                          <div key={pct} className="absolute inset-x-0 border-t border-dashed border-border/5 group-hover:border-border/15 pointer-events-none" style={{ top: `${pct}%` }} aria-hidden="true" />
                         ))}
                       </div>
                     ))}
@@ -1340,15 +1340,15 @@ export default function Planning(){
     const key = toDateKey(currentDate);
     const dayItems = layoutDayEvents(eventsByDate[key]||[], gridOptions);
     return (
-      <div className={`${isMobile ? "" : "flex-1"} flex bg-[#0e0e0e] border border-white/10 overflow-hidden`} data-testid="day-view">
+      <div className={`${isMobile ? "" : "flex-1"} flex bg-background/70 border border-border/25 overflow-hidden`} data-testid="day-view">
         {/* Un seul conteneur défilant : les libellés d'heures restent alignés
             avec la grille quand on descend dans la journée. */}
         <div className={isMobile ? "w-full" : "flex-1 overflow-y-auto"} data-testid="day-scroll">
           <div className="flex">
-            <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
+            <div className="w-14 shrink-0 bg-card/70 border-r border-border/25">
               {HOURS.map(h=>(
                 <div key={h} style={{ height: hourHeight }}
-                  className="border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1 tabular-nums">{pad(h)}:00</div>
+                  className="border-b border-border/10 text-xs text-muted-foreground pr-2 text-right pt-1 tabular-nums">{pad(h)}:00</div>
               ))}
             </div>
             <div className="flex-1 relative">
@@ -1360,9 +1360,9 @@ export default function Planning(){
                     openNew(currentDate, h, minute);
                   }}
                   data-testid={`day-cell-${h}`}
-                  className="border-b border-white/[0.06] hover:bg-white/[0.02] cursor-pointer relative group u-micro">
+                  className="border-b border-border/10 hover:bg-primary/[0.03] cursor-pointer relative group u-micro">
                   {[25, 50, 75].map(pct=>(
-                    <div key={pct} className="absolute inset-x-0 border-t border-dashed border-white/[0.05] group-hover:border-white/[0.12] pointer-events-none" style={{ top: `${pct}%` }} aria-hidden="true" />
+                    <div key={pct} className="absolute inset-x-0 border-t border-dashed border-border/5 group-hover:border-border/15 pointer-events-none" style={{ top: `${pct}%` }} aria-hidden="true" />
                   ))}
                 </div>
               ))}
@@ -1382,58 +1382,58 @@ export default function Planning(){
     // Mobile : un seul jour à la fois (bandeau au-dessus) ; desktop : semaine complète
     const visibleDays = isMobile ? days.filter(d=> toDateKey(d)===selectedKey) : days;
     return (
-      <div className="flex-1 flex flex-col border border-white/10 bg-[#0e0e0e] overflow-hidden">
-        <div className="p-3 md:p-4 border-b border-white/10 bg-[#141414] flex flex-wrap items-center gap-x-4 gap-y-3">
+      <div className="flex-1 flex flex-col border border-border/25 bg-background/70 overflow-hidden">
+        <div className="p-3 md:p-4 border-b border-border/25 bg-card/70 flex flex-wrap items-center gap-x-4 gap-y-3">
           {/* mode switcher: this week vs recurring template */}
-          <div className="flex border border-white/10 bg-[#111111] p-1" role="tablist" aria-label={t("planning.availabilityTab")}>
+          <div className="flex border border-border/25 bg-background p-1" role="tablist" aria-label={t("planning.availabilityTab")}>
             <button onClick={()=> setAvailMode("week")} data-testid="avail-mode-week" role="tab" aria-selected={availMode==="week"}
-              className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.25em] u-micro ${availMode==="week" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.25em] u-micro ${availMode==="week" ? "bg-gold text-primary-foreground font-bold" : "text-foreground/50 hover:text-foreground"}`}>
               {t("planning.avail.mode.week")}
             </button>
             <button onClick={()=> setAvailMode("recurring")} data-testid="avail-mode-recurring" role="tab" aria-selected={availMode==="recurring"}
-              className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.25em] u-micro flex items-center gap-1.5 ${availMode==="recurring" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.25em] u-micro flex items-center gap-1.5 ${availMode==="recurring" ? "bg-gold text-primary-foreground font-bold" : "text-foreground/50 hover:text-foreground"}`}>
               <Repeat size={11} aria-hidden="true" /> {t("planning.avail.mode.recurring")}
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#f7f7f7]/60">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-foreground/60">
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-emerald-500/25 border border-emerald-400/50 inline-block" aria-hidden="true" /> {t("planning.avail.exception.legend")}</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-transparent border border-dashed border-emerald-400/70 inline-block" aria-hidden="true" /> {t("planning.avail.recurring.legend")}</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 absence-hatch border border-red-400/40 inline-block" aria-hidden="true" /> {t("planning.absence.absent")}</span>
           </div>
           {canManage && teamFilterActive && (
-            <span className="text-xs uppercase tracking-widest text-[#D8CA82] border border-[#D8CA82]/30 px-2 py-1" data-testid="avail-filter-note">
+            <span className="text-xs uppercase tracking-widest text-primary border border-primary/30 px-2 py-1" data-testid="avail-filter-note">
               {t("planning.avail.filteredNote")}
             </span>
           )}
           <div className="w-full md:w-auto md:ml-auto flex items-center gap-2 flex-wrap">
             {canManage && (
-              <div className="text-xs uppercase tracking-widest text-[#D8CA82] border border-[#D8CA82]/30 px-2.5 py-1">
+              <div className="text-xs uppercase tracking-widest text-primary border border-primary/30 px-2.5 py-1">
                 <Users size={12} className="inline mr-1" aria-hidden="true" /> Manager • team view
               </div>
             )}
             {availMode==="week" ? (
-              <button onClick={clearMyWeek} data-testid="avail-clear-week" className="text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:border-white/30 px-3 py-1.5 u-micro">
+              <button onClick={clearMyWeek} data-testid="avail-clear-week" className="text-xs uppercase tracking-widest border border-border/30 text-foreground/60 hover:text-foreground hover:border-border/45 px-3 py-1.5 u-micro">
                 {t("planning.avail.clear")}
               </button>
             ) : (
-              <button onClick={clearRecurring} data-testid="avail-clear-recurring" className="text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:border-white/30 px-3 py-1.5 u-micro">
+              <button onClick={clearRecurring} data-testid="avail-clear-recurring" className="text-xs uppercase tracking-widest border border-border/30 text-foreground/60 hover:text-foreground hover:border-border/45 px-3 py-1.5 u-micro">
                 {t("planning.avail.recurring.clear")}
               </button>
             )}
           </div>
         </div>
-        <p className="px-4 pt-3 pb-1 text-xs text-[#f7f7f7]/50">
+        <p className="px-4 pt-3 pb-1 text-xs text-foreground/50">
           {availMode==="week" ? t("planning.avail.recurring.applied") : t("planning.avail.recurring.subtitle")} {t("planning.absence.hint")}
         </p>
 
         {availMode==="week" && (
-          <div className="mx-3 md:mx-4 my-3 border border-red-400/30 bg-[#8c1d18]/10 p-3" data-testid="absence-quick-panel">
+          <div className="mx-3 md:mx-4 my-3 border border-red-400/30 bg-destructive/10 p-3" data-testid="absence-quick-panel">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-start gap-3 lg:w-[300px]">
                 <CalendarOff size={18} className="text-red-300 mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <p className="font-display text-xs uppercase tracking-[0.25em] text-red-200">{t("planning.absence.quickTitle")}</p>
-                  <p className="text-xs text-[#f7f7f7]/55 mt-1 leading-relaxed">{t("planning.absence.quickSub")}</p>
+                  <p className="eyebrow text-red-200">{t("planning.absence.quickTitle")}</p>
+                  <p className="text-xs text-foreground/55 mt-1 leading-relaxed">{t("planning.absence.quickSub")}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 flex-1">
@@ -1446,10 +1446,10 @@ export default function Planning(){
                       type="button"
                       onClick={()=> openAbsenceModal(key)}
                       data-testid={`absence-quick-${key}`}
-                      className={`border px-3 py-2 text-left u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 ${myAbsence ? "border-red-300/60 bg-red-500/15" : "border-white/10 bg-[#111111] hover:border-red-300/60 hover:bg-red-500/10"}`}
+                      className={`border px-3 py-2 text-left u-micro focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300 ${myAbsence ? "border-red-300/60 bg-red-500/15" : "border-border/25 bg-background hover:border-red-300/60 hover:bg-red-500/10"}`}
                     >
-                      <span className="block text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/45">{d.toLocaleDateString(locale,{weekday:"short"})}</span>
-                      <span className={`block font-display text-sm mt-0.5 ${myAbsence ? "text-red-200" : "text-[#f7f7f7]"}`}>{d.getDate()}</span>
+                      <span className="block text-xs uppercase tracking-[0.2em] text-foreground/45">{d.toLocaleDateString(locale,{weekday:"short"})}</span>
+                      <span className={`block font-display text-sm mt-0.5 ${myAbsence ? "text-red-200" : "text-foreground"}`}>{d.getDate()}</span>
                       <span className={`block text-xs uppercase tracking-widest mt-1 ${myAbsence ? "text-red-200" : "text-red-300/80"}`}>
                         {myAbsence ? t("planning.absence.editDay") : t("planning.absence.declare")}
                       </span>
@@ -1473,8 +1473,8 @@ export default function Planning(){
                   const myCount = myAvailForWeek[key]?.size||0;
                   return <span className="text-emerald-300">{myCount}h</span>;
                 }, "avail-day-strip")}
-                <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-widest text-[#f7f7f7]/60">
+                <div className="px-3 py-2 border-b border-border/25 flex items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-widest text-foreground/60">
                     {currentDate.toLocaleDateString(locale,{weekday:"long", day:"numeric", month:"long"})}
                   </p>
                   <button onClick={()=> openAbsenceModal(selectedKey)} data-testid={`absence-toggle-${selectedKey}`}
@@ -1485,8 +1485,8 @@ export default function Planning(){
                 </div>
               </>
             ) : (
-              <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
-                <div className="w-14 shrink-0 border-r border-white/10" />
+              <div className="flex border-b border-border/25 bg-card/70 shrink-0">
+                <div className="w-14 shrink-0 border-r border-border/25" />
                 {days.map(d=>{
                   const key = toDateKey(d);
                   const myCount = myAvailForWeek[key]?.size||0;
@@ -1495,19 +1495,19 @@ export default function Planning(){
                   const myAbsence = user ? absenceIndex[`${user.uid}_${key}`] : null;
                   const dayAbsences = teamAbsencesForWeek[key] || [];
                   return (
-                    <div key={key} className={`flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center relative group/day ${today?"bg-[#D8CA82]/10":""} ${myAbsence?"bg-[#8c1d18]/10":""}`}>
+                    <div key={key} className={`flex-1 px-2 py-3 border-r border-border/20 last:border-0 text-center relative group/day ${today?"bg-primary/10":""} ${myAbsence?"bg-destructive/10":""}`}>
                       <div className="flex items-center justify-center gap-1">
-                        <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
                         <button
                           onClick={()=> openAbsenceModal(key)}
                           data-testid={`absence-toggle-${key}`}
                           aria-label={`${t("planning.absence.declare")} — ${d.toLocaleDateString(locale,{weekday:"long", day:"numeric", month:"long"})}`}
                           title={t("planning.absence.declare")}
-                          className={`w-5 h-5 flex items-center justify-center u-micro ${myAbsence ? "text-red-300" : "text-[#f7f7f7]/25 hover:text-red-300 opacity-60 group-hover/day:opacity-100 focus-visible:opacity-100"}`}>
+                          className={`w-5 h-5 flex items-center justify-center u-micro ${myAbsence ? "text-red-300" : "text-foreground/25 hover:text-red-300 opacity-60 group-hover/day:opacity-100 focus-visible:opacity-100"}`}>
                           {myAbsence ? <CalendarX size={12} aria-hidden="true" /> : <CalendarOff size={12} aria-hidden="true" />}
                         </button>
                       </div>
-                      <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-[#D8CA82] text-[#111111]":"text-[#f7f7f7]"}`}>{d.getDate()}</p>
+                      <p className={`text-sm font-display font-bold mt-1 w-7 h-7 mx-auto flex items-center justify-center rounded-full ${today?"bg-gold text-primary-foreground":"text-foreground"}`}>{d.getDate()}</p>
                       {myAbsence ? (
                         <p className="text-xs text-red-300 mt-1 uppercase tracking-widest" data-testid={`absence-flag-${key}`}>{t("planning.absence.absent")}</p>
                       ) : (
@@ -1525,9 +1525,9 @@ export default function Planning(){
             )}
             <div className="flex-1 overflow-y-auto select-none">
               <div className="flex">
-                <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
+                <div className="w-14 shrink-0 bg-card/70 border-r border-border/25">
                   {HOURS.map(h=>(
-                    <div key={h} className={`${AVAIL_ROW} border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1`}>{pad(h)}:00</div>
+                    <div key={h} className={`${AVAIL_ROW} border-b border-border/10 text-xs text-muted-foreground pr-2 text-right pt-1`}>{pad(h)}:00</div>
                   ))}
                 </div>
                 <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(0,1fr))` }}>
@@ -1538,7 +1538,7 @@ export default function Planning(){
                     const existing = user ? availIndex[`${user.uid}_${key}`] : null;
                     const removedSet = new Set(existing?.removed || []);
                     return (
-                      <div key={key} className="border-r border-white/5 last:border-0 relative">
+                      <div key={key} className="border-r border-border/20 last:border-0 relative">
                         {HOURS.map(h=>{
                           const isMine = myAvailForWeek[key]?.has(h);
                           const isRecurring = isMine && recHours.has(h) && !removedSet.has(h);
@@ -1551,34 +1551,34 @@ export default function Planning(){
                               onPointerEnter={myAbsence ? undefined : handleCellPointerEnter("week", key, h)}
                               onClick={myAbsence ? undefined : handleCellClick("week", key, h)}
                               aria-disabled={myAbsence}
-                              className={`${AVAIL_ROW} border-b border-white/[0.06] relative group flex items-center justify-center u-micro touch-manipulation
+                              className={`${AVAIL_ROW} border-b border-border/10 relative group flex items-center justify-center u-micro touch-manipulation
                                 ${myAbsence ? "cursor-not-allowed" : "cursor-pointer"}
                                 ${isMine && !isRecurring ? "bg-emerald-500/25 hover:bg-emerald-500/35 border-emerald-400/30" : ""}
                                 ${isRecurring ? "bg-emerald-500/10 hover:bg-emerald-500/20" : ""}
-                                ${!isMine && !myAbsence ? "hover:bg-white/[0.04]" : ""}`}>
+                                ${!isMine && !myAbsence ? "hover:bg-primary/[0.06]" : ""}`}>
                               {isRecurring && <span className="absolute inset-[3px] border border-dashed border-emerald-400/60 pointer-events-none" aria-hidden="true" />}
                               {isMine && !isRecurring && <Check size={12} className="text-emerald-300 absolute top-1 left-1" aria-hidden="true" />}
                               {isMine && <span className={`text-xs uppercase tracking-widest font-bold ${isRecurring ? "text-emerald-200/60" : "text-emerald-200/80"}`}>Dispo</span>}
                               {isRecurring && <Repeat size={9} className="text-emerald-300/70 absolute top-1 left-1" aria-hidden="true" />}
                               {canManage && teamCount>0 && !myAbsence && (
-                                <span className={`absolute bottom-0.5 right-1 text-xs px-1 ${isMine ? "bg-emerald-900/60 text-emerald-200" : "bg-[#1A1A1A] text-[#f7f7f7]/50 border border-white/10"}`}>
+                                <span className={`absolute bottom-0.5 right-1 text-xs px-1 ${isMine ? "bg-emerald-900/60 text-emerald-200" : "bg-card text-foreground/50 border border-border/25"}`}>
                                   {teamCount}
                                 </span>
                               )}
                               {/* tooltip on hover for team */}
                               {canManage && teamCount>0 && !myAbsence && (
-                                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-20 hidden group-hover:block bg-[#1A1A1A] border border-white/20 p-2 min-w-[160px]">
-                                  <p className="text-xs uppercase tracking-widest text-[#D8CA82] mb-1">{pad(h)}:00 – {pad((h+1)%24)}:00 • {teamCount} dispo</p>
+                                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-20 hidden group-hover:block bg-card border border-border/35 p-2 min-w-[160px]">
+                                  <p className="text-xs uppercase tracking-widest text-primary mb-1">{pad(h)}:00 – {pad((h+1)%24)}:00 • {teamCount} dispo</p>
                                   <div className="space-y-1">
                                     {teamList.slice(0,10).map(p=>(
-                                      <div key={p.uid} className="text-xs text-[#f7f7f7]/80 flex items-center gap-1.5">
+                                      <div key={p.uid} className="text-xs text-foreground/80 flex items-center gap-1.5">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" aria-hidden="true" />
                                         <span className="truncate">{p.name}</span>
-                                        {p.roster && <span className="text-[8px] uppercase tracking-widest opacity-50 border border-white/15 px-0.5 shrink-0">{p.roster}</span>}
+                                        {p.roster && <span className="text-[8px] uppercase tracking-widest opacity-50 border border-border/30 px-0.5 shrink-0">{p.roster}</span>}
                                         <span className="text-xs opacity-50 ml-auto shrink-0">{getGameShortLabel(p.game)}</span>
                                       </div>
                                     ))}
-                                    {teamList.length>10 && <p className="text-xs text-[#c8c8c8]">+{teamList.length-10} autres</p>}
+                                    {teamList.length>10 && <p className="text-xs text-muted-foreground">+{teamList.length-10} autres</p>}
                                   </div>
                                 </div>
                               )}
@@ -1591,8 +1591,8 @@ export default function Planning(){
                             data-testid={`absence-overlay-${key}`}
                             aria-label={t("planning.absence.remove")}
                             title={t("planning.absence.remove")}
-                            className="absolute inset-0 absence-hatch bg-[#0e0e0e]/85 border border-red-400/30 flex items-center justify-center group/abs cursor-pointer">
-                            <span className="text-xs font-display font-bold uppercase tracking-[0.3em] text-red-300 bg-[#111111]/90 border border-red-400/40 px-2 py-1 [writing-mode:vertical-rl]">
+                            className="absolute inset-0 absence-hatch bg-background/85 border border-red-400/30 flex items-center justify-center group/abs cursor-pointer">
+                            <span className="text-xs font-display font-bold uppercase tracking-[0.3em] text-red-300 bg-background/90 border border-red-400/40 px-2 py-1 [writing-mode:vertical-rl]">
                               {t("planning.absence.absent")}
                             </span>
                           </button>
@@ -1618,28 +1618,28 @@ export default function Planning(){
     return (
       <div className="flex flex-col overflow-hidden flex-1" data-testid="recurring-grid">
         {isMobile ? (
-          <div className="grid grid-cols-7 border-b border-white/10 bg-[#141414] shrink-0" data-testid="mobile-recurring-strip">
+          <div className="grid grid-cols-7 border-b border-border/25 bg-card/70 shrink-0" data-testid="mobile-recurring-strip">
             {WEEKDAY_KEYS.map((wk, i)=>{
               const count = (myRecurring?.days?.[String(wk)] || []).length;
               const selected = wk===recurringDay;
               return (
                 <button key={wk} type="button" onClick={()=> setRecurringDay(wk)} aria-pressed={selected}
                   data-testid={`recurring-day-${wk}`}
-                  className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] border-r border-white/5 last:border-0 u-micro touch-manipulation ${selected ? "bg-[#D8CA82] text-[#111111]" : "text-[#f7f7f7]/80"}`}>
-                  <span className={`text-[10px] uppercase tracking-wider ${selected ? "text-[#111111]/80" : "text-[#c8c8c8]"}`}>{daysNames[i]}</span>
+                  className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] border-r border-border/20 last:border-0 u-micro touch-manipulation ${selected ? "bg-gold text-primary-foreground" : "text-foreground/80"}`}>
+                  <span className={`text-[10px] uppercase tracking-wider ${selected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{daysNames[i]}</span>
                   <span className={`text-[10px] ${selected ? "" : "text-emerald-300/80"}`}>{count>0 ? `${count}h` : "—"}</span>
                 </button>
               );
             })}
           </div>
         ) : (
-          <div className="flex border-b border-white/10 bg-[#141414] shrink-0">
-            <div className="w-14 shrink-0 border-r border-white/10" />
+          <div className="flex border-b border-border/25 bg-card/70 shrink-0">
+            <div className="w-14 shrink-0 border-r border-border/25" />
             {WEEKDAY_KEYS.map((wk, i)=>{
               const count = (myRecurring?.days?.[String(wk)] || []).length;
               return (
-                <div key={wk} className="flex-1 px-2 py-3 border-r border-white/5 last:border-0 text-center">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8]">{daysNames[i]}</p>
+                <div key={wk} className="flex-1 px-2 py-3 border-r border-border/20 last:border-0 text-center">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{daysNames[i]}</p>
                   <p className="text-xs mt-1 text-emerald-300/80">{count>0 ? `${count}h` : ""}</p>
                 </div>
               );
@@ -1648,16 +1648,16 @@ export default function Planning(){
         )}
         <div className="flex-1 overflow-y-auto select-none">
           <div className="flex">
-            <div className="w-14 shrink-0 bg-[#141414] border-r border-white/10">
+            <div className="w-14 shrink-0 bg-card/70 border-r border-border/25">
               {HOURS.map(h=>(
-                <div key={h} className={`${AVAIL_ROW} border-b border-white/[0.06] text-xs text-[#c8c8c8] pr-2 text-right pt-1`}>{pad(h)}:00</div>
+                <div key={h} className={`${AVAIL_ROW} border-b border-border/10 text-xs text-muted-foreground pr-2 text-right pt-1`}>{pad(h)}:00</div>
               ))}
             </div>
             <div className="flex-1 grid" style={{ gridTemplateColumns: `repeat(${visibleWk.length}, minmax(0,1fr))` }}>
               {visibleWk.map(wk=>{
                 const hours = new Set(myRecurring?.days?.[String(wk)] || []);
                 return (
-                  <div key={wk} className="border-r border-white/5 last:border-0">
+                  <div key={wk} className="border-r border-border/20 last:border-0">
                     {HOURS.map(h=>{
                       const on = hours.has(h);
                       return (
@@ -1666,8 +1666,8 @@ export default function Planning(){
                           onPointerDown={handleCellPointerDown("recurring", wk, h)}
                           onPointerEnter={handleCellPointerEnter("recurring", wk, h)}
                           onClick={handleCellClick("recurring", wk, h)}
-                          className={`${AVAIL_ROW} border-b border-white/[0.06] cursor-pointer relative flex items-center justify-center u-micro touch-manipulation
-                            ${on ? "bg-emerald-500/15 hover:bg-emerald-500/25" : "hover:bg-white/[0.04]"}`}>
+                          className={`${AVAIL_ROW} border-b border-border/10 cursor-pointer relative flex items-center justify-center u-micro touch-manipulation
+                            ${on ? "bg-emerald-500/15 hover:bg-emerald-500/25" : "hover:bg-primary/[0.06]"}`}>
                           {on && <span className="absolute inset-[3px] border border-dashed border-emerald-400/60 pointer-events-none" aria-hidden="true" />}
                           {on && <Repeat size={9} className="text-emerald-300/70 absolute top-1 left-1" aria-hidden="true" />}
                           {on && <span className="text-xs text-emerald-200/60 uppercase tracking-widest font-bold">Dispo</span>}
@@ -1687,23 +1687,23 @@ export default function Planning(){
   return (
     // Mobile (< sm) : la page prend sa hauteur naturelle et défile avec le layout joueur.
     // À partir de sm : hauteur fixée, défilement interne (colonne calendrier / sidebar).
-    <div className="flex flex-col bg-[#111111] sm:h-full overflow-hidden" data-testid="planning-page">
+    <div className="flex flex-col bg-background sm:h-full overflow-hidden" data-testid="planning-page">
       {/* top toolbar - google calendar style */}
-      <div className="min-h-[56px] sm:min-h-[64px] border-b border-white/10 bg-[#0c0c0c] flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 flex-wrap py-2">
+      <div className="min-h-[56px] sm:min-h-[64px] border-b border-border/25 bg-background/70 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 shrink-0 flex-wrap py-2">
         <div className="flex items-center gap-2">
           <button onClick={goToday} data-testid="planning-today"
-            className="border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-[0.2em] px-4 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro">
+            className="border border-border/35 text-foreground text-xs uppercase tracking-[0.2em] px-4 py-2 hover:border-primary hover:text-primary u-micro">
             {t("planning.today")}
           </button>
           <button onClick={downloadWeekICS} data-testid="planning-export-ics" title={t("planning.downloadWeek")}
-            className="border border-white/20 text-[#f7f7f7]/60 text-xs uppercase tracking-[0.2em] px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro flex items-center gap-1.5">
+            className="border border-border/35 text-foreground/60 text-xs uppercase tracking-[0.2em] px-3 py-2 hover:border-primary hover:text-primary u-micro flex items-center gap-1.5">
             <Download size={13} aria-hidden="true" /> <span className="hidden sm:inline">{t("planning.downloadWeek")}</span>
           </button>
-          <div className="flex border border-white/10">
-            <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:bg-white/10 u-micro"><ChevronLeft size={16}/></button>
-            <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-8 h-8 flex items-center justify-center text-[#f7f7f7]/60 hover:text-[#f7f7f7] hover:bg-white/10 u-micro border-l border-white/10"><ChevronRight size={16}/></button>
+          <div className="flex border border-border/25">
+            <button onClick={goPrev} aria-label={lang==="en"?"Previous":"Précédent"} className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-primary/10 u-micro"><ChevronLeft size={16}/></button>
+            <button onClick={goNext} aria-label={lang==="en"?"Next":"Suivant"} className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-primary/10 u-micro border-l border-border/25"><ChevronRight size={16}/></button>
           </div>
-          <h2 className="font-display text-sm md:text-base uppercase tracking-[0.2em] text-[#f7f7f7] ml-1 sm:ml-3 sm:min-w-[160px]" data-testid="planning-title">
+          <h2 className="font-display text-sm md:text-base uppercase tracking-[0.2em] text-foreground ml-1 sm:ml-3 sm:min-w-[160px]" data-testid="planning-title">
             {tab==="availability" ? (availMode==="recurring" ? t("planning.avail.recurring.title") : weekLabel) : view==="month" ? monthLabel : view==="week" ? weekLabel : dayLabel}
           </h2>
         </div>
@@ -1713,20 +1713,20 @@ export default function Planning(){
             type="button"
             onClick={() => { setTab("availability"); setAvailMode("week"); openAbsenceModal(toDateKey(currentDate)); }}
             data-testid="planning-absence-shortcut"
-            className="bg-[#8c1d18] text-white font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(220,38,38,0.3)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300"
+            className="clip-blade-sm bg-destructive text-destructive-foreground font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(220,38,38,0.3)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300"
             title={t("planning.absence.shortcutHelp")}
           >
             <CalendarOff size={14} aria-hidden="true" /> {t("planning.absence.shortcut")}
           </button>
 
           {/* tab switcher */}
-          <div className="flex border border-white/10 bg-[#141414] p-1">
+          <div className="flex panel clip-blade-sm p-1">
             <button onClick={()=> setTab("calendar")} data-testid="tab-calendar"
-              className={`px-4 py-1.5 text-xs uppercase tracking-[0.25em] u-micro ${tab==="calendar" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-4 py-1.5 text-xs uppercase tracking-[0.25em] u-micro ${tab==="calendar" ? "bg-gold text-primary-foreground font-bold" : "text-foreground/50 hover:text-foreground"}`}>
               {t("planning.calendarTab")}
             </button>
             <button onClick={()=> setTab("availability")} data-testid="tab-availability"
-              className={`px-4 py-1.5 text-xs uppercase tracking-[0.25em] u-micro ${tab==="availability" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-4 py-1.5 text-xs uppercase tracking-[0.25em] u-micro ${tab==="availability" ? "bg-gold text-primary-foreground font-bold" : "text-foreground/50 hover:text-foreground"}`}>
               {t("planning.availabilityTab")}
             </button>
           </div>
@@ -1734,7 +1734,7 @@ export default function Planning(){
           {/* game filter — also applies to the availability team view (manager) */}
           <select value={gameFilter} onChange={(e)=> { setGameFilter(e.target.value); setRosterFilter("all"); }} data-testid="planning-game-filter"
             aria-label={t("planning.game")}
-            className="bg-[#141414] border border-white/15 text-[#f7f7f7] text-xs px-2.5 py-2 focus:outline-none focus:border-[#D8CA82]">
+            className="bg-card/70 border border-border/30 text-foreground text-xs px-2.5 py-2 focus:outline-none focus:border-primary">
             <option value="all">Tous les pôles</option>
             {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
             <option value="global">Global</option>
@@ -1744,7 +1744,7 @@ export default function Planning(){
           {(gameFilter==="all" || gameHasRosters(gameFilter)) && (
             <select value={rosterFilter} onChange={(e)=> setRosterFilter(e.target.value)} data-testid="planning-roster-filter"
               aria-label={t("planning.roster")}
-              className="bg-[#141414] border border-white/15 text-[#f7f7f7] text-xs px-2.5 py-2 focus:outline-none focus:border-[#D8CA82]">
+              className="bg-card/70 border border-border/30 text-foreground text-xs px-2.5 py-2 focus:outline-none focus:border-primary">
               <option value="all">{t("planning.roster.none")}</option>
               {(gameFilter==="all" ? allNames : rostersForGame(gameFilter)).map(r=> <option key={r} value={r}>{r}</option>)}
             </select>
@@ -1752,14 +1752,14 @@ export default function Planning(){
 
           {/* view switcher - only for calendar tab */}
           {tab==="calendar" && (
-            <div className="flex border border-white/10 bg-[#141414] p-1">
+            <div className="flex panel clip-blade-sm p-1">
               {[
                 {id:"month", label:t("planning.month")},
                 {id:"week", label:t("planning.week")},
                 {id:"day", label:t("planning.day")},
               ].map(v=>(
                 <button key={v.id} onClick={()=> setView(v.id)} data-testid={`view-${v.id}`}
-                  className={`px-2 sm:px-3 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${view===v.id ? "bg-white/10 text-[#f7f7f7]" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+                  className={`px-2 sm:px-3 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${view===v.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                   {v.label}
                 </button>
               ))}
@@ -1768,13 +1768,13 @@ export default function Planning(){
 
           {/* taille de la grille horaire — les créneaux de 15 min restent lisibles */}
           {tab==="calendar" && view!=="month" && (
-            <div className="flex border border-white/10 bg-[#141414] p-1" role="group" aria-label={t("planning.zoom.label")}>
+            <div className="flex panel clip-blade-sm p-1" role="group" aria-label={t("planning.zoom.label")}>
               {PLANNING_ZOOM_LEVELS.map(level=>(
                 <button key={level.id} type="button" onClick={()=> setCalendarZoom(level.id)}
                   data-testid={`planning-zoom-${level.id}`}
                   aria-pressed={calendarZoom===level.id}
                   title={t(`planning.zoom.${level.id}`)}
-                  className={`px-2 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${calendarZoom===level.id ? "bg-white/10 text-[#f7f7f7]" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+                  className={`px-2 py-1.5 text-xs uppercase tracking-[0.2em] u-micro ${calendarZoom===level.id ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                   {t(`planning.zoom.${level.id}`)}
                 </button>
               ))}
@@ -1783,14 +1783,14 @@ export default function Planning(){
 
           {tab==="calendar" && canManage && (
             <button onClick={openImport} data-testid="planning-import-ics" title={t("planning.import.help")}
-              className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-[0.2em] px-3 py-2.5 flex items-center gap-1.5 hover:bg-[#D8CA82]/10 hover:border-[#D8CA82] u-micro">
+              className="border border-primary/50 text-primary text-xs uppercase tracking-[0.2em] px-3 py-2.5 flex items-center gap-1.5 hover:bg-primary/10 hover:border-primary u-micro">
               <Upload size={14} aria-hidden="true" /> <span className="hidden sm:inline">{t("planning.import")}</span>
             </button>
           )}
 
           {tab==="calendar" && canManage && (
             <button onClick={()=> openNew(currentDate)} data-testid="planning-new-event"
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] u-micro-shadow">
+              className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] u-micro-shadow">
               <Plus size={14} /> {t("planning.new")}
             </button>
           )}
@@ -1800,33 +1800,33 @@ export default function Planning(){
       {/* main area */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* left sidebar - mini calendar + legend (sous le calendrier sur mobile, dispos uniquement) */}
-        <aside className={`order-last lg:order-first w-full lg:w-[260px] lg:shrink-0 border-t lg:border-t-0 lg:border-r border-white/10 bg-[#0c0c0c] p-3 lg:p-4 space-y-4 lg:overflow-y-auto ${tab==="calendar" ? "hidden lg:block" : "block"}`}>
+        <aside className={`order-last lg:order-first w-full lg:w-[260px] lg:shrink-0 border-t lg:border-t-0 lg:border-r border-border/25 bg-background/70 p-3 lg:p-4 space-y-4 lg:overflow-y-auto ${tab==="calendar" ? "hidden lg:block" : "block"}`}>
           <div className="hidden md:block">{renderMiniMonth()}</div>
 
           {tab==="calendar" ? (
             <>
-              <div className="border border-white/10 bg-[#141414] p-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] mb-3 flex items-center gap-2">
-                  <CalendarDays size={12} className="text-[#D8CA82]" /> Mes calendriers
+              <div className="panel clip-blade-sm p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 flex items-center gap-2">
+                  <CalendarDays size={12} className="text-primary" /> Mes calendriers
                 </p>
                 <div className="space-y-2">
                   {GAMES.map(g=>(
-                    <label key={g} className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer">
-                      <input type="checkbox" checked={gameFilter==="all" || gameFilter===g} onChange={()=> { setGameFilter(gameFilter===g?"all":g); setRosterFilter("all"); }} className="accent-[#D8CA82]" />
+                    <label key={g} className="flex items-center gap-2 text-xs text-foreground/70 cursor-pointer">
+                      <input type="checkbox" checked={gameFilter==="all" || gameFilter===g} onChange={()=> { setGameFilter(gameFilter===g?"all":g); setRosterFilter("all"); }} className="accent-primary" />
                       <span className="w-2.5 h-2.5 rounded-full" style={{backgroundColor: getGameColor(g)}} />
                       {g}
                     </label>
                   ))}
-                  <label className="flex items-center gap-2 text-xs text-[#f7f7f7]/70 cursor-pointer">
-                    <input type="checkbox" checked={gameFilter==="all" || gameFilter==="global"} onChange={()=> { setGameFilter(gameFilter==="global"?"all":"global"); setRosterFilter("all"); }} className="accent-[#D8CA82]" />
+                  <label className="flex items-center gap-2 text-xs text-foreground/70 cursor-pointer">
+                    <input type="checkbox" checked={gameFilter==="all" || gameFilter==="global"} onChange={()=> { setGameFilter(gameFilter==="global"?"all":"global"); setRosterFilter("all"); }} className="accent-primary" />
                     <span className="w-2.5 h-2.5 rounded-full bg-[#4285F4]" /> Global
                   </label>
                   {/* roster sub-filters (rosters gérés depuis le panel admin) */}
                   {GAMES.filter((g)=> gameHasRosters(g) && (gameFilter==="all" || gameFilter===g)).map((g)=>(
-                    <div key={g} className="ml-4 mt-2 space-y-1.5 border-l border-white/10 pl-3">
-                      <p className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] mb-1">Rosters {getGameShortLabel(g)}</p>
+                    <div key={g} className="ml-4 mt-2 space-y-1.5 border-l border-border/25 pl-3">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">Rosters {getGameShortLabel(g)}</p>
                       {rostersForGame(g).map(r=>(
-                        <label key={r} className="flex items-center gap-2 text-xs text-[#f7f7f7]/60 cursor-pointer">
+                        <label key={r} className="flex items-center gap-2 text-xs text-foreground/60 cursor-pointer">
                           <input type="checkbox" checked={rosterFilter===r} onChange={()=> setRosterFilter(rosterFilter===r?"all":r)} style={{ accentColor: getGameColor(g) }} />
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `${getGameColor(g)}99` }} />
                           {r}
@@ -1837,37 +1837,37 @@ export default function Planning(){
                 </div>
               </div>
 
-              <div className="border border-white/10 bg-[#141414] p-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] mb-3">Légende couleurs</p>
+              <div className="panel clip-blade-sm p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">Légende couleurs</p>
                 <div className="grid grid-cols-2 gap-2">
                   {COLORS.map(c=>(
-                    <div key={c.id} className="flex items-center gap-2 text-xs text-[#f7f7f7]/60">
+                    <div key={c.id} className="flex items-center gap-2 text-xs text-foreground/60">
                       <span className="w-3 h-3 rounded-sm" style={{backgroundColor:c.id}} /> {c.name}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-[#c8c8c8] mt-4 leading-relaxed">
+                <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
                   {t("planning.clickToAdd")}. {t("planning.slotHelp")} {t("planning.freePlaceholder")}
                 </p>
               </div>
 
-              <div className="border border-[#D8CA82]/20 bg-[#D8CA82]/5 p-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-2">Raccourci</p>
-                <p className="text-xs text-[#f7f7f7]/60 leading-relaxed">
-                  Pas de type prédéfini. Écris librement ton titre. Ex: <em className="text-[#D8CA82]">“Scrim RL vs VIT – 21h / Review EVA bind”</em> C’est toi qui décides.
+              <div className="border border-primary/20 bg-primary/5 p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-primary mb-2">Raccourci</p>
+                <p className="text-xs text-foreground/60 leading-relaxed">
+                  Pas de type prédéfini. Écris librement ton titre. Ex: <em className="text-primary">“Scrim RL vs VIT – 21h / Review EVA bind”</em> C’est toi qui décides.
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="border border-white/10 bg-[#141414] p-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-2">{t("planning.avail.title")}</p>
-                <p className="text-xs text-[#f7f7f7]/60 leading-relaxed">{t("planning.avail.subtitle")}</p>
+              <div className="panel clip-blade-sm p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-primary mb-2">{t("planning.avail.title")}</p>
+                <p className="text-xs text-foreground/60 leading-relaxed">{t("planning.avail.subtitle")}</p>
               </div>
 
               {/* Ma semaine type (récurrente) */}
-              <div className="border border-white/10 bg-[#141414] p-4" data-testid="recurring-summary">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] mb-3 flex items-center gap-2">
+              <div className="panel clip-blade-sm p-4" data-testid="recurring-summary">
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 flex items-center gap-2">
                   <Repeat size={12} className="text-emerald-300" aria-hidden="true" /> {t("planning.avail.recurring.title")}
                 </p>
                 <div className="space-y-1 text-xs">
@@ -1876,14 +1876,14 @@ export default function Planning(){
                     if(hours.length===0) return null;
                     const refDay = weekKeys.find(k=> weekdayKey(k)===wk);
                     return (
-                      <div key={wk} className="flex justify-between text-[#f7f7f7]/60">
+                      <div key={wk} className="flex justify-between text-foreground/60">
                         <span>{fromDateKey(refDay).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short"})}</span>
                         <span className="text-emerald-300/80">{hours.map(h=>`${pad(h)}h`).join(", ")}</span>
                       </div>
                     );
                   })}
                   {!myRecurring && (
-                    <p className="text-[#c8c8c8] italic">{t("planning.avail.recurring.subtitle")}</p>
+                    <p className="text-muted-foreground italic">{t("planning.avail.recurring.subtitle")}</p>
                   )}
                 </div>
                 <button onClick={()=> setAvailMode("recurring")} data-testid="recurring-edit-link"
@@ -1892,39 +1892,39 @@ export default function Planning(){
                 </button>
               </div>
 
-              <div className="border border-white/10 bg-[#141414] p-4">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] mb-3">{t("planning.avail.mySlots")}</p>
+              <div className="panel clip-blade-sm p-4">
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">{t("planning.avail.mySlots")}</p>
                 <div className="space-y-1 text-xs">
                   {weekKeys.map(k=>{
                     const hours = Array.from(myAvailForWeek[k]||[]).sort((a,b)=>a-b);
                     if(hours.length===0) return null;
                     return (
-                      <div key={k} className="flex justify-between text-[#f7f7f7]/60">
+                      <div key={k} className="flex justify-between text-foreground/60">
                         <span>{fromDateKey(k).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short"})}</span>
                         <span className="text-emerald-300">{hours.map(h=>`${pad(h)}h`).join(", ")}</span>
                       </div>
                     );
                   })}
-                  {Object.values(myAvailForWeek).every(s=> s.size===0) && <p className="text-[#c8c8c8] italic">Aucun créneau cette semaine</p>}
+                  {Object.values(myAvailForWeek).every(s=> s.size===0) && <p className="text-muted-foreground italic">Aucun créneau cette semaine</p>}
                 </div>
               </div>
 
               {/* Mes absences à venir */}
-              <div className="border border-[#8c1d18]/40 bg-[#141414] p-4" data-testid="absence-panel">
+              <div className="panel clip-blade-sm border border-destructive/40 p-4" data-testid="absence-panel">
                 <p className="text-xs uppercase tracking-[0.3em] text-red-300/90 mb-3 flex items-center gap-2">
                   <CalendarOff size={12} aria-hidden="true" /> {t("planning.absence.myAbsences")}
                 </p>
                 {myAbsences.length===0 ? (
-                  <p className="text-xs text-[#c8c8c8] italic">{t("planning.absence.empty")}</p>
+                  <p className="text-xs text-muted-foreground italic">{t("planning.absence.empty")}</p>
                 ) : (
                   <div className="space-y-2">
                     {myAbsences.slice(0,8).map(a=>(
                       <div key={a.id} className="flex items-center gap-2 text-xs">
-                        <span className="text-[#f7f7f7]/70">{fromDateKey(a.date).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short", day:"numeric", month:"short"})}</span>
-                        {a.reason && <span className="text-[#c8c8c8] truncate">{a.reason}</span>}
+                        <span className="text-foreground/70">{fromDateKey(a.date).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short", day:"numeric", month:"short"})}</span>
+                        {a.reason && <span className="text-muted-foreground truncate">{a.reason}</span>}
                         <button onClick={()=> removeAbsence(a.date)} data-testid={`absence-delete-${a.date}`}
                           aria-label={`${t("planning.absence.remove")} — ${a.date}`}
-                          className="ml-auto w-5 h-5 flex items-center justify-center text-[#c8c8c8] hover:text-red-300 u-micro shrink-0">
+                          className="ml-auto w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-red-300 u-micro shrink-0">
                           <X size={12} aria-hidden="true" />
                         </button>
                       </div>
@@ -1934,10 +1934,10 @@ export default function Planning(){
               </div>
 
               {canManage && (
-                <div className="border border-[#D8CA82]/20 bg-[#141414] p-4" data-testid="team-view-panel">
-                  <p className="text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">{t("planning.avail.teamView")}</p>
+                <div className="border border-primary/20 bg-card/70 p-4" data-testid="team-view-panel">
+                  <p className="text-xs uppercase tracking-[0.3em] text-primary mb-3">{t("planning.avail.teamView")}</p>
                   {teamFilterActive && (
-                    <p className="text-xs uppercase tracking-widest text-[#D8CA82]/70 mb-2">— {t("planning.avail.filteredNote")}</p>
+                    <p className="text-xs uppercase tracking-widest text-primary/70 mb-2">— {t("planning.avail.filteredNote")}</p>
                   )}
                   <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {weekKeys.map(k=>{
@@ -1946,43 +1946,43 @@ export default function Planning(){
                       if(total===0) return null;
                       return (
                         <div key={k} className="text-xs">
-                          <p className="text-[#f7f7f7]/50 mb-1">{fromDateKey(k).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"long", day:"numeric"})}</p>
+                          <p className="text-foreground/50 mb-1">{fromDateKey(k).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"long", day:"numeric"})}</p>
                           {Object.entries(perHour).sort((a,b)=> Number(a[0])-Number(b[0])).map(([h, list])=>(
                             <div key={h} className="flex justify-between ml-2">
-                              <span className="text-[#c8c8c8]">{pad(h)}h</span>
-                              <span className="text-[#D8CA82]">{list.length} dispo</span>
+                              <span className="text-muted-foreground">{pad(h)}h</span>
+                              <span className="text-primary">{list.length} dispo</span>
                             </div>
                           ))}
                         </div>
                       );
                     })}
                     {weekKeys.every(k=> Object.values(teamAvailForWeek[k]).flat().length===0) && (
-                      <p className="text-xs text-[#c8c8c8] italic">Aucune disponibilité {teamFilterActive ? "(filtre actif)" : "cette semaine"}.</p>
+                      <p className="text-xs text-muted-foreground italic">Aucune disponibilité {teamFilterActive ? "(filtre actif)" : "cette semaine"}.</p>
                     )}
                   </div>
                   {/* Absences de la semaine (filtrées) */}
-                  <div className="mt-4 pt-3 border-t border-white/10">
+                  <div className="mt-4 pt-3 border-t border-border/25">
                     <p className="text-xs uppercase tracking-[0.3em] text-red-300/90 mb-2 flex items-center gap-2">
                       <CalendarX size={11} aria-hidden="true" /> {t("planning.absence.teamTitle")}
                     </p>
                     {weekKeys.every(k=> (teamAbsencesForWeek[k]||[]).length===0) ? (
-                      <p className="text-xs text-[#c8c8c8] italic">{t("planning.absence.teamEmpty")}</p>
+                      <p className="text-xs text-muted-foreground italic">{t("planning.absence.teamEmpty")}</p>
                     ) : (
                       <div className="space-y-1.5" data-testid="team-absence-list">
                         {weekKeys.map(k=> (teamAbsencesForWeek[k]||[]).map(a=>(
                           <div key={`${k}_${a.uid}`} className="text-xs flex items-start gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1 shrink-0" aria-hidden="true" />
-                            <span className="text-[#f7f7f7]/70">{a.name}</span>
-                            <span className="text-[#c8c8c8]">{fromDateKey(k).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short", day:"numeric"})}</span>
-                            {a.reason && <span className="text-[#c8c8c8] truncate">— {a.reason}</span>}
+                            <span className="text-foreground/70">{a.name}</span>
+                            <span className="text-muted-foreground">{fromDateKey(k).toLocaleDateString(lang==="en"?"en-US":"fr-FR",{weekday:"short", day:"numeric"})}</span>
+                            {a.reason && <span className="text-muted-foreground truncate">— {a.reason}</span>}
                           </div>
                         )))}
                       </div>
                     )}
                   </div>
                   {orphanScan.uids.length>0 && (
-                    <div className="mt-4 pt-3 border-t border-white/10" data-testid="planning-cleanup">
-                      <p className="text-xs text-[#c8c8c8] leading-relaxed">
+                    <div className="mt-4 pt-3 border-t border-border/25" data-testid="planning-cleanup">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
                         {t("planning.cleanup.hint")} ({orphanScan.uids.length} · {orphanScan.docs} doc{orphanScan.docs>1?"s":""})
                       </p>
                       <button onClick={askCleanupOrphans} data-testid="planning-cleanup-btn"
@@ -1998,7 +1998,7 @@ export default function Planning(){
         </aside>
 
         {/* center calendar */}
-        <main className="order-first lg:order-none flex-1 min-w-0 min-h-0 flex flex-col p-2 lg:p-3 bg-[#111111] lg:overflow-hidden">
+        <main className="order-first lg:order-none flex-1 min-w-0 min-h-0 flex flex-col p-2 lg:p-3 bg-background lg:overflow-hidden">
           {tab==="calendar" ? (
             <>
               {view==="month" && renderMonthView()}
@@ -2013,25 +2013,25 @@ export default function Planning(){
 
       {/* absence modal */}
       {absenceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="absence-modal-title">
-          <div className="w-full max-w-[440px] bg-[#1A1A1A] border border-white/15 animate-in fade-in zoom-in duration-200" data-testid="absence-modal">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="absence-modal-title">
+          <div className="w-full max-w-[440px] bg-card border border-border/30 animate-in fade-in zoom-in duration-200" data-testid="absence-modal">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/25">
               <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-[#8c1d18]" aria-hidden="true" />
-                <h3 id="absence-modal-title" className="font-display text-sm uppercase tracking-[0.25em] text-[#f7f7f7]">{t("planning.absence.title")}</h3>
+                <div className="w-1 h-6 bg-destructive" aria-hidden="true" />
+                <h3 id="absence-modal-title" className="font-display text-sm uppercase tracking-[0.25em] text-foreground">{t("planning.absence.title")}</h3>
               </div>
               <button onClick={()=> { setAbsenceModal(null); setAbsenceReason(""); }} aria-label={t("common.cancel")}
-                className="w-8 h-8 flex items-center justify-center text-[#c8c8c8] hover:text-[#f7f7f7] hover:bg-white/10 u-micro"><X size={16}/></button>
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-primary/10 u-micro"><X size={16}/></button>
             </div>
             <form onSubmit={saveAbsence} className="p-6 space-y-5">
-              <p className="text-sm text-[#f7f7f7]/60">
+              <p className="text-sm text-foreground/60">
                 {fromDateKey(absenceModal).toLocaleDateString(lang==="en"?"en-US":"fr-FR", { weekday:"long", day:"numeric", month:"long", year:"numeric" })}
               </p>
               <div>
-                <label htmlFor="absence-reason" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.absence.reason")}</label>
+                <label htmlFor="absence-reason" className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.absence.reason")}</label>
                 <input id="absence-reason" value={absenceReason} onChange={e=> setAbsenceReason(e.target.value)}
                   placeholder={t("planning.absence.reasonPlaceholder")} maxLength={120} data-testid="absence-reason-input"
-                  className="w-full bg-[#111111] border border-white/15 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#c8c8c8]" />
+                  className="w-full bg-background border border-border/30 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground" />
               </div>
               <div className="flex items-center justify-between">
                 {user && absenceIndex[`${user.uid}_${absenceModal}`] ? (
@@ -2042,11 +2042,11 @@ export default function Planning(){
                 ) : <div/>}
                 <div className="flex gap-2">
                   <button type="button" onClick={()=> { setAbsenceModal(null); setAbsenceReason(""); }}
-                    className="border border-white/15 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-[#f7f7f7] hover:border-white/30 u-micro">
+                    className="border border-border/30 text-foreground/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-foreground hover:border-border/45 u-micro">
                     {t("common.cancel")}
                   </button>
                   <button type="submit" data-testid="absence-confirm-btn"
-                    className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] u-micro-shadow flex items-center gap-2">
+                    className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] u-micro-shadow flex items-center gap-2">
                     <CalendarOff size={14} aria-hidden="true" />
                     {t("planning.absence.declare")}
                   </button>
@@ -2059,18 +2059,18 @@ export default function Planning(){
 
       {/* import .ics modal (managers) */}
       {importOpen && canManage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
-          <div className="w-full max-w-[600px] max-h-[calc(100dvh-2rem)] overflow-y-auto bg-[#1A1A1A] border border-white/15 animate-in fade-in zoom-in duration-200" data-testid="import-modal">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+          <div className="w-full max-w-[600px] max-h-[calc(100dvh-2rem)] overflow-y-auto bg-card border border-border/30 animate-in fade-in zoom-in duration-200" data-testid="import-modal">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/25">
               <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-[#D8CA82]" aria-hidden="true" />
+                <div className="w-1 h-6 bg-gold" aria-hidden="true" />
                 <div>
-                  <h3 id="import-modal-title" className="font-display text-sm uppercase tracking-[0.25em] text-[#f7f7f7]">{t("planning.import.title")}</h3>
-                  <p className="text-xs text-[#c8c8c8] mt-1">{t("planning.import.subtitle")}</p>
+                  <h3 id="import-modal-title" className="font-display text-sm uppercase tracking-[0.25em] text-foreground">{t("planning.import.title")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{t("planning.import.subtitle")}</p>
                 </div>
               </div>
               <button onClick={closeImport} aria-label={t("common.cancel")} disabled={importBusy}
-                className="w-8 h-8 flex items-center justify-center text-[#c8c8c8] hover:text-[#f7f7f7] hover:bg-white/10 u-micro disabled:opacity-40"><X size={16}/></button>
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-primary/10 u-micro disabled:opacity-40"><X size={16}/></button>
             </div>
 
             <form onSubmit={(e)=>{ e.preventDefault(); runImport(); }} className="p-6 space-y-5">
@@ -2078,26 +2078,26 @@ export default function Planning(){
               <div
                 onDragOver={(e)=> e.preventDefault()}
                 onDrop={(e)=>{ e.preventDefault(); if(!importBusy) handleImportFile(e.dataTransfer?.files?.[0]); }}
-                className="border border-dashed border-white/25 px-4 py-5 text-center hover:border-[#D8CA82]/60 hover:bg-[#D8CA82]/5 transition-colors"
+                className="border border-dashed border-border/40 px-4 py-5 text-center hover:border-primary/60 hover:bg-primary/5 transition-colors"
                 data-testid="import-dropzone"
               >
                 <label className="flex flex-col items-center gap-2 cursor-pointer">
-                  <FileText size={20} className="text-[#D8CA82]" aria-hidden="true" />
-                  <span className="text-sm text-[#f7f7f7]">{t("planning.import.chooseFile")}</span>
-                  <span className="text-xs text-[#c8c8c8]">{t("planning.import.fileHint")}</span>
+                  <FileText size={20} className="text-primary" aria-hidden="true" />
+                  <span className="text-sm text-foreground">{t("planning.import.chooseFile")}</span>
+                  <span className="text-xs text-muted-foreground">{t("planning.import.fileHint")}</span>
                   <input type="file" accept=".ics,text/calendar" className="sr-only" disabled={importBusy}
                     data-testid="import-file-input"
                     onChange={(e)=>{ const file = e.target.files?.[0]; e.target.value = ""; handleImportFile(file); }} />
                 </label>
                 {importFileName && (
-                  <p className="mt-3 text-xs text-[#D8CA82] truncate" data-testid="import-file-name">📎 {importFileName}</p>
+                  <p className="mt-3 text-xs text-primary truncate" data-testid="import-file-name">📎 {importFileName}</p>
                 )}
               </div>
 
               {/* cible : pôle + roster */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="import-game" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.game")}</label>
+                  <label htmlFor="import-game" className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.game")}</label>
                   <select id="import-game" value={importTargetGame} disabled={importBusy}
                     data-testid="import-game"
                     onChange={(e)=>{
@@ -2106,42 +2106,42 @@ export default function Planning(){
                       setImportTargetRoster(prev => (rostersForGame(nextGame).includes(prev) ? prev : ""));
                       setImportColor(getGameColor(nextGame));
                     }}
-                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                    className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary">
                     {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
                     <option value="global">Global</option>
                   </select>
                 </div>
                 {importNeedsRoster && (
                   <div>
-                    <label htmlFor="import-roster" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.roster")} *</label>
+                    <label htmlFor="import-roster" className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.roster")} *</label>
                     <select id="import-roster" value={importTargetRoster} disabled={importBusy}
                       data-testid="import-roster"
                       onChange={(e)=> setImportTargetRoster(e.target.value)}
-                      className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                      className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary">
                       <option value="">— {t("planning.rosterRequired")} —</option>
                       {importRosterOptions.map(r=> <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 )}
                 <div>
-                  <label htmlFor="import-horizon" className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.import.horizon")}</label>
+                  <label htmlFor="import-horizon" className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.import.horizon")}</label>
                   <select id="import-horizon" value={importHorizon} disabled={importBusy}
                     data-testid="import-horizon"
                     onChange={(e)=> setImportHorizon(Number(e.target.value))}
-                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                    className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary">
                     {[30, 90, 180, 365].map(d=> (
                       <option key={d} value={d}>{t("planning.import.days").replace("{count}", String(d))}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block" data-testid="import-color-label">
+                  <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block" data-testid="import-color-label">
                     {importFileColors.length > 0 && importUseFileColors ? t("planning.import.defaultColor") : t("planning.color")}
                   </p>
                   <div className="flex items-center gap-2 flex-wrap">
                     {COLORS.map(c=>(
                       <button key={c.id} type="button" onClick={()=> setImportColor(c.id)} disabled={importBusy}
-                        className={`w-7 h-7 rounded-sm border-2 u-micro ${importColor===c.id ? "border-white scale-110" : "border-transparent opacity-70 hover:opacity-100"}`}
+                        className={`w-7 h-7 rounded-sm border-2 u-micro ${importColor===c.id ? "border-border/25 scale-110" : "border-transparent opacity-70 hover:opacity-100"}`}
                         style={{backgroundColor:c.id}} title={c.name} aria-label={c.name}
                         aria-pressed={importColor===c.id} />
                     ))}
@@ -2151,28 +2151,28 @@ export default function Planning(){
 
               {/* couleurs du fichier .ics (COLOR / X-APPLE-CALENDAR-COLOR) */}
               {importFileColors.length > 0 && (
-                <div className="border border-white/10 bg-[#111111] p-4 space-y-2" data-testid="import-file-colors">
+                <div className="border border-border/25 bg-background p-4 space-y-2" data-testid="import-file-colors">
                   <label className="flex items-start gap-2 cursor-pointer">
                     <input type="checkbox" checked={importUseFileColors} disabled={importBusy}
                       onChange={(e)=> setImportUseFileColors(e.target.checked)}
-                      className="accent-[#D8CA82] mt-0.5" data-testid="import-use-file-colors" />
+                      className="accent-primary mt-0.5" data-testid="import-use-file-colors" />
                     <span>
-                      <span className="block text-xs uppercase tracking-[0.2em] text-[#f7f7f7]">{t("planning.import.fileColors")}</span>
-                      <span className="block text-xs text-[#c8c8c8]">
+                      <span className="block text-xs uppercase tracking-[0.2em] text-foreground">{t("planning.import.fileColors")}</span>
+                      <span className="block text-xs text-muted-foreground">
                         {t("planning.import.fileColorsHelp").replace("{count}", String(importFileColors.length))}
                       </span>
                     </span>
                   </label>
                   <div className="flex items-center gap-1.5 flex-wrap pl-6" data-testid="import-file-palette">
                     {importFileColors.slice(0, 16).map(c=>(
-                      <span key={c} className="w-4 h-4 rounded-sm border border-white/25" style={{ backgroundColor: ensureVisibleOnDark(c) }} title={c} aria-label={c} />
+                      <span key={c} className="w-4 h-4 rounded-sm border border-border/40" style={{ backgroundColor: ensureVisibleOnDark(c) }} title={c} aria-label={c} />
                     ))}
                     {importFileColors.length > 16 && (
-                      <span className="text-xs text-[#c8c8c8]">+{importFileColors.length - 16}</span>
+                      <span className="text-xs text-muted-foreground">+{importFileColors.length - 16}</span>
                     )}
                   </div>
                   {importUseFileColors && importPlan.fresh.some(occ => !occ.color) && (
-                    <p className="text-xs text-[#c8c8c8] leading-relaxed pl-6">
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-6">
                       {t("planning.import.colorFallback")}
                     </p>
                   )}
@@ -2181,15 +2181,15 @@ export default function Planning(){
 
               {/* aperçu */}
               {importParsed && !importParsed.error && (
-                <div className="border border-white/10 bg-[#111111] p-4 space-y-2" data-testid="import-preview">
+                <div className="border border-border/25 bg-background p-4 space-y-2" data-testid="import-preview">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8]">{t("planning.import.preview")}</p>
-                    <span className="text-xs font-bold text-[#D8CA82]" data-testid="import-count">
+                    <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">{t("planning.import.preview")}</p>
+                    <span className="text-xs font-bold text-primary" data-testid="import-count">
                       {t("planning.import.detected").replace("{count}", String(importPlan.fresh.length))}
                     </span>
                   </div>
                   {importPlan.fresh.length === 0 ? (
-                    <p className="text-xs text-[#c8c8c8] italic">{t("planning.import.nothing")}</p>
+                    <p className="text-xs text-muted-foreground italic">{t("planning.import.nothing")}</p>
                   ) : (
                     <ul className="space-y-1.5" data-testid="import-preview-list">
                       {importPlan.fresh.slice(0, 6).map((occ, i)=>(
@@ -2197,17 +2197,17 @@ export default function Planning(){
                           <span className="w-2 h-2 rounded-full shrink-0" aria-hidden="true"
                             data-testid={`import-swatch-${i}`}
                             style={{ backgroundColor: importColorFor(occ) }} />
-                          <span className="text-[#c8c8c8] shrink-0">{formatImportSlot(occ)}</span>
-                          <span className="text-[#f7f7f7]/80 truncate">{occ.title || t("planning.import.untitled")}</span>
+                          <span className="text-muted-foreground shrink-0">{formatImportSlot(occ)}</span>
+                          <span className="text-foreground/80 truncate">{occ.title || t("planning.import.untitled")}</span>
                         </li>
                       ))}
                     </ul>
                   )}
                   {importPlan.fresh.length > 6 && (
-                    <p className="text-xs text-[#c8c8c8]">+ {importPlan.fresh.length - 6} {t("planning.import.others")}</p>
+                    <p className="text-xs text-muted-foreground">+ {importPlan.fresh.length - 6} {t("planning.import.others")}</p>
                   )}
                   {importPlan.duplicates.length > 0 && (
-                    <p className="text-xs text-[#D8CA82]/80" data-testid="import-duplicates">
+                    <p className="text-xs text-primary/80" data-testid="import-duplicates">
                       {t("planning.import.duplicates").replace("{count}", String(importPlan.duplicates.length))}
                     </p>
                   )}
@@ -2223,7 +2223,7 @@ export default function Planning(){
                     </p>
                   )}
                   {importParsed.counts?.cancelled > 0 && (
-                    <p className="text-xs text-[#c8c8c8]">{t("planning.import.cancelled").replace("{count}", String(importParsed.counts.cancelled))}</p>
+                    <p className="text-xs text-muted-foreground">{t("planning.import.cancelled").replace("{count}", String(importParsed.counts.cancelled))}</p>
                   )}
                 </div>
               )}
@@ -2236,25 +2236,25 @@ export default function Planning(){
               <div className="space-y-3 pt-1">
                 {importBusy && (
                   <div>
-                    <div className="h-1 w-full bg-white/10 overflow-hidden">
-                      <div className="h-full bg-[#D8CA82] transition-all"
+                    <div className="h-1 w-full bg-primary/10 overflow-hidden">
+                      <div className="h-full bg-gold transition-all"
                         style={{ width: `${importProgress.total ? Math.round((importProgress.done / importProgress.total) * 100) : 0}%` }} />
                     </div>
-                    <p className="text-xs text-[#c8c8c8] mt-1.5" data-testid="import-progress">
+                    <p className="text-xs text-muted-foreground mt-1.5" data-testid="import-progress">
                       {importProgress.done} / {importProgress.total}
                     </p>
                   </div>
                 )}
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-[#c8c8c8] max-w-[55%] leading-relaxed">{t("planning.import.help")}</p>
+                  <p className="text-xs text-muted-foreground max-w-[55%] leading-relaxed">{t("planning.import.help")}</p>
                   <div className="flex gap-2">
                     <button type="button" onClick={closeImport} disabled={importBusy}
-                      className="border border-white/15 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-[#f7f7f7] hover:border-white/30 u-micro disabled:opacity-40">
+                      className="border border-border/30 text-foreground/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-foreground hover:border-border/45 u-micro disabled:opacity-40">
                       {t("common.cancel")}
                     </button>
                     <button type="submit" data-testid="import-submit"
                       disabled={importBusy || importPlan.fresh.length === 0 || (importNeedsRoster && !importTargetRoster)}
-                      className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] u-micro-shadow disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                      className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] u-micro-shadow disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
                       {importBusy ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Upload size={14} aria-hidden="true" />}
                       {t("planning.import.submit").replace("{count}", String(importPlan.fresh.length))}
                     </button>
@@ -2268,64 +2268,64 @@ export default function Planning(){
 
       {/* event modal - free writing */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-[560px] max-h-[calc(100dvh-2rem)] overflow-y-auto bg-[#1A1A1A] border border-white/15 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm">
+          <div className="w-full max-w-[560px] max-h-[calc(100dvh-2rem)] overflow-y-auto bg-card border border-border/30 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/25">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6" style={{backgroundColor: form.color}} />
-                <h3 className="font-display text-sm uppercase tracking-[0.25em] text-[#f7f7f7]">{selectedEvent ? t("planning.edit") : t("planning.new")}</h3>
+                <h3 className="font-display text-sm uppercase tracking-[0.25em] text-foreground">{selectedEvent ? t("planning.edit") : t("planning.new")}</h3>
               </div>
-              <button onClick={closeModal} aria-label={t("common.cancel")} className="w-8 h-8 flex items-center justify-center text-[#c8c8c8] hover:text-[#f7f7f7] hover:bg-white/10 u-micro"><X size={16}/></button>
+              <button onClick={closeModal} aria-label={t("common.cancel")} className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-primary/10 u-micro"><X size={16}/></button>
             </div>
 
             <form onSubmit={saveEvent} className="p-6 space-y-5">
               <div>
-                <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.title")} *</label>
+                <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.title")} *</label>
                 <input value={form.title} onChange={e=> setForm(f=>({...f,title:e.target.value}))}
                   placeholder={t("planning.freePlaceholder")}
                   required
-                  className="w-full bg-[#111111] border border-white/15 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#c8c8c8]" />
-                <p className="text-xs text-[#c8c8c8] mt-1.5">Écris ce que tu veux — pas de liste prédéfinie.</p>
+                  className="w-full bg-background border border-border/30 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground" />
+                <p className="text-xs text-muted-foreground mt-1.5">Écris ce que tu veux — pas de liste prédéfinie.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.start")}</label>
+                  <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.start")}</label>
                   <input type="datetime-local" value={form.start} onChange={e=> setForm(f=>({...f,start:e.target.value}))} required
-                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+                    className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.end")}</label>
+                  <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.end")}</label>
                   <input type="datetime-local" value={form.end} onChange={e=> setForm(f=>({...f,end:e.target.value}))} required
-                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+                    className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.game")}</label>
+                  <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.game")}</label>
                   <select value={form.game} onChange={e=> setForm(f=>({...f,game:e.target.value, roster: gameHasRosters(e.target.value) ? (f.roster || roster) : null}))}
-                    className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                    className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary">
                     {GAMES.map(g=> <option key={g} value={g}>{g}</option>)}
                     <option value="global">Global</option>
                   </select>
                 </div>
                 {gameHasRosters(form.game) && (
                   <div>
-                    <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.roster")} *</label>
+                    <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.roster")} *</label>
                     <select value={form.roster||""} onChange={e=> setForm(f=>({...f,roster: e.target.value||null}))}
-                      className="w-full bg-[#111111] border border-white/15 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]">
+                      className="w-full bg-background border border-border/30 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary">
                       <option value="">— {t("planning.rosterRequired")} —</option>
                       {rostersForGame(form.game).map(r=> <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 )}
                 <div>
-                  <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.color")}</label>
+                  <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.color")}</label>
                   <div className="flex items-center gap-2 flex-wrap">
                     {COLORS.map(c=>(
                       <button key={c.id} type="button" onClick={()=> setForm(f=>({...f,color:c.id}))}
-                        className={`w-7 h-7 rounded-sm border-2 u-micro ${form.color===c.id ? "border-white scale-110" : "border-transparent opacity-70 hover:opacity-100"}`}
+                        className={`w-7 h-7 rounded-sm border-2 u-micro ${form.color===c.id ? "border-border/25 scale-110" : "border-transparent opacity-70 hover:opacity-100"}`}
                         style={{backgroundColor:c.id}} title={c.name} aria-label={c.name} />
                     ))}
                   </div>
@@ -2333,25 +2333,25 @@ export default function Planning(){
               </div>
 
               <div>
-                <label className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-2 block">{t("planning.desc")}</label>
+                <label className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 block">{t("planning.desc")}</label>
                 <textarea value={form.description} onChange={e=> setForm(f=>({...f,description:e.target.value}))}
                   placeholder={t("planning.descPlaceholder")}
                   rows={3}
-                  className="w-full bg-[#111111] border border-white/15 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#c8c8c8] resize-none" />
+                  className="w-full bg-background border border-border/30 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground resize-none" />
               </div>
 
               {selectedEvent && (
                 <>
                   {renderAttendanceBlock()}
-                  <div className="border border-white/10 bg-[#111111] p-4" data-testid="event-agenda">
-                    <p className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mb-3">{t("planning.addToCalendar")}</p>
+                  <div className="border border-border/25 bg-background p-4" data-testid="event-agenda">
+                    <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3">{t("planning.addToCalendar")}</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <button type="button" onClick={exportEventICS} data-testid="event-ics"
-                        className="flex items-center gap-1.5 text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 hover:border-[#D8CA82] hover:text-[#D8CA82] px-3 py-2 u-micro">
+                        className="flex items-center gap-1.5 text-xs uppercase tracking-widest border border-border/30 text-foreground/70 hover:border-primary hover:text-primary px-3 py-2 u-micro">
                         <Download size={13} aria-hidden="true" /> {t("planning.ics")}
                       </button>
                       <a href={gcalUrl(selectedEvent)} target="_blank" rel="noopener noreferrer" data-testid="event-gcal"
-                        className="flex items-center gap-1.5 text-xs uppercase tracking-widest border border-white/15 text-[#f7f7f7]/70 hover:border-[#D8CA82] hover:text-[#D8CA82] px-3 py-2 u-micro">
+                        className="flex items-center gap-1.5 text-xs uppercase tracking-widest border border-border/30 text-foreground/70 hover:border-primary hover:text-primary px-3 py-2 u-micro">
                         <ExternalLink size={13} aria-hidden="true" /> {t("planning.gcal")}
                       </a>
                     </div>
@@ -2368,11 +2368,11 @@ export default function Planning(){
                 ) : <div/>}
                 <div className="flex gap-2">
                   <button type="button" onClick={closeModal}
-                    className="border border-white/15 text-[#f7f7f7]/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-[#f7f7f7] hover:border-white/30 u-micro">
+                    className="border border-border/30 text-foreground/60 text-xs uppercase tracking-widest px-5 py-2.5 hover:text-foreground hover:border-border/45 u-micro">
                     {t("common.cancel")}
                   </button>
                   <button type="submit" data-testid="planning-submit"
-                    className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] u-micro-shadow flex items-center gap-2">
+                    className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-6 py-2.5 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] u-micro-shadow flex items-center gap-2">
                     {selectedEvent ? <Edit2 size={14}/> : <Plus size={14}/>}
                     {selectedEvent ? t("planning.save") : t("planning.create")}
                   </button>
@@ -2384,17 +2384,17 @@ export default function Planning(){
       )}
 
       <AlertDialog open={!!confirmDialog} onOpenChange={(open) => !open && setConfirmDialog(null)}>
-        <AlertDialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] shadow-[0_0_40px_rgba(0,0,0,0.65)]">
+        <AlertDialogContent className="panel clip-blade border border-primary/30 rounded-none text-foreground shadow-deep">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-[#D8CA82] text-base">
+            <AlertDialogTitle className="font-display uppercase tracking-[0.25em] text-primary text-base">
               {confirmDialog?.title}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[#f7f7f7]/60 leading-relaxed">
+            <AlertDialogDescription className="text-foreground/60 leading-relaxed">
               {confirmDialog?.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:space-x-0">
-            <AlertDialogCancel className="bg-transparent border border-white/20 text-[#f7f7f7]/70 hover:bg-white/5 hover:text-[#f7f7f7] uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">
+            <AlertDialogCancel className="bg-transparent border border-border/35 text-foreground/70 hover:bg-primary/5 hover:text-foreground uppercase tracking-widest text-xs px-5 py-2.5 rounded-none mt-0">
               {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction

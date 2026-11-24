@@ -21,7 +21,7 @@ import { Markdown } from "../lib/markdown";
 import { useRecruitmentSettings } from "../hooks/useRecruitmentSettings";
 import { RECRUIT_STATUSES } from "../lib/recruitment";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 /* La tranche « -15 » matérialise le seuil légal français de consentement
    numérique (15 ans, art. 45 loi Informatique et Libertés) : en dessous, un
    parcours de consentement parental vérifié par email est obligatoire. */
@@ -194,57 +194,57 @@ export default function Recruitment() {
   );
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("recruit.title") }]} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="recruit-title">{t("recruit.title")}</h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("recruit.sub")}</p>
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("recruit.title") }]} />
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="recruit-title">{t("recruit.title")}</h1>
+          <p className="text-muted-foreground mt-4 tracking-wide">{t("recruit.sub")}</p>
         </div>
       </section>
 
       {/* POSTES OUVERTS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16">
         <div className="flex items-center gap-4 mb-8">
-          <Briefcase className="text-[#D8CA82]" size={18} />
-          <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("recruit.positions")}</h2>
-          <div className="flex-1 h-px bg-white/10" />
+          <Briefcase className="text-primary" size={18} />
+          <h2 className="eyebrow">{t("recruit.positions")}</h2>
+          <div className="flex-1 gold-line opacity-50" />
         </div>
         {positions.length === 0 ? (
           <EmptyState icon={CalendarX} text={t("recruit.positions.empty")} testId="recruit-positions-empty" />
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="recruit-positions-grid">
             {positions.map((p) => (
-              <div key={p.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col gap-4 hover:border-[#D8CA82]/50 transition-colors" data-testid={`recruit-position-${p.id}`}>
+              <div key={p.id} className="panel clip-blade-sm p-6 flex flex-col gap-4 hover:border-primary/50 transition-colors" data-testid={`recruit-position-${p.id}`}>
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-display font-bold text-[#f7f7f7]">{p.title}</p>
-                  <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5 shrink-0">{p.game}</span>
+                  <p className="font-display font-bold text-foreground">{p.title}</p>
+                  <span className="text-xs font-display tracking-[0.25em] uppercase text-primary border border-primary/40 px-2 py-0.5 shrink-0">{p.game}</span>
                 </div>
                 {p.prerequisites && (
-                  <div className="text-sm text-[#f7f7f7]/60">
-                    <span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.prereq")} :</span>
+                  <div className="text-sm text-foreground/60">
+                    <span className="text-primary/80 text-xs uppercase tracking-wider">{t("recruit.prereq")} :</span>
                     <Markdown source={p.prerequisites} className="text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h1]:mt-3 [&_h1]:mb-1 [&_h1]:text-xl [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-lg [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base" />
                   </div>
                 )}
                 {p.availability && (
-                  <div className="text-sm text-[#f7f7f7]/60">
-                    <span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.avail")} :</span>
+                  <div className="text-sm text-foreground/60">
+                    <span className="text-primary/80 text-xs uppercase tracking-wider">{t("recruit.avail")} :</span>
                     <Markdown source={p.availability} className="text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h1]:mt-3 [&_h1]:mb-1 [&_h1]:text-xl [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-lg [&_h3]:mt-2 [&_h3]:mb-1 [&_h3]:text-base" />
                   </div>
                 )}
                 {p.processText && (
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-[#D8CA82]/80 mb-1.5">{t("recruit.process")}</p>
-                    <ol className="text-sm text-[#f7f7f7]/60 space-y-1 list-decimal list-inside">
+                    <p className="text-xs uppercase tracking-wider text-primary/80 mb-1.5">{t("recruit.process")}</p>
+                    <ol className="text-sm text-foreground/60 space-y-1 list-decimal list-inside">
                       {p.processText.split("\n").filter(Boolean).map((s, i) => <li key={i}>{s}</li>)}
                     </ol>
                   </div>
                 )}
-                <div className="mt-auto pt-3 border-t border-white/10 flex items-center justify-between">
-                  <span className="text-xs text-[#c8c8c8]">{p.deadline ? `${t("recruit.deadline")} : ${p.deadline}` : ""}</span>
+                <div className="mt-auto pt-3 border-t border-border/25 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{p.deadline ? `${t("recruit.deadline")} : ${p.deadline}` : ""}</span>
                   <button onClick={() => applyTo(p)} data-testid={`recruit-apply-${p.id}`}
-                    className="bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
+                    className="clip-blade-sm bg-gold text-primary-foreground font-display text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow">
                     {t("recruit.apply")}
                   </button>
                 </div>
@@ -257,28 +257,28 @@ export default function Recruitment() {
       {/* PARCOURS DE CANDIDATURE — frise d'étapes + délais moyens publics */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16" data-testid="recruit-process-section" aria-labelledby="recruit-process-h2">
         <div className="flex items-center gap-4 mb-4">
-          <RouteIcon className="text-[#D8CA82]" size={18} aria-hidden="true" />
-          <h2 id="recruit-process-h2" className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("recruit.steps.title")}</h2>
-          <div className="flex-1 h-px bg-white/10" />
+          <RouteIcon className="text-primary" size={18} aria-hidden="true" />
+          <h2 id="recruit-process-h2" className="eyebrow">{t("recruit.steps.title")}</h2>
+          <div className="flex-1 gold-line opacity-50" />
         </div>
-        <p className="text-sm text-[#c8c8c8] mb-8 max-w-3xl">{t("recruit.steps.sub")}</p>
+        <p className="text-sm text-muted-foreground mb-8 max-w-3xl">{t("recruit.steps.sub")}</p>
         <ApplicationStepper variant="public" delays={delays} />
       </section>
 
       {/* TRYOUTS — créneaux d'essai planifiés + réservation */}
       <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-16" data-testid="recruit-tryout-section" aria-labelledby="recruit-tryout-h2">
         <div className="flex items-center gap-4 mb-4">
-          <CalendarCheck className="text-[#D8CA82]" size={18} aria-hidden="true" />
-          <h2 id="recruit-tryout-h2" className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{t("recruit.tryout.title")}</h2>
-          <div className="flex-1 h-px bg-white/10" />
+          <CalendarCheck className="text-primary" size={18} aria-hidden="true" />
+          <h2 id="recruit-tryout-h2" className="eyebrow">{t("recruit.tryout.title")}</h2>
+          <div className="flex-1 gold-line opacity-50" />
         </div>
-        <p className="text-sm text-[#c8c8c8] mb-8 max-w-3xl">{t("recruit.tryout.sub")}</p>
+        <p className="text-sm text-muted-foreground mb-8 max-w-3xl">{t("recruit.tryout.sub")}</p>
         <TryoutList />
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16 grid lg:grid-cols-12 gap-12" ref={formRef}>
         <div className="lg:col-span-5">
-          <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82] mb-6">{t("recruit.newApp")}</h2>
+          <h2 className="eyebrow mb-6">{t("recruit.newApp")}</h2>
           {parentalStatus === "confirmed" && (
             <div className="mb-6 border border-emerald-300/40 bg-emerald-300/5 p-4" role="status" data-testid="recruit-parental-confirmed">
               <p className="text-sm text-emerald-300">✅ Consentement parental confirmé. La candidature va être examinée par l'équipe.</p>
@@ -292,48 +292,48 @@ export default function Recruitment() {
           {!user ? (
             <LoginPrompt messageKey="recruit.loginRequired" prefix="recruit" />
           ) : (
-            <form onSubmit={submit} className="space-y-5 border border-white/10 bg-[#1A1A1A] p-6" data-testid="recruit-form" noValidate>
+            <form onSubmit={submit} className="space-y-5 panel clip-blade-sm p-6" data-testid="recruit-form" noValidate>
               <label htmlFor="recruit-website" className="sr-only">Site web</label>
               <input id="recruit-website" type="text" {...getHoneypotProps("website")} data-testid="recruit-honeypot" />
 
               {/* Postes ouverts OU candidature spontanée (scouting / essai libre) */}
-              <fieldset className="border border-white/10 p-4" data-testid="recruit-mode-group">
-                <legend className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] px-1">{t("recruit.mode.title")}</legend>
+              <fieldset className="border border-border/25 p-4" data-testid="recruit-mode-group">
+                <legend className="text-xs uppercase tracking-[0.2em] text-muted-foreground px-1">{t("recruit.mode.title")}</legend>
                 <div className="grid grid-cols-2 gap-3 mt-1">
                   {[
                     { id: "open", label: t("recruit.mode.open"), hint: t("recruit.mode.open.hint") },
                     { id: "spontaneous", label: t("recruit.mode.spontaneous"), hint: t("recruit.mode.spontaneous.hint") },
                   ].map((opt) => (
                     <label key={opt.id} htmlFor={`recruit-mode-${opt.id}`}
-                      className={`border p-3 cursor-pointer transition-colors ${mode === opt.id ? "border-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 hover:border-[#D8CA82]/40"}`}>
+                      className={`border p-3 cursor-pointer transition-colors ${mode === opt.id ? "border-primary bg-primary/10" : "border-border/30 hover:border-primary/40"}`}>
                       <span className="flex items-center gap-2">
                         <input id={`recruit-mode-${opt.id}`} type="radio" name="applicationMode" value={opt.id}
                           checked={mode === opt.id} onChange={() => { setMode(opt.id); markApplicationStarted(`mode_${opt.id}`); }}
-                          data-testid={`recruit-mode-${opt.id}`} className="accent-[#D8CA82]" />
-                        <span className="text-xs font-display uppercase tracking-[0.15em] text-[#f7f7f7]">{opt.label}</span>
+                          data-testid={`recruit-mode-${opt.id}`} className="accent-primary" />
+                        <span className="text-xs font-display uppercase tracking-[0.15em] text-foreground">{opt.label}</span>
                       </span>
-                      <span className="block text-[11px] text-[#c8c8c8]/70 mt-1.5 leading-snug">{opt.hint}</span>
+                      <span className="block text-[11px] text-muted-foreground/70 mt-1.5 leading-snug">{opt.hint}</span>
                     </label>
                   ))}
                 </div>
               </fieldset>
 
               {isSpontaneous && (
-                <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 p-4 flex gap-3" data-testid="recruit-spontaneous-note">
-                  <Sparkles size={16} className="text-[#D8CA82] shrink-0 mt-0.5" aria-hidden="true" />
-                  <p className="text-xs text-[#c8c8c8] leading-relaxed">{t("recruit.spontaneous.note")}</p>
+                <div className="border border-primary/30 bg-primary/5 p-4 flex gap-3" data-testid="recruit-spontaneous-note">
+                  <Sparkles size={16} className="text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">{t("recruit.spontaneous.note")}</p>
                 </div>
               )}
 
               <div>
-                <label htmlFor="recruit-pseudo" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.pseudo")}</label>
+                <label htmlFor="recruit-pseudo" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("recruit.form.pseudo")}</label>
                 <input id="recruit-pseudo" type="text" value={form.pseudo} onChange={set("pseudo")} required minLength={2} maxLength={60} className={inputCls} data-testid="recruit-pseudo-input" />
               </div>
 
               <div>
-                <label htmlFor="recruit-position" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">
+                <label htmlFor="recruit-position" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">
                   {isSpontaneous ? t("recruit.spontaneous.position") : t("recruit.form.position")}
-                  {isSpontaneous && <span className="text-[#c8c8c8]/50 normal-case tracking-normal"> ({t("recruit.spontaneous.optional")})</span>}
+                  {isSpontaneous && <span className="text-muted-foreground/50 normal-case tracking-normal"> ({t("recruit.spontaneous.optional")})</span>}
                 </label>
                 <input id="recruit-position" type="text" value={form.position} onChange={set("position")} required={!isSpontaneous}
                   maxLength={140} className={inputCls} data-testid="recruit-position-input" />
@@ -341,43 +341,43 @@ export default function Recruitment() {
 
               {isSpontaneous && (
                 <div>
-                  <label htmlFor="recruit-game" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.spontaneous.game")}</label>
+                  <label htmlFor="recruit-game" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("recruit.spontaneous.game")}</label>
                   <select id="recruit-game" value={form.game} onChange={set("game")} className={inputCls} data-testid="recruit-game-input"
                     aria-describedby="recruit-game-hint">
                     <option value="">—</option>
                     {GAMES.filter((g) => !isRemovedGame(g)).map((g) => <option key={g} value={g}>{g}</option>)}
                   </select>
-                  <p id="recruit-game-hint" className="text-[11px] text-[#c8c8c8]/60 mt-1.5">{t("recruit.spontaneous.game.hint")}</p>
+                  <p id="recruit-game-hint" className="text-[11px] text-muted-foreground/60 mt-1.5">{t("recruit.spontaneous.game.hint")}</p>
                 </div>
               )}
 
               <div>
-                <label htmlFor="recruit-ageRange" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{t("recruit.form.age")}</label>
+                <label htmlFor="recruit-ageRange" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{t("recruit.form.age")}</label>
                 <select id="recruit-ageRange" value={form.ageRange} onChange={set("ageRange")} required className={inputCls} data-testid="recruit-ageRange-input">
                   <option value="">—</option>
                   {AGE_RANGES.map((a) => <option key={a} value={a}>{a === MINOR_RANGE ? "Moins de 15 ans" : a}</option>)}
                 </select>
               </div>
               {isMinor && (
-                <div className="border border-[#D8CA82]/40 bg-[#D8CA82]/5 p-4 space-y-4" data-testid="recruit-parental-section">
-                  <p className="text-xs text-[#D8CA82] uppercase tracking-[0.2em] font-display">Consentement parental requis</p>
-                  <p className="text-xs text-[#c8c8c8] leading-relaxed">
+                <div className="border border-primary/40 bg-primary/5 p-4 space-y-4" data-testid="recruit-parental-section">
+                  <p className="text-xs text-primary uppercase tracking-[0.2em] font-display">Consentement parental requis</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Tu as moins de 15 ans : l'accord d'un titulaire de l'autorité parentale est obligatoire (RGPD / loi
                     Informatique et Libertés). Un email de confirmation lui sera envoyé — ta candidature ne sera examinée
                     qu'après sa validation. Sans confirmation sous 30 jours, elle sera automatiquement supprimée.
                   </p>
                   <div>
-                    <label htmlFor="recruit-parentName" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Nom et prénom du parent / tuteur</label>
+                    <label htmlFor="recruit-parentName" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">Nom et prénom du parent / tuteur</label>
                     <input id="recruit-parentName" type="text" value={parent.parentName} onChange={setParentField("parentName")} required={isMinor} className={inputCls} data-testid="recruit-parentName-input" />
                   </div>
                   <div>
-                    <label htmlFor="recruit-parentEmail" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">Email du parent / tuteur</label>
+                    <label htmlFor="recruit-parentEmail" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">Email du parent / tuteur</label>
                     <input id="recruit-parentEmail" type="email" value={parent.parentEmail} onChange={setParentField("parentEmail")} required={isMinor} placeholder="parent@exemple.fr" className={inputCls} data-testid="recruit-parentEmail-input" />
                   </div>
                   <label htmlFor="recruit-parent-consent" className="flex items-start gap-3 cursor-pointer" data-testid="recruit-parent-consent-label">
                     <input id="recruit-parent-consent" type="checkbox" checked={parentConsent} onChange={(e) => setParentConsent(e.target.checked)} data-testid="recruit-parent-consent-checkbox"
-                      className="mt-1 accent-[#D8CA82]" />
-                    <span className="text-xs text-[#c8c8c8] leading-relaxed">
+                      className="mt-1 accent-primary" />
+                    <span className="text-xs text-muted-foreground leading-relaxed">
                       Je certifie que le titulaire de l'autorité parentale indiqué ci-dessus est informé de cette candidature
                       et recevra un email pour confirmer son accord au traitement de mes données.
                     </span>
@@ -386,7 +386,7 @@ export default function Recruitment() {
               )}
               {fields.map((f) => (
                 <div key={f.key}>
-                  <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{f.label}</label>
+                  <label htmlFor={`recruit-${f.key}`} className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{f.label}</label>
                   {f.type === "textarea" ? (
                     <textarea id={`recruit-${f.key}`} value={form[f.key]} onChange={set(f.key)} required={f.required} rows={3} placeholder={f.placeholder} minLength={f.min} maxLength={f.max} className={inputCls} data-testid={`recruit-${f.key}-input`} />
                   ) : (
@@ -396,8 +396,8 @@ export default function Recruitment() {
               ))}
               <label htmlFor="recruit-consent" className="flex items-start gap-3 cursor-pointer" data-testid="recruit-consent-label">
                 <input id="recruit-consent" type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} data-testid="recruit-consent-checkbox"
-                  className="mt-1 accent-[#D8CA82]" />
-                <span className="text-xs text-[#c8c8c8] leading-relaxed">{t("recruit.form.consent")}</span>
+                  className="mt-1 accent-primary" />
+                <span className="text-xs text-muted-foreground leading-relaxed">{t("recruit.form.consent")}</span>
               </label>
               <Button type="submit" disabled={sending} data-testid="recruit-submit-btn" variant="gold" size="md">
                 {t("recruit.form.submit")}
@@ -409,12 +409,12 @@ export default function Recruitment() {
           {user && (
             <>
               <div className="flex items-center justify-between gap-3 mb-6">
-                <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#D8CA82]" data-testid="recruit-threads-title">
+                <h2 className="eyebrow" data-testid="recruit-threads-title">
                   {canSeeRecruit ? t("recruit.allApps") : t("recruit.myApps")}
                 </h2>
                 {canSeeRecruit && (
                   <Link to="/admin?tab=inbox" data-testid="recruit-inbox-link"
-                    className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+                    className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">
                     {tx("inbox.title")} →
                   </Link>
                 )}

@@ -91,7 +91,7 @@ export const TryoutList = ({ onBooked }) => {
 
   if (upcoming.length === 0) {
     return (
-      <p className="text-[#c8c8c8] border border-white/10 bg-[#141414] p-5" data-testid="recruit-tryout-empty">
+      <p className="text-muted-foreground panel clip-blade-sm p-5" data-testid="recruit-tryout-empty">
         {t("recruit.tryout.empty")}
       </p>
     );
@@ -104,27 +104,27 @@ export const TryoutList = ({ onBooked }) => {
         const bookable = isTryoutBookable(slot);
         const mine = !!bookings[slot.id];
         return (
-          <article key={slot.id} className="border border-white/10 bg-[#1A1A1A] p-6 flex flex-col gap-4" data-testid={`recruit-tryout-${slot.id}`}>
+          <article key={slot.id} className="panel clip-blade-sm p-6 flex flex-col gap-4" data-testid={`recruit-tryout-${slot.id}`}>
             <div className="flex items-start justify-between gap-3">
-              <p className="font-display font-bold text-[#f7f7f7]">{slot.title}</p>
+              <p className="font-display font-bold text-foreground">{slot.title}</p>
               {slot.game && (
-                <span className="text-xs font-display tracking-[0.25em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5 shrink-0">
+                <span className="text-xs font-display tracking-[0.25em] uppercase text-primary border border-primary/40 px-2 py-0.5 shrink-0">
                   {slot.game}
                 </span>
               )}
             </div>
 
-            <p className="text-sm text-[#f7f7f7]/80 flex items-center gap-2">
-              <CalendarCheck size={14} className="text-[#D8CA82]" aria-hidden="true" />
+            <p className="text-sm text-foreground/80 flex items-center gap-2">
+              <CalendarCheck size={14} className="text-primary" aria-hidden="true" />
               {fmtTryoutStart(slot, lang)}
               {Number(slot.durationMin) > 0 && ` · ${slot.durationMin} min`}
             </p>
 
             {slot.location && (
-              <p className="text-sm text-[#c8c8c8] flex items-center gap-2">
-                <MapPin size={14} className="text-[#D8CA82]/80" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <MapPin size={14} className="text-primary/80" aria-hidden="true" />
                 {/^https?:\/\//.test(slot.location) ? (
-                  <a href={slot.location} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] hover:underline break-all">
+                  <a href={slot.location} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
                     {slot.location}
                   </a>
                 ) : (
@@ -134,14 +134,14 @@ export const TryoutList = ({ onBooked }) => {
             )}
 
             {slot.instructions && (
-              <p className="text-sm text-[#c8c8c8]/70 leading-relaxed">
-                <span className="text-[#D8CA82]/80 text-xs uppercase tracking-wider">{t("recruit.tryout.instructions")} :</span>{" "}
+              <p className="text-sm text-muted-foreground/70 leading-relaxed">
+                <span className="text-primary/80 text-xs uppercase tracking-wider">{t("recruit.tryout.instructions")} :</span>{" "}
                 {slot.instructions}
               </p>
             )}
 
-            <div className="mt-auto pt-3 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-xs text-[#c8c8c8] flex items-center gap-1.5">
+            <div className="mt-auto pt-3 border-t border-border/25 flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <Users size={12} aria-hidden="true" />
                 {bookable ? (remaining === null ? `${slot.capacity || "∞"} ${t("recruit.tryout.unlimited")}` : `${remaining} ${t("recruit.tryout.remaining")}`) : t("recruit.tryout.full")}
               </span>
@@ -152,7 +152,7 @@ export const TryoutList = ({ onBooked }) => {
                 </span>
               ) : !user ? (
                 <Link to="/connexion" state={{ from: { pathname: "/recrutement" } }}
-                  className="focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] text-xs font-display uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid={`recruit-tryout-login-${slot.id}`}>
+                  className="focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary text-xs font-display uppercase tracking-widest text-primary hover:underline" data-testid={`recruit-tryout-login-${slot.id}`}>
                   {t("nav.login")} → {t("recruit.tryout.book")}
                 </Link>
               ) : (
@@ -161,7 +161,7 @@ export const TryoutList = ({ onBooked }) => {
                   onClick={() => book(slot)}
                   disabled={!bookable || busyId === slot.id}
                   data-testid={`recruit-tryout-book-${slot.id}`}
-                  className="focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] bg-[#D8CA82] text-[#111111] text-xs font-display font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow"
+                  className="focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary bg-gold text-primary-foreground text-xs font-display font-bold uppercase tracking-widest px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow"
                 >
                   {bookable ? t("recruit.tryout.book") : t("recruit.tryout.full")}
                 </button>

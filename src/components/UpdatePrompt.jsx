@@ -23,7 +23,7 @@ export const UpdatePrompt = () => {
         id: TOAST_ID,
         description: t("pwa.update.desc"),
         duration: Infinity,
-        icon: <RefreshCw size={16} className="text-[#D8CA82]" aria-hidden="true" />,
+        icon: <RefreshCw size={16} className="text-primary" aria-hidden="true" />,
         action: {
           label: t("pwa.update.action"),
           onClick: () => applyServiceWorkerUpdate(),

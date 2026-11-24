@@ -10,7 +10,7 @@ import { ConfirmAction } from "../ConfirmAction";
 import { isHttpUrl, isImageValue } from "../../lib/validation";
 import { ANALYTICS_EVENTS, trackEvent } from "../../lib/analytics";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY = {
   type: "photo", title: "", url: "", thumbnail: "", game: "EVA",
   playerTag: "", event: "", folder: "", tags: "", matchId: "", articleId: "",
@@ -145,13 +145,13 @@ export const AdminMedia = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10" data-testid="admin-media">
-      <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6 self-start" data-testid="admin-media-form">
+      <form onSubmit={submit} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6 self-start" data-testid="admin-media-form">
         <div className="flex items-center justify-between">
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">
             {editId ? t("common.edit") || "Modifier" : t("admin.media.add")}
           </p>
           {editId && (
-            <button type="button" onClick={cancelEdit} className="text-[#c8c8c8] hover:text-[#f7f7f7]" aria-label={t("common.cancel")}>
+            <button type="button" onClick={cancelEdit} className="text-muted-foreground hover:text-foreground" aria-label={t("common.cancel")}>
               <X size={16} />
             </button>
           )}
@@ -168,7 +168,7 @@ export const AdminMedia = () => {
         <input value={form.title} onChange={set("title")} placeholder={t("admin.events.titlePlaceholder")} required className={inputCls} data-testid="admin-media-title" />
         {form.type === "photo" ? (
           <div>
-            <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.media.photoUpload")}</label>
+            <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.media.photoUpload")}</label>
             <ImageUpload value={form.url} onChange={(url) => setForm((f) => ({ ...f, url }))} folder="media" maxWidth={2000} testId="admin-media-upload" />
           </div>
         ) : (
@@ -176,7 +176,7 @@ export const AdminMedia = () => {
         )}
         {form.type === "video" && (
           <div>
-            <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.media.thumbnailPlaceholder")}</label>
+            <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.media.thumbnailPlaceholder")}</label>
             <ImageUpload value={form.thumbnail} onChange={(url) => setForm((f) => ({ ...f, thumbnail: url }))} folder="media" maxWidth={800} testId="admin-media-thumbnail-upload" />
           </div>
         )}
@@ -188,7 +188,7 @@ export const AdminMedia = () => {
         {/* Dossiers, tags et rattachement — nouvelle médiathèque */}
         <div className="grid grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">
               <FolderOpen size={11} className="inline mr-1" /> Dossier
             </span>
             <input value={form.folder} onChange={set("folder")} list="media-folders" placeholder="matchs-2026"
@@ -198,7 +198,7 @@ export const AdminMedia = () => {
             </datalist>
           </label>
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">
               <Tag size={11} className="inline mr-1" /> Tags
             </span>
             <input value={form.tags} onChange={set("tags")} placeholder="mvp, rl, final"
@@ -207,7 +207,7 @@ export const AdminMedia = () => {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Match lié</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">Match lié</span>
             <select value={form.matchId} onChange={set("matchId")} className={inputCls} data-testid="admin-media-match">
               <option value="">—</option>
               {matches.map((m) => (
@@ -216,7 +216,7 @@ export const AdminMedia = () => {
             </select>
           </label>
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">Article lié</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">Article lié</span>
             <select value={form.articleId} onChange={set("articleId")} className={inputCls} data-testid="admin-media-article">
               <option value="">—</option>
               {articles.map((a) => <option key={a.id} value={a.id}>{a.title || a.id}</option>)}
@@ -225,7 +225,7 @@ export const AdminMedia = () => {
         </div>
 
         <button type="submit" data-testid="admin-media-submit"
-          className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+          className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
           {editId ? t("common.save") : t("notes.save")}
         </button>
       </form>
@@ -233,7 +233,7 @@ export const AdminMedia = () => {
       <div className="lg:col-span-7" data-testid="admin-media-list">
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <label className="relative flex-1">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher (titre, tag, dossier, événement)…"
               className={`${inputCls} pl-9`} data-testid="admin-media-search" />
           </label>
@@ -242,40 +242,40 @@ export const AdminMedia = () => {
             <option value="all">Tous les dossiers</option>
             {folders.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
-          <span className="text-xs text-[#c8c8c8] self-center">{filtered.length} / {media.length}</span>
+          <span className="text-xs text-muted-foreground self-center">{filtered.length} / {media.length}</span>
         </div>
 
         <div className="space-y-2">
-          {media.length === 0 && <p className="text-[#c8c8c8]">{t("media.empty")}</p>}
-          {media.length > 0 && filtered.length === 0 && <p className="text-[#c8c8c8]">Aucun média pour ces filtres.</p>}
+          {media.length === 0 && <p className="text-muted-foreground">{t("media.empty")}</p>}
+          {media.length > 0 && filtered.length === 0 && <p className="text-muted-foreground">Aucun média pour ces filtres.</p>}
           {filtered.map((m) => {
             const match = m.matchId ? linkedMatch(m.matchId) : null;
             const article = m.articleId ? linkedArticle(m.articleId) : null;
             return (
-              <div key={m.id} className="flex items-start gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3" data-testid={`admin-media-item-${m.id}`}>
-                <span className="text-xs uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-1.5 py-0.5 shrink-0">{t(`media.type.${m.type}`)}</span>
+              <div key={m.id} className="flex items-start gap-3 panel clip-blade-sm px-4 py-3" data-testid={`admin-media-item-${m.id}`}>
+                <span className="text-xs uppercase tracking-widest border border-primary/40 text-primary px-1.5 py-0.5 shrink-0">{t(`media.type.${m.type}`)}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
-                  <p className="text-xs text-[#c8c8c8] truncate">
+                  <p className="text-sm font-semibold text-foreground truncate">{m.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">
                     {m.game}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}
                     {m.folder ? ` · 📁 ${m.folder}` : ""}
                   </p>
                   {(m.tags || []).length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {m.tags.map((tag) => (
-                        <span key={tag} className="text-[10px] uppercase tracking-widest border border-white/15 text-[#c8c8c8] px-1.5 py-0.5">#{tag}</span>
+                        <span key={tag} className="text-[10px] uppercase tracking-widest border border-border/30 text-muted-foreground px-1.5 py-0.5">#{tag}</span>
                       ))}
                     </div>
                   )}
                   {(match || article) && (
                     <div className="flex flex-wrap gap-3 mt-1 text-[11px]">
                       {match && (
-                        <a href={`/resultats/${match.id}`} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] hover:underline">
+                        <a href={`/resultats/${match.id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           Match : {match.opponentName || match.id}
                         </a>
                       )}
                       {article && (
-                        <a href={`/actus/${article.id}`} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] hover:underline">
+                        <a href={`/actus/${article.id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           Article : {article.title || article.id}
                         </a>
                       )}
@@ -284,11 +284,11 @@ export const AdminMedia = () => {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button type="button" onClick={() => copyLink(m)} title={lang === "en" ? "Copy link" : "Copier le lien"}
-                    aria-label={`${lang === "en" ? "Copy link" : "Copier le lien"} ${m.title}`} className="text-[#c8c8c8] hover:text-[#D8CA82]">
+                    aria-label={`${lang === "en" ? "Copy link" : "Copier le lien"} ${m.title}`} className="text-muted-foreground hover:text-primary">
                     <Copy size={14} />
                   </button>
                   <button type="button" onClick={() => startEdit(m)} title={t("common.edit") || "Modifier"}
-                    aria-label={`${t("common.edit") || "Modifier"} ${m.title}`} className="text-[#c8c8c8] hover:text-[#D8CA82]"
+                    aria-label={`${t("common.edit") || "Modifier"} ${m.title}`} className="text-muted-foreground hover:text-primary"
                     data-testid={`admin-media-edit-${m.id}`}>
                     <Pencil size={14} />
                   </button>
