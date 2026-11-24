@@ -42,7 +42,7 @@ export const HeadToHead = ({ matches, opponentName, testId = "h2h" }) => {
     <div className="panel clip-blade-sm p-5" data-testid={testId}>
       <div className="flex items-center gap-3 mb-4">
         <Swords size={15} className="text-primary" aria-hidden="true" />
-        <p className="font-display text-xs uppercase tracking-[0.3em] text-foreground">
+        <p className="eyebrow">
           {t("h2h.title")} <span className="text-primary">{h2h.opponentName}</span>
         </p>
       </div>

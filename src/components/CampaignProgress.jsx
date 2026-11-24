@@ -29,10 +29,10 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
   const reached = pct >= 100;
 
   return (
-    <div className="panel clip-blade-sm border border-primary/30/70 p-5" data-testid={testId}>
+    <div className="panel clip-blade-sm border border-primary/30 p-5" data-testid={testId}>
       <div className="flex items-center gap-2 mb-2">
         <Target size={14} className="text-primary shrink-0" aria-hidden="true" />
-        <p className={`font-display uppercase tracking-[0.25em] text-foreground ${compact ? "text-xs" : "text-xs"}`}>
+        <p className={`eyebrow ${compact ? "text-[0.62rem]" : "text-[0.68rem]"}`}>
           {campaign.title}
         </p>
         {reached && (
@@ -41,7 +41,7 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
           </span>
         )}
       </div>
-      <div className="h-2.5 bg-primary/10 overflow-hidden mb-2">
+      <div className="clip-blade-sm h-2.5 bg-primary/10 overflow-hidden mb-2">
         <div
           className={`h-full transition-all ${reached ? "bg-emerald-400" : "bg-gold"}`}
           style={{ width: `${pct}%` }}

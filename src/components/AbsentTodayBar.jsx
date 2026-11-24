@@ -48,7 +48,7 @@ export const AbsentTodayBar = () => {
     <button
       onClick={() => navigate("/espace-joueur/planning")}
       data-testid="absent-today-bar"
-      className="w-full flex items-center gap-3 px-4 py-2 bg-[#8c1d18]/15 border-b border-red-400/25 hover:bg-[#8c1d18]/25 transition-colors text-left"
+      className="w-full flex items-center gap-3 px-4 py-2 bg-destructive/15 border-b border-red-400/25 hover:bg-destructive/25 transition-colors text-left"
       title={t("player.absentToday.view")}
     >
       <CalendarX size={15} className="text-red-300 shrink-0" aria-hidden="true" />

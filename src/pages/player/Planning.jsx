@@ -1427,7 +1427,7 @@ export default function Planning(){
         </p>
 
         {availMode==="week" && (
-          <div className="mx-3 md:mx-4 my-3 border border-red-400/30 bg-[#8c1d18]/10 p-3" data-testid="absence-quick-panel">
+          <div className="mx-3 md:mx-4 my-3 border border-red-400/30 bg-destructive/10 p-3" data-testid="absence-quick-panel">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex items-start gap-3 lg:w-[300px]">
                 <CalendarOff size={18} className="text-red-300 mt-0.5 shrink-0" aria-hidden="true" />
@@ -1495,7 +1495,7 @@ export default function Planning(){
                   const myAbsence = user ? absenceIndex[`${user.uid}_${key}`] : null;
                   const dayAbsences = teamAbsencesForWeek[key] || [];
                   return (
-                    <div key={key} className={`flex-1 px-2 py-3 border-r border-border/20 last:border-0 text-center relative group/day ${today?"bg-primary/10":""} ${myAbsence?"bg-[#8c1d18]/10":""}`}>
+                    <div key={key} className={`flex-1 px-2 py-3 border-r border-border/20 last:border-0 text-center relative group/day ${today?"bg-primary/10":""} ${myAbsence?"bg-destructive/10":""}`}>
                       <div className="flex items-center justify-center gap-1">
                         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{d.toLocaleDateString(locale,{weekday:"short"})}</p>
                         <button
@@ -1591,7 +1591,7 @@ export default function Planning(){
                             data-testid={`absence-overlay-${key}`}
                             aria-label={t("planning.absence.remove")}
                             title={t("planning.absence.remove")}
-                            className="absolute inset-0 absence-hatch bg-background/70/85 border border-red-400/30 flex items-center justify-center group/abs cursor-pointer">
+                            className="absolute inset-0 absence-hatch bg-background/85 border border-red-400/30 flex items-center justify-center group/abs cursor-pointer">
                             <span className="text-xs font-display font-bold uppercase tracking-[0.3em] text-red-300 bg-background/90 border border-red-400/40 px-2 py-1 [writing-mode:vertical-rl]">
                               {t("planning.absence.absent")}
                             </span>
@@ -1713,7 +1713,7 @@ export default function Planning(){
             type="button"
             onClick={() => { setTab("availability"); setAvailMode("week"); openAbsenceModal(toDateKey(currentDate)); }}
             data-testid="planning-absence-shortcut"
-            className="bg-[#8c1d18] text-foreground font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(220,38,38,0.3)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300"
+            className="clip-blade-sm bg-destructive text-destructive-foreground font-display font-bold uppercase tracking-widest text-xs px-4 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(220,38,38,0.3)] u-micro-shadow focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-300"
             title={t("planning.absence.shortcutHelp")}
           >
             <CalendarOff size={14} aria-hidden="true" /> {t("planning.absence.shortcut")}
@@ -1910,7 +1910,7 @@ export default function Planning(){
               </div>
 
               {/* Mes absences à venir */}
-              <div className="border border-[#8c1d18]/40 bg-card/70 p-4" data-testid="absence-panel">
+              <div className="panel clip-blade-sm border border-destructive/40 p-4" data-testid="absence-panel">
                 <p className="text-xs uppercase tracking-[0.3em] text-red-300/90 mb-3 flex items-center gap-2">
                   <CalendarOff size={12} aria-hidden="true" /> {t("planning.absence.myAbsences")}
                 </p>
@@ -2017,7 +2017,7 @@ export default function Planning(){
           <div className="w-full max-w-[440px] bg-card border border-border/30 animate-in fade-in zoom-in duration-200" data-testid="absence-modal">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/25">
               <div className="flex items-center gap-3">
-                <div className="w-1 h-6 bg-[#8c1d18]" aria-hidden="true" />
+                <div className="w-1 h-6 bg-destructive" aria-hidden="true" />
                 <h3 id="absence-modal-title" className="font-display text-sm uppercase tracking-[0.25em] text-foreground">{t("planning.absence.title")}</h3>
               </div>
               <button onClick={()=> { setAbsenceModal(null); setAbsenceReason(""); }} aria-label={t("common.cancel")}
