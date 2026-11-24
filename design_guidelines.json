@@ -1,30 +1,33 @@
 {
-  "theme": "dark",
+  "theme": "dark — ELYSIUM obsidian + divine gold",
   "archetype": "LUXURY / PERFORMANCE PRO HYBRID",
   "typography": {
     "headings": "Orbitron",
+    "labels": "Chakra Petch",
     "body": "Rajdhani",
-    "fallback_headings": "Bungee or Chakra Petch",
-    "font_install_commands": "Install from Google Fonts in index.css using @import"
+    "loading": "Google Fonts <link> in public/index.html",
+    "rules": "font-display = Orbitron + 0.02em; .eyebrow = Chakra Petch 600, 0.38em uppercase, gold"
   },
   "colors": {
-    "background": "#111111",
-    "surface": "#1A1A1A",
-    "primary": "#D8CA82",
-    "primary_foreground": "#111111",
-    "secondary": "#222222",
-    "secondary_foreground": "#f7f7f7",
-    "text_primary": "#f7f7f7",
-    "text_secondary": "#a0a0a0",
-    "border": "rgba(216, 202, 130, 0.2)",
-    "accent": "#D8CA82",
-    "destructive": "#8c1d18"
+    "notation": "oklch custom properties in src/index.css, consumed as oklch(var(--token) / <alpha-value>)",
+    "background": "oklch(0.12 0.006 85)",
+    "card": "oklch(0.16 0.008 85)",
+    "foreground": "oklch(0.95 0.012 95)",
+    "primary": "oklch(0.84 0.095 98)",
+    "primary_foreground": "oklch(0.15 0.012 85)",
+    "muted_foreground": "oklch(0.72 0.02 90)",
+    "border": "oklch(0.84 0.095 98 / 16%)",
+    "destructive": "oklch(0.62 0.2 27)",
+    "radius": "0.125rem (blade cut-paths instead of rounded corners)"
   },
   "visual_enhancers": {
-    "shadows": "Minimal. Use a subtle glow for Heritage Gold accents: drop-shadow-[0_0_8px_rgba(216,202,130,0.5)]. No soft generic gray shadows.",
-    "borders": "Sharp 1px borders. Use border-white/10 for structural grids and border-[#D8CA82]/50 for interactive/focus states.",
-    "textures": "Use the local brand asset /brand/pattern.png overlaid with low opacity (10-20%) and blend-mode: soft-light over #111111 background.",
-    "surfaces": "Solid Midnight Black backgrounds. For sticky headers, use heavy glassmorphism: bg-[#111111]/80 backdrop-blur-xl border-b border-white/10."
+    "surfaces": "panel = obsidian gradient + 1px gold-tinted border + blur(14px) + deep shadow",
+    "corners": "clip-blade (14px) / clip-blade-sm (8px) polygon cuts — never border-radius",
+    "accent_text": "text-gold = animated 135deg gold gradient clipped to text",
+    "rules": "gold-line = 1px transparent→gold→transparent gradient",
+    "motion": "Reveal (3D lift on scroll), TiltCard (pointer tilt + glare), RiseTitle (letters rise in 3D), marquee footer",
+    "backdrop": "fixed 3D gold emblem (three.js) per route + veil gradient; disabled without WebGL or under prefers-reduced-motion",
+    "accessibility": "all motion collapses under prefers-reduced-motion; golden focus ring on every interactive element"
   },
   "grids": {
     "marketing": "Asymmetrical layout, big typography, generous spacing (p-12, p-24). Bento grid with gap-8 for feature highlights.",
@@ -120,5 +123,6 @@
     "All interactive elements and key text MUST include a data-testid attribute (kebab-case, role-based).",
     "Never use placeholder image services. Use the provided Unsplash/Pexels URLs or local brand assets.",
     "Never use standard AI assistant emojis in the UI. Use proper icon libraries like Phosphor or Lucide."
-  ]
+  ],
+  "design_source": "https://github.com/Elysiumweb/Elysium-design"
 }

@@ -269,20 +269,20 @@ export default function Home() {
           </div>
           <div className="lg:col-span-8">
             <Reveal delay={120}>
-            <h2 id="home-manifesto-h2" className="eyebrow mb-4">{t("home.manifesto.title")}</h2>
-            <p className="font-display text-3xl font-black uppercase leading-[1.05] sm:text-4xl lg:text-5xl mb-6">
-              Not given. <span className="text-gold">Earned.</span>
-            </p>
-            <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed">
-              {t("home.manifesto.text")}
-            </p>
+              <h2 id="home-manifesto-h2" className="eyebrow mb-4">{t("home.manifesto.title")}</h2>
+              <p className="font-display text-3xl font-black uppercase leading-[1.05] sm:text-4xl lg:text-5xl mb-6">
+                Not given. <span className="text-gold">Earned.</span>
+              </p>
+              <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed">
+                {t("home.manifesto.text")}
+              </p>
             </Reveal>
           </div>
         </div>
       </section>
 
       {/* BOUTIQUE — lancement du maillot officiel */}
-      <section className="border-b border-border/25 bg-background" data-testid="home-shop" aria-labelledby="home-shop-title">
+      <section className="border-b border-border/25 bg-background/40" data-testid="home-shop" aria-labelledby="home-shop-title">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
           <div className="grid md:grid-cols-2 panel clip-blade overflow-hidden group">
             <div className="relative aspect-square bg-background/70 overflow-hidden">
