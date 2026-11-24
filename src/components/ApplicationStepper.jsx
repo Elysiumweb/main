@@ -70,7 +70,7 @@ export const ApplicationStepper = ({
             {variant === "thread" && (
               <span
                 aria-hidden="true"
-                className={`mt-0.5 h-6 w-6 shrink-0 border flex items-center justify-center ${
+                className={`clip-blade-sm mt-0.5 h-6 w-6 shrink-0 border flex items-center justify-center ${
                   done
                     ? "border-primary bg-gold text-primary-foreground"
                     : current
@@ -85,7 +85,7 @@ export const ApplicationStepper = ({
             <div className={variant === "thread" ? "flex-1 pb-4" : "flex-1"}>
               <div className="flex items-center gap-2 flex-wrap">
                 <p
-                  className={`font-display text-xs uppercase tracking-[0.2em] ${
+                  className={`font-label text-[0.68rem] font-semibold uppercase tracking-[0.16em] ${
                     current ? "text-primary" : done ? "text-foreground/80" : "text-muted-foreground/50"
                   }`}
                 >

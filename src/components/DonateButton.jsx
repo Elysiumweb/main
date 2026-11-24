@@ -113,7 +113,7 @@ export const DonateButton = ({
             rel="noopener noreferrer"
             data-testid="donate-paypal-fallback-link"
             onClick={() => trackEvent(ANALYTICS_EVENTS.DONATE_CLICK, { source: "paypal_fallback" })}
-            className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            className="clip-blade-sm bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-4 inline-flex items-center gap-2 hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.45)] transition-shadow motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
             <Heart size={16} aria-hidden="true" /> {t("donate.cta")}
             <ExternalLink size={13} aria-hidden="true" />
@@ -135,7 +135,7 @@ export const DonateSubscriptionBlock = ({ testId = "donate-subscription" }) => {
   const { t } = useLang();
   if (!PAYPAL_SUBSCRIPTION_HOSTED_BUTTON_ID) {
     return (
-      <div className="border border-border/30 bg-card/70 px-4 py-3 text-xs text-muted-foreground leading-relaxed" data-testid={testId}>
+      <div className="clip-blade-sm border border-border/30 bg-card/70 px-4 py-3 text-xs text-muted-foreground leading-relaxed" data-testid={testId}>
         {t("donate.monthly.notConfigured")}{" "}
         <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>
       </div>

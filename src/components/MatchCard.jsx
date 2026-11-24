@@ -52,7 +52,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   if (cancelled) {
     return (
       <span
-        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-amber-300 border-amber-400/50 bg-amber-500/10 flex items-center gap-1"
+        className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase border px-2 py-0.5 text-amber-300 border-amber-400/50 bg-amber-500/10 flex items-center gap-1"
         data-testid="match-status-cancelled"
       >
         <Ban size={11} aria-hidden="true" />
@@ -63,7 +63,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   if (live) {
     return (
       <span
-        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-400/60 bg-red-500/10 flex items-center gap-1.5"
+        className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase border px-2 py-0.5 text-red-300 border-red-400/60 bg-red-500/10 flex items-center gap-1.5"
         data-testid="match-status-live"
       >
         <span className="relative flex h-2 w-2" aria-hidden="true">
@@ -77,7 +77,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   if (upcoming) {
     return (
       <span
-        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-sky-300 border-sky-300/40 flex items-center gap-1"
+        className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase border px-2 py-0.5 text-sky-300 border-sky-300/40 flex items-center gap-1"
         data-testid="match-status-upcoming"
       >
         <CalendarClock size={11} aria-hidden="true" />
@@ -88,7 +88,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   if (result === "win") {
     return (
       <span
-        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-emerald-300 border-emerald-300/50 flex items-center gap-1"
+        className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase border px-2 py-0.5 text-emerald-300 border-emerald-300/50 flex items-center gap-1"
         data-testid="match-status-win"
       >
         <Trophy size={11} aria-hidden="true" />
@@ -99,7 +99,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   if (result === "loss") {
     return (
       <span
-        className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-red-300 border-red-300/50 flex items-center gap-1"
+        className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase border px-2 py-0.5 text-red-300 border-red-300/50 flex items-center gap-1"
         data-testid="match-status-loss"
       >
         <Skull size={11} aria-hidden="true" />
@@ -109,7 +109,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   }
   return (
     <span
-      className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-muted-foreground border-border/40 flex items-center gap-1"
+      className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase border px-2 py-0.5 text-muted-foreground border-border/40 flex items-center gap-1"
       data-testid="match-status-draw"
     >
       <span aria-hidden="true">=</span>
@@ -198,9 +198,9 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       </span>
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-display tracking-[0.3em] uppercase text-primary border border-primary/40 px-2 py-0.5">{match.game || "EVA"}</span>
+          <span className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase text-primary border border-primary/40 px-2 py-0.5">{match.game || "EVA"}</span>
           {roster && (
-            <span className="text-xs font-display tracking-[0.25em] uppercase text-foreground/70 border border-border/30 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
+            <span className="clip-blade-sm font-label text-[0.62rem] font-semibold tracking-[0.18em] uppercase text-muted-foreground border border-border/30 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
               {roster}
             </span>
           )}
@@ -221,7 +221,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
             <p className="font-display font-black text-2xl text-muted-foreground" aria-label={live ? "Score en cours de mise à jour" : "Match à venir"}>VS</p>
           ) : (
             <p className="font-display font-black text-3xl text-foreground" aria-label={`Score : ${us} à ${them}`}>
-              <span className={result === "win" ? "text-primary" : "text-foreground"}>{match.scoreUs}</span>
+              <span className={result === "win" ? "text-gold" : "text-foreground"}>{match.scoreUs}</span>
               <span className="text-muted-foreground mx-2" aria-hidden="true">—</span>
               <span className="text-foreground">{match.scoreThem}</span>
             </p>
@@ -258,7 +258,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
         </div>
       )}
       {(onEdit || onDelete || onDuplicate || onMarkUpcoming) && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10 motion-reduce:transition-none flex items-center gap-1 bg-background/80 border border-border/25 px-1 py-0.5">
+        <div className="clip-blade-sm absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10 motion-reduce:transition-none flex items-center gap-1 bg-background/90 border border-border/25 px-1 py-0.5 backdrop-blur">
           {onDuplicate && (
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(match); }}
