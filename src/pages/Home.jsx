@@ -233,7 +233,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:animate-none" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-red-400" />
             </span>
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")} :</p>
+            <p className="eyebrow text-red-300 font-bold">{t("results.liveNow")} :</p>
             {liveMatches.map((m) => (
               <span key={m.id} className="text-sm text-foreground">
                 {getElysiumTeamName(m.roster)} vs {m.opponentName || "?"}

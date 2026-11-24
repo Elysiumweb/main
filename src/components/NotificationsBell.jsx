@@ -65,7 +65,7 @@ export const NotificationsBell = () => {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 panel clip-blade-sm border border-primary/25 rounded-none p-0 text-foreground" data-testid="notifications-panel">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/25">
-          <p className="font-display text-xs uppercase tracking-[0.25em] text-primary">{t("notif.title")}</p>
+          <p className="eyebrow">{t("notif.title")}</p>
           {unread.length > 0 && (
             <button onClick={markAllRead} className="text-xs uppercase tracking-widest text-foreground/50 hover:text-primary" data-testid="notifications-mark-read">
               {t("notif.markRead")}

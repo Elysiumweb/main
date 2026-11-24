@@ -300,7 +300,7 @@ export default function PartnerDetail() {
 
           {others.length > 0 && (
             <div className="border border-border/25 bg-background/70 p-6" data-testid="partner-detail-others">
-              <p className="font-display text-xs uppercase tracking-[0.3em] text-foreground mb-4">
+              <p className="eyebrow mb-4">
                 {t("partners.sheet.others")}
               </p>
               <ul className="space-y-3">

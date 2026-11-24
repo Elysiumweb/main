@@ -150,20 +150,20 @@ export default function Press() {
           <a href="/brand/elysium-press-kit.zip" download data-testid="press-download-zip"
             className="panel clip-blade-sm border border-primary/30 p-6 flex flex-col hover:border-primary/60 transition-colors group">
             <Package className="text-primary mb-3 group-hover:scale-105 transition-transform" size={22} aria-hidden="true" />
-            <p className="font-display text-xs uppercase tracking-[0.25em] text-foreground">Kit presse complet · ZIP</p>
+            <p className="eyebrow">Kit presse complet · ZIP</p>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Tous les logos PNG + SVG + PDF, pattern et accents aux bonnes dimensions. 10 fichiers vectoriels inclus.</p>
             <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Download size={12} /> Télécharger le ZIP</span>
           </a>
           <a href="/brand/charte-elysium.pdf" download data-testid="press-download-charte"
             className="panel clip-blade-sm p-6 flex flex-col hover:border-primary/40 transition-colors group">
             <FileText className="text-primary mb-3" size={22} aria-hidden="true" />
-            <p className="font-display text-xs uppercase tracking-[0.25em] text-foreground">Charte graphique · PDF</p>
+            <p className="eyebrow">Charte graphique · PDF</p>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Couleurs officielles, zone de protection, taille minimale, fonds autorisés & usages interdits.</p>
             <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Download size={12} /> Télécharger le PDF</span>
           </a>
           <div className="border border-border/25 bg-background/70 p-6 flex flex-col" data-testid="press-key-figures">
             <Award className="text-primary mb-3" size={22} aria-hidden="true" />
-            <p className="font-display text-xs uppercase tracking-[0.25em] text-primary">Chiffres-clés — au 20 août 2026</p>
+            <p className="eyebrow">Chiffres-clés — au 20 août 2026</p>
             <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground leading-relaxed">
               <li>• Fondée 2026 · Association loi 1901 · RNA W772011943</li>
               <li>• 2 pôles : EVA · Rocket League</li>
@@ -216,7 +216,7 @@ export default function Press() {
         </div>
 
         <div className="panel clip-blade-sm p-6 mb-12" data-testid="press-exports">
-          <h2 className="eyebrow text-foreground mb-4">Exports dédiés par usage</h2>
+          <h2 className="eyebrow mb-4">Exports dédiés par usage</h2>
           <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Chaque contexte utilise son fichier natif, pas un PNG étiré en CSS.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             {USAGE_EXPORTS.map((u) => (

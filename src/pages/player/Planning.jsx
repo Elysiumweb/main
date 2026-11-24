@@ -1432,7 +1432,7 @@ export default function Planning(){
               <div className="flex items-start gap-3 lg:w-[300px]">
                 <CalendarOff size={18} className="text-red-300 mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <p className="font-display text-xs uppercase tracking-[0.25em] text-red-200">{t("planning.absence.quickTitle")}</p>
+                  <p className="eyebrow text-red-200">{t("planning.absence.quickTitle")}</p>
                   <p className="text-xs text-foreground/55 mt-1 leading-relaxed">{t("planning.absence.quickSub")}</p>
                 </div>
               </div>

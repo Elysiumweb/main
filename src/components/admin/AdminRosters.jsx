@@ -116,7 +116,7 @@ export const AdminRosters = () => {
             <div key={g}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getGameColor(g) }} aria-hidden="true" />
-                <p className="font-display text-xs uppercase tracking-[0.3em] text-foreground">{g}</p>
+                <p className="eyebrow">{g}</p>
                 <div className="flex-1 gold-line opacity-50" />
               </div>
               <div className="space-y-2">

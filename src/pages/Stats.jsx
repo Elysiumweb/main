@@ -511,7 +511,7 @@ export default function Stats() {
                   <div className="mt-6" data-testid="stats-leaders">
                     <div className="flex items-center gap-3 mb-1">
                       <TrendingUp className="text-primary" size={14} />
-                      <h4 className="font-display text-xs uppercase tracking-[0.3em] text-foreground">{t("stats.leaders")}</h4>
+                      <h4 className="eyebrow">{t("stats.leaders")}</h4>
                     </div>
                     <p className="text-xs text-muted-foreground mb-4">{t("stats.leaders.sub")}</p>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">

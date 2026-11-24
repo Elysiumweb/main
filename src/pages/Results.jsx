@@ -196,7 +196,7 @@ export default function Results() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:animate-none" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-400" />
               </span>
-              <p className="font-display text-xs uppercase tracking-[0.3em] text-red-300 font-bold">{t("results.liveNow")}</p>
+              <p className="eyebrow text-red-300 font-bold">{t("results.liveNow")}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="results-live-grid">
               {liveMatches.map((m) => <MatchCard key={m.id} match={m} nowMs={nowMs} initialOpen={m.id===matchParam} />)}

@@ -141,7 +141,7 @@ export const AdminAnalytics = () => {
 
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 panel clip-blade-sm p-4">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.chart.daily")}</p>
+              <p className="eyebrow mb-4">{tx("an.chart.daily")}</p>
               <div className="h-64" data-testid="admin-analytics-chart">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={summary.daily} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
@@ -161,7 +161,7 @@ export const AdminAnalytics = () => {
             </div>
 
             <div className="panel clip-blade-sm p-4">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.chart.topPages")}</p>
+              <p className="eyebrow mb-4">{tx("an.chart.topPages")}</p>
               {summary.pages.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{tx("an.empty")}</p>
               ) : (
@@ -184,7 +184,7 @@ export const AdminAnalytics = () => {
 
           <div className="grid lg:grid-cols-2 gap-6 mt-6">
             <div className="panel clip-blade-sm p-4" data-testid="admin-analytics-funnel">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.funnel.title")}</p>
+              <p className="eyebrow mb-4">{tx("an.funnel.title")}</p>
               <div className="space-y-4">
                 {[
                   { label: tx("an.funnel.started"), value: summary.funnel.started, max: Math.max(1, summary.funnel.started) },
@@ -207,7 +207,7 @@ export const AdminAnalytics = () => {
             </div>
 
             <div className="panel clip-blade-sm p-4">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.chart.events")}</p>
+              <p className="eyebrow mb-4">{tx("an.chart.events")}</p>
               {summary.topEvents.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{tx("an.empty")}</p>
               ) : (
@@ -232,7 +232,7 @@ export const AdminAnalytics = () => {
 
           <div className="panel clip-blade-sm mt-6" data-testid="admin-analytics-event-table">
             <div className="px-4 py-3 border-b border-border/25 flex items-center justify-between">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary">{tx("an.plan.title")}</p>
+              <p className="eyebrow">{tx("an.plan.title")}</p>
               <p className="text-xs text-muted-foreground/60">{summary.totalEvents} {tx("an.table.count")}</p>
             </div>
             <div className="overflow-x-auto">
