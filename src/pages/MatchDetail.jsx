@@ -162,10 +162,10 @@ export default function MatchDetail() {
     jsonLd,
   });
 
-  if (error) return <div className="min-h-[60vh] bg-background flex items-center justify-center"><ErrorState onRetry={()=>window.location.reload()} testId="match-detail-error" /></div>;
+  if (error) return <div className="min-h-[60vh] bg-transparent flex items-center justify-center"><ErrorState onRetry={()=>window.location.reload()} testId="match-detail-error" /></div>;
   if (loading) return <div className="min-h-[60vh] bg-transparent"><LoadingState testId="match-detail-loading" /></div>;
   if (!match) return (
-    <div className="min-h-[60vh] bg-background flex flex-col items-center justify-center gap-4">
+    <div className="min-h-[60vh] bg-transparent flex flex-col items-center justify-center gap-4">
       <p className="text-muted-foreground">Match introuvable.</p>
       <Link to="/resultats" className="border border-primary/50 text-primary px-5 py-2 text-xs uppercase tracking-widest">Retour aux résultats</Link>
     </div>

@@ -159,7 +159,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-background py-16 px-4">
+    <div className="min-h-[70vh] bg-transparent py-16 px-4">
       <div className="max-w-2xl mx-auto space-y-10">
         <PageBreadcrumb className="opacity-80" items={[{ label: t("nav.profile") }]} />
         <div>

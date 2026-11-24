@@ -131,7 +131,7 @@ export default function Home() {
   }, [members]);
 
   return (
-    <div className="bg-background">
+    <div className="bg-transparent">
       {/* HERO */}
       <section className="relative flex min-h-[78svh] items-end pb-14 pt-14 sm:min-h-[72vh] sm:items-center sm:pb-0" data-testid="home-hero" aria-labelledby="home-h1">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full relative">
@@ -621,7 +621,7 @@ export default function Home() {
 
       {/* PARTENAIRES — « Ils nous font confiance », logos cliquables vers la fiche */}
       {partners.length > 0 && (
-        <section className="border-t border-border/25 bg-background" aria-labelledby="home-partners-h2" data-testid="home-partners">
+        <section className="border-t border-border/25 bg-background/60" aria-labelledby="home-partners-h2" data-testid="home-partners">
           <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
             <div className="flex items-center gap-4 mb-4">
               <Handshake className="text-primary" size={20} aria-hidden="true" />

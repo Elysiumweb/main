@@ -72,7 +72,7 @@ export default function OpponentDetail() {
   if (error) return <div className="min-h-[60vh] bg-transparent"><ErrorState testId="opponent-detail-error" /></div>;
   if (matches===null) return <div className="min-h-[60vh] bg-transparent"><LoadingState testId="opponent-detail-loading" /></div>;
   if (!opponent) return (
-    <div className="min-h-[60vh] bg-background flex flex-col items-center justify-center gap-4">
+    <div className="min-h-[60vh] bg-transparent flex flex-col items-center justify-center gap-4">
       <p className="text-muted-foreground">Adversaire introuvable : {slug}</p>
       <Link to="/adversaires" className="border border-primary/50 text-primary px-5 py-2 text-xs uppercase tracking-widest">Tous les adversaires</Link>
     </div>

@@ -131,7 +131,7 @@ export default function Login() {
   const passwordHintId = "login-password-hint";
 
   return (
-    <div className="min-h-[80vh] bg-background relative flex items-center justify-center px-4 py-16 overflow-hidden">
+    <div className="min-h-[80vh] bg-transparent relative flex items-center justify-center px-4 py-16 overflow-hidden">
       <div className="pattern-overlay" />
       <div
         className="w-full max-w-md panel clip-blade shadow-gold p-8 relative anim-fade-up motion-reduce:animate-none"
