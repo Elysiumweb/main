@@ -69,7 +69,7 @@ export default function Shop() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb className="opacity-80" items={[{ label: t("shop.title") }]} />
-          <p className="font-display text-xs uppercase tracking-[0.4em] text-primary mb-4">Official merch • 2026</p>
+          <p className="eyebrow mb-4">Official merch • 2026</p>
           <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="shop-title">
             {t("shop.title")}
           </h1>
@@ -82,7 +82,7 @@ export default function Shop() {
         <ProductCard id="jersey-2026" alt={t("shop.imageAlt")} badge={t("shop.official")}>
           <div className="flex items-center gap-3 text-primary mb-5">
             <Shirt size={20} aria-hidden="true" />
-            <span className="text-xs font-display uppercase tracking-[0.35em]">Elysium • 2026</span>
+            <span className="text-xs eyebrow">Elysium • 2026</span>
           </div>
           <h2 id="jersey-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-foreground leading-tight">
             {t("shop.productName")}
@@ -119,7 +119,7 @@ export default function Shop() {
         <ProductCard id="manchettes-2026" alt={t("shop.manchettes.imageAlt")} badge={t("shop.manchettes.badge")}>
           <div className="flex items-center gap-3 text-primary mb-5">
             <Sparkles size={20} aria-hidden="true" />
-            <span className="text-xs font-display uppercase tracking-[0.35em]">Elysium • 2026</span>
+            <span className="text-xs eyebrow">Elysium • 2026</span>
           </div>
           <h2 id="manchettes-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-foreground leading-tight">
             {t("shop.manchettes.name")}

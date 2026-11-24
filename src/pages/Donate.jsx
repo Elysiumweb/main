@@ -34,11 +34,9 @@ export default function Donate() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <PageBreadcrumb className="opacity-80" items={[{ label: t("donate.title") }]} />
-          <p className="text-xs font-display uppercase tracking-[0.45em] text-primary mb-5">
-            {t("donate.badge")}
-          </p>
+          <p className="eyebrow mb-5">{t("donate.badge")}</p>
           <h1
-            className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-foreground uppercase leading-none"
+            className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold"
             data-testid="donate-title"
           >
             {t("donate.title")}

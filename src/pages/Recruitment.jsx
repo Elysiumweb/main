@@ -21,7 +21,7 @@ import { Markdown } from "../lib/markdown";
 import { useRecruitmentSettings } from "../hooks/useRecruitmentSettings";
 import { RECRUIT_STATUSES } from "../lib/recruitment";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 /* La tranche « -15 » matérialise le seuil légal français de consentement
    numérique (15 ans, art. 45 loi Informatique et Libertés) : en dessous, un
    parcours de consentement parental vérifié par email est obligatoire. */

@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { ImageUpload } from "../ImageUpload";
 import { isHttpUrl, isImageValue } from "../../lib/validation";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY = { name: "", slug: "", logo: "", country: "", website: "", twitter: "" };
 
 const slugify = (s) => String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80);

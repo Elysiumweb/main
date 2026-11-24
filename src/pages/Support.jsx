@@ -20,8 +20,8 @@ import { SocialIcon } from "../components/SocialIcon";
 const CATS = ["account", "technical", "team", "other"];
 const PRIOS = ["low", "normal", "high"];
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
-const selectCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
+const selectCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 
 /* Recherche insensible aux accents et à la casse (« don » trouve « dons »). */
 const fold = (s) =>

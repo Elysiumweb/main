@@ -10,7 +10,7 @@ import { ConfirmAction } from "../ConfirmAction";
 import { isHttpUrl, isImageValue } from "../../lib/validation";
 import { ANALYTICS_EVENTS, trackEvent } from "../../lib/analytics";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY = {
   type: "photo", title: "", url: "", thumbnail: "", game: "EVA",
   playerTag: "", event: "", folder: "", tags: "", matchId: "", articleId: "",

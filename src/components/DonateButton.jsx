@@ -214,7 +214,7 @@ export const DonateBlock = ({ testId = "donate-block" }) => {
       />
       <div className="relative grid lg:grid-cols-12 gap-8 items-center">
         <div className="lg:col-span-7">
-          <p className="text-xs font-display uppercase tracking-[0.35em] text-primary mb-4">
+          <p className="text-xs eyebrow mb-4">
             {t("donate.badge")}
           </p>
           <h3 className="font-display font-black text-2xl sm:text-3xl uppercase text-foreground leading-tight">

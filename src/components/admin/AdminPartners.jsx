@@ -54,7 +54,7 @@ import {
  * ------------------------------------------------------------------------- */
 
 const inputCls =
-  "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+  "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const labelCls = "text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2";
 
 const EMPTY = {

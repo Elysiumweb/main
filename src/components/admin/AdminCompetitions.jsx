@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { StandingsCsvImport } from "./StandingsCsvImport";
 import { sortStandingsRows } from "../../lib/standingsCsv";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const STATUSES = ["upcoming", "ongoing", "finished"];
 const EMPTY = { name: "", officialUrl: "", season: "", status: "upcoming", position: "", notes: "", standings: [], order: "" };
 

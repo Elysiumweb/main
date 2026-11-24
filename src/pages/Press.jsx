@@ -126,7 +126,7 @@ export default function Press() {
 
         {/* Export des résultats (CSV / PDF) */}
         <div className="panel clip-blade-sm border border-primary/30 p-6 mb-12" data-testid="press-exports-sport">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-4 flex items-center gap-2"><FileSpreadsheet size={14}/> Export des résultats (CSV / PDF) — données sportives exportables</h2>
+          <h2 className="eyebrow mb-4 flex items-center gap-2"><FileSpreadsheet size={14}/> Export des résultats (CSV / PDF) — données sportives exportables</h2>
           <p className="text-xs text-muted-foreground mb-4">La presse a les logos mais aussi désormais les données sportives : résultats complets avec VOD, MVP, score par manche.</p>
           <div className="flex flex-wrap gap-3">
             <button onClick={exportCsv} data-testid="press-export-results-csv" className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-primary/10"><Download size={12}/> Export Résultats CSV ({matches.length})</button>
@@ -188,7 +188,7 @@ export default function Press() {
         </div>
 
         <div className="border border-border/25 bg-background/70 p-6 sm:p-8 mb-12" data-testid="press-guidelines">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-6 flex items-center gap-2"><Ruler size={14} /> Charte d’usage — logos</h2>
+          <h2 className="eyebrow mb-6 flex items-center gap-2"><Ruler size={14} /> Charte d’usage — logos</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <p className="text-xs font-display uppercase tracking-widest text-foreground mb-2 flex items-center gap-2"><Shield size={12} className="text-primary" /> Zone de protection</p>
@@ -216,7 +216,7 @@ export default function Press() {
         </div>
 
         <div className="panel clip-blade-sm p-6 mb-12" data-testid="press-exports">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-foreground mb-4">Exports dédiés par usage</h2>
+          <h2 className="eyebrow text-foreground mb-4">Exports dédiés par usage</h2>
           <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Chaque contexte utilise son fichier natif, pas un PNG étiré en CSS.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             {USAGE_EXPORTS.map((u) => (
@@ -289,7 +289,7 @@ export default function Press() {
         ))}
 
         <div className="panel clip-blade-sm p-6 sm:p-8 mb-12" data-testid="press-photos">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-6 flex items-center gap-2"><ImageIcon size={14} /> Photos officielles — libre d’usage éditorial</h2>
+          <h2 className="eyebrow mb-6 flex items-center gap-2"><ImageIcon size={14} /> Photos officielles — libre d’usage éditorial</h2>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               { title: "Portrait équipe — EVA", file: "photo-equipe-eva.jpg", desc: "Roster EVA en tenue officielle, fond #111111" },

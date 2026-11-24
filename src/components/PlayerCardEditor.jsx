@@ -11,7 +11,7 @@ import { useRosters } from "../hooks/useRosters";
 import { ImageUpload } from "./ImageUpload";
 import { normalizeCareer } from "../lib/playerStats";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY_CAREER = { club: "", role: "", period: "", achievements: "" };
 const EMPTY = { pseudo: "", game: "EVA", roster: "", ingameRole: "", status: "player", photo: "", bio: "", rank: "", mmr: "", palmares: "", equipment: "", arrivalDate: "", career: [], availableForMatch: false, recruitmentStatus: "closed", x: "", twitch: "", instagram: "", youtube: "", tiktok: "" };
 

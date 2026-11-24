@@ -9,7 +9,7 @@ import { DEFAULT_REDIRECTS, isInternalPath, normalizePath } from "../../lib/redi
 import { useCustomRedirects } from "../../hooks/useRedirects";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 const EMPTY = { from: "", to: "", note: "" };
 
 export const AdminRedirects = () => {

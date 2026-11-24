@@ -284,7 +284,7 @@ export default function Home() {
             <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-center">
               <div className="flex items-center gap-3 text-primary mb-5">
                 <Shirt size={19} aria-hidden="true" />
-                <p className="text-xs font-display uppercase tracking-[0.35em]">Official merch • 2026</p>
+                <p className="text-xs eyebrow">Official merch • 2026</p>
               </div>
               <h2 id="home-shop-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-foreground">{t("shop.productName")}</h2>
               <p className="font-display font-black text-2xl text-primary mt-4">49,90&nbsp;€</p>
@@ -365,7 +365,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" aria-hidden="true" />
               <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{backgroundImage:"radial-gradient(oklch(0.84 0.095 98/0.3) 1px, transparent 1px)", backgroundSize:"3px 3px"}} aria-hidden="true" />
               <div className="relative p-8 lg:p-12 flex flex-col flex-1">
-                <p className="text-xs font-display uppercase tracking-[0.4em] text-primary mb-8 flex items-center gap-2">
+                <p className="text-xs eyebrow mb-8 flex items-center gap-2">
                   <CalendarClock size={13} aria-hidden="true" /> {t("home.proof.nextMatch")}
                 </p>
                 {nextMatch ? (
@@ -409,7 +409,7 @@ export default function Home() {
 
             {/* PALMARÈS */}
             <article className="lg:col-span-2 panel clip-blade-sm p-8 flex flex-col hover:border-primary/50 u-micro" data-testid="home-proof-palmares">
-              <p className="text-xs font-display uppercase tracking-[0.4em] text-primary mb-6 flex items-center gap-2">
+              <p className="text-xs eyebrow mb-6 flex items-center gap-2">
                 <Trophy size={13} aria-hidden="true" /> {t("home.proof.palmares")}
               </p>
               {palmares.total === 0 ? (
@@ -447,7 +447,7 @@ export default function Home() {
 
             {/* EFFECTIF */}
             <article className="lg:col-span-2 panel clip-blade-sm p-8 flex flex-col hover:border-primary/50 u-micro" data-testid="home-proof-roster">
-              <p className="text-xs font-display uppercase tracking-[0.4em] text-primary mb-6 flex items-center gap-2">
+              <p className="text-xs eyebrow mb-6 flex items-center gap-2">
                 <Users size={13} aria-hidden="true" /> {t("home.proof.roster")}
               </p>
               <p className="font-display font-black text-5xl text-foreground">{rosterStats.total}</p>

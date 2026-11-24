@@ -101,7 +101,7 @@ export default function SupportTrack() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={t("support.track.tokenLabel")}
               data-testid="support-track-input"
-              className="w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
+              className="clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary"
             />
           </div>
           <Button type="submit" variant="gold" size="md" disabled={loading} data-testid="support-track-submit">

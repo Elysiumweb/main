@@ -10,7 +10,7 @@ import { GAMES } from "../../lib/constants";
 import { createNotification } from "../../lib/notify";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
+const inputCls = "clip-blade-sm w-full bg-background/50 border border-border/35 px-3 py-2.5 text-sm text-foreground transition-colors focus:outline-none focus:border-primary";
 
 const LEVEL_CLS = {
   info: "border-primary/40 text-primary",

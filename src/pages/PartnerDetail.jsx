@@ -192,7 +192,7 @@ export default function PartnerDetail() {
               <PartnerLogo src={logo} name={partner.name} className="h-full w-full" />
             </div>
             <div className="min-w-0">
-              <p className="font-display text-[11px] uppercase tracking-[0.4em] text-primary mb-2">
+              <p className="eyebrow mb-2">
                 {t("partners.sheet.title")}
               </p>
               <h1
