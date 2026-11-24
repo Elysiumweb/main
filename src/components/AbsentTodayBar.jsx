@@ -55,13 +55,13 @@ export const AbsentTodayBar = () => {
       <span className="text-xs uppercase tracking-[0.2em] text-red-200/90 shrink-0 hidden sm:inline">{t("player.absentToday")}</span>
       <span className="flex items-center gap-1.5 flex-wrap">
         {absentToday.slice(0, 8).map((p) => (
-          <span key={p.uid} className="flex items-center gap-1 text-xs text-[#f7f7f7]/80" data-testid={`absent-today-${p.uid}`}>
+          <span key={p.uid} className="flex items-center gap-1 text-xs text-foreground/80" data-testid={`absent-today-${p.uid}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" aria-hidden="true" />
             {p.name}
-            {p.reason && <span className="text-xs text-[#c8c8c8]">— {p.reason}</span>}
+            {p.reason && <span className="text-xs text-muted-foreground">— {p.reason}</span>}
           </span>
         ))}
-        {absentToday.length > 8 && <span className="text-xs text-[#c8c8c8]">+{absentToday.length - 8}</span>}
+        {absentToday.length > 8 && <span className="text-xs text-muted-foreground">+{absentToday.length - 8}</span>}
       </span>
       <span className="ml-auto flex items-center gap-1 text-xs uppercase tracking-widest text-red-300/80 shrink-0">
         <Users size={11} aria-hidden="true" /> {absentToday.length} {t("player.absentToday.count")}

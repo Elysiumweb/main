@@ -9,7 +9,7 @@ import { DEFAULT_REDIRECTS, isInternalPath, normalizePath } from "../../lib/redi
 import { useCustomRedirects } from "../../hooks/useRedirects";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
 const EMPTY = { from: "", to: "", note: "" };
 
 export const AdminRedirects = () => {
@@ -59,57 +59,57 @@ export const AdminRedirects = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10" data-testid="admin-redirects">
-      <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6 self-start" data-testid="admin-redirects-form">
+      <form onSubmit={submit} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6 self-start" data-testid="admin-redirects-form">
         <div className="flex items-center gap-3">
-          <Link2 size={18} className="text-[#D8CA82]" />
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{tx("redir.add")}</p>
+          <Link2 size={18} className="text-primary" />
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{tx("redir.add")}</p>
         </div>
         <div>
-          <label htmlFor="redirect-from" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("redir.from")}</label>
+          <label htmlFor="redirect-from" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("redir.from")}</label>
           <input id="redirect-from" value={form.from} onChange={set("from")} placeholder="/ancienne-page"
             className={inputCls} required data-testid="admin-redirect-from" />
         </div>
         <div>
-          <label htmlFor="redirect-to" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("redir.to")}</label>
+          <label htmlFor="redirect-to" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("redir.to")}</label>
           <input id="redirect-to" value={form.to} onChange={set("to")} placeholder="/nouvelle-page"
             className={inputCls} required data-testid="admin-redirect-to" />
         </div>
         <div>
-          <label htmlFor="redirect-note" className="text-xs uppercase tracking-[0.2em] text-[#c8c8c8] block mb-2">{tx("redir.note")}</label>
+          <label htmlFor="redirect-note" className="text-xs uppercase tracking-[0.2em] text-muted-foreground block mb-2">{tx("redir.note")}</label>
           <input id="redirect-note" value={form.note} onChange={set("note")} maxLength={160}
             className={inputCls} data-testid="admin-redirect-note" />
         </div>
         <button type="submit" disabled={saving} data-testid="admin-redirect-submit"
-          className="inline-flex items-center gap-2 bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-60">
+          className="inline-flex items-center gap-2 bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow disabled:opacity-60">
           <Plus size={14} /> {tx("redir.add")}
         </button>
-        <p className="text-xs text-[#c8c8c8]/60">{tx("redir.sub")}</p>
+        <p className="text-xs text-muted-foreground/60">{tx("redir.sub")}</p>
       </form>
 
       <div className="lg:col-span-7" data-testid="admin-redirects-list">
-        {rules.length === 0 && <p className="text-sm text-[#c8c8c8]">{tx("redir.empty")}</p>}
+        {rules.length === 0 && <p className="text-sm text-muted-foreground">{tx("redir.empty")}</p>}
         <div className="space-y-2">
           {rules.map((rule) => (
-            <div key={rule.id} className={`flex flex-wrap items-center gap-3 border border-white/10 bg-[#1A1A1A] px-4 py-3 ${rule.active === false ? "opacity-60" : ""}`}
+            <div key={rule.id} className={`flex flex-wrap items-center gap-3 panel clip-blade-sm px-4 py-3 ${rule.active === false ? "opacity-60" : ""}`}
               data-testid={`admin-redirect-${rule.id}`}>
               <div className="flex items-center gap-2 min-w-0 flex-1 text-sm">
-                <code className="text-[#f7f7f7]/80 truncate">{rule.from}</code>
-                <CornerDownRight size={14} className="text-[#D8CA82] shrink-0" />
-                <code className="text-[#D8CA82] truncate">{rule.to}</code>
+                <code className="text-foreground/80 truncate">{rule.from}</code>
+                <CornerDownRight size={14} className="text-primary shrink-0" />
+                <code className="text-primary truncate">{rule.to}</code>
               </div>
-              {rule.note && <span className="text-xs text-[#c8c8c8] max-w-[220px] truncate">{rule.note}</span>}
+              {rule.note && <span className="text-xs text-muted-foreground max-w-[220px] truncate">{rule.note}</span>}
               {rule.system && (
-                <span className="text-[10px] uppercase tracking-widest border border-white/20 text-[#c8c8c8] px-1.5 py-0.5">
+                <span className="text-[10px] uppercase tracking-widest border border-border/35 text-muted-foreground px-1.5 py-0.5">
                   {tx("redir.default")}
                 </span>
               )}
-              <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 ${rule.active === false ? "border-white/20 text-[#c8c8c8]" : "border-emerald-400/40 text-emerald-300"}`}>
+              <span className={`text-[10px] uppercase tracking-widest border px-1.5 py-0.5 ${rule.active === false ? "border-border/35 text-muted-foreground" : "border-emerald-400/40 text-emerald-300"}`}>
                 {rule.active === false ? "off" : tx("redir.active")}
               </span>
               {!rule.system && (
                 <>
                   <button type="button" onClick={() => toggle(rule)} data-testid={`admin-redirect-toggle-${rule.id}`}
-                    className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">
+                    className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">
                     {rule.active === false ? tx("redir.active") : "off"}
                   </button>
                   <ConfirmAction title={tx("redir.delete")} description={`${rule.from} → ${rule.to}`}

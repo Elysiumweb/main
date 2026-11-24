@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { GAMES, getGameColor } from "../../lib/constants";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
 
 /**
  * Gestion des rosters par le compte officiel : création / suppression.
@@ -90,45 +90,45 @@ export const AdminRosters = () => {
   return (
     <div className="space-y-10">
       <div className="grid lg:grid-cols-12 gap-10">
-        <form onSubmit={create} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6 h-fit" data-testid="admin-rosters-form">
-          <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.rosters.add")}</p>
+        <form onSubmit={create} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6 h-fit" data-testid="admin-rosters-form">
+          <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{t("admin.rosters.add")}</p>
           <div>
-            <label htmlFor="admin-roster-name" className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("admin.rosters.name")}</label>
+            <label htmlFor="admin-roster-name" className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("admin.rosters.name")}</label>
             <input id="admin-roster-name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60}
               placeholder={t("admin.rosters.namePlaceholder")} className={inputCls} data-testid="admin-roster-name-input" />
           </div>
           <div>
-            <label htmlFor="admin-roster-game" className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("common.game")}</label>
+            <label htmlFor="admin-roster-game" className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("common.game")}</label>
             <select id="admin-roster-game" value={game} onChange={(e) => setGame(e.target.value)} className={inputCls} data-testid="admin-roster-game-input">
               {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
           <button type="submit" data-testid="admin-roster-create-btn"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+            className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 flex items-center gap-2 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
             <Plus size={14} aria-hidden="true" /> {t("admin.rosters.create")}
           </button>
-          <p className="text-xs text-[#c8c8c8] leading-relaxed">{t("admin.rosters.hint")}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{t("admin.rosters.hint")}</p>
         </form>
 
         <div className="lg:col-span-7 space-y-6" data-testid="admin-rosters-list">
-          {rosters.length === 0 && <p className="text-[#c8c8c8]">{t("admin.rosters.empty")}</p>}
+          {rosters.length === 0 && <p className="text-muted-foreground">{t("admin.rosters.empty")}</p>}
           {grouped.filter(([, list]) => list.length > 0).map(([g, list]) => (
             <div key={g}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getGameColor(g) }} aria-hidden="true" />
-                <p className="font-display text-xs uppercase tracking-[0.3em] text-[#f7f7f7]">{g}</p>
-                <div className="flex-1 h-px bg-white/10" />
+                <p className="font-display text-xs uppercase tracking-[0.3em] text-foreground">{g}</p>
+                <div className="flex-1 h-px bg-primary/10" />
               </div>
               <div className="space-y-2">
                 {list.map((r) => {
                   const usage = usageOf(r.name);
                   const total = usage.users + usage.members + usage.matches;
                   return (
-                    <div key={r.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3" data-testid={`admin-roster-row-${r.id}`}>
-                      <Layers size={15} className="text-[#D8CA82] shrink-0" aria-hidden="true" />
+                    <div key={r.id} className="flex items-center gap-4 panel clip-blade-sm px-4 py-3" data-testid={`admin-roster-row-${r.id}`}>
+                      <Layers size={15} className="text-primary shrink-0" aria-hidden="true" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#f7f7f7]">{r.name}</p>
-                        <p className="text-xs text-[#c8c8c8]">
+                        <p className="text-sm font-semibold text-foreground">{r.name}</p>
+                        <p className="text-xs text-muted-foreground">
                           {total === 0
                             ? t("admin.rosters.unused")
                             : `${usage.users} ${t("admin.rosters.countAccounts")} · ${usage.members} ${t("admin.rosters.countCards")} · ${usage.matches} ${t("admin.rosters.countMatches")}`}
@@ -156,7 +156,7 @@ export const AdminRosters = () => {
       {orphans.length > 0 && (
         <div className="border border-orange-300/30 bg-orange-300/5 p-6" data-testid="admin-rosters-orphans">
           <p className="font-display text-sm uppercase tracking-[0.3em] text-orange-200 mb-2">{t("admin.rosters.orphans")}</p>
-          <p className="text-xs text-[#c8c8c8] mb-4 leading-relaxed">{t("admin.rosters.orphansHint")}</p>
+          <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{t("admin.rosters.orphansHint")}</p>
           <div className="flex flex-wrap gap-2">
             {orphans.map((o) => (
               <button key={`${o.game}||${o.name}`} onClick={(e) => create(e, o)} data-testid={`admin-roster-adopt-${o.game}-${o.name}`}

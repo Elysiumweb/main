@@ -19,15 +19,15 @@ const WARMERS_PRICES = [
 
 /** Carte produit : visuel à gauche, arguments et achat à droite. */
 const ProductCard = ({ id, alt, badge, children }) => (
-  <article className="grid lg:grid-cols-12 border border-white/10 bg-[#141414] overflow-hidden" data-testid={`shop-${id}`}>
-    <div className="lg:col-span-7 relative min-h-[420px] sm:min-h-[620px] bg-[#0c0c0c] overflow-hidden">
+  <article className="grid lg:grid-cols-12 panel clip-blade-sm overflow-hidden" data-testid={`shop-${id}`}>
+    <div className="lg:col-span-7 relative min-h-[420px] sm:min-h-[620px] bg-background/70 overflow-hidden">
       <ImageWithFallback
         src={id === "jersey-2026" ? PRODUCT_IMAGE : WARMERS_IMAGE}
         alt={alt}
         loading={id === "jersey-2026" ? "eager" : "lazy"}
         className="absolute inset-0 w-full h-full object-cover"
       />
-      <span className="absolute top-5 left-5 bg-[#111111] text-[#D8CA82] px-3 py-2 text-xs font-display font-bold uppercase tracking-[0.25em]">
+      <span className="absolute top-5 left-5 bg-background text-primary px-3 py-2 text-xs font-display font-bold uppercase tracking-[0.25em]">
         {badge}
       </span>
     </div>
@@ -50,55 +50,55 @@ export default function Shop() {
         rel="noopener noreferrer"
         onClick={() => trackPurchaseClick(source, product)}
         data-testid={testId}
-        className="mt-9 min-h-[52px] inline-flex items-center justify-center gap-3 bg-[#D8CA82] text-[#111111] px-6 py-4 font-display font-black text-xs uppercase tracking-[0.22em] hover:bg-[#eadf9e] hover:shadow-[0_0_24px_rgba(216,202,130,0.3)] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f7f7f7]"
+        className="mt-9 min-h-[52px] inline-flex items-center justify-center gap-3 bg-gold text-primary-foreground px-6 py-4 font-display font-black text-xs uppercase tracking-[0.22em] hover:bg-primary-glow hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.3)] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
         aria-label={`${label} — ${t("common.opensInNewTab")}`}
       >
         {label} <ExternalLink size={16} aria-hidden="true" />
       </a>
-      <p className="text-xs text-[#c8c8c8] mt-3 text-center">{t("shop.partnerNote")}</p>
+      <p className="text-xs text-muted-foreground mt-3 text-center">{t("shop.partnerNote")}</p>
     </>
   );
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative overflow-hidden border-b border-white/10">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden border-b border-border/25">
         <div className="pattern-overlay" />
         <div className="absolute -right-20 top-1/2 -translate-y-1/2 opacity-[0.05] pointer-events-none" aria-hidden="true">
           <img src="/brand/logo-icon-gold.png" alt="" className="w-[440px] sm:w-[620px] max-w-none" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("shop.title") }]} />
-          <p className="font-display text-xs uppercase tracking-[0.4em] text-[#D8CA82] mb-4">Official merch • 2026</p>
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="shop-title">
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("shop.title") }]} />
+          <p className="font-display text-xs uppercase tracking-[0.4em] text-primary mb-4">Official merch • 2026</p>
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="shop-title">
             {t("shop.title")}
           </h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-2xl">{t("shop.sub")}</p>
+          <p className="text-muted-foreground mt-4 tracking-wide max-w-2xl">{t("shop.sub")}</p>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12 lg:py-20 space-y-12 lg:space-y-16">
         {/* MAILLOT OFFICIEL */}
         <ProductCard id="jersey-2026" alt={t("shop.imageAlt")} badge={t("shop.official")}>
-          <div className="flex items-center gap-3 text-[#D8CA82] mb-5">
+          <div className="flex items-center gap-3 text-primary mb-5">
             <Shirt size={20} aria-hidden="true" />
             <span className="text-xs font-display uppercase tracking-[0.35em]">Elysium • 2026</span>
           </div>
-          <h2 id="jersey-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-[#f7f7f7] leading-tight">
+          <h2 id="jersey-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-foreground leading-tight">
             {t("shop.productName")}
           </h2>
-          <p className="font-display font-black text-3xl text-[#D8CA82] mt-5">49,90&nbsp;€ <span className="text-xs font-normal uppercase tracking-widest text-[#c8c8c8]">TTC</span></p>
-          <p className="text-[#c8c8c8] mt-6 leading-relaxed">{t("shop.description")}</p>
+          <p className="font-display font-black text-3xl text-primary mt-5">49,90&nbsp;€ <span className="text-xs font-normal uppercase tracking-widest text-muted-foreground">TTC</span></p>
+          <p className="text-muted-foreground mt-6 leading-relaxed">{t("shop.description")}</p>
 
-          <ul className="mt-7 space-y-3 text-sm text-[#f7f7f7]" aria-label={t("shop.features") }>
-            <li className="flex items-center gap-3"><Sparkles className="text-[#D8CA82] shrink-0" size={17} aria-hidden="true" />{t("shop.feature.fabric")}</li>
-            <li className="flex items-center gap-3"><PackageCheck className="text-[#D8CA82] shrink-0" size={17} aria-hidden="true" />{t("shop.feature.made")}</li>
+          <ul className="mt-7 space-y-3 text-sm text-foreground" aria-label={t("shop.features") }>
+            <li className="flex items-center gap-3"><Sparkles className="text-primary shrink-0" size={17} aria-hidden="true" />{t("shop.feature.fabric")}</li>
+            <li className="flex items-center gap-3"><PackageCheck className="text-primary shrink-0" size={17} aria-hidden="true" />{t("shop.feature.made")}</li>
           </ul>
 
           <div className="mt-8">
-            <p className="text-xs font-display uppercase tracking-[0.3em] text-[#c8c8c8] mb-3">{t("shop.sizes")}</p>
+            <p className="text-xs font-display uppercase tracking-[0.3em] text-muted-foreground mb-3">{t("shop.sizes")}</p>
             <div className="flex flex-wrap gap-2" aria-label={SIZES.join(", ")}>
               {SIZES.map((size) => (
-                <span key={size} className="min-w-10 h-10 px-2 border border-white/15 flex items-center justify-center text-xs font-display text-[#f7f7f7]">
+                <span key={size} className="min-w-10 h-10 px-2 border border-border/30 flex items-center justify-center text-xs font-display text-foreground">
                   {size}
                 </span>
               ))}
@@ -116,20 +116,20 @@ export default function Shop() {
 
         {/* MANCHETTES */}
         <ProductCard id="manchettes-2026" alt={t("shop.manchettes.imageAlt")} badge={t("shop.manchettes.badge")}>
-          <div className="flex items-center gap-3 text-[#D8CA82] mb-5">
+          <div className="flex items-center gap-3 text-primary mb-5">
             <Sparkles size={20} aria-hidden="true" />
             <span className="text-xs font-display uppercase tracking-[0.35em]">Elysium • 2026</span>
           </div>
-          <h2 id="manchettes-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-[#f7f7f7] leading-tight">
+          <h2 id="manchettes-title" className="font-display font-black text-3xl sm:text-4xl uppercase text-foreground leading-tight">
             {t("shop.manchettes.name")}
           </h2>
-          <p className="text-[#c8c8c8] mt-5 leading-relaxed">{t("shop.manchettes.sub")}</p>
+          <p className="text-muted-foreground mt-5 leading-relaxed">{t("shop.manchettes.sub")}</p>
 
           <div className="grid grid-cols-2 gap-3 mt-8" role="list" aria-label={t("shop.manchettes.prices")}>
             {WARMERS_PRICES.map((o) => (
-              <div key={o.id} role="listitem" className="border border-white/15 p-4 flex flex-col gap-1" data-testid={`shop-price-${o.id}`}>
-                <span className="text-[10px] font-display uppercase tracking-[0.25em] text-[#c8c8c8]">{t(o.labelKey)}</span>
-                <span className="font-display font-black text-2xl text-[#D8CA82]">{o.price}</span>
+              <div key={o.id} role="listitem" className="border border-border/30 p-4 flex flex-col gap-1" data-testid={`shop-price-${o.id}`}>
+                <span className="text-[10px] font-display uppercase tracking-[0.25em] text-muted-foreground">{t(o.labelKey)}</span>
+                <span className="font-display font-black text-2xl text-primary">{o.price}</span>
               </div>
             ))}
           </div>

@@ -9,8 +9,8 @@ import { ChatMessages } from "./ChatMessages";
 import { createNotification } from "../lib/notify";
 
 const STATUS_CLS = {
-  open: "text-[#D8CA82] border-[#D8CA82]/40",
-  closed: "text-[#c8c8c8] border-white/20",
+  open: "text-primary border-primary/40",
+  closed: "text-muted-foreground border-border/35",
   pending: "text-orange-300 border-orange-300/40",
   reviewing: "text-sky-300 border-sky-300/40",
   interviewing: "text-violet-300 border-violet-300/40",
@@ -45,24 +45,24 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
   const current = threads.find((x) => x.id === selected);
 
   if (threads.length === 0) {
-    return <p className="text-[#c8c8c8] tracking-wide py-8" data-testid={`${prefix}-threads-empty`}>{t(emptyKey)}</p>;
+    return <p className="text-muted-foreground tracking-wide py-8" data-testid={`${prefix}-threads-empty`}>{t(emptyKey)}</p>;
   }
 
   return (
-    <div className="grid md:grid-cols-12 border border-white/10 bg-[#141414] min-h-[400px] md:h-[560px] h-[70vh] overflow-hidden">
-      <div className={`md:col-span-4 border-r border-white/10 overflow-y-auto ${selected ? "hidden md:block" : "block"}`} data-testid={`${prefix}-threads-list`}>
+    <div className="grid md:grid-cols-12 panel clip-blade-sm min-h-[400px] md:h-[560px] h-[70vh] overflow-hidden">
+      <div className={`md:col-span-4 border-r border-border/25 overflow-y-auto ${selected ? "hidden md:block" : "block"}`} data-testid={`${prefix}-threads-list`}>
         {threads.map((th) => (
           <button key={th.id} onClick={() => setSelected(th.id)} data-testid={`${prefix}-thread-${th.id}`}
-            className={`w-full text-left px-4 py-3 border-b border-white/5 transition-colors ${selected === th.id ? "bg-[#D8CA82]/10 border-l-2 border-l-[#D8CA82]" : "hover:bg-white/5"}`}>
+            className={`w-full text-left px-4 py-3 border-b border-border/20 transition-colors ${selected === th.id ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-primary/5"}`}>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-[#f7f7f7] truncate flex-1">{th[titleField]}</p>
+              <p className="text-sm font-semibold text-foreground truncate flex-1">{th[titleField]}</p>
               {th.status && (
-                <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_CLS[th.status] || "text-[#c8c8c8] border-white/20"}`} data-testid={`${prefix}-status-${th.id}`}>
+                <span className={`text-xs uppercase tracking-widest border px-1.5 py-0.5 shrink-0 ${STATUS_CLS[th.status] || "text-muted-foreground border-border/35"}`} data-testid={`${prefix}-status-${th.id}`}>
                   {t(`status.${th.status}`)}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#c8c8c8] truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString(lang === "en" ? "en-US" : "fr-FR") : ""}</p>
+            <p className="text-xs text-muted-foreground truncate">{th.name} · {th.createdAt?.toDate ? th.createdAt.toDate().toLocaleDateString(lang === "en" ? "en-US" : "fr-FR") : ""}</p>
           </button>
         ))}
       </div>
@@ -70,22 +70,22 @@ export const ThreadsPanel = ({ collectionName, canSeeAll, emptyKey, titleField, 
         {current && (
           <>
             {renderThreadHeader && (
-              <div className="px-4 py-3 border-b border-white/10 bg-[#141414] shrink-0" data-testid={`${prefix}-thread-header-extra`}>
+              <div className="px-4 py-3 border-b border-border/25 bg-card/70 shrink-0" data-testid={`${prefix}-thread-header-extra`}>
                 {renderThreadHeader(current)}
               </div>
             )}
-            <div className="px-4 py-3 border-b border-white/10 bg-[#1A1A1A] shrink-0 flex items-start gap-3">
-              <button onClick={()=> setSelected(null)} className="md:hidden text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] mr-2">←</button>
+            <div className="px-4 py-3 border-b border-border/25 bg-card shrink-0 flex items-start gap-3">
+              <button onClick={()=> setSelected(null)} className="md:hidden text-xs uppercase tracking-widest text-muted-foreground hover:text-primary mr-2">←</button>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-display text-[#D8CA82] uppercase tracking-wider flex items-center gap-2">
+                <p className="text-sm font-display text-primary uppercase tracking-wider flex items-center gap-2">
                   <MessageSquare size={14} /> {current[titleField]}
                 </p>
-                {current.meta && <p className="text-xs text-[#f7f7f7]/50 mt-1 whitespace-pre-wrap">{current.meta}</p>}
+                {current.meta && <p className="text-xs text-foreground/50 mt-1 whitespace-pre-wrap">{current.meta}</p>}
               </div>
               {canSetStatus && statusOptions && (
                 <select value={current.status || statusOptions[0]} data-testid={`${prefix}-status-select`}
                   onChange={async (e) => { try { await updateDoc(doc(db, collectionName, current.id), { status: e.target.value }); } catch (err) { console.error(err); } }}
-                  className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] shrink-0">
+                  className="bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary shrink-0">
                   {statusOptions.map((s) => <option key={s} value={s}>{t(`status.${s}`)}</option>)}
                 </select>
               )}
@@ -107,10 +107,10 @@ export const LoginPrompt = ({ messageKey, prefix }) => {
   const { t, lang } = useLang();
   const location = useLocation();
   return (
-    <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-10 text-center" data-testid={`${prefix}-login-prompt`}>
-      <p className="text-[#f7f7f7]/70 mb-6">{t(messageKey)}</p>
+    <div className="border border-primary/30 bg-card p-10 text-center" data-testid={`${prefix}-login-prompt`}>
+      <p className="text-foreground/70 mb-6">{t(messageKey)}</p>
       <Link to="/connexion" state={{ from: location }} data-testid={`${prefix}-login-link`}
-        className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 inline-block hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+        className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 inline-block hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
         {t("nav.login")}
       </Link>
     </div>

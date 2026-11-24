@@ -29,10 +29,10 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
   const reached = pct >= 100;
 
   return (
-    <div className="border border-[#D8CA82]/30 bg-[#141414] p-5" data-testid={testId}>
+    <div className="border border-primary/30 bg-card/70 p-5" data-testid={testId}>
       <div className="flex items-center gap-2 mb-2">
-        <Target size={14} className="text-[#D8CA82] shrink-0" aria-hidden="true" />
-        <p className={`font-display uppercase tracking-[0.25em] text-[#f7f7f7] ${compact ? "text-xs" : "text-xs"}`}>
+        <Target size={14} className="text-primary shrink-0" aria-hidden="true" />
+        <p className={`font-display uppercase tracking-[0.25em] text-foreground ${compact ? "text-xs" : "text-xs"}`}>
           {campaign.title}
         </p>
         {reached && (
@@ -41,9 +41,9 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
           </span>
         )}
       </div>
-      <div className="h-2.5 bg-white/10 overflow-hidden mb-2">
+      <div className="h-2.5 bg-primary/10 overflow-hidden mb-2">
         <div
-          className={`h-full transition-all ${reached ? "bg-emerald-400" : "bg-[#D8CA82]"}`}
+          className={`h-full transition-all ${reached ? "bg-emerald-400" : "bg-gold"}`}
           style={{ width: `${pct}%` }}
           role="progressbar"
           aria-valuenow={pct}
@@ -52,11 +52,11 @@ export const CampaignProgress = ({ compact = false, testId = "campaign-progress"
           aria-label={`${campaign.title} — ${pct}%`}
         />
       </div>
-      <p className="text-xs text-[#f7f7f7]/60">
-        {t("campaign.progress")} <span className="font-display font-bold text-[#D8CA82]">{Number(campaign.currentAmount).toLocaleString(lang === "en" ? "en-US" : "fr-FR")} €</span>
+      <p className="text-xs text-foreground/60">
+        {t("campaign.progress")} <span className="font-display font-bold text-primary">{Number(campaign.currentAmount).toLocaleString(lang === "en" ? "en-US" : "fr-FR")} €</span>
         {" / "}
-        <span className="text-[#f7f7f7]">{Number(campaign.goalAmount).toLocaleString(lang === "en" ? "en-US" : "fr-FR")} €</span>
-        <span className="text-[#c8c8c8] ml-2">({pct}%)</span>
+        <span className="text-foreground">{Number(campaign.goalAmount).toLocaleString(lang === "en" ? "en-US" : "fr-FR")} €</span>
+        <span className="text-muted-foreground ml-2">({pct}%)</span>
       </p>
     </div>
   );

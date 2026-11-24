@@ -1,8 +1,8 @@
 import { useLang } from "../lib/i18n";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
-const H = ({ children }) => <h2 className="font-display text-base md:text-lg uppercase tracking-[0.2em] text-[#D8CA82] mt-10 mb-3">{children}</h2>;
-const P = ({ children }) => <p className="text-[#f7f7f7]/70 leading-relaxed mb-3 text-sm sm:text-base">{children}</p>;
+const H = ({ children }) => <h2 className="font-display text-base md:text-lg uppercase tracking-[0.2em] text-primary mt-10 mb-3">{children}</h2>;
+const P = ({ children }) => <p className="text-foreground/70 leading-relaxed mb-3 text-sm sm:text-base">{children}</p>;
 
 const CONTENT = {
   mentions: {
@@ -75,17 +75,17 @@ export default function LegalPage({ kind }) {
   const { t } = useLang();
   const c = CONTENT[kind];
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-4xl mx-auto px-4 sm:px-8 py-12 relative">
-          <PageBreadcrumb items={[{ label: t(c.titleKey) }]} />
-          <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-[#f7f7f7] uppercase" data-testid={`legal-title-${kind}`}>{t(c.titleKey)}</h1>
+          <PageBreadcrumb className="opacity-80" items={[{ label: t(c.titleKey) }]} />
+          <h1 className="font-display font-black text-3xl sm:text-4xl lg:text-5xl text-foreground uppercase" data-testid={`legal-title-${kind}`}>{t(c.titleKey)}</h1>
         </div>
       </section>
       <section className="max-w-4xl mx-auto px-4 sm:px-8 py-12" data-testid={`legal-content-${kind}`}>
         {c.body}
-        <p className="text-xs text-[#c8c8c8] mt-12">Dernière mise à jour : juillet 2026</p>
+        <p className="text-xs text-muted-foreground mt-12">Dernière mise à jour : juillet 2026</p>
       </section>
     </div>
   );

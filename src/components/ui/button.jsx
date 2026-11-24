@@ -4,31 +4,35 @@ import { cva } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none font-display uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D8CA82] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  // ELYSIUM design system: blade-cut corners, Orbitron labels, gold or frame.
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none font-display uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-[#D8CA82] text-[#111111] font-bold hover:shadow-[0_0_20px_rgba(216,202,130,0.35)] u-micro-shadow",
+          "clip-blade-sm bg-gold text-primary-foreground font-bold hover:shadow-[0_0_20px_oklch(0.84_0.095_98/0.4)] u-micro-shadow",
         gold:
-          "bg-[#D8CA82] text-[#111111] font-bold hover:shadow-[0_0_20px_rgba(216,202,130,0.35)] u-micro-shadow",
+          "clip-blade-sm bg-gold text-primary-foreground font-bold hover:shadow-[0_0_20px_oklch(0.84_0.095_98/0.4)] u-micro-shadow",
         primary:
-          "bg-[#D8CA82] text-[#111111] font-bold hover:shadow-[0_0_20px_rgba(216,202,130,0.35)] u-micro-shadow",
+          "clip-blade-sm bg-gold text-primary-foreground font-bold hover:shadow-[0_0_20px_oklch(0.84_0.095_98/0.4)] u-micro-shadow",
         outline:
-          "border border-white/20 text-[#f7f7f7] hover:border-[#D8CA82] hover:text-[#D8CA82] u-micro",
+          "clip-blade-sm border border-primary/50 text-primary hover:border-primary hover:bg-primary/10 u-micro",
+        frame:
+          "clip-blade-sm border border-border/50 text-foreground/85 hover:border-primary hover:text-primary u-micro",
         secondary:
-          "border border-white/15 bg-white/5 text-[#f7f7f7] hover:bg-white/10 hover:border-[#D8CA82]/50",
+          "clip-blade-sm border border-border/40 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/50",
         destructive:
-          "bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-bold",
+          "clip-blade-sm bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-bold",
         danger:
-          "bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-bold",
-        ghost: "text-[#f7f7f7]/70 hover:text-[#D8CA82] hover:bg-white/5",
-        link: "text-[#D8CA82] underline-offset-4 hover:underline p-0 h-auto",
+          "clip-blade-sm bg-red-500/15 border border-red-400/50 text-red-200 hover:bg-red-500/25 hover:text-red-100 font-bold",
+        ghost: "text-foreground/70 hover:text-primary hover:bg-primary/5",
+        link: "text-primary underline-offset-4 hover:underline p-0 h-auto",
       },
       size: {
         default: "px-6 py-3 text-sm",
         md: "px-6 py-3 text-sm",
         lg: "px-8 py-4 text-sm font-bold",
+        xl: "px-9 py-4 text-sm font-bold",
         sm: "px-4 py-2 text-xs",
         xs: "px-2.5 py-1 text-xs",
         icon: "h-9 w-9 p-0",

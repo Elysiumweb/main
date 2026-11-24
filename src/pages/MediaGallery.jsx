@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from "../components/ui/dialog";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 import { ImageWithFallback } from "../components/ImageWithFallback";
 
-const selectCls = "bg-[#1A1A1A] border border-white/20 px-3 py-2 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const selectCls = "bg-card border border-border/35 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary";
 
 export const videoEmbedUrl = (url) => {
   try {
@@ -53,20 +53,20 @@ export default function MediaGallery() {
     (event === "all" || m.event === event));
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("media.title") }]} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="media-title">{t("media.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("media.sub")}</p>
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("media.title") }]} />
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="media-title">{t("media.title")}</h1>
+          <p className="text-foreground/50 mt-4 tracking-wide">{t("media.sub")}</p>
         </div>
       </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <div className="border border-white/10 bg-[#0c0c0c] p-4 mb-8 flex items-center gap-3" data-testid="media-editorial-note">
-          <span className="text-[#D8CA82]">◆</span>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8]">Grille éditoriale — tailles variables, pas uniforme 3 colonnes</p>
-          <span className="ml-auto text-xs text-[#c8c8c8]">{filtered.length} médias</span>
+        <div className="border border-border/25 bg-background/70 p-4 mb-8 flex items-center gap-3" data-testid="media-editorial-note">
+          <span className="text-primary">◆</span>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Grille éditoriale — tailles variables, pas uniforme 3 colonnes</p>
+          <span className="ml-auto text-xs text-muted-foreground">{filtered.length} médias</span>
         </div>
         <div className="flex flex-wrap gap-4 mb-10 overflow-x-auto pb-2" data-testid="media-filters">
           <select value={type} onChange={(e) => setType(e.target.value)} className={selectCls} data-testid="media-filter-type">
@@ -100,8 +100,8 @@ export default function MediaGallery() {
               return (
                 <Dialog key={m.id}>
                   <DialogTrigger asChild>
-                    <button className={`group border border-white/10 bg-[#1A1A1A] hover:border-[#D8CA82]/50 transition-colors text-left overflow-hidden break-inside-avoid ${i%5===0 ? "sm:row-span-2" : ""} ${m.type==="video" ? "border-[#D8CA82]/20" : ""}`} data-testid={`media-item-${m.id}`}>
-                      <div className={`relative bg-[#0d0d0d] flex items-center justify-center overflow-hidden ${i%3===0 ? "h-72" : i%4===0 ? "h-56" : "h-48"}`}>
+                    <button className={`group panel clip-blade-sm hover:border-primary/50 transition-colors text-left overflow-hidden break-inside-avoid ${i%5===0 ? "sm:row-span-2" : ""} ${m.type==="video" ? "border-primary/20" : ""}`} data-testid={`media-item-${m.id}`}>
+                      <div className={`relative bg-background/70 flex items-center justify-center overflow-hidden ${i%3===0 ? "h-72" : i%4===0 ? "h-56" : "h-48"}`}>
                         {m.type === "photo" ? (
                           <ImageWithFallback
                             src={m.url}
@@ -116,27 +116,27 @@ export default function MediaGallery() {
                             ) : (
                               <div className="absolute inset-0 canvas-dots" />
                             )}
-                            <PlayCircle size={44} className="absolute text-[#D8CA82] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" />
+                            <PlayCircle size={44} className="absolute text-primary drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" />
                           </>
                         )}
                       </div>
                       <div className="p-4">
-                        <p className="text-sm font-semibold text-[#f7f7f7] truncate">{m.title}</p>
-                        <p className="text-xs uppercase tracking-widest text-[#c8c8c8] mt-1">
+                        <p className="text-sm font-semibold text-foreground truncate">{m.title}</p>
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">
                           {t(`media.type.${m.type}`)}{m.game ? ` · ${m.game}` : ""}{m.playerTag ? ` · ${m.playerTag}` : ""}{m.event ? ` · ${m.event}` : ""}
                         </p>
                       </div>
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="bg-[#111111] border border-[#D8CA82]/30 rounded-none max-w-3xl p-2" data-testid={`media-lightbox-${m.id}`}>
+                  <DialogContent className="bg-background border border-primary/30 rounded-none max-w-3xl p-2" data-testid={`media-lightbox-${m.id}`}>
                     {m.type === "photo" ? (
                       <ImageWithFallback src={m.url} alt={m.title} fallbackType="brand" className="w-full max-h-[75vh] object-contain" />
                     ) : embed ? (
                       <iframe src={embed} title={m.title} className="w-full aspect-video" allowFullScreen allow="autoplay; fullscreen" />
                     ) : (
-                      <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82] underline p-8 block text-center">{m.url}</a>
+                      <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-primary underline p-8 block text-center">{m.url}</a>
                     )}
-                    <p className="text-sm text-[#f7f7f7]/70 px-2 pb-2">{m.title}</p>
+                    <p className="text-sm text-foreground/70 px-2 pb-2">{m.title}</p>
                   </DialogContent>
                 </Dialog>
               );

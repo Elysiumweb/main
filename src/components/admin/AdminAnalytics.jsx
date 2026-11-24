@@ -33,13 +33,13 @@ const EVENT_LABELS = {
 };
 
 const KPI = ({ label, value, hint, Icon }) => (
-  <div className="border border-white/10 bg-[#141414] px-4 py-4">
+  <div className="panel clip-blade-sm px-4 py-4">
     <div className="flex items-center justify-between mb-1">
-      <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">{label}</p>
-      <Icon size={14} className="text-[#D8CA82]" aria-hidden="true" />
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
+      <Icon size={14} className="text-primary" aria-hidden="true" />
     </div>
-    <p className="font-display font-bold text-2xl text-[#f7f7f7]">{value}</p>
-    {hint && <p className="text-[11px] text-[#c8c8c8]/60 mt-0.5">{hint}</p>}
+    <p className="font-display font-bold text-2xl text-foreground">{value}</p>
+    {hint && <p className="text-[11px] text-muted-foreground/60 mt-0.5">{hint}</p>}
   </div>
 );
 
@@ -90,23 +90,23 @@ export const AdminAnalytics = () => {
       <div className="flex flex-col sm:flex-row sm:items-end gap-4 justify-between mb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="text-[#D8CA82]" size={18} />
-            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-[#f7f7f7]">{tx("an.title")}</h2>
+            <BarChart3 className="text-primary" size={18} />
+            <h2 className="font-display text-base md:text-lg tracking-[0.3em] uppercase text-foreground">{tx("an.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50 max-w-2xl">{tx("an.sub")}</p>
+          <p className="text-sm text-foreground/50 max-w-2xl">{tx("an.sub")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex border border-white/15" role="group" aria-label={tx("an.title")}>
+          <div className="flex border border-border/30" role="group" aria-label={tx("an.title")}>
             {RANGES.map((r) => (
               <button key={r} type="button" onClick={() => setDays(r)} data-testid={`admin-analytics-range-${r}`}
                 aria-pressed={days === r}
-                className={`px-3 py-2 text-xs uppercase tracking-widest ${days === r ? "bg-[#D8CA82] text-[#111111]" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+                className={`px-3 py-2 text-xs uppercase tracking-widest ${days === r ? "bg-gold text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                 {tx(`an.range.${r}`)}
               </button>
             ))}
           </div>
           <button type="button" onClick={() => setRefreshKey((k) => k + 1)} data-testid="admin-analytics-refresh"
-            className="inline-flex items-center gap-2 border border-white/20 text-[#f7f7f7] text-xs uppercase tracking-widest px-3 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82]">
+            className="inline-flex items-center gap-2 border border-border/35 text-foreground text-xs uppercase tracking-widest px-3 py-2 hover:border-primary hover:text-primary">
             <RefreshCw size={13} /> {tx("an.refresh")}
           </button>
         </div>
@@ -117,11 +117,11 @@ export const AdminAnalytics = () => {
           {tx("an.consent.off")}
         </p>
       )}
-      <p className="text-xs text-[#c8c8c8]/60 mb-6">{tx("an.hint")}</p>
+      <p className="text-xs text-muted-foreground/60 mb-6">{tx("an.hint")}</p>
 
       {error && <p className="text-sm text-red-300 mb-4" role="alert">{error}</p>}
       {loading ? (
-        <p className="text-sm text-[#c8c8c8]">{tx("an.loading")}</p>
+        <p className="text-sm text-muted-foreground">{tx("an.loading")}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6" data-testid="admin-analytics-kpis">
@@ -140,40 +140,40 @@ export const AdminAnalytics = () => {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 border border-white/10 bg-[#141414] p-4">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-4">{tx("an.chart.daily")}</p>
+            <div className="lg:col-span-2 panel clip-blade-sm p-4">
+              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.chart.daily")}</p>
               <div className="h-64" data-testid="admin-analytics-chart">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={summary.daily} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
                     <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                    <XAxis dataKey="date" tickFormatter={fmtDate} tick={{ fill: "#c8c8c8", fontSize: 10 }} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: "#c8c8c8", fontSize: 10 }} allowDecimals={false} />
+                    <XAxis dataKey="date" tickFormatter={fmtDate} tick={{ fill: "oklch(0.72 0.02 90)", fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fill: "oklch(0.72 0.02 90)", fontSize: 10 }} allowDecimals={false} />
                     <Tooltip
-                      contentStyle={{ background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", borderRadius: 0, color: "#f7f7f7" }}
+                      contentStyle={{ background: "oklch(0.16 0.008 85)", border: "1px solid oklch(0.84 0.095 98/0.3)", borderRadius: 0, color: "oklch(0.95 0.012 95)" }}
                       labelFormatter={fmtDate}
                       formatter={(value, name) => [value, name === "views" ? tx("an.kpi.views") : tx("an.chart.events")]}
                     />
-                    <Line type="monotone" dataKey="views" stroke="#D8CA82" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="views" stroke="oklch(0.84 0.095 98)" strokeWidth={2} dot={false} />
                     <Line type="monotone" dataKey="events" stroke="#6b7280" strokeWidth={1} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="border border-white/10 bg-[#141414] p-4">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-4">{tx("an.chart.topPages")}</p>
+            <div className="panel clip-blade-sm p-4">
+              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.chart.topPages")}</p>
               {summary.pages.length === 0 ? (
-                <p className="text-sm text-[#c8c8c8]">{tx("an.empty")}</p>
+                <p className="text-sm text-muted-foreground">{tx("an.empty")}</p>
               ) : (
                 <ul className="space-y-2" data-testid="admin-analytics-top-pages">
                   {summary.pages.slice(0, 10).map((page) => (
                     <li key={page.path} className="text-sm">
-                      <div className="flex items-center justify-between gap-2 text-[#f7f7f7]/80">
+                      <div className="flex items-center justify-between gap-2 text-foreground/80">
                         <span className="truncate">{page.path}</span>
-                        <span className="text-[#D8CA82] tabular-nums">{nf.format(page.count)}</span>
+                        <span className="text-primary tabular-nums">{nf.format(page.count)}</span>
                       </div>
-                      <div className="h-1 bg-white/10 mt-1">
-                        <div className="h-full bg-[#D8CA82]/70" style={{ width: `${Math.max(4, (page.count / summary.pages[0].count) * 100)}%` }} />
+                      <div className="h-1 bg-primary/10 mt-1">
+                        <div className="h-full bg-primary/70" style={{ width: `${Math.max(4, (page.count / summary.pages[0].count) * 100)}%` }} />
                       </div>
                     </li>
                   ))}
@@ -183,46 +183,46 @@ export const AdminAnalytics = () => {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6 mt-6">
-            <div className="border border-white/10 bg-[#141414] p-4" data-testid="admin-analytics-funnel">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-4">{tx("an.funnel.title")}</p>
+            <div className="panel clip-blade-sm p-4" data-testid="admin-analytics-funnel">
+              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.funnel.title")}</p>
               <div className="space-y-4">
                 {[
                   { label: tx("an.funnel.started"), value: summary.funnel.started, max: Math.max(1, summary.funnel.started) },
                   { label: tx("an.funnel.submitted"), value: summary.funnel.submitted, max: Math.max(1, summary.funnel.started) },
                 ].map((step) => (
                   <div key={step.label}>
-                    <div className="flex items-center justify-between text-sm text-[#f7f7f7]/80 mb-1">
+                    <div className="flex items-center justify-between text-sm text-foreground/80 mb-1">
                       <span>{step.label}</span>
                       <span className="tabular-nums">{nf.format(step.value)}</span>
                     </div>
-                    <div className="h-2 bg-white/10">
-                      <div className="h-full bg-[#D8CA82]" style={{ width: `${Math.min(100, (step.value / step.max) * 100)}%` }} />
+                    <div className="h-2 bg-primary/10">
+                      <div className="h-full bg-gold" style={{ width: `${Math.min(100, (step.value / step.max) * 100)}%` }} />
                     </div>
                   </div>
                 ))}
-                <p className="text-xs uppercase tracking-widest text-[#c8c8c8]">
-                  {tx("an.funnel.rate")} : <span className="text-[#D8CA82]">{summary.funnel.rate} %</span>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                  {tx("an.funnel.rate")} : <span className="text-primary">{summary.funnel.rate} %</span>
                 </p>
               </div>
             </div>
 
-            <div className="border border-white/10 bg-[#141414] p-4">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-4">{tx("an.chart.events")}</p>
+            <div className="panel clip-blade-sm p-4">
+              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary mb-4">{tx("an.chart.events")}</p>
               {summary.topEvents.length === 0 ? (
-                <p className="text-sm text-[#c8c8c8]">{tx("an.empty")}</p>
+                <p className="text-sm text-muted-foreground">{tx("an.empty")}</p>
               ) : (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={summary.topEvents.slice(0, 8)} layout="vertical" margin={{ top: 0, right: 12, left: 8, bottom: 0 }}>
                       <XAxis type="number" hide />
-                      <YAxis type="category" dataKey="name" width={130} tick={{ fill: "#c8c8c8", fontSize: 10 }}
+                      <YAxis type="category" dataKey="name" width={130} tick={{ fill: "oklch(0.72 0.02 90)", fontSize: 10 }}
                         tickFormatter={(name) => EVENT_LABELS[name] || name} />
                       <Tooltip
-                        contentStyle={{ background: "#1A1A1A", border: "1px solid rgba(216,202,130,0.3)", borderRadius: 0, color: "#f7f7f7" }}
+                        contentStyle={{ background: "oklch(0.16 0.008 85)", border: "1px solid oklch(0.84 0.095 98/0.3)", borderRadius: 0, color: "oklch(0.95 0.012 95)" }}
                         formatter={(value) => [value, tx("an.table.count")]}
                         labelFormatter={(name) => EVENT_LABELS[name] || name}
                       />
-                      <Bar dataKey="count" fill="#D8CA82" />
+                      <Bar dataKey="count" fill="oklch(0.84 0.095 98)" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -230,27 +230,27 @@ export const AdminAnalytics = () => {
             </div>
           </div>
 
-          <div className="border border-white/10 bg-[#141414] mt-6" data-testid="admin-analytics-event-table">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-              <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82]">{tx("an.plan.title")}</p>
-              <p className="text-xs text-[#c8c8c8]/60">{summary.totalEvents} {tx("an.table.count")}</p>
+          <div className="panel clip-blade-sm mt-6" data-testid="admin-analytics-event-table">
+            <div className="px-4 py-3 border-b border-border/25 flex items-center justify-between">
+              <p className="font-display text-xs uppercase tracking-[0.25em] text-primary">{tx("an.plan.title")}</p>
+              <p className="text-xs text-muted-foreground/60">{summary.totalEvents} {tx("an.table.count")}</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-widest text-[#c8c8c8] border-b border-white/10">
+                  <tr className="text-left text-xs uppercase tracking-widest text-muted-foreground border-b border-border/25">
                     <th className="px-4 py-2">{tx("an.table.event")}</th>
                     <th className="px-4 py-2">{tx("an.table.count")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(ANALYTICS_EVENTS).map(([, name]) => (
-                    <tr key={name} className="border-b border-white/5">
-                      <td className="px-4 py-2 text-[#f7f7f7]/80">
-                        <span className="text-[#c8c8c8] mr-2">{EVENT_LABELS[name] || name}</span>
-                        <code className="text-[11px] text-[#D8CA82]/70">{name}</code>
+                    <tr key={name} className="border-b border-border/20">
+                      <td className="px-4 py-2 text-foreground/80">
+                        <span className="text-muted-foreground mr-2">{EVENT_LABELS[name] || name}</span>
+                        <code className="text-[11px] text-primary/70">{name}</code>
                       </td>
-                      <td className="px-4 py-2 text-[#D8CA82] tabular-nums">{nf.format(summary.counts[name] || 0)}</td>
+                      <td className="px-4 py-2 text-primary tabular-nums">{nf.format(summary.counts[name] || 0)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -43,23 +43,23 @@ export default function Offline() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-[#111111] flex flex-col justify-center">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-background flex flex-col justify-center">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
           <div className="max-w-3xl mx-auto text-center" data-testid="offline-page">
-            <WifiOff className="mx-auto text-[#D8CA82] mb-6" size={48} aria-hidden="true" />
-            <p className="font-display text-[#D8CA82] text-xs uppercase tracking-[0.5em] mb-4">
+            <WifiOff className="mx-auto text-primary mb-6" size={48} aria-hidden="true" />
+            <p className="font-display text-primary text-xs uppercase tracking-[0.5em] mb-4">
               {t("offline.badge")}
             </p>
-            <h1 className="font-display font-black text-4xl sm:text-6xl text-[#f7f7f7] uppercase">
+            <h1 className="font-display font-black text-4xl sm:text-6xl text-foreground uppercase">
               {t("offline.title")}
             </h1>
-            <p className="text-[#c8c8c8] mt-6 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed">
               {t("offline.desc")}
             </p>
             {online && (
-              <p className="text-[#D8CA82] mt-4 text-sm" role="status" data-testid="offline-back-online">
+              <p className="text-primary mt-4 text-sm" role="status" data-testid="offline-back-online">
                 {t("offline.backOnline")}
               </p>
             )}

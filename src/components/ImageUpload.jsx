@@ -88,8 +88,8 @@ export const ImageUpload = ({
             : configured ? "cursor-pointer"
             : "cursor-not-allowed opacity-60"
         } ${
-          dragOver ? "border-[#D8CA82] bg-[#D8CA82]/10" : "border-white/20 bg-[#0d0d0d] hover:border-[#D8CA82]/60"
-        } focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]`}
+          dragOver ? "border-primary bg-primary/10" : "border-border/35 bg-background/70 hover:border-primary/60"
+        } focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}
         data-testid={`${testId}-dropzone`}
       >
         <input
@@ -101,27 +101,27 @@ export const ImageUpload = ({
           data-testid={`${testId}-input`}
         />
         {busy ? (
-          <span className="flex flex-col items-center gap-2 text-[#c8c8c8]">
-            <Loader2 size={20} className="text-[#D8CA82] animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <span className="flex flex-col items-center gap-2 text-muted-foreground">
+            <Loader2 size={20} className="text-primary animate-spin motion-reduce:animate-none" aria-hidden="true" />
             <span className="text-xs uppercase tracking-[0.2em]">
               {t("upload.uploading")}{progress === null ? "" : ` ${progress}%`}
             </span>
-            <span className="block h-1 w-40 bg-white/10 overflow-hidden">
+            <span className="block h-1 w-40 bg-primary/10 overflow-hidden">
               <span
-                className={`block h-full bg-[#D8CA82] ${progress === null ? "w-1/3 animate-pulse motion-reduce:animate-none" : "transition-all"}`}
+                className={`block h-full bg-gold ${progress === null ? "w-1/3 animate-pulse motion-reduce:animate-none" : "transition-all"}`}
                 style={progress === null ? undefined : { width: `${progress}%` }}
               />
             </span>
           </span>
         ) : configured ? (
-          <span className="flex flex-col items-center gap-2 text-[#c8c8c8]">
-            <UploadCloud size={20} className="text-[#D8CA82]" aria-hidden="true" />
+          <span className="flex flex-col items-center gap-2 text-muted-foreground">
+            <UploadCloud size={20} className="text-primary" aria-hidden="true" />
             <span className="text-xs uppercase tracking-[0.2em]">{label || t("upload.label")}</span>
-            <span className="text-xs text-[#c8c8c8]">{t("upload.hint")}</span>
+            <span className="text-xs text-muted-foreground">{t("upload.hint")}</span>
           </span>
         ) : (
-          <span className="flex flex-col items-center gap-2 text-[#c8c8c8]" data-testid={`${testId}-unavailable`}>
-            <ImageOff size={20} className="text-[#D8CA82]/70" aria-hidden="true" />
+          <span className="flex flex-col items-center gap-2 text-muted-foreground" data-testid={`${testId}-unavailable`}>
+            <ImageOff size={20} className="text-primary/70" aria-hidden="true" />
             <span className="text-xs uppercase tracking-[0.2em]">{label || t("upload.label")}</span>
             <span className="text-xs">{t("upload.notConfigured")}</span>
           </span>
@@ -129,14 +129,14 @@ export const ImageUpload = ({
       </div>
 
       {value && (
-        <div className="relative border border-white/10 bg-[#0d0d0d] p-2" data-testid={`${testId}-preview`}>
+        <div className="relative border border-border/25 bg-background/70 p-2" data-testid={`${testId}-preview`}>
           <img src={value} alt={label || t("upload.preview")} className="h-28 object-cover w-full" />
           <button
             type="button"
             onClick={() => onChange("")}
             aria-label={t("common.delete")}
             data-testid={`${testId}-clear`}
-            className="absolute top-1 right-1 bg-[#111111]/90 border border-white/20 text-[#f7f7f7]/70 p-1 hover:text-red-300 hover:border-red-300/50"
+            className="absolute top-1 right-1 bg-background/90 border border-border/35 text-foreground/70 p-1 hover:text-red-300 hover:border-red-300/50"
           >
             <X size={12} />
           </button>

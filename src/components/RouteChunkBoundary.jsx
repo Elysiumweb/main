@@ -13,17 +13,17 @@ const RouteChunkError = ({ onRetry }) => {
       data-testid="route-load-error"
       role="alert"
     >
-      <WifiOff className="text-[#D8CA82]" size={32} aria-hidden="true" />
-      <h1 className="font-display font-bold text-lg text-[#f7f7f7] uppercase tracking-widest">
+      <WifiOff className="text-primary" size={32} aria-hidden="true" />
+      <h1 className="font-display font-bold text-lg text-foreground uppercase tracking-widest">
         {t("route.loadError.title")}
       </h1>
-      <p className="text-[#c8c8c8] max-w-md text-sm">
+      <p className="text-muted-foreground max-w-md text-sm">
         {offline ? t("offline.desc") : t("route.loadError.desc")}
       </p>
       <button
         onClick={onRetry}
         data-testid="route-load-error-retry"
-        className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+        className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-primary/10 transition-colors motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
       >
         <RefreshCw size={13} aria-hidden="true" /> {t("route.loadError.retry")}
       </button>

@@ -20,7 +20,7 @@ const SHARE_URL = (network, url, text) => {
 };
 
 const NETWORKS = [
-  { key: "x", label: "X", icon: "x", className: "hover:border-[#f7f7f7] hover:text-[#f7f7f7]" },
+  { key: "x", label: "X", icon: "x", className: "hover:border-primary hover:text-primary" },
   { key: "facebook", label: "Facebook", icon: "facebook", className: "hover:border-[#1877F2] hover:text-[#1877F2]" },
   { key: "whatsapp", label: "WhatsApp", icon: "whatsapp", className: "hover:border-[#25D366] hover:text-[#25D366]" },
 ];
@@ -61,7 +61,7 @@ export const ShareButtons = ({ url, text, title, testId = "share-buttons", compa
 
   return (
     <div className="flex items-center gap-2 flex-wrap" data-testid={testId} role="group" aria-label={title || t("playerpage.share")}>
-      <span className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] mr-1">
+      <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground mr-1">
         {t("share.label")}
       </span>
       {NETWORKS.map((n) => (
@@ -74,7 +74,7 @@ export const ShareButtons = ({ url, text, title, testId = "share-buttons", compa
           title={n.label}
           data-testid={`${testId}-${n.key}`}
           onClick={() => trackEvent(ANALYTICS_EVENTS.SHARE, { channel: n.key })}
-          className={`border border-white/15 text-[#f7f7f7]/60 p-2 hover:bg-white/5 transition-colors ${n.className} focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${compact ? "p-1.5" : ""}`}
+          className={`border border-border/30 text-foreground/60 p-2 hover:bg-primary/5 transition-colors ${n.className} focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${compact ? "p-1.5" : ""}`}
         >
           <BrandGlyph name={n.icon} size={compact ? 13 : 15} />
         </a>
@@ -84,7 +84,7 @@ export const ShareButtons = ({ url, text, title, testId = "share-buttons", compa
         aria-label={t("playerpage.share")}
         title={t("playerpage.share")}
         data-testid={`${testId}-copy`}
-        className={`border border-white/15 text-[#f7f7f7]/60 p-2 hover:bg-white/5 hover:text-[#D8CA82] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${compact ? "p-1.5" : ""}`}
+        className={`border border-border/30 text-foreground/60 p-2 hover:bg-primary/5 hover:text-primary transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${compact ? "p-1.5" : ""}`}
       >
         {copied ? <Check size={compact ? 13 : 15} className="text-emerald-300" aria-hidden="true" /> : <Link2 size={compact ? 13 : 15} aria-hidden="true" />}
       </button>

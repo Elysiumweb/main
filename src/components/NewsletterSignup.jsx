@@ -8,7 +8,7 @@ import { Mail, CheckCircle, AlertCircle } from "lucide-react";
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const inputCls =
-  "w-full bg-[#1A1A1A] border border-white/20 px-4 py-3 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+  "w-full bg-card border border-border/35 px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary";
 
 export const NewsletterSignup = ({ compact = false }) => {
   const { t } = useLang();
@@ -95,14 +95,14 @@ export const NewsletterSignup = ({ compact = false }) => {
               aria-invalid={status === "error"}
               aria-describedby={status === "error" ? errorId : undefined}
               data-testid="newsletter-email-input"
-              className={inputCls + " placeholder:text-[#a0a0a0]"}
+              className={inputCls + " placeholder:text-muted-foreground"}
             />
             <button
               type="submit"
               disabled={status === "loading"}
               aria-describedby={status === "error" ? errorId : undefined}
               data-testid="newsletter-submit-btn"
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-6 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow disabled:opacity-50 flex items-center gap-2 motion-reduce:transition-none"
+              className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-6 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow disabled:opacity-50 flex items-center gap-2 motion-reduce:transition-none"
             >
               <Mail size={14} aria-hidden="true" /> {t("newsletter.submit")}
             </button>
@@ -129,22 +129,22 @@ export const NewsletterSignup = ({ compact = false }) => {
             type="checkbox"
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
-            className="mt-0.5 accent-[#D8CA82]"
+            className="mt-0.5 accent-primary"
             data-testid="newsletter-consent-checkbox"
           />
-          <span className="text-xs text-[#c8c8c8] leading-relaxed">{t("newsletter.consent")}</span>
+          <span className="text-xs text-muted-foreground leading-relaxed">{t("newsletter.consent")}</span>
         </label>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-background">
+      <section className="relative border-b border-border/25 overflow-hidden">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-20 relative">
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="newsletter-title">{t("newsletter.title")}</h1>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide">{t("newsletter.sub")}</p>
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-foreground uppercase" data-testid="newsletter-title">{t("newsletter.title")}</h1>
+          <p className="text-muted-foreground mt-4 tracking-wide">{t("newsletter.sub")}</p>
         </div>
       </section>
       <section className="max-w-xl mx-auto px-4 sm:px-8 py-16">
@@ -156,14 +156,14 @@ export const NewsletterSignup = ({ compact = false }) => {
             aria-live="polite"
           >
             <CheckCircle className="text-emerald-300" size={36} aria-hidden="true" />
-            <p className="text-[#f7f7f7] text-center">{message}</p>
+            <p className="text-foreground text-center">{message}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6" data-testid="newsletter-form" noValidate>
             <label htmlFor={`${emailId}-website`} className="sr-only">Site web</label>
             <input id={`${emailId}-website`} type="text" {...getHoneypotProps("website")} data-testid="newsletter-page-honeypot" />
             <div>
-              <label htmlFor={emailId} className="text-xs uppercase tracking-[0.25em] text-[#c8c8c8] block mb-2">
+              <label htmlFor={emailId} className="text-xs uppercase tracking-[0.25em] text-muted-foreground block mb-2">
                 {t("newsletter.email")}
               </label>
               <input
@@ -188,9 +188,9 @@ export const NewsletterSignup = ({ compact = false }) => {
                 type="checkbox"
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 accent-[#D8CA82]"
+                className="mt-0.5 accent-primary"
               />
-              <span className="text-xs text-[#c8c8c8] leading-relaxed">{t("newsletter.consent")}</span>
+              <span className="text-xs text-muted-foreground leading-relaxed">{t("newsletter.consent")}</span>
             </label>
             {status === "error" && (
               <p
@@ -208,7 +208,7 @@ export const NewsletterSignup = ({ compact = false }) => {
               type="submit"
               disabled={status === "loading"}
               data-testid="newsletter-page-submit"
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_rgba(216,202,130,0.45)] transition-shadow disabled:opacity-50 motion-reduce:transition-none"
+              className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-4 flex items-center gap-2 hover:shadow-[0_0_24px_oklch(0.84 0.095 98/0.45)] transition-shadow disabled:opacity-50 motion-reduce:transition-none"
             >
               <Mail size={16} aria-hidden="true" /> {t("newsletter.submit")}
             </button>
@@ -216,7 +216,7 @@ export const NewsletterSignup = ({ compact = false }) => {
         )}
 
         {/* Unsubscribe section */}
-        <div className="mt-16 pt-8 border-t border-white/10">
+        <div className="mt-16 pt-8 border-t border-border/25">
           <UnsubscribeForm />
         </div>
       </section>
@@ -254,8 +254,8 @@ const UnsubscribeForm = () => {
 
   return (
     <div data-testid="newsletter-unsubscribe">
-      <h3 className="font-display text-sm uppercase tracking-[0.3em] text-[#c8c8c8] mb-2">{t("newsletter.unsubscribe.title")}</h3>
-      <p className="text-xs text-[#c8c8c8] mb-6">{t("newsletter.unsubscribe.sub")}</p>
+      <h3 className="font-display text-sm uppercase tracking-[0.3em] text-muted-foreground mb-2">{t("newsletter.unsubscribe.title")}</h3>
+      <p className="text-xs text-muted-foreground mb-6">{t("newsletter.unsubscribe.sub")}</p>
       {status === "success" ? (
         <p
           className="text-emerald-300 text-sm"
@@ -279,13 +279,13 @@ const UnsubscribeForm = () => {
             aria-invalid={status === "error"}
             aria-describedby={status === "error" ? errorId : undefined}
             data-testid="unsubscribe-email-input"
-            className="flex-1 bg-[#1A1A1A] border border-white/20 px-4 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82] placeholder:text-[#a0a0a0]"
+            className="flex-1 bg-card border border-border/35 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary placeholder:text-muted-foreground"
           />
           <button
             type="submit"
             disabled={status === "loading"}
             data-testid="unsubscribe-submit"
-            className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 hover:border-red-300 hover:text-red-300 transition-colors disabled:opacity-50 motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82]"
+            className="border border-border/35 text-muted-foreground text-xs uppercase tracking-widest px-4 py-2.5 hover:border-red-300 hover:text-red-300 transition-colors disabled:opacity-50 motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
           >
             {t("newsletter.unsubscribe.submit")}
           </button>

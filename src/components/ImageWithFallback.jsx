@@ -27,7 +27,7 @@ export const ImageWithFallback = ({
         <div
           role="img"
           aria-label={alt || "Image indisponible"}
-          className={`${className} bg-[#0c0c0c] flex items-center justify-center border border-white/10 text-[#a0a0a0] font-display tracking-widest text-xs uppercase select-none`}
+          className={`${className} bg-background/70 flex items-center justify-center border border-border/25 text-muted-foreground font-display tracking-widest text-xs uppercase select-none`}
         >
           <span aria-hidden="true">{safeInitials}</span>
         </div>
@@ -37,17 +37,17 @@ export const ImageWithFallback = ({
     if (fallbackType === "video") {
       return (
         <div
-          className={`${className} relative bg-[#0c0c0c] flex items-center justify-center overflow-hidden border border-white/10`}
+          className={`${className} relative bg-background/70 flex items-center justify-center overflow-hidden border border-border/25`}
         >
           <div className="absolute inset-0 canvas-dots opacity-40" />
-          <PlayCircle size={40} className="text-[#D8CA82] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" aria-hidden="true" />
+          <PlayCircle size={40} className="text-primary drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" aria-hidden="true" />
         </div>
       );
     }
 
     return (
       <div
-        className={`${className} relative bg-[#0c0c0c] flex items-center justify-center overflow-hidden border border-white/10`}
+        className={`${className} relative bg-background/70 flex items-center justify-center overflow-hidden border border-border/25`}
       >
         <div className="absolute inset-0 canvas-dots opacity-30" />
         <img

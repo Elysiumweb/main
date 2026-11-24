@@ -16,7 +16,7 @@ const OpponentLogo = ({ src, name, className="" }) => {
   const [err, setErr] = useState(false);
   if (!src || err) {
     const initials = (name||"?").split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||"").join("")||"?";
-    return <div className={`${className} flex items-center justify-center border border-white/15 bg-[#0c0c0c] text-[#a0a0a0] text-xs`}>{initials}</div>;
+    return <div className={`${className} flex items-center justify-center border border-border/30 bg-background/70 text-muted-foreground text-xs`}>{initials}</div>;
   }
   return <img src={src} alt={`Logo ${name}`} onError={()=>setErr(true)} className={`${className} object-contain`} />;
 };
@@ -69,29 +69,29 @@ export default function OpponentDetail() {
     } : undefined,
   });
 
-  if (error) return <div className="min-h-[60vh] bg-[#111111]"><ErrorState testId="opponent-detail-error" /></div>;
-  if (matches===null) return <div className="min-h-[60vh] bg-[#111111]"><LoadingState testId="opponent-detail-loading" /></div>;
+  if (error) return <div className="min-h-[60vh] bg-transparent"><ErrorState testId="opponent-detail-error" /></div>;
+  if (matches===null) return <div className="min-h-[60vh] bg-transparent"><LoadingState testId="opponent-detail-loading" /></div>;
   if (!opponent) return (
-    <div className="min-h-[60vh] bg-[#111111] flex flex-col items-center justify-center gap-4">
-      <p className="text-[#c8c8c8]">Adversaire introuvable : {slug}</p>
-      <Link to="/adversaires" className="border border-[#D8CA82]/50 text-[#D8CA82] px-5 py-2 text-xs uppercase tracking-widest">Tous les adversaires</Link>
+    <div className="min-h-[60vh] bg-background flex flex-col items-center justify-center gap-4">
+      <p className="text-muted-foreground">Adversaire introuvable : {slug}</p>
+      <Link to="/adversaires" className="border border-primary/50 text-primary px-5 py-2 text-xs uppercase tracking-widest">Tous les adversaires</Link>
     </div>
   );
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{label:"Adversaires", to:"/adversaires"}, {label:opponent.name}]} />
+          <PageBreadcrumb className="opacity-80" items={[{label:"Adversaires", to:"/adversaires"}, {label:opponent.name}]} />
           <div className="flex items-center gap-6">
-            <OpponentLogo src={opponent.logo} name={opponent.name} className="h-20 w-20 border border-white/10 bg-[#1A1A1A]" />
+            <OpponentLogo src={opponent.logo} name={opponent.name} className="h-20 w-20 panel clip-blade-sm" />
             <div>
-              <h1 className="font-display font-black text-4xl sm:text-5xl text-[#f7f7f7] uppercase" data-testid="opponent-detail-title">{opponent.name}</h1>
-              <div className="flex items-center gap-3 mt-3 text-xs text-[#c8c8c8]">
-                {opponent.country && <span className="border border-white/15 px-2 py-0.5 uppercase tracking-widest">{opponent.country}</span>}
-                {opponent.website && <a href={opponent.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[#D8CA82]"><Globe size={12}/> Site officiel <ExternalLink size={10}/></a>}
-                {opponent.twitter && <a href={opponent.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-[#D8CA82]">X / Twitter</a>}
+              <h1 className="font-display font-black text-4xl sm:text-5xl uppercase leading-[0.95] text-gold" data-testid="opponent-detail-title">{opponent.name}</h1>
+              <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                {opponent.country && <span className="border border-border/30 px-2 py-0.5 uppercase tracking-widest">{opponent.country}</span>}
+                {opponent.website && <a href={opponent.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary"><Globe size={12}/> Site officiel <ExternalLink size={10}/></a>}
+                {opponent.twitter && <a href={opponent.twitter} target="_blank" rel="noopener noreferrer" className="hover:text-primary">X / Twitter</a>}
               </div>
             </div>
           </div>
@@ -103,25 +103,25 @@ export default function OpponentDetail() {
           {h2h && <HeadToHead matches={matches} opponentName={opponent.name} testId="opponent-detail-h2h" />}
 
           <div>
-            <h2 className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-6 flex items-center gap-2"><Trophy size={14}/> Historique des confrontations ({opponentMatches.length})</h2>
+            <h2 className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-6 flex items-center gap-2"><Trophy size={14}/> Historique des confrontations ({opponentMatches.length})</h2>
             <div className="grid sm:grid-cols-2 gap-4" data-testid="opponent-detail-grid">
               {opponentMatches.map(m=> <MatchCard key={m.id} match={m} />)}
             </div>
           </div>
         </div>
         <aside className="lg:col-span-4 space-y-6">
-          <div className="border border-white/10 bg-[#1A1A1A] p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Fiche</p>
-            <ul className="text-xs text-[#c8c8c8] space-y-2">
-              <li>Nom : <span className="text-[#f7f7f7]">{opponent.name}</span></li>
-              {opponent.country && <li>Pays : <span className="text-[#f7f7f7]">{opponent.country}</span></li>}
-              <li>Confrontations : <span className="text-[#f7f7f7]">{opponentMatches.length}</span></li>
+          <div className="panel clip-blade-sm p-6">
+            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Fiche</p>
+            <ul className="text-xs text-muted-foreground space-y-2">
+              <li>Nom : <span className="text-foreground">{opponent.name}</span></li>
+              {opponent.country && <li>Pays : <span className="text-foreground">{opponent.country}</span></li>}
+              <li>Confrontations : <span className="text-foreground">{opponentMatches.length}</span></li>
               {h2h && <li>Bilan : <span className="text-emerald-300">{h2h.wins}V</span> – <span className="text-red-300">{h2h.losses}D</span> {h2h.draws?`– ${h2h.draws}N`:""} · {h2h.scoreFor}-{h2h.scoreAgainst}</li>}
             </ul>
-            <Link to="/adversaires" className="mt-4 inline-flex text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">← Tous les adversaires</Link>
+            <Link to="/adversaires" className="mt-4 inline-flex text-xs uppercase tracking-widest text-primary hover:underline">← Tous les adversaires</Link>
           </div>
-          <div className="border border-white/10 bg-[#0c0c0c] p-6">
-            <p className="text-xs text-[#c8c8c8] leading-relaxed">Cette fiche est générée automatiquement à partir des matchs saisis. Les logos et informations enrichies peuvent être complétés depuis l'administration (collection <code>opponents</code>).</p>
+          <div className="border border-border/25 bg-background/70 p-6">
+            <p className="text-xs text-muted-foreground leading-relaxed">Cette fiche est générée automatiquement à partir des matchs saisis. Les logos et informations enrichies peuvent être complétés depuis l'administration (collection <code>opponents</code>).</p>
           </div>
         </aside>
       </section>

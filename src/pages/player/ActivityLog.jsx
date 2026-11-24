@@ -25,23 +25,23 @@ export default function ActivityLog() {
     <div className="h-full overflow-y-auto p-6">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Activity size={16} className="text-[#D8CA82]" />
-          <h2 className="font-display text-sm uppercase tracking-[0.3em] text-[#f7f7f7]">{t("player.activity")}</h2>
+          <Activity size={16} className="text-primary" />
+          <h2 className="font-display text-sm uppercase tracking-[0.3em] text-foreground">{t("player.activity")}</h2>
         </div>
         {items.length === 0 ? (
-          <p className="text-[#c8c8c8]" data-testid="activity-empty">{t("activity.empty")}</p>
+          <p className="text-muted-foreground" data-testid="activity-empty">{t("activity.empty")}</p>
         ) : (
           <div className="space-y-1.5" data-testid="activity-list">
             {items.map((a) => {
               const Icon = ICONS[a.type?.split("_")[0]] || Activity;
               return (
-                <div key={a.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-2.5" data-testid={`activity-${a.id}`}>
-                  <Icon size={15} className="text-[#D8CA82] shrink-0" />
+                <div key={a.id} className="flex items-center gap-4 panel clip-blade-sm px-4 py-2.5" data-testid={`activity-${a.id}`}>
+                  <Icon size={15} className="text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#f7f7f7]/80 truncate">
-                      <span className="text-[#D8CA82]">{t(`activity.${a.type}`)}</span> — {a.label}
+                    <p className="text-sm text-foreground/80 truncate">
+                      <span className="text-primary">{t(`activity.${a.type}`)}</span> — {a.label}
                     </p>
-                    <p className="text-xs text-[#f7f7f7]/35">
+                    <p className="text-xs text-foreground/35">
                       {a.byName} · {a.game}{a.createdAt?.toDate ? ` · ${a.createdAt.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""}
                     </p>
                   </div>

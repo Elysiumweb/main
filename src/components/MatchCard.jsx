@@ -28,7 +28,7 @@ const OpponentLogo = ({ src, name, className = "" }) => {
       <div
         role="img"
         aria-label={`${t("a11y.opponentLogoFallback")} : ${safeName}`}
-        className={`${className} flex items-center justify-center border border-white/15 bg-[#0c0c0c] text-[#a0a0a0] font-display tracking-widest text-xs uppercase select-none`}
+        className={`${className} flex items-center justify-center border border-border/30 bg-background/70 text-muted-foreground font-display tracking-widest text-xs uppercase select-none`}
         data-testid="opponent-logo-fallback"
       >
         <span aria-hidden="true">{initials}</span>
@@ -109,7 +109,7 @@ const ResultBadge = ({ result, t, upcoming = false, live = false, cancelled = fa
   }
   return (
     <span
-      className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-[#c8c8c8] border-white/25 flex items-center gap-1"
+      className="text-xs font-display tracking-[0.3em] uppercase border px-2 py-0.5 text-muted-foreground border-border/40 flex items-center gap-1"
       data-testid="match-status-draw"
     >
       <span aria-hidden="true">=</span>
@@ -180,7 +180,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
 
   const card = (
     <div
-      className="border border-white/10 bg-[#1A1A1A] p-6 relative group hover:border-[#D8CA82]/50 transition-colors cursor-pointer motion-reduce:transition-none"
+      className="panel clip-blade-sm p-6 relative group hover:border-primary/50 transition-colors cursor-pointer motion-reduce:transition-none"
       data-testid={`match-card-${match.id}`}
       role="button"
       tabIndex={0}
@@ -198,54 +198,54 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       </span>
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-display tracking-[0.3em] uppercase text-[#D8CA82] border border-[#D8CA82]/40 px-2 py-0.5">{match.game || "EVA"}</span>
+          <span className="text-xs font-display tracking-[0.3em] uppercase text-primary border border-primary/40 px-2 py-0.5">{match.game || "EVA"}</span>
           {roster && (
-            <span className="text-xs font-display tracking-[0.25em] uppercase text-[#f7f7f7]/70 border border-white/15 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
+            <span className="text-xs font-display tracking-[0.25em] uppercase text-foreground/70 border border-border/30 px-2 py-0.5" data-testid={`match-roster-${match.id}`}>
               {roster}
             </span>
           )}
-          {maps.length>0 && <span className="text-xs border border-white/10 text-[#c8c8c8] px-1.5 py-0.5 flex items-center gap-1"><MapIcon size={10}/> {maps.length}</span>}
-          {mvp && <span className="text-xs border border-[#D8CA82]/20 text-[#D8CA82] px-1.5 py-0.5 flex items-center gap-1"><Award size={10}/> MVP</span>}
+          {maps.length>0 && <span className="text-xs border border-border/25 text-muted-foreground px-1.5 py-0.5 flex items-center gap-1"><MapIcon size={10}/> {maps.length}</span>}
+          {mvp && <span className="text-xs border border-primary/20 text-primary px-1.5 py-0.5 flex items-center gap-1"><Award size={10}/> MVP</span>}
         </div>
         <ResultBadge result={result} t={t} upcoming={upcoming} live={live} cancelled={cancelled} />
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-2 w-1/3">
           <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="808" height="798" loading="lazy" className="h-12 w-auto object-contain" />
-          <span className="text-xs font-display uppercase tracking-wider text-[#f7f7f7] text-center leading-tight" data-testid={`match-team-name-${match.id}`}>{teamName}</span>
+          <span className="text-xs font-display uppercase tracking-wider text-foreground text-center leading-tight" data-testid={`match-team-name-${match.id}`}>{teamName}</span>
         </div>
         <div className="text-center">
           {cancelled ? (
             <p className="font-display font-bold text-sm uppercase tracking-widest text-amber-300" aria-label={t("results.cancelled")}>{t("results.cancelled")}</p>
           ) : upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? (
-            <p className="font-display font-black text-2xl text-[#c8c8c8]" aria-label={live ? "Score en cours de mise à jour" : "Match à venir"}>VS</p>
+            <p className="font-display font-black text-2xl text-muted-foreground" aria-label={live ? "Score en cours de mise à jour" : "Match à venir"}>VS</p>
           ) : (
-            <p className="font-display font-black text-3xl text-[#f7f7f7]" aria-label={`Score : ${us} à ${them}`}>
-              <span className={result === "win" ? "text-[#D8CA82]" : "text-[#f7f7f7]"}>{match.scoreUs}</span>
-              <span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>
-              <span className="text-[#f7f7f7]">{match.scoreThem}</span>
+            <p className="font-display font-black text-3xl text-foreground" aria-label={`Score : ${us} à ${them}`}>
+              <span className={result === "win" ? "text-primary" : "text-foreground"}>{match.scoreUs}</span>
+              <span className="text-muted-foreground mx-2" aria-hidden="true">—</span>
+              <span className="text-foreground">{match.scoreThem}</span>
             </p>
           )}
         </div>
         <div className="flex flex-col items-center gap-2 w-1/3">
           <OpponentLogo src={match.opponentLogo} name={match.opponentName} className="h-12 w-12" />
-          <span className="text-xs font-display uppercase tracking-wider text-[#c8c8c8] text-center">{match.opponentName}</span>
+          <span className="text-xs font-display uppercase tracking-wider text-muted-foreground text-center">{match.opponentName}</span>
         </div>
       </div>
-      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between flex-wrap gap-2">
-        <span className="text-xs text-[#c8c8c8]">
+      <div className="mt-4 pt-3 border-t border-border/25 flex items-center justify-between flex-wrap gap-2">
+        <span className="text-xs text-muted-foreground">
           {formattedDate}{match.time && match.timezone ? ` (${match.timezone})` : ""}
         </span>
-        {match.competition && <span className="text-xs text-[#D8CA82]/80 uppercase tracking-wider">{match.competition}</span>}
+        {match.competition && <span className="text-xs text-primary/80 uppercase tracking-wider">{match.competition}</span>}
       </div>
       {(upcoming || live) && (match.platform || match.watchUrl) && (
         <div className="mt-3 flex items-center justify-between gap-2">
-          {match.platform && <span className="text-xs text-[#c8c8c8]">{t("results.platform")} : {match.platform}</span>}
+          {match.platform && <span className="text-xs text-muted-foreground">{t("results.platform")} : {match.platform}</span>}
           {match.watchUrl && (
             <a href={match.watchUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.stopPropagation(); trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_card", matchId: match.id, platform: match.platform || "watchUrl", status: match.status }); }} data-testid={`match-watch-${match.id}`}
-              className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${live
+              className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${live
                 ? "bg-red-500/15 border border-red-400/60 text-red-300 font-bold px-3 py-1.5 hover:bg-red-500/25"
-                : "text-[#D8CA82] hover:underline"}`}>
+                : "text-primary hover:underline"}`}>
               {live ? <Radio size={13} aria-hidden="true" /> : <PlayCircle size={13} aria-hidden="true" />}
               {live ? t("results.watchLive") : t("results.watch")}
             </a>
@@ -254,17 +254,17 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       )}
       {hasVod && !upcoming && !live && !cancelled && (
         <div className="mt-3">
-          <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" onClick={(e)=> e.stopPropagation()} data-testid={`match-vod-${match.id}`} className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82] flex items-center gap-1.5"><Film size={12}/> {t("results.vod")}</a>
+          <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" onClick={(e)=> e.stopPropagation()} data-testid={`match-vod-${match.id}`} className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary flex items-center gap-1.5"><Film size={12}/> {t("results.vod")}</a>
         </div>
       )}
       {(onEdit || onDelete || onDuplicate || onMarkUpcoming) && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10 motion-reduce:transition-none flex items-center gap-1 bg-[#111111]/80 border border-white/10 px-1 py-0.5">
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10 motion-reduce:transition-none flex items-center gap-1 bg-background/80 border border-border/25 px-1 py-0.5">
           {onDuplicate && (
             <button
               onClick={(e) => { e.stopPropagation(); onDuplicate(match); }}
               data-testid={`match-duplicate-${match.id}`}
               aria-label={`${t("admin.match.duplicate")} — ${match.opponentName}`}
-              className="text-[#f7f7f7]/50 hover:text-[#D8CA82] p-1"
+              className="text-foreground/50 hover:text-primary p-1"
               title={t("admin.match.duplicate")}
             >
               <Copy size={13} aria-hidden="true" />
@@ -286,7 +286,7 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               onClick={(e) => { e.stopPropagation(); onEdit(match); }}
               data-testid={`match-edit-${match.id}`}
               aria-label={`${t("admin.edit")} — ${match.opponentName}`}
-              className="text-[#D8CA82]/80 hover:text-[#D8CA82] p-1"
+              className="text-primary/80 hover:text-primary p-1"
               title={t("admin.edit")}
             >
               <Pencil size={13} aria-hidden="true" />
@@ -314,50 +314,50 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
       if (o) trackEvent(ANALYTICS_EVENTS.MATCH_VIEW, { matchId: match.id, status: match.status, game: match.game, competition: match.competition });
     }}>
       <DialogTrigger asChild>{card}</DialogTrigger>
-      <DialogContent className="bg-[#1A1A1A] border border-[#D8CA82]/30 rounded-none text-[#f7f7f7] max-w-lg max-h-[90vh] overflow-y-auto" data-testid={`match-detail-${match.id}`}>
+      <DialogContent className="panel clip-blade border border-primary/30 rounded-none text-foreground max-w-lg max-h-[90vh] overflow-y-auto" data-testid={`match-detail-${match.id}`}>
         <DialogHeader>
-          <DialogTitle className="font-display uppercase tracking-widest text-[#D8CA82]">
+          <DialogTitle className="font-display uppercase tracking-widest text-primary">
             {teamName} vs {match.opponentName}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 text-sm">
-          <div className="flex items-center justify-between border border-white/10 p-4">
+          <div className="flex items-center justify-between border border-border/25 p-4">
             <div className="flex flex-col items-center gap-1 w-1/3">
               <OptimizedImage src="/brand/logo-icon-gold.png" alt={`Logo ${teamName}`} width="808" height="798" loading="lazy" className="h-10 w-auto object-contain" />
               <span className="text-xs font-display uppercase text-center leading-tight">{teamName}</span>
             </div>
             <p className="font-display font-black text-3xl" aria-label={cancelled ? t("results.cancelled") : upcoming ? "Match à venir" : `Score : ${match.scoreUs} à ${match.scoreThem}`}>
-              {cancelled ? <span className="text-base uppercase tracking-widest text-amber-300">{t("results.cancelled")}</span> : upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? "VS" : <>{match.scoreUs}<span className="text-[#a0a0a0] mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
+              {cancelled ? <span className="text-base uppercase tracking-widest text-amber-300">{t("results.cancelled")}</span> : upcoming || (live && (match.scoreUs === undefined || match.scoreUs === "")) ? "VS" : <>{match.scoreUs}<span className="text-muted-foreground mx-2" aria-hidden="true">—</span>{match.scoreThem}</>}
             </p>
             <div className="flex flex-col items-center gap-1 w-1/3">
               <OpponentLogo src={match.opponentLogo} name={match.opponentName} className="h-10 w-10" />
               <span className="text-xs font-display uppercase text-center">{match.opponentName}</span>
             </div>
           </div>
-          <p className="text-[#c8c8c8]">
+          <p className="text-muted-foreground">
             {formattedDate}{match.timezone ? ` (${match.timezone})` : ""}
             {match.competition ? ` — ${match.competition}` : ""}{match.platform ? ` — ${match.platform}` : ""}
           </p>
           {roster && (
-            <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50" data-testid={`match-detail-roster-${match.id}`}>
-              {t("results.roster")} : <span className="text-[#D8CA82]">{roster}</span>
+            <p className="text-xs uppercase tracking-[0.25em] text-foreground/50" data-testid={`match-detail-roster-${match.id}`}>
+              {t("results.roster")} : <span className="text-primary">{roster}</span>
             </p>
           )}
           {participants.length > 0 && (
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2">
+              <p className="text-xs uppercase tracking-[0.25em] text-primary mb-2">
                 {t("results.players")}
               </p>
               <div className="flex flex-wrap gap-2" data-testid={`match-players-${match.id}`}>
                 {participants.map((p, idx) => {
                   const mvpTimes = mvpCount(p.mvp);
                   return (
-                    <span key={p.playerId || `${p.pseudo}-${idx}`} className="border border-white/15 bg-[#141414] px-3 py-2 text-xs text-[#f7f7f7]/80">
+                    <span key={p.playerId || `${p.pseudo}-${idx}`} className="border border-border/30 bg-card/70 px-3 py-2 text-xs text-foreground/80">
                       <span className="font-semibold">{p.pseudo || "Joueur"}</span>
                       {hasPlayerStats(p) && (
-                        <span className="block text-[#c8c8c8] mt-1">
+                        <span className="block text-muted-foreground mt-1">
                           {formatStatLine(p)}
-                          {mvpTimes > 0 && <span className="text-[#D8CA82] ml-2">· {mvpTimes > 1 ? `MVP ×${mvpTimes}` : "MVP"}</span>}
+                          {mvpTimes > 0 && <span className="text-primary ml-2">· {mvpTimes > 1 ? `MVP ×${mvpTimes}` : "MVP"}</span>}
                         </span>
                       )}
                     </span>
@@ -368,25 +368,25 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
           )}
           {maps.length>0 && (
             <div data-testid={`match-maps-${match.id}`}>
-              <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] mb-2 flex items-center gap-1"><MapIcon size={12}/> {t("results.maps")}</p>
-              <div className="border border-white/10 bg-[#141414] divide-y divide-white/5">
+              <p className="text-xs uppercase tracking-[0.25em] text-primary mb-2 flex items-center gap-1"><MapIcon size={12}/> {t("results.maps")}</p>
+              <div className="panel clip-blade-sm bg-card divide-y divide-border/20">
                 {maps.map((m,i)=>(
                   <div key={i} className="flex items-center justify-between px-3 py-2 text-xs">
-                    <span className="text-[#f7f7f7]">{m.name || `Map ${i+1}`}</span>
-                    <span className="text-[#c8c8c8]">{m.scoreUs || "—"} — {m.scoreThem || "—"}</span>
+                    <span className="text-foreground">{m.name || `Map ${i+1}`}</span>
+                    <span className="text-muted-foreground">{m.scoreUs || "—"} — {m.scoreThem || "—"}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
           {mvp && (
-            <div data-testid={`match-mvp-${match.id}`} className="border border-[#D8CA82]/20 bg-[#D8CA82]/5 px-3 py-2 flex items-center gap-2">
-              <Award size={12} className="text-[#D8CA82]"/>
-              <span className="text-xs uppercase tracking-widest text-[#D8CA82]">{t("results.mvp")} :</span>
-              <span className="text-xs text-[#f7f7f7]">{mvp}</span>
+            <div data-testid={`match-mvp-${match.id}`} className="border border-primary/20 bg-primary/5 px-3 py-2 flex items-center gap-2">
+              <Award size={12} className="text-primary"/>
+              <span className="text-xs uppercase tracking-widest text-primary">{t("results.mvp")} :</span>
+              <span className="text-xs text-foreground">{mvp}</span>
             </div>
           )}
-          <div className="pt-2 border-t border-white/10 flex flex-col gap-3">
+          <div className="pt-2 border-t border-border/25 flex flex-col gap-3">
             <ShareButtons
               url={canonicalUrl}
               text={`${teamName} vs ${match.opponentName || t("common.adversary")}${!upcoming && !live && !cancelled ? ` — ${match.scoreUs ?? "?"}-${match.scoreThem ?? "?"}` : ""}`}
@@ -394,25 +394,25 @@ export const MatchCard = ({ match, onDelete, onEdit, onDuplicate, onMarkUpcoming
               testId={`match-share-${match.id}`}
               compact
             />
-            <Link to={`/resultats/${match.id}`} onClick={()=> setOpen(false)} className="text-xs uppercase tracking-widest text-[#D8CA82] hover:underline" data-testid={`match-detail-link-${match.id}`}>Voir la page dédiée →</Link>
+            <Link to={`/resultats/${match.id}`} onClick={()=> setOpen(false)} className="text-xs uppercase tracking-widest text-primary hover:underline" data-testid={`match-detail-link-${match.id}`}>Voir la page dédiée →</Link>
           </div>
           <div className="flex gap-4 flex-wrap">
             {(upcoming || live) && match.watchUrl && (
               <a href={match.watchUrl} target="_blank" rel="noopener noreferrer"
                 onClick={() => trackEvent(ANALYTICS_EVENTS.LIVE_CLICK, { source: "match_detail", matchId: match.id, platform: match.platform || "watchUrl", status: match.status })}
-                className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D8CA82] ${live
+                className={`text-xs uppercase tracking-widest flex items-center gap-1.5 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${live
                   ? "bg-red-500/15 border border-red-400/60 text-red-300 font-bold px-3 py-2"
-                  : "text-[#D8CA82] hover:underline"}`}>
+                  : "text-primary hover:underline"}`}>
                 {live ? <Radio size={13} aria-hidden="true" /> : <ExternalLink size={13} aria-hidden="true" />}
                 {live ? t("results.watchLive") : t("results.watch")}
               </a>
             )}
             {hasVod && (
-              <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest flex items-center gap-1.5 text-[#f7f7f7]/80 hover:text-[#D8CA82] border border-white/10 px-3 py-2">
+              <a href={match.vodUrl} target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-widest flex items-center gap-1.5 text-foreground/80 hover:text-primary border border-border/25 px-3 py-2">
                 <Film size={13}/> {t("results.vod")}
               </a>
             )}
-            <Link to={`/adversaires/${slugify(match.opponentName)}`} className="text-xs uppercase tracking-widest text-[#c8c8c8] hover:text-[#D8CA82]">Fiche adversaire →</Link>
+            <Link to={`/adversaires/${slugify(match.opponentName)}`} className="text-xs uppercase tracking-widest text-muted-foreground hover:text-primary">Fiche adversaire →</Link>
           </div>
         </div>
       </DialogContent>

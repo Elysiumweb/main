@@ -108,103 +108,103 @@ export default function Press() {
   };
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("press.title") }]} />
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("press.title") }]} />
           <div className="flex items-center gap-3">
-            <Newspaper className="text-[#D8CA82]" size={26} aria-hidden="true" />
-            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="press-title">{t("press.title")}</h1>
+            <Newspaper className="text-primary" size={26} aria-hidden="true" />
+            <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="press-title">{t("press.title")}</h1>
           </div>
-          <p className="text-[#c8c8c8] mt-4 tracking-wide max-w-3xl">{t("press.sub")}</p>
+          <p className="text-muted-foreground mt-4 tracking-wide max-w-3xl">{t("press.sub")}</p>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
-        <p className="text-sm text-[#c8c8c8] leading-relaxed max-w-3xl mb-8" data-testid="press-intro">{t("press.intro")}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl mb-8" data-testid="press-intro">{t("press.intro")}</p>
 
         {/* Export des résultats (CSV / PDF) */}
-        <div className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 mb-12" data-testid="press-exports-sport">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#D8CA82] mb-4 flex items-center gap-2"><FileSpreadsheet size={14}/> Export des résultats (CSV / PDF) — données sportives exportables</h2>
-          <p className="text-xs text-[#c8c8c8] mb-4">La presse a les logos mais aussi désormais les données sportives : résultats complets avec VOD, MVP, score par manche.</p>
+        <div className="border border-primary/30 bg-card p-6 mb-12" data-testid="press-exports-sport">
+          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-4 flex items-center gap-2"><FileSpreadsheet size={14}/> Export des résultats (CSV / PDF) — données sportives exportables</h2>
+          <p className="text-xs text-muted-foreground mb-4">La presse a les logos mais aussi désormais les données sportives : résultats complets avec VOD, MVP, score par manche.</p>
           <div className="flex flex-wrap gap-3">
-            <button onClick={exportCsv} data-testid="press-export-results-csv" className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10"><Download size={12}/> Export Résultats CSV ({matches.length})</button>
-            <button onClick={exportCompetitionsCsv} data-testid="press-export-competitions-csv" className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]"><Table2 size={12}/> Export Compétitions CSV ({competitions.length})</button>
-            <button onClick={exportPdf} data-testid="press-export-results-pdf" className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]"><FileText size={12}/> Export PDF (impression)</button>
+            <button onClick={exportCsv} data-testid="press-export-results-csv" className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:bg-primary/10"><Download size={12}/> Export Résultats CSV ({matches.length})</button>
+            <button onClick={exportCompetitionsCsv} data-testid="press-export-competitions-csv" className="border border-border/35 text-muted-foreground text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:border-primary/40 hover:text-primary"><Table2 size={12}/> Export Compétitions CSV ({competitions.length})</button>
+            <button onClick={exportPdf} data-testid="press-export-results-pdf" className="border border-border/35 text-muted-foreground text-xs uppercase tracking-widest px-5 py-2.5 flex items-center gap-2 hover:border-primary/40 hover:text-primary"><FileText size={12}/> Export PDF (impression)</button>
           </div>
-          <p className="text-xs text-[#c8c8c8]/60 mt-3">Inclut : date, jeu, roster, adversaire, score, compétition, statut, VOD, MVP, maps. Format compatible presse.</p>
+          <p className="text-xs text-muted-foreground/60 mt-3">Inclut : date, jeu, roster, adversaire, score, compétition, statut, VOD, MVP, maps. Format compatible presse.</p>
         </div>
 
-        <div className="border border-[#D8CA82]/30 bg-[#D8CA82]/5 px-4 py-3 mb-10" data-testid="press-ratio-note">
-          <p className="text-xs text-[#D8CA82] flex items-start gap-2 leading-relaxed">
+        <div className="border border-primary/30 bg-primary/5 px-4 py-3 mb-10" data-testid="press-ratio-note">
+          <p className="text-xs text-primary flex items-start gap-2 leading-relaxed">
             <Shield size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
             <span>
               <strong>Ratio source préservé :</strong> toutes les dimensions annoncées correspondent exactement aux fichiers livrés.
-              Ne jamais forcer un <code className="bg-white/10 px-1 py-0.5">width/height</code> incohérent — utilisez <code className="bg-white/10 px-1 py-0.5">object-contain</code> + <code className="bg-white/10 px-1 py-0.5">height:auto</code> ou les exports dédiés ci-dessous.
+              Ne jamais forcer un <code className="bg-primary/10 px-1 py-0.5">width/height</code> incohérent — utilisez <code className="bg-primary/10 px-1 py-0.5">object-contain</code> + <code className="bg-primary/10 px-1 py-0.5">height:auto</code> ou les exports dédiés ci-dessous.
             </span>
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-5 mb-12" data-testid="press-kit-complete">
           <a href="/brand/elysium-press-kit.zip" download data-testid="press-download-zip"
-            className="border border-[#D8CA82]/30 bg-[#1A1A1A] p-6 flex flex-col hover:border-[#D8CA82]/60 transition-colors group">
-            <Package className="text-[#D8CA82] mb-3 group-hover:scale-105 transition-transform" size={22} aria-hidden="true" />
-            <p className="font-display text-xs uppercase tracking-[0.25em] text-[#f7f7f7]">Kit presse complet · ZIP</p>
-            <p className="text-xs text-[#c8c8c8] mt-2 leading-relaxed">Tous les logos PNG + SVG + PDF, pattern et accents aux bonnes dimensions. 10 fichiers vectoriels inclus.</p>
-            <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#D8CA82]"><Download size={12} /> Télécharger le ZIP</span>
+            className="border border-primary/30 bg-card p-6 flex flex-col hover:border-primary/60 transition-colors group">
+            <Package className="text-primary mb-3 group-hover:scale-105 transition-transform" size={22} aria-hidden="true" />
+            <p className="font-display text-xs uppercase tracking-[0.25em] text-foreground">Kit presse complet · ZIP</p>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Tous les logos PNG + SVG + PDF, pattern et accents aux bonnes dimensions. 10 fichiers vectoriels inclus.</p>
+            <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Download size={12} /> Télécharger le ZIP</span>
           </a>
           <a href="/brand/charte-elysium.pdf" download data-testid="press-download-charte"
-            className="border border-white/10 bg-[#141414] p-6 flex flex-col hover:border-[#D8CA82]/40 transition-colors group">
-            <FileText className="text-[#D8CA82] mb-3" size={22} aria-hidden="true" />
-            <p className="font-display text-xs uppercase tracking-[0.25em] text-[#f7f7f7]">Charte graphique · PDF</p>
-            <p className="text-xs text-[#c8c8c8] mt-2 leading-relaxed">Couleurs officielles, zone de protection, taille minimale, fonds autorisés & usages interdits.</p>
-            <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#D8CA82]"><Download size={12} /> Télécharger le PDF</span>
+            className="panel clip-blade-sm p-6 flex flex-col hover:border-primary/40 transition-colors group">
+            <FileText className="text-primary mb-3" size={22} aria-hidden="true" />
+            <p className="font-display text-xs uppercase tracking-[0.25em] text-foreground">Charte graphique · PDF</p>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">Couleurs officielles, zone de protection, taille minimale, fonds autorisés & usages interdits.</p>
+            <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-widest text-primary"><Download size={12} /> Télécharger le PDF</span>
           </a>
-          <div className="border border-white/10 bg-[#0c0c0c] p-6 flex flex-col" data-testid="press-key-figures">
-            <Award className="text-[#D8CA82] mb-3" size={22} aria-hidden="true" />
-            <p className="font-display text-xs uppercase tracking-[0.25em] text-[#D8CA82]">Chiffres-clés — au 20 août 2026</p>
-            <ul className="mt-3 space-y-1.5 text-xs text-[#c8c8c8] leading-relaxed">
+          <div className="border border-border/25 bg-background/70 p-6 flex flex-col" data-testid="press-key-figures">
+            <Award className="text-primary mb-3" size={22} aria-hidden="true" />
+            <p className="font-display text-xs uppercase tracking-[0.25em] text-primary">Chiffres-clés — au 20 août 2026</p>
+            <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground leading-relaxed">
               <li>• Fondée 2026 · Association loi 1901 · RNA W772011943</li>
               <li>• 2 pôles : EVA · Rocket League</li>
-              <li>• Communauté Discord active · <a href="https://discord.gg/RH3ZZkMJsw" className="text-[#D8CA82] underline">discord.gg/RH3ZZkMJsw</a></li>
+              <li>• Communauté Discord active · <a href="https://discord.gg/RH3ZZkMJsw" className="text-primary underline">discord.gg/RH3ZZkMJsw</a></li>
               <li>• Slogan : “Not given. Earned.”</li>
             </ul>
-            <p className="text-xs text-[#f7f7f7]/50 mt-3">Mise à jour : 20 août 2026</p>
+            <p className="text-xs text-foreground/50 mt-3">Mise à jour : 20 août 2026</p>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-5 mb-12" data-testid="press-presentations">
-          <div className="border border-white/10 bg-[#141414] p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Présentation courte — 280 caractères</p>
-            <p className="text-sm text-[#c8c8c8] leading-relaxed">Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.</p>
-            <button onClick={() => navigator.clipboard?.writeText("Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.")} className="mt-3 text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Copier</button>
+          <div className="panel clip-blade-sm p-6">
+            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Présentation courte — 280 caractères</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.</p>
+            <button onClick={() => navigator.clipboard?.writeText("Elysium Esport est une équipe esport française (EVA, Rocket League) fondée en 2026. Association loi 1901 portée par des joueurs et bénévoles, elle porte l’écusson “Not given. Earned.” en compétition et communauté.")} className="mt-3 text-xs uppercase tracking-widest text-primary hover:underline">Copier</button>
           </div>
-          <div className="border border-white/10 bg-[#141414] p-6">
-            <p className="font-display text-xs uppercase tracking-[0.3em] text-[#D8CA82] mb-3">Présentation longue — 600 caractères</p>
-            <p className="text-sm text-[#c8c8c8] leading-relaxed">Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA (Esports Virtual Arenas) et Rocket League — partagent le même ADN et le mêmeécusson. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et aux dons, avec comptes présentés chaque année en assemblée générale.</p>
-            <button onClick={() => navigator.clipboard?.writeText("Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA et Rocket League — partagent le même ADN. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et dons.")} className="mt-3 text-xs uppercase tracking-widest text-[#D8CA82] hover:underline">Copier</button>
+          <div className="panel clip-blade-sm p-6">
+            <p className="font-display text-xs uppercase tracking-[0.3em] text-primary mb-3">Présentation longue — 600 caractères</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA (Esports Virtual Arenas) et Rocket League — partagent le même ADN et le mêmeécusson. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et aux dons, avec comptes présentés chaque année en assemblée générale.</p>
+            <button onClick={() => navigator.clipboard?.writeText("Dans la mythologie grecque, l’Elysium est la demeure des héros. Depuis 2026, Elysium Esport en fait son standard : excellence, intégrité et communauté. Deux pôles compétitifs — EVA et Rocket League — partagent le même ADN. L’association (RNA W772011943) finance matériel, LAN et inscriptions grâce à ses partenaires et dons.")} className="mt-3 text-xs uppercase tracking-widest text-primary hover:underline">Copier</button>
           </div>
         </div>
 
-        <div className="border border-white/10 bg-[#0c0c0c] p-6 sm:p-8 mb-12" data-testid="press-guidelines">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#D8CA82] mb-6 flex items-center gap-2"><Ruler size={14} /> Charte d’usage — logos</h2>
+        <div className="border border-border/25 bg-background/70 p-6 sm:p-8 mb-12" data-testid="press-guidelines">
+          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-6 flex items-center gap-2"><Ruler size={14} /> Charte d’usage — logos</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <p className="text-xs font-display uppercase tracking-widest text-[#f7f7f7] mb-2 flex items-center gap-2"><Shield size={12} className="text-[#D8CA82]" /> Zone de protection</p>
-              <p className="text-xs text-[#c8c8c8] leading-relaxed">Marge minimale = hauteur du “E” du wordmark sur tous les côtés. Aucun texte, bord ou autre logo ne doit empiéter.</p>
+              <p className="text-xs font-display uppercase tracking-widest text-foreground mb-2 flex items-center gap-2"><Shield size={12} className="text-primary" /> Zone de protection</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">Marge minimale = hauteur du “E” du wordmark sur tous les côtés. Aucun texte, bord ou autre logo ne doit empiéter.</p>
             </div>
             <div>
-              <p className="text-xs font-display uppercase tracking-widest text-[#f7f7f7] mb-2 flex items-center gap-2"><Ruler size={12} className="text-[#D8CA82]" /> Taille minimale</p>
-              <p className="text-xs text-[#c8c8c8] leading-relaxed\">Horizontal : 120 px de large. Vertical : 80 px. Icône seule : 24 px. En dessous, utiliser l’icône seule.</p>
+              <p className="text-xs font-display uppercase tracking-widest text-foreground mb-2 flex items-center gap-2"><Ruler size={12} className="text-primary" /> Taille minimale</p>
+              <p className="text-xs text-muted-foreground leading-relaxed\">Horizontal : 120 px de large. Vertical : 80 px. Icône seule : 24 px. En dessous, utiliser l’icône seule.</p>
             </div>
             <div>
-              <p className="text-xs font-display uppercase tracking-widest text-[#f7f7f7] mb-2 flex items-center gap-2"><Palette size={12} className="text-[#D8CA82]" /> Fonds autorisés</p>
-              <p className="text-xs text-[#c8c8c8] leading-relaxed">Or #D8CA82 ou blanc sur fond #111111 / #0c0c0c. Noir sur fond clair (≥ 4,5:1). Pas d’ombre portée ni dégradé.</p>
+              <p className="text-xs font-display uppercase tracking-widest text-foreground mb-2 flex items-center gap-2"><Palette size={12} className="text-primary" /> Fonds autorisés</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">Or #D8CA82 ou blanc sur fond #111111 / #0c0c0c. Noir sur fond clair (≥ 4,5:1). Pas d’ombre portée ni dégradé.</p>
             </div>
             <div>
-              <p className="text-xs font-display uppercase tracking-widest text-[#f7f7f7] mb-2 flex items-center gap-2"><Ban size={12} className="text-red-300" /> Usages interdits</p>
-              <ul className="text-xs text-[#c8c8c8] leading-relaxed list-disc list-inside">
+              <p className="text-xs font-display uppercase tracking-widest text-foreground mb-2 flex items-center gap-2"><Ban size={12} className="text-red-300" /> Usages interdits</p>
+              <ul className="text-xs text-muted-foreground leading-relaxed list-disc list-inside">
                 <li>Ne pas déformer (conserver ratio source)</li>
                 <li>Ne pas recolorer hors palette</li>
                 <li>Ne pas ajouter contour/ombre</li>
@@ -212,18 +212,18 @@ export default function Press() {
               </ul>
             </div>
           </div>
-          <p className="text-xs text-[#c8c8c8]/70 mt-6">Tous les exports ci-dessous respectent leur ratio source. Les variantes SVG/PDF sont vectorielles — privilégiez-les pour l’impression.</p>
+          <p className="text-xs text-muted-foreground/70 mt-6">Tous les exports ci-dessous respectent leur ratio source. Les variantes SVG/PDF sont vectorielles — privilégiez-les pour l’impression.</p>
         </div>
 
-        <div className="border border-white/10 bg-[#141414] p-6 mb-12" data-testid="press-exports">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#f7f7f7] mb-4">Exports dédiés par usage</h2>
-          <p className="text-xs text-[#c8c8c8] mb-4 leading-relaxed">Chaque contexte utilise son fichier natif, pas un PNG étiré en CSS.</p>
+        <div className="panel clip-blade-sm p-6 mb-12" data-testid="press-exports">
+          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-foreground mb-4">Exports dédiés par usage</h2>
+          <p className="text-xs text-muted-foreground mb-4 leading-relaxed">Chaque contexte utilise son fichier natif, pas un PNG étiré en CSS.</p>
           <div className="grid sm:grid-cols-2 gap-3">
             {USAGE_EXPORTS.map((u) => (
-              <div key={u.file} className="border border-white/5 bg-[#111111] p-3">
-                <p className="text-xs font-semibold text-[#f7f7f7]">{u.label}</p>
-                <p className="text-xs text-[#c8c8c8] mt-1\">{u.use}</p>
-                <p className="text-xs text-[#D8CA82] mt-1 font-mono\">{u.file}</p>
+              <div key={u.file} className="border border-border/20 bg-background p-3">
+                <p className="text-xs font-semibold text-foreground">{u.label}</p>
+                <p className="text-xs text-muted-foreground mt-1\">{u.use}</p>
+                <p className="text-xs text-primary mt-1 font-mono\">{u.file}</p>
               </div>
             ))}
           </div>
@@ -231,7 +231,7 @@ export default function Press() {
 
         {ASSETS.map((group) => (
           <div key={group.group} className="mb-12" data-testid={`press-group-${group.group}`}>
-            <h2 className="font-display text-xs tracking-[0.35em] uppercase text-[#D8CA82] mb-6">{t(GROUP_TITLES[group.group])}</h2>
+            <h2 className="eyebrow mb-6">{t(GROUP_TITLES[group.group])}</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {group.items.map((item) => {
                 const base = item.file.replace(/\.png$/, "");
@@ -239,8 +239,8 @@ export default function Press() {
                 const pdfFile = `${base}.pdf`;
                 const webpFile = `optimized/${base}.webp`;
                 return (
-                  <div key={item.file} className="border border-white/10 bg-[#1A1A1A] p-4 flex flex-col" data-testid={`press-asset-${item.file.replace(/\./g, "-")}`}>
-                    <div className="h-32 bg-[#0d0d0d] flex items-center justify-center p-4 mb-4 border border-white/5">
+                  <div key={item.file} className="panel clip-blade-sm p-4 flex flex-col" data-testid={`press-asset-${item.file.replace(/\./g, "-")}`}>
+                    <div className="h-32 bg-background/70 flex items-center justify-center p-4 mb-4 border border-border/20">
                       <img
                         src={`/brand/${item.file}`}
                         alt=""
@@ -251,15 +251,15 @@ export default function Press() {
                         style={{ aspectRatio: `${item.w}/${item.h}` }}
                       />
                     </div>
-                    <p className="text-sm font-semibold text-[#f7f7f7]">{item.name}</p>
-                    <p className="text-xs text-[#c8c8c8] mt-1">PNG · {item.w}×{item.h} · {item.ratio}</p>
-                    <p className="text-xs text-[#c8c8c8]/70 mt-1">Ratio source préservé — ne pas étirer</p>
+                    <p className="text-sm font-semibold text-foreground">{item.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG · {item.w}×{item.h} · {item.ratio}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">Ratio source préservé — ne pas étirer</p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       <a
                         href={`/brand/${item.file}`}
                         download
                         data-testid={`press-download-${item.file.replace(/\./g, "-")}`}
-                        className="inline-flex items-center justify-center gap-1 border border-[#D8CA82]/40 text-[#D8CA82] text-xs uppercase tracking-widest px-2 py-2 hover:bg-[#D8CA82]/10 transition-colors"
+                        className="inline-flex items-center justify-center gap-1 border border-primary/40 text-primary text-xs uppercase tracking-widest px-2 py-2 hover:bg-primary/10 transition-colors"
                       >
                         <Download size={11} aria-hidden="true" /> PNG
                       </a>
@@ -267,7 +267,7 @@ export default function Press() {
                         href={`/brand/${svgFile}`}
                         download
                         data-testid={`press-download-svg-${item.file.replace(/\./g, "-")}`}
-                        className="inline-flex items-center justify-center gap-1 border border-white/15 text-[#c8c8c8] text-xs uppercase tracking-widest px-2 py-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82] transition-colors"
+                        className="inline-flex items-center justify-center gap-1 border border-border/30 text-muted-foreground text-xs uppercase tracking-widest px-2 py-2 hover:border-primary/40 hover:text-primary transition-colors"
                       >
                         <Download size={11} aria-hidden="true" /> SVG
                       </a>
@@ -275,12 +275,12 @@ export default function Press() {
                         href={`/brand/${pdfFile}`}
                         download
                         data-testid={`press-download-pdf-${item.file.replace(/\./g, "-")}`}
-                        className="inline-flex items-center justify-center gap-1 border border-white/15 text-[#c8c8c8] text-xs uppercase tracking-widest px-2 py-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82] transition-colors"
+                        className="inline-flex items-center justify-center gap-1 border border-border/30 text-muted-foreground text-xs uppercase tracking-widest px-2 py-2 hover:border-primary/40 hover:text-primary transition-colors"
                       >
                         <Download size={11} aria-hidden="true" /> PDF
                       </a>
                     </div>
-                    <p className="text-xs text-[#c8c8c8]/50 mt-2">WEBP optimisé : <a href={`/brand/${webpFile}`} className="underline hover:text-[#D8CA82]">{webpFile}</a></p>
+                    <p className="text-xs text-muted-foreground/50 mt-2">WEBP optimisé : <a href={`/brand/${webpFile}`} className="underline hover:text-primary">{webpFile}</a></p>
                   </div>
                 );
               })}
@@ -288,38 +288,38 @@ export default function Press() {
           </div>
         ))}
 
-        <div className="border border-white/10 bg-[#141414] p-6 sm:p-8 mb-12" data-testid="press-photos">
-          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-[#D8CA82] mb-6 flex items-center gap-2"><ImageIcon size={14} /> Photos officielles — libre d’usage éditorial</h2>
+        <div className="panel clip-blade-sm p-6 sm:p-8 mb-12" data-testid="press-photos">
+          <h2 className="font-display text-xs uppercase tracking-[0.35em] text-primary mb-6 flex items-center gap-2"><ImageIcon size={14} /> Photos officielles — libre d’usage éditorial</h2>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               { title: "Portrait équipe — EVA", file: "photo-equipe-eva.jpg", desc: "Roster EVA en tenue officielle, fond #111111" },
               { title: "Portrait équipe — RL", file: "photo-equipe-rl.jpg", desc: "Roster Rocket League, même traitement" },
               { title: "Match EVA — LAN", file: "photo-match-eva.jpg", desc: "Ambiance arène EVA, droits maîtrisés" },
             ].map((p) => (
-              <div key={p.file} className="border border-white/5 bg-[#111111] p-3 flex flex-col">
-                <div className="h-36 bg-[#0d0d0d] border border-white/5 flex items-center justify-center">
-                  <FileImage size={24} className="text-[#c8c8c8]" aria-hidden="true" />
+              <div key={p.file} className="border border-border/20 bg-background p-3 flex flex-col">
+                <div className="h-36 bg-background/70 border border-border/20 flex items-center justify-center">
+                  <FileImage size={24} className="text-muted-foreground" aria-hidden="true" />
                 </div>
-                <p className="text-xs font-semibold text-[#f7f7f7] mt-3">{p.title}</p>
-                <p className="text-xs text-[#c8c8c8] mt-1">{p.desc}</p>
+                <p className="text-xs font-semibold text-foreground mt-3">{p.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{p.desc}</p>
                 <a href={`/brand/photos/${p.file}`} download data-testid={`press-photo-${p.file.replace(/\./g,"-")}`}
-                  className="mt-3 inline-flex items-center justify-center gap-2 border border-[#D8CA82]/40 text-[#D8CA82] text-xs uppercase tracking-widest px-3 py-2 hover:bg-[#D8CA82]/10"> <Download size={11}/> Télécharger JPG</a>
+                  className="mt-3 inline-flex items-center justify-center gap-2 border border-primary/40 text-primary text-xs uppercase tracking-widest px-3 py-2 hover:bg-primary/10"> <Download size={11}/> Télécharger JPG</a>
               </div>
             ))}
           </div>
-          <p className="text-xs text-[#c8c8c8]/60 mt-4">Traitement commun demandé : contraste fort, légère désaturation, cadrage et grain maîtrisés — voir charte PDF.</p>
+          <p className="text-xs text-muted-foreground/60 mt-4">Traitement commun demandé : contraste fort, légère désaturation, cadrage et grain maîtrisés — voir charte PDF.</p>
         </div>
 
-        <div className="border border-white/10 bg-[#141414] p-8" data-testid="press-contact">
+        <div className="panel clip-blade-sm p-8" data-testid="press-contact">
           <div className="flex items-center gap-3 mb-3">
-            <Mail className="text-[#D8CA82]" size={18} aria-hidden="true" />
-            <h2 className="font-display text-xs tracking-[0.35em] uppercase text-[#f7f7f7]">{t("press.contact.title")}</h2>
+            <Mail className="text-primary" size={18} aria-hidden="true" />
+            <h2 className="eyebrow">{t("press.contact.title")}</h2>
           </div>
-          <p className="text-sm text-[#c8c8c8]">
+          <p className="text-sm text-muted-foreground">
             {t("press.contact.text")}{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#D8CA82] hover:underline" data-testid="press-contact-email">{CONTACT_EMAIL}</a>
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline" data-testid="press-contact-email">{CONTACT_EMAIL}</a>
           </p>
-          <p className="text-xs text-[#c8c8c8]/60 mt-4">
+          <p className="text-xs text-muted-foreground/60 mt-4">
             {SITE_URL}/presse · Kit daté du 20 août 2026
           </p>
         </div>

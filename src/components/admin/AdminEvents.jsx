@@ -6,7 +6,7 @@ import { db } from "../../lib/firebase";
 import { useLang } from "../../lib/i18n";
 import { fmtDate } from "../../lib/formatters";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
 const EMPTY = { title: "", type: "tournament", date: "", description: "", link: "" };
 const TYPES = ["tournament", "training", "stream", "community"];
 
@@ -40,8 +40,8 @@ export const AdminEvents = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10">
-      <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-events-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">{t("admin.events.add")}</p>
+      <form onSubmit={submit} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6" data-testid="admin-events-form">
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">{t("admin.events.add")}</p>
         <input value={form.title} onChange={set("title")} placeholder={t("admin.events.titlePlaceholder")} required className={inputCls} data-testid="admin-event-title" />
         <div className="grid grid-cols-2 gap-4">
           <select value={form.type} onChange={set("type")} className={inputCls} data-testid="admin-event-type">
@@ -52,17 +52,17 @@ export const AdminEvents = () => {
         <input value={form.link} onChange={set("link")} placeholder={t("admin.events.linkPlaceholder")} className={inputCls} data-testid="admin-event-link" />
         <textarea value={form.description} onChange={set("description")} placeholder={t("admin.events.descPlaceholder")} rows={3} className={inputCls} data-testid="admin-event-desc" />
         <button type="submit" data-testid="admin-event-submit"
-          className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+          className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
           {t("notes.save")}
         </button>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-events-list">
-        {events.length === 0 && <p className="text-[#c8c8c8]">{t("cal.empty")}</p>}
+        {events.length === 0 && <p className="text-muted-foreground">{t("cal.empty")}</p>}
         {events.map((ev) => (
-          <div key={ev.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
+          <div key={ev.id} className="flex items-center gap-4 panel clip-blade-sm px-4 py-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#f7f7f7] truncate">{ev.title}</p>
-              <p className="text-xs text-[#c8c8c8]">{t(`cal.type.${ev.type}`)} · {ev.date ? fmtDate(ev.date, lang, { hour: "2-digit", minute: "2-digit" }) : ""}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{ev.title}</p>
+              <p className="text-xs text-muted-foreground">{t(`cal.type.${ev.type}`)} · {ev.date ? fmtDate(ev.date, lang, { hour: "2-digit", minute: "2-digit" }) : ""}</p>
             </div>
             <button onClick={() => del(ev.id)} title={t("common.delete")} aria-label={`${t("common.delete")} ${ev.title}`} className="text-red-400/70 hover:text-red-400" data-testid={`admin-event-delete-${ev.id}`}><Trash2 size={15} /></button>
           </div>

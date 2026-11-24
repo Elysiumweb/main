@@ -19,13 +19,13 @@ export const VerifyEmailBanner = () => {
   };
 
   return (
-    <div className="bg-[#D8CA82]/10 border-b border-[#D8CA82]/30 px-4 py-2 flex items-center gap-3 text-sm" data-testid="verify-email-banner">
-      <MailWarning size={15} className="text-[#D8CA82] shrink-0" />
-      <span className="text-[#f7f7f7]/80 flex-1">{t("verify.banner")}</span>
-      <button onClick={resend} className="text-[#D8CA82] text-xs uppercase tracking-widest hover:underline" data-testid="verify-resend-btn">
+    <div className="bg-primary/10 border-b border-primary/30 px-4 py-2 flex items-center gap-3 text-sm" data-testid="verify-email-banner">
+      <MailWarning size={15} className="text-primary shrink-0" />
+      <span className="text-foreground/80 flex-1">{t("verify.banner")}</span>
+      <button onClick={resend} className="text-primary text-xs uppercase tracking-widest hover:underline" data-testid="verify-resend-btn">
         {t("verify.resend")}
       </button>
-      <button onClick={() => setHidden(true)} className="text-[#c8c8c8] hover:text-[#f7f7f7]" data-testid="verify-dismiss-btn"><X size={14} /></button>
+      <button onClick={() => setHidden(true)} className="text-muted-foreground hover:text-foreground" data-testid="verify-dismiss-btn"><X size={14} /></button>
     </div>
   );
 };

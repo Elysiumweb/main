@@ -39,7 +39,7 @@ const renderInline = (text, keyPrefix = "i") => {
     }
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
       return (
-        <code key={key} className="bg-white/10 border border-white/10 px-1.5 py-0.5 text-[0.9em] text-[#D8CA82]">
+        <code key={key} className="bg-primary/10 border border-border/25 px-1.5 py-0.5 text-[0.9em] text-primary">
           {part.slice(1, -1)}
         </code>
       );
@@ -56,7 +56,7 @@ const renderInline = (text, keyPrefix = "i") => {
             title={title}
             loading="lazy"
             decoding="async"
-            className="max-w-full h-auto my-4 border border-white/10"
+            className="max-w-full h-auto my-4 border border-border/25"
           />
         );
       }
@@ -67,7 +67,7 @@ const renderInline = (text, keyPrefix = "i") => {
       if (isUrl(href)) {
         return (
           <a key={key} href={href} title={title} target={linkTarget(href)} rel={linkTarget(href) ? "noopener noreferrer" : undefined}
-            className="text-[#D8CA82] underline underline-offset-2 hover:opacity-80">
+            className="text-primary underline underline-offset-2 hover:opacity-80">
             {renderInline(label || href, key)}
           </a>
         );
@@ -196,7 +196,7 @@ export const Markdown = ({ source, className = "" }) => {
               4: "text-base sm:text-lg", 5: "text-base", 6: "text-sm",
             };
             return (
-              <Tag key={key} className={`font-display font-bold text-[#f7f7f7] mt-8 mb-3 ${sizes[block.level] || "text-base"}`}>
+              <Tag key={key} className={`font-display font-bold text-foreground mt-8 mb-3 ${sizes[block.level] || "text-base"}`}>
                 {renderInline(block.text, key)}
               </Tag>
             );
@@ -218,7 +218,7 @@ export const Markdown = ({ source, className = "" }) => {
           }
           case "quote":
             return (
-              <blockquote key={key} className="border-l-4 border-[#D8CA82]/60 bg-white/5 px-5 py-3 my-4 text-[#c8c8c8] italic">
+              <blockquote key={key} className="border-l-4 border-primary/60 bg-primary/5 px-5 py-3 my-4 text-muted-foreground italic">
                 {block.lines.map((l, li) => (
                   <p key={li} className="my-1">{renderInline(l, `${key}-${li}`)}</p>
                 ))}
@@ -236,26 +236,26 @@ export const Markdown = ({ source, className = "" }) => {
             );
           case "code":
             return (
-              <pre key={key} className="bg-[#0c0c0c] border border-white/10 p-4 my-4 overflow-x-auto text-sm text-[#f7f7f7]/90">
+              <pre key={key} className="bg-background/70 border border-border/25 p-4 my-4 overflow-x-auto text-sm text-foreground/90">
                 <code>{block.text}</code>
               </pre>
             );
           case "table": {
             const { header, body } = parseTable(block.rows);
             return (
-              <div key={key} className="overflow-x-auto my-5 border border-white/10">
+              <div key={key} className="overflow-x-auto my-5 border border-border/25">
                 <table className="w-full text-sm">
                   {header.some(Boolean) && (
                     <thead>
-                      <tr className="border-b border-white/15 bg-white/5">
-                        {header.map((h, hi) => <th key={hi} className="px-3 py-2 text-left text-[#D8CA82] font-display uppercase tracking-wider text-xs">{renderInline(h, `${key}-th-${hi}`)}</th>)}
+                      <tr className="border-b border-border/30 bg-primary/5">
+                        {header.map((h, hi) => <th key={hi} className="px-3 py-2 text-left text-primary font-display uppercase tracking-wider text-xs">{renderInline(h, `${key}-th-${hi}`)}</th>)}
                       </tr>
                     </thead>
                   )}
                   <tbody>
                     {body.map((row, ri) => (
-                      <tr key={ri} className="border-b border-white/5 last:border-0">
-                        {row.map((cell, ci) => <td key={ci} className="px-3 py-2 text-[#c8c8c8]">{renderInline(cell, `${key}-td-${ri}-${ci}`)}</td>)}
+                      <tr key={ri} className="border-b border-border/20 last:border-0">
+                        {row.map((cell, ci) => <td key={ci} className="px-3 py-2 text-muted-foreground">{renderInline(cell, `${key}-td-${ri}-${ci}`)}</td>)}
                       </tr>
                     ))}
                   </tbody>
@@ -264,7 +264,7 @@ export const Markdown = ({ source, className = "" }) => {
             );
           }
           case "hr":
-            return <hr key={key} className="border-white/10 my-8" />;
+            return <hr key={key} className="border-border/25 my-8" />;
           default:
             return null;
         }

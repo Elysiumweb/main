@@ -149,13 +149,13 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
   const hiddenCount = parsed?.rows ? parsed.rows.length - previewRows.length : 0;
 
   return (
-    <div className="border border-[#D8CA82]/25 bg-[#141414] p-4 mb-4" data-testid="admin-standings-csv">
+    <div className="border border-primary/25 bg-card/70 p-4 mb-4" data-testid="admin-standings-csv">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#D8CA82] flex items-center gap-2">
+          <p className="text-xs uppercase tracking-[0.25em] text-primary flex items-center gap-2">
             <FileSpreadsheet size={14} aria-hidden="true" /> {t("admin.standingsCsv.title")}
           </p>
-          <p className="text-xs text-[#c8c8c8] mt-1 max-w-xl">{t("admin.standingsCsv.hint")}</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xl">{t("admin.standingsCsv.hint")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <input
@@ -170,7 +170,7 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="border border-[#D8CA82]/50 text-[#D8CA82] font-display font-bold uppercase tracking-widest text-xs px-4 py-2 flex items-center gap-2 hover:bg-[#D8CA82]/10 disabled:opacity-40"
+            className="border border-primary/50 text-primary font-display font-bold uppercase tracking-widest text-xs px-4 py-2 flex items-center gap-2 hover:bg-primary/10 disabled:opacity-40"
             data-testid="admin-standings-csv-import-btn"
           >
             <FileUp size={14} aria-hidden="true" /> {t("admin.standingsCsv.import")}
@@ -179,7 +179,7 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
             type="button"
             onClick={() => setPasteOpen((v) => !v)}
             aria-expanded={pasteOpen}
-            className="border border-white/20 text-[#f7f7f7]/80 text-xs uppercase tracking-widest px-3 py-2 flex items-center gap-2 hover:border-[#D8CA82]/40 hover:text-[#D8CA82]"
+            className="border border-border/35 text-foreground/80 text-xs uppercase tracking-widest px-3 py-2 flex items-center gap-2 hover:border-primary/40 hover:text-primary"
             data-testid="admin-standings-csv-paste-toggle"
           >
             <ClipboardPaste size={14} aria-hidden="true" /> {t("admin.standingsCsv.paste")}
@@ -187,7 +187,7 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
           <button
             type="button"
             onClick={downloadTemplate}
-            className="border border-white/15 text-[#c8c8c8] text-xs uppercase tracking-widest px-3 py-2 flex items-center gap-2 hover:text-[#D8CA82] hover:border-[#D8CA82]/40"
+            className="border border-border/30 text-muted-foreground text-xs uppercase tracking-widest px-3 py-2 flex items-center gap-2 hover:text-primary hover:border-primary/40"
             data-testid="admin-standings-csv-template"
           >
             <Download size={14} aria-hidden="true" /> {t("admin.standingsCsv.template")}
@@ -204,13 +204,13 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
             onChange={(e) => setPasteValue(e.target.value)}
             rows={4}
             placeholder={t("admin.standingsCsv.pastePlaceholder")}
-            className="w-full bg-[#111111] border border-white/20 px-3 py-2 text-xs font-mono text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+            className="w-full bg-background border border-border/35 px-3 py-2 text-xs font-mono text-foreground focus:outline-none focus:border-primary"
             data-testid="admin-standings-csv-paste-input"
           />
           <button
             type="button"
             onClick={applyPaste}
-            className="mt-2 border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-4 py-2 hover:bg-[#D8CA82]/10"
+            className="mt-2 border border-primary/50 text-primary text-xs uppercase tracking-widest px-4 py-2 hover:bg-primary/10"
             data-testid="admin-standings-csv-paste-apply"
           >
             {t("admin.standingsCsv.analyze")}
@@ -223,14 +223,14 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
-          className={`mt-4 border border-dashed px-4 py-5 text-center transition-colors ${dragOver ? "border-[#D8CA82] bg-[#D8CA82]/10" : "border-white/20 bg-[#0f0f0f]"}`}
+          className={`mt-4 border border-dashed px-4 py-5 text-center transition-colors ${dragOver ? "border-primary bg-primary/10" : "border-border/35 bg-background/70"}`}
           data-testid="admin-standings-csv-dropzone"
         >
-          <p className="text-xs text-[#c8c8c8]">
-            <FileUp size={14} className="inline mr-2 text-[#D8CA82]" aria-hidden="true" />
+          <p className="text-xs text-muted-foreground">
+            <FileUp size={14} className="inline mr-2 text-primary" aria-hidden="true" />
             {t("admin.standingsCsv.drop")}
           </p>
-          <p className="text-[11px] text-[#c8c8c8]/60 mt-1">{t("admin.standingsCsv.dropFormat")}</p>
+          <p className="text-[11px] text-muted-foreground/60 mt-1">{t("admin.standingsCsv.dropFormat")}</p>
         </div>
       )}
 
@@ -242,8 +242,8 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
 
       {parsed && (
         <div className="mt-4" data-testid="admin-standings-csv-preview">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#c8c8c8]">
-            {fileName && <span className="text-[#f7f7f7]/80">{fileName}</span>}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            {fileName && <span className="text-foreground/80">{fileName}</span>}
             <span>· {parsed.rows.length} {t("admin.standingsCsv.teams")}</span>
             <span>· {describeDelimiter(parsed.delimiter)}</span>
             <span>
@@ -257,19 +257,19 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
             </p>
           )}
           {parsed.ignoredHeaders.length > 0 && (
-            <p className="mt-1 text-[11px] text-[#c8c8c8]/70">
+            <p className="mt-1 text-[11px] text-muted-foreground/70">
               {t("admin.standingsCsv.ignored")} : {parsed.ignoredHeaders.join(", ")}
             </p>
           )}
           {parsed.skippedRows > 0 && (
-            <p className="mt-1 text-[11px] text-[#c8c8c8]/70">
+            <p className="mt-1 text-[11px] text-muted-foreground/70">
               {parsed.skippedRows} {t("admin.standingsCsv.skipped")}
             </p>
           )}
 
-          <div className="overflow-x-auto mt-3 border border-white/10">
+          <div className="overflow-x-auto mt-3 border border-border/25">
             <table className="w-full text-xs">
-              <thead className="text-[#c8c8c8] uppercase tracking-widest bg-[#1A1A1A]">
+              <thead className="text-muted-foreground uppercase tracking-widest bg-card">
                 <tr>
                   <th className="text-left py-2 px-2">#</th>
                   <th className="text-left">{t("admin.standingsCsv.team")}</th>
@@ -283,35 +283,35 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
               </thead>
               <tbody>
                 {previewRows.map((row, index) => (
-                  <tr key={`${row.team}-${index}`} className="border-t border-white/5" data-testid={`admin-standings-csv-row-${index}`}>
-                    <td className="py-1.5 px-2 text-[#c8c8c8]">{index + 1}</td>
-                    <td className="py-1.5 font-semibold text-[#f7f7f7]">{row.team}</td>
-                    <td className="text-center text-[#c8c8c8]">{row.played}</td>
+                  <tr key={`${row.team}-${index}`} className="border-t border-border/20" data-testid={`admin-standings-csv-row-${index}`}>
+                    <td className="py-1.5 px-2 text-muted-foreground">{index + 1}</td>
+                    <td className="py-1.5 font-semibold text-foreground">{row.team}</td>
+                    <td className="text-center text-muted-foreground">{row.played}</td>
                     <td className="text-center text-emerald-300/80">{row.wins}</td>
-                    <td className="text-center text-[#c8c8c8]">{row.draws}</td>
+                    <td className="text-center text-muted-foreground">{row.draws}</td>
                     <td className="text-center text-red-300/60">{row.losses}</td>
-                    <td className="text-center text-[#c8c8c8]">{row.diff || "—"}</td>
-                    <td className="text-right px-2 font-bold text-[#D8CA82]">{row.points}</td>
+                    <td className="text-center text-muted-foreground">{row.diff || "—"}</td>
+                    <td className="text-right px-2 font-bold text-primary">{row.points}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           {hiddenCount > 0 && (
-            <p className="mt-2 text-[11px] text-[#c8c8c8]/70">
+            <p className="mt-2 text-[11px] text-muted-foreground/70">
               + {hiddenCount} {t("admin.standingsCsv.moreRows")}
             </p>
           )}
 
           <fieldset className="mt-4">
-            <legend className="text-[11px] uppercase tracking-[0.2em] text-[#c8c8c8] mb-2">
+            <legend className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
               {t("admin.standingsCsv.target")}
             </legend>
             <div className="flex flex-wrap gap-2">
               {["replace", "append"].map((value) => (
                 <label
                   key={value}
-                  className={`cursor-pointer border px-3 py-1.5 text-[11px] uppercase tracking-widest ${mode === value ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#c8c8c8] hover:text-[#f7f7f7]"}`}
+                  className={`cursor-pointer border px-3 py-1.5 text-[11px] uppercase tracking-widest ${mode === value ? "border-primary text-primary bg-primary/10" : "border-border/30 text-muted-foreground hover:text-foreground"}`}
                   data-testid={`admin-standings-csv-mode-${value}`}
                 >
                   <input
@@ -338,7 +338,7 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
             <button
               type="button"
               onClick={apply}
-              className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)]"
+              className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-xs px-5 py-2.5 flex items-center gap-2 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)]"
               data-testid="admin-standings-csv-apply"
             >
               <Check size={14} aria-hidden="true" /> {t("admin.standingsCsv.apply")}
@@ -346,7 +346,7 @@ export function StandingsCsvImport({ existingStandings = [], onApply, disabled =
             <button
               type="button"
               onClick={cancel}
-              className="border border-white/20 text-[#c8c8c8] text-xs uppercase tracking-widest px-4 py-2.5 flex items-center gap-2 hover:text-[#f7f7f7]"
+              className="border border-border/35 text-muted-foreground text-xs uppercase tracking-widest px-4 py-2.5 flex items-center gap-2 hover:text-foreground"
               data-testid="admin-standings-csv-cancel"
             >
               <X size={14} aria-hidden="true" /> {t("admin.standingsCsv.cancel")}

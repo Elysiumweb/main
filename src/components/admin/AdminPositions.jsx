@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { GAMES } from "../../lib/constants";
 import { ConfirmAction } from "../ConfirmAction";
 
-const inputCls = "w-full bg-[#111111] border border-white/20 px-3 py-2.5 text-sm text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]";
+const inputCls = "w-full bg-background border border-border/35 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary";
 const EMPTY = { title: "", game: "EVA", prerequisites: "", availability: "", processText: "", deadline: "", open: "true" };
 
 export const AdminPositions = () => {
@@ -44,8 +44,8 @@ export const AdminPositions = () => {
 
   return (
     <div className="grid lg:grid-cols-12 gap-10">
-      <form onSubmit={submit} className="lg:col-span-5 space-y-4 border border-white/10 bg-[#1A1A1A] p-6" data-testid="admin-positions-form">
-        <p className="font-display text-sm uppercase tracking-[0.3em] text-[#D8CA82]">
+      <form onSubmit={submit} className="lg:col-span-5 space-y-4 panel clip-blade-sm p-6" data-testid="admin-positions-form">
+        <p className="font-display text-sm uppercase tracking-[0.3em] text-primary">
           {editId ? t("admin.positions.edit") : t("admin.positions.add")}
         </p>
         <input value={form.title} onChange={set("title")} placeholder={t("admin.positions.titlePlaceholder")} required className={inputCls} data-testid="admin-position-title" />
@@ -61,34 +61,34 @@ export const AdminPositions = () => {
         <textarea value={form.prerequisites} onChange={set("prerequisites")} placeholder={t("recruit.prereq")} rows={2} className={inputCls} data-testid="admin-position-prereq" />
         <textarea value={form.availability} onChange={set("availability")} placeholder={t("recruit.avail")} rows={2} className={inputCls} data-testid="admin-position-avail" />
         <textarea value={form.processText} onChange={set("processText")} placeholder={t("admin.positions.processPlaceholder")} rows={3} className={inputCls} data-testid="admin-position-process" />
-        <p className="text-xs text-[#c8c8c8]">{t("admin.positions.markdownHint")}</p>
+        <p className="text-xs text-muted-foreground">{t("admin.positions.markdownHint")}</p>
         <div>
-          <label className="text-xs uppercase tracking-[0.2em] text-[#f7f7f7]/60 block mb-2">{t("recruit.deadline")}</label>
+          <label className="text-xs uppercase tracking-[0.2em] text-foreground/60 block mb-2">{t("recruit.deadline")}</label>
           <input type="date" value={form.deadline} onChange={set("deadline")} className={inputCls} data-testid="admin-position-deadline" />
         </div>
         <div className="flex gap-3">
           <button type="submit" data-testid="admin-position-submit"
-            className="bg-[#D8CA82] text-[#111111] font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_rgba(216,202,130,0.4)] transition-shadow">
+            className="bg-gold text-primary-foreground font-display font-bold uppercase tracking-widest text-sm px-8 py-3 hover:shadow-[0_0_16px_oklch(0.84 0.095 98/0.4)] transition-shadow">
             {t("notes.save")}
           </button>
           {editId && (
             <button type="button" onClick={() => { setEditId(null); setForm(EMPTY); }} data-testid="admin-position-cancel"
-              className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-5">{t("common.cancel")}</button>
+              className="border border-border/40 text-foreground/70 text-xs uppercase tracking-widest px-5">{t("common.cancel")}</button>
           )}
         </div>
       </form>
       <div className="lg:col-span-7 space-y-2" data-testid="admin-positions-list">
-        {positions.length === 0 && <p className="text-[#c8c8c8]">{t("recruit.positions.empty")}</p>}
+        {positions.length === 0 && <p className="text-muted-foreground">{t("recruit.positions.empty")}</p>}
         {positions.map((p) => (
-          <div key={p.id} className="flex items-center gap-4 border border-white/10 bg-[#1A1A1A] px-4 py-3">
-            <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${p.open !== false ? "text-emerald-300 border-emerald-300/40" : "text-[#c8c8c8] border-white/20"}`}>
+          <div key={p.id} className="flex items-center gap-4 panel clip-blade-sm px-4 py-3">
+            <span className={`text-xs uppercase tracking-widest border px-2 py-0.5 ${p.open !== false ? "text-emerald-300 border-emerald-300/40" : "text-muted-foreground border-border/35"}`}>
               {p.open !== false ? t("status.open") : t("status.closed")}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#f7f7f7] truncate">{p.title}</p>
-              <p className="text-xs text-[#c8c8c8]">{p.game}{p.deadline ? ` · ${t("recruit.deadline")}: ${p.deadline}` : ""}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{p.title}</p>
+              <p className="text-xs text-muted-foreground">{p.game}{p.deadline ? ` · ${t("recruit.deadline")}: ${p.deadline}` : ""}</p>
             </div>
-            <button onClick={() => edit(p)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${p.title}`} className="text-[#D8CA82]/70 hover:text-[#D8CA82]" data-testid={`admin-position-edit-${p.id}`}><Pencil size={15} /></button>
+            <button onClick={() => edit(p)} title={t("admin.edit")} aria-label={`${t("admin.edit")} ${p.title}`} className="text-primary/70 hover:text-primary" data-testid={`admin-position-edit-${p.id}`}><Pencil size={15} /></button>
             <ConfirmAction
               title={t("admin.positions.deleteTitle")}
               description={t("admin.positions.deleteDesc")}

@@ -145,49 +145,49 @@ export default function Notes() {
 
   return (
     <div className="flex h-full">
-      <div className="w-72 border-r border-white/10 bg-[#0f0f0f] flex flex-col shrink-0">
-        <div className="flex border-b border-white/10 shrink-0">
+      <div className="w-72 border-r border-border/25 bg-background/70 flex flex-col shrink-0">
+        <div className="flex border-b border-border/25 shrink-0">
           {[[("collective"), Users, "notes.collective"], ["private", Lock, "notes.private"]].map(([k, Icon, label]) => (
             <button key={k} onClick={() => { setTab(k); setSelected(null); }} data-testid={`notes-tab-${k}`}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs uppercase tracking-wider border-b-2 transition-colors ${tab === k ? "border-[#D8CA82] text-[#D8CA82]" : "border-transparent text-[#f7f7f7]/50"}`}>
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs uppercase tracking-wider border-b-2 transition-colors ${tab === k ? "border-primary text-primary" : "border-transparent text-foreground/50"}`}>
               <Icon size={13} /> {t(label)}
             </button>
           ))}
         </div>
         {/* Bascule actif / corbeille */}
-        <div className="flex border-b border-white/10 shrink-0">
+        <div className="flex border-b border-border/25 shrink-0">
           <button onClick={() => { setView("active"); setSelected(null); }} data-testid="notes-view-active"
-            className={`flex-1 py-2 text-xs uppercase tracking-widest ${view === "active" ? "text-[#D8CA82] bg-[#D8CA82]/10" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+            className={`flex-1 py-2 text-xs uppercase tracking-widest ${view === "active" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}>
             {t("notes.all")}
           </button>
           <button onClick={() => { setView("trash"); setSelected(null); }} data-testid="notes-view-trash"
-            className={`flex-1 py-2 text-xs uppercase tracking-widest flex items-center justify-center gap-1 ${view === "trash" ? "text-red-300 bg-red-500/10" : "text-[#c8c8c8] hover:text-[#f7f7f7]"}`}>
+            className={`flex-1 py-2 text-xs uppercase tracking-widest flex items-center justify-center gap-1 ${view === "trash" ? "text-red-300 bg-red-500/10" : "text-muted-foreground hover:text-foreground"}`}>
             <Trash size={11} /> {t("notes.trash")}
           </button>
         </div>
         {view === "active" && (
           <button onClick={create} data-testid="notes-new-btn"
-            className="m-3 border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest py-2 flex items-center justify-center gap-2 hover:bg-[#D8CA82]/10 transition-colors shrink-0">
+            className="m-3 border border-primary/50 text-primary text-xs uppercase tracking-widest py-2 flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors shrink-0">
             <Plus size={14} /> {t("notes.new")}
           </button>
         )}
         {view === "trash" && (
-          <p className="mx-3 my-3 text-xs text-[#c8c8c8] leading-relaxed shrink-0">{t("notes.trashHint")}</p>
+          <p className="mx-3 my-3 text-xs text-muted-foreground leading-relaxed shrink-0">{t("notes.trashHint")}</p>
         )}
         <div className="mx-3 mb-2 relative shrink-0">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#c8c8c8]" />
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("notes.search")} data-testid="notes-search-input"
-            className="w-full bg-[#111111] border border-white/15 pl-8 pr-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]" />
+            className="w-full bg-background border border-border/30 pl-8 pr-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary" />
         </div>
         <div className="flex-1 overflow-y-auto" data-testid="notes-list">
-          {visible.length === 0 && <p className="text-xs text-[#c8c8c8] px-4 py-2" data-testid="notes-empty">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>}
+          {visible.length === 0 && <p className="text-xs text-muted-foreground px-4 py-2" data-testid="notes-empty">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>}
           {visible.map((n) => (
-            <div key={n.id} className={`group flex items-center border-b border-white/5 ${selected === n.id ? "bg-[#D8CA82]/10" : "hover:bg-white/5"}`}>
+            <div key={n.id} className={`group flex items-center border-b border-border/20 ${selected === n.id ? "bg-primary/10" : "hover:bg-primary/5"}`}>
               <button onClick={() => { setSelected(n.id); setShowHistory(false); }} data-testid={`notes-item-${n.id}`} className="flex-1 text-left px-4 py-3 min-w-0">
-                <p className="text-sm text-[#f7f7f7] truncate">{n.title || "—"}</p>
-                <p className="text-xs text-[#c8c8c8] uppercase tracking-wider">
+                <p className="text-sm text-foreground truncate">{n.title || "—"}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">
                   {n.status === "draft" ? t("notes.draft") : t("common.saved")}{tab === "collective" ? ` · ${n.ownerName || ""}` : ""}
-                  {(n.tags || []).length > 0 && <span className="text-[#D8CA82]/60"> · {n.tags.join(", ")}</span>}
+                  {(n.tags || []).length > 0 && <span className="text-primary/60"> · {n.tags.join(", ")}</span>}
                 </p>
               </button>
               {view === "active" ? (
@@ -196,7 +196,7 @@ export default function Notes() {
                 </button>
               ) : (
                 <div className="flex items-center px-1">
-                  <button onClick={() => restore(n.id)} title={t("notes.restore")} data-testid={`notes-restore-${n.id}`} className="px-1.5 text-[#D8CA82]/70 hover:text-[#D8CA82]"><RotateCcw size={13} /></button>
+                  <button onClick={() => restore(n.id)} title={t("notes.restore")} data-testid={`notes-restore-${n.id}`} className="px-1.5 text-primary/70 hover:text-primary"><RotateCcw size={13} /></button>
                   <button onClick={() => deleteForever(n.id)} title={t("notes.deleteForever")} data-testid={`notes-forever-${n.id}`} className="px-1.5 text-red-400/70 hover:text-red-400"><Trash2 size={13} /></button>
                 </div>
               )}
@@ -207,45 +207,45 @@ export default function Notes() {
       <div className="flex-1 flex flex-col min-w-0">
         {selected && currentNote && !currentNote.deletedAt ? (
           <>
-            <div className="border-b border-white/10 p-3 flex gap-3 items-center shrink-0 bg-[#141414]">
+            <div className="border-b border-border/25 p-3 flex gap-3 items-center shrink-0 bg-card/70">
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("notes.title")} data-testid="notes-title-input"
-                className="flex-1 bg-transparent font-display text-lg text-[#f7f7f7] focus:outline-none" />
+                className="flex-1 bg-transparent font-display text-lg text-foreground focus:outline-none" />
               <button onClick={() => setShowHistory((s) => !s)} title={t("notes.history")} data-testid="notes-history-btn"
-                className={`flex items-center gap-1.5 border px-3 py-2 text-xs uppercase tracking-widest ${showHistory ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/25 text-[#f7f7f7]/70 hover:border-[#D8CA82] hover:text-[#D8CA82]"}`}>
+                className={`flex items-center gap-1.5 border px-3 py-2 text-xs uppercase tracking-widest ${showHistory ? "border-primary text-primary bg-primary/10" : "border-border/40 text-foreground/70 hover:border-primary hover:text-primary"}`}>
                 <History size={13} /> {t("notes.history")} {versions.length > 0 && <span className="text-xs opacity-60">({versions.length})</span>}
               </button>
               <button onClick={() => save("draft")} data-testid="notes-draft-btn"
-                className="border border-white/25 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-4 py-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+                className="border border-border/40 text-foreground/70 text-xs uppercase tracking-widest px-4 py-2 hover:border-primary hover:text-primary transition-colors">
                 {t("notes.draft")}
               </button>
               <button onClick={() => save("saved")} data-testid="notes-save-btn"
-                className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_rgba(216,202,130,0.4)] transition-shadow">
+                className="bg-gold text-primary-foreground text-xs font-bold uppercase tracking-widest px-4 py-2 hover:shadow-[0_0_12px_oklch(0.84 0.095 98/0.4)] transition-shadow">
                 {t("notes.save")}
               </button>
             </div>
             <div className="flex-1 flex min-h-0">
               <textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder={t("notes.content")} data-testid="notes-content-input"
-                className="flex-1 bg-[#111111] p-6 text-[#f7f7f7]/90 text-sm leading-relaxed resize-none focus:outline-none" />
+                className="flex-1 bg-background p-6 text-foreground/90 text-sm leading-relaxed resize-none focus:outline-none" />
               {showHistory && (
-                <aside className="w-72 border-l border-white/10 bg-[#0f0f0f] overflow-y-auto shrink-0" data-testid="notes-history-panel">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                    <p className="text-xs uppercase tracking-[0.25em] text-[#f7f7f7]/50">{t("notes.history")}</p>
-                    <button onClick={() => setShowHistory(false)} className="text-[#c8c8c8] hover:text-[#f7f7f7]"><X size={14} /></button>
+                <aside className="w-72 border-l border-border/25 bg-background/70 overflow-y-auto shrink-0" data-testid="notes-history-panel">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/25">
+                    <p className="text-xs uppercase tracking-[0.25em] text-foreground/50">{t("notes.history")}</p>
+                    <button onClick={() => setShowHistory(false)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
                   </div>
                   {versions.length === 0 ? (
-                    <p className="text-xs text-[#c8c8c8] px-4 py-3" data-testid="notes-history-empty">{t("notes.history.empty")}</p>
+                    <p className="text-xs text-muted-foreground px-4 py-3" data-testid="notes-history-empty">{t("notes.history.empty")}</p>
                   ) : (
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-border/20">
                       {versions.map((v) => (
-                        <div key={v.id} className="px-4 py-3 hover:bg-white/5" data-testid={`notes-version-${v.id}`}>
-                          <p className="text-xs text-[#c8c8c8] uppercase tracking-wider">
+                        <div key={v.id} className="px-4 py-3 hover:bg-primary/5" data-testid={`notes-version-${v.id}`}>
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider">
                             {v.savedAt?.toDate ? v.savedAt.toDate().toLocaleString(lang === "en" ? "en-US" : "fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
                             {v.by ? ` · ${t("notes.versionBy")} ${v.by}` : ""}
                           </p>
-                          <p className="text-sm text-[#f7f7f7] truncate mt-0.5">{v.title || "—"}</p>
-                          <p className="text-xs text-[#c8c8c8] line-clamp-2 mt-0.5">{v.content}</p>
+                          <p className="text-sm text-foreground truncate mt-0.5">{v.title || "—"}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{v.content}</p>
                           <button onClick={() => restoreVersion(v)} data-testid={`notes-restore-version-${v.id}`}
-                            className="mt-2 flex items-center gap-1.5 text-xs uppercase tracking-widest border border-[#D8CA82]/40 text-[#D8CA82] px-2.5 py-1 hover:bg-[#D8CA82]/10">
+                            className="mt-2 flex items-center gap-1.5 text-xs uppercase tracking-widest border border-primary/40 text-primary px-2.5 py-1 hover:bg-primary/10">
                             <RotateCcw size={11} /> {t("notes.restoreVersion")}
                           </button>
                         </div>
@@ -255,14 +255,14 @@ export default function Notes() {
                 </aside>
               )}
             </div>
-            <div className="border-t border-white/10 px-4 py-2 bg-[#141414] shrink-0">
+            <div className="border-t border-border/25 px-4 py-2 bg-card/70 shrink-0">
               <input value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t("notes.tags")} data-testid="notes-tags-input"
-                className="w-full bg-transparent text-xs text-[#D8CA82] focus:outline-none placeholder:text-[#f7f7f7]/25" />
+                className="w-full bg-transparent text-xs text-primary focus:outline-none placeholder:text-foreground/25" />
             </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-[#c8c8c8] text-sm" data-testid="notes-no-selection">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>
+            <p className="text-muted-foreground text-sm" data-testid="notes-no-selection">{view === "trash" ? t("notes.trash.empty") : t("notes.empty")}</p>
           </div>
         )}
       </div>

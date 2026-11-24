@@ -96,7 +96,7 @@ export const GlobalSearch = () => {
           {pages.map((p) => (
             <CommandItem key={p.path} value={p.label} keywords={[p.label, p.path]}
               onSelect={() => runCommand(() => navigate(p.path), { target: "page", path: p.path })}>
-              <FileText size={14} className="mr-2 text-[#D8CA82]" />
+              <FileText size={14} className="mr-2 text-primary" />
               {p.label}
             </CommandItem>
           ))}
@@ -109,9 +109,9 @@ export const GlobalSearch = () => {
           {players.map((p) => (
             <CommandItem key={`player-${p.id}`} value={`${p.pseudo} ${p.game || ""} ${p.bio || ""}`}
               onSelect={() => runCommand(() => navigate(`/equipe/${p.id}`), { target: "player", game: p.game || "" })}>
-              <Users size={14} className="mr-2 text-[#D8CA82]" />
+              <Users size={14} className="mr-2 text-primary" />
               <span className="font-bold">{p.pseudo}</span>
-              {p.game && <span className="ml-2 text-xs text-[#c8c8c8]">{p.game}</span>}
+              {p.game && <span className="ml-2 text-xs text-muted-foreground">{p.game}</span>}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -126,11 +126,11 @@ export const GlobalSearch = () => {
             return (
               <CommandItem key={`match-${m.id}`} value={label}
                 onSelect={() => runCommand(() => navigate("/resultats"), { target: "match" })}>
-                <Trophy size={14} className="mr-2 text-[#D8CA82]" />
+                <Trophy size={14} className="mr-2 text-primary" />
                 <span>{teamName} vs {m.opponentName}</span>
-                {m.roster && <span className="ml-2 text-xs text-[#D8CA82]">{m.roster}</span>}
-                {m.competition && <span className="ml-2 text-xs text-[#c8c8c8]">{m.competition}</span>}
-                <span className="ml-2 text-xs text-[#a0a0a0]">{m.date}</span>
+                {m.roster && <span className="ml-2 text-xs text-primary">{m.roster}</span>}
+                {m.competition && <span className="ml-2 text-xs text-muted-foreground">{m.competition}</span>}
+                <span className="ml-2 text-xs text-muted-foreground">{m.date}</span>
               </CommandItem>
             );
           })}
@@ -144,7 +144,7 @@ export const GlobalSearch = () => {
             {partners.map((p) => (
               <CommandItem key={`partner-${p.id}`} value={`${p.name || ""} ${p.description?.slice(0, 100) || ""}`}
                 onSelect={() => runCommand(() => navigate(partnerFichePath(p)), { target: "partner" })}>
-                <Handshake size={14} className="mr-2 text-[#D8CA82]" />
+                <Handshake size={14} className="mr-2 text-primary" />
                 <span className="truncate">{p.name}</span>
               </CommandItem>
             ))}
@@ -158,7 +158,7 @@ export const GlobalSearch = () => {
           {articles.map((a) => (
             <CommandItem key={`article-${a.id}`} value={`${a.title || ""} ${a.content?.slice(0, 100) || ""}`}
               onSelect={() => runCommand(() => navigate(`/actus/${a.id}`), { target: "article" })}>
-              <Newspaper size={14} className="mr-2 text-[#D8CA82]" />
+              <Newspaper size={14} className="mr-2 text-primary" />
               <span className="truncate">{a.title}</span>
             </CommandItem>
           ))}

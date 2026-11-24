@@ -16,7 +16,7 @@ import { downloadICS, gcalUrl } from "../lib/calendar";
 import { PageBreadcrumb } from "../components/PageBreadcrumb";
 
 const TYPE_ICONS = { tournament: Trophy, training: Dumbbell, stream: Radio, community: PartyPopper };
-const TYPE_COLORS = { tournament: "#D8CA82", training: "#4FC3F7", stream: "#E53935", community: "#81C784" };
+const TYPE_COLORS = { tournament: "oklch(0.84 0.095 98)", training: "#4FC3F7", stream: "#E53935", community: "#81C784" };
 const TYPES = ["tournament", "training", "stream", "community"];
 
 /* Identifiant anonyme HISTORIQUE : conservé uniquement pour reconnaître les
@@ -78,21 +78,21 @@ const MonthGrid = ({ events, selectedDate, onSelect, t, lang }) => {
     <div data-testid="cal-month-view">
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label={t("cal.month.prev")} data-testid="cal-month-prev"
-          className="border border-white/15 text-[#f7f7f7]/60 p-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+          className="border border-border/30 text-foreground/60 p-2 hover:border-primary hover:text-primary transition-colors">
           <ChevronLeft size={15} />
         </button>
-        <p className="font-display uppercase tracking-[0.3em] text-[#f7f7f7] text-sm">{monthLabel}</p>
+        <p className="font-display uppercase tracking-[0.3em] text-foreground text-sm">{monthLabel}</p>
         <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label={t("cal.month.next")} data-testid="cal-month-next"
-          className="border border-white/15 text-[#f7f7f7]/60 p-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+          className="border border-border/30 text-foreground/60 p-2 hover:border-primary hover:text-primary transition-colors">
           <ChevronRight size={15} />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-px bg-white/10 border border-white/10" role="grid" aria-label={monthLabel}>
+      <div className="grid grid-cols-7 gap-px bg-primary/10 border border-border/25" role="grid" aria-label={monthLabel}>
         {(lang === "en" ? ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] : ["L", "M", "M", "J", "V", "S", "D"]).map((d, i) => (
-          <div key={i} className="bg-[#0c0c0c] text-center text-xs uppercase tracking-widest text-[#c8c8c8] py-2">{d}</div>
+          <div key={i} className="bg-background/70 text-center text-xs uppercase tracking-widest text-muted-foreground py-2">{d}</div>
         ))}
         {cells.map((day, i) => {
-          if (day === null) return <div key={i} className="bg-[#111111] min-h-[70px]" />;
+          if (day === null) return <div key={i} className="bg-background min-h-[70px]" />;
           const dateObj = new Date(cursor.getFullYear(), cursor.getMonth(), day);
           const key = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${day}`;
           const dayEvents = byDay[key] || [];
@@ -105,23 +105,23 @@ const MonthGrid = ({ events, selectedDate, onSelect, t, lang }) => {
               onClick={() => onSelect(isSelected ? null : key)}
               data-testid={`cal-month-day-${day}`}
               aria-label={`${day} ${monthLabel}${dayEvents.length ? ` — ${dayEvents.length} ${t("cal.month.events")}` : ""}`}
-              className={`min-h-[70px] p-1.5 text-left bg-[#141414] hover:bg-[#1A1A1A] transition-colors flex flex-col gap-1 ${isSelected ? "ring-1 ring-inset ring-[#D8CA82] bg-[#D8CA82]/10" : ""}`}
+              className={`min-h-[70px] p-1.5 text-left bg-card/70 hover:bg-card transition-colors flex flex-col gap-1 ${isSelected ? "ring-1 ring-inset ring-primary bg-primary/10" : ""}`}
             >
-              <span className={`text-xs font-display font-bold ${isToday ? "text-[#D8CA82]" : "text-[#f7f7f7]/70"}`}>
+              <span className={`text-xs font-display font-bold ${isToday ? "text-primary" : "text-foreground/70"}`}>
                 {day}
-                {isToday && <span className="ml-1 text-[8px] uppercase tracking-widest text-[#D8CA82]">•</span>}
+                {isToday && <span className="ml-1 text-[8px] uppercase tracking-widest text-primary">•</span>}
               </span>
               <span className="flex flex-wrap gap-1">
                 {dayEvents.slice(0, 3).map((ev) => (
-                  <span key={ev.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLORS[ev.type] || "#D8CA82" }} title={ev.title} />
+                  <span key={ev.id} className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLORS[ev.type] || "oklch(0.84 0.095 98)" }} title={ev.title} />
                 ))}
-                {dayEvents.length > 3 && <span className="text-[8px] text-[#c8c8c8]">+{dayEvents.length - 3}</span>}
+                {dayEvents.length > 3 && <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>}
               </span>
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-widest text-[#c8c8c8]">
+      <div className="mt-3 flex flex-wrap gap-3 text-xs uppercase tracking-widest text-muted-foreground">
         {TYPES.map((ty) => (
           <span key={ty} className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TYPE_COLORS[ty] }} />
@@ -198,23 +198,23 @@ const EventRow = ({ ev, dim, user, displayName }) => {
   };
 
   return (
-    <div className={`flex items-center gap-5 border border-white/10 bg-[#1A1A1A] px-5 py-4 flex-wrap ${dim ? "opacity-50" : ""}`} data-testid={`cal-event-${ev.id}`}>
-      <div className="text-center shrink-0 w-16 border-r border-white/10 pr-4">
-        <p className="font-display font-bold text-2xl text-[#D8CA82]">{d ? d.getDate() : "—"}</p>
-        <p className="text-xs uppercase text-[#c8c8c8]">{d ? d.toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { month: "short", year: "2-digit" }) : ""}</p>
+    <div className={`flex items-center gap-5 panel clip-blade-sm px-5 py-4 flex-wrap ${dim ? "opacity-50" : ""}`} data-testid={`cal-event-${ev.id}`}>
+      <div className="text-center shrink-0 w-16 border-r border-border/25 pr-4">
+        <p className="font-display font-bold text-2xl text-primary">{d ? d.getDate() : "—"}</p>
+        <p className="text-xs uppercase text-muted-foreground">{d ? d.toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { month: "short", year: "2-digit" }) : ""}</p>
       </div>
-      <Icon size={18} className="text-[#D8CA82] shrink-0" />
+      <Icon size={18} className="text-primary shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-[#f7f7f7]">{ev.title}</p>
-        <p className="text-xs text-[#c8c8c8] mt-0.5">
+        <p className="font-semibold text-foreground">{ev.title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
           {t(`cal.type.${ev.type}`)}{d ? ` · ${d.toLocaleTimeString(lang === "en" ? "en-US" : "fr-FR", { hour: "2-digit", minute: "2-digit" })}` : ""}
           {ev.description ? ` — ${ev.description}` : ""}
         </p>
         {participants.length > 0 && (
-          <p className="text-xs text-[#f7f7f7]/50 mt-1 flex items-center gap-1.5" data-testid={`cal-rsvp-count-${ev.id}`}>
-            <UserCheck size={11} className="text-[#D8CA82]" aria-hidden="true" />
+          <p className="text-xs text-foreground/50 mt-1 flex items-center gap-1.5" data-testid={`cal-rsvp-count-${ev.id}`}>
+            <UserCheck size={11} className="text-primary" aria-hidden="true" />
             {participants.length} {t("cal.rsvp.count")}
-            {isIn && <span className="text-[#D8CA82]">· {t("cal.rsvp.you")}</span>}
+            {isIn && <span className="text-primary">· {t("cal.rsvp.you")}</span>}
           </p>
         )}
         {askName && (
@@ -224,9 +224,9 @@ const EventRow = ({ ev, dim, user, displayName }) => {
               onChange={(e) => setAnonName(e.target.value)}
               placeholder={t("cal.rsvp.namePlaceholder")}
               onKeyDown={(e) => e.key === "Enter" && confirmAnon()}
-              className="bg-[#111111] border border-white/20 px-2 py-1.5 text-xs text-[#f7f7f7] focus:outline-none focus:border-[#D8CA82]"
+              className="bg-background border border-border/35 px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
             />
-            <button onClick={confirmAnon} className="bg-[#D8CA82] text-[#111111] text-xs font-bold uppercase tracking-widest px-3 py-1.5" data-testid={`cal-rsvp-confirm-${ev.id}`}>
+            <button onClick={confirmAnon} className="bg-gold text-primary-foreground text-xs font-bold uppercase tracking-widest px-3 py-1.5" data-testid={`cal-rsvp-confirm-${ev.id}`}>
               {t("cal.rsvp.confirm")}
             </button>
           </div>
@@ -240,7 +240,7 @@ const EventRow = ({ ev, dim, user, displayName }) => {
             aria-pressed={isIn}
             data-testid={`cal-rsvp-${ev.id}`}
             className={`text-xs uppercase tracking-widest border px-3 py-2 flex items-center gap-1.5 transition-colors disabled:opacity-50 ${
-              isIn ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/20 text-[#f7f7f7]/60 hover:border-[#D8CA82] hover:text-[#D8CA82]"
+              isIn ? "border-primary text-primary bg-primary/10" : "border-border/35 text-foreground/60 hover:border-primary hover:text-primary"
             }`}
           >
             {isIn ? <Check size={11} aria-hidden="true" /> : <UserPlus size={11} aria-hidden="true" />}
@@ -248,16 +248,16 @@ const EventRow = ({ ev, dim, user, displayName }) => {
           </button>
         )}
         {ev.link && (
-          <a href={ev.link} target="_blank" rel="noopener noreferrer" className="text-[#D8CA82]/70 hover:text-[#D8CA82]" title={ev.link} data-testid={`cal-link-${ev.id}`}>
+          <a href={ev.link} target="_blank" rel="noopener noreferrer" className="text-primary/70 hover:text-primary" title={ev.link} data-testid={`cal-link-${ev.id}`}>
             <ExternalLink size={15} />
           </a>
         )}
         {!dim && (
           <>
             <button onClick={() => downloadICS([ev], "elysium-calendrier.ics")} title={t("cal.export")} data-testid={`cal-ics-${ev.id}`}
-              className="text-[#f7f7f7]/50 hover:text-[#D8CA82] transition-colors"><Download size={15} /></button>
+              className="text-foreground/50 hover:text-primary transition-colors"><Download size={15} /></button>
             <a href={gcalUrl(ev)} target="_blank" rel="noopener noreferrer" title={t("cal.gcal")} data-testid={`cal-gcal-${ev.id}`}
-              className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] border border-white/15 px-2 py-1 transition-colors">
+              className="text-xs uppercase tracking-widest text-foreground/50 hover:text-primary border border-border/30 px-2 py-1 transition-colors">
               GCal
             </a>
           </>
@@ -340,43 +340,43 @@ export default function CommunityCalendar() {
   const downloadAll = () => downloadICS([...officialMatchesICS, ...(events || [])], "elysium-calendrier.ics", { calendarName: "Elysium" });
 
   return (
-    <div className="min-h-[70vh] bg-[#111111]">
-      <section className="relative border-b border-white/10 overflow-hidden">
+    <div className="min-h-[70vh] bg-transparent">
+      <section className="relative overflow-hidden pt-6 sm:pt-10">
         <div className="pattern-overlay" />
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 relative">
-          <PageBreadcrumb items={[{ label: t("cal.title") }]} />
-          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-[#f7f7f7] uppercase" data-testid="cal-title">{t("cal.title")}</h1>
-          <p className="text-[#f7f7f7]/50 mt-4 tracking-wide">{t("cal.sub")}</p>
+          <PageBreadcrumb className="opacity-80" items={[{ label: t("cal.title") }]} />
+          <h1 className="font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase leading-[0.95] text-gold" data-testid="cal-title">{t("cal.title")}</h1>
+          <p className="text-foreground/50 mt-4 tracking-wide">{t("cal.sub")}</p>
         </div>
       </section>
 
       {/* Abonnement aux matchs officiels (flux iCal global) */}
-      <section className="border-b border-white/10 bg-[#0c0c0c]" data-testid="cal-subscribe">
+      <section className="border-b border-border/25 bg-background/70" data-testid="cal-subscribe">
         <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12">
           <div className="flex items-center gap-3 mb-2">
-            <CalendarDays size={17} className="text-[#D8CA82]" aria-hidden="true" />
-            <h2 className="font-display text-sm tracking-[0.3em] uppercase text-[#f7f7f7]">{t("cal.subscribe.title")}</h2>
+            <CalendarDays size={17} className="text-primary" aria-hidden="true" />
+            <h2 className="eyebrow">{t("cal.subscribe.title")}</h2>
           </div>
-          <p className="text-sm text-[#f7f7f7]/50 mb-6">{t("cal.subscribe.sub")}</p>
+          <p className="text-sm text-foreground/50 mb-6">{t("cal.subscribe.sub")}</p>
           <div className="flex items-center gap-3 flex-wrap">
-            <code className="text-xs text-[#D8CA82] bg-[#111111] border border-white/10 px-3 py-2.5 break-all" data-testid="cal-subscribe-url">{icsUrl}</code>
+            <code className="text-xs text-primary bg-background border border-border/25 px-3 py-2.5 break-all" data-testid="cal-subscribe-url">{icsUrl}</code>
             <button onClick={copyFeed} data-testid="cal-subscribe-copy"
-              className="border border-[#D8CA82]/50 text-[#D8CA82] text-xs uppercase tracking-widest px-4 py-2.5 flex items-center gap-2 hover:bg-[#D8CA82]/10 transition-colors">
+              className="border border-primary/50 text-primary text-xs uppercase tracking-widest px-4 py-2.5 flex items-center gap-2 hover:bg-primary/10 transition-colors">
               {copied ? <Check size={13} aria-hidden="true" /> : <Link2 size={13} aria-hidden="true" />}
               {copied ? t("cal.subscribe.copied") : t("cal.subscribe.copy")}
             </button>
             <a href={gcalSubscribe} target="_blank" rel="noopener noreferrer" data-testid="cal-subscribe-gcal"
-              className="border border-white/20 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-4 py-2.5 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+              className="border border-border/35 text-foreground/70 text-xs uppercase tracking-widest px-4 py-2.5 hover:border-primary hover:text-primary transition-colors">
               {t("cal.subscribe.gcal")}
             </a>
             <button onClick={downloadAll} data-testid="cal-subscribe-download"
-              className="border border-white/20 text-[#f7f7f7]/70 text-xs uppercase tracking-widest px-4 py-2.5 flex items-center gap-2 hover:border-[#D8CA82] hover:text-[#D8CA82] transition-colors">
+              className="border border-border/35 text-foreground/70 text-xs uppercase tracking-widest px-4 py-2.5 flex items-center gap-2 hover:border-primary hover:text-primary transition-colors">
               <Download size={13} aria-hidden="true" /> {t("cal.subscribe.download")}
             </button>
           </div>
           <details className="mt-4" data-testid="cal-subscribe-how">
-            <summary className="text-xs uppercase tracking-widest text-[#f7f7f7]/50 hover:text-[#D8CA82] cursor-pointer">{t("cal.subscribe.how")}</summary>
-            <ol className="mt-3 space-y-1.5 text-sm text-[#c8c8c8] list-decimal list-inside">
+            <summary className="text-xs uppercase tracking-widest text-foreground/50 hover:text-primary cursor-pointer">{t("cal.subscribe.how")}</summary>
+            <ol className="mt-3 space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
               <li>{t("cal.subscribe.step1")}</li>
               <li>{t("cal.subscribe.step2")}</li>
               <li>{t("cal.subscribe.step3")}</li>
@@ -392,18 +392,18 @@ export default function CommunityCalendar() {
           <div className="flex flex-wrap gap-2" data-testid="cal-filters">
             {["all", ...TYPES].map((ty) => (
               <button key={ty} onClick={() => setTypeFilter(ty)} data-testid={`cal-filter-${ty}`}
-                className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${typeFilter === ty ? "border-[#D8CA82] text-[#D8CA82] bg-[#D8CA82]/10" : "border-white/15 text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+                className={`text-xs uppercase tracking-[0.2em] border px-3 py-1.5 transition-colors ${typeFilter === ty ? "border-primary text-primary bg-primary/10" : "border-border/30 text-foreground/50 hover:text-foreground"}`}>
                 {ty === "all" ? t("media.all") : t(`cal.type.${ty}`)}
               </button>
             ))}
           </div>
-          <div className="flex gap-1 border border-white/15 p-1" role="tablist" aria-label={t("cal.title")}>
+          <div className="flex gap-1 border border-border/30 p-1" role="tablist" aria-label={t("cal.title")}>
             <button onClick={() => setView("list")} data-testid="cal-view-list" role="tab" aria-selected={view === "list"}
-              className={`px-3 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "list" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-3 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "list" ? "bg-gold text-primary-foreground font-bold" : "text-foreground/50 hover:text-foreground"}`}>
               <List size={12} aria-hidden="true" /> {t("cal.view.list")}
             </button>
             <button onClick={() => setView("month")} data-testid="cal-view-month" role="tab" aria-selected={view === "month"}
-              className={`px-3 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "month" ? "bg-[#D8CA82] text-[#111111] font-bold" : "text-[#f7f7f7]/50 hover:text-[#f7f7f7]"}`}>
+              className={`px-3 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 transition-colors ${view === "month" ? "bg-gold text-primary-foreground font-bold" : "text-foreground/50 hover:text-foreground"}`}>
               <Grid3X3 size={12} aria-hidden="true" /> {t("cal.view.month")}
             </button>
           </div>
@@ -418,25 +418,25 @@ export default function CommunityCalendar() {
             <MonthGrid events={filtered} selectedDate={selectedDay} onSelect={setSelectedDay} t={t} lang={lang} />
             {selectedDay ? (
               <div className="space-y-3" data-testid="cal-month-day-events">
-                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8]">
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                   {new Date(`${selectedDay}T12:00:00`).toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", { weekday: "long", day: "numeric", month: "long" })} — {selectedDayEvents.length} {t("cal.month.events")}
                 </p>
-                {selectedDayEvents.length === 0 && <p className="text-[#c8c8c8] text-sm">{t("cal.empty")}</p>}
+                {selectedDayEvents.length === 0 && <p className="text-muted-foreground text-sm">{t("cal.empty")}</p>}
                 {selectedDayEvents.map((ev) => <EventRow key={ev.id} ev={ev} user={user} displayName={displayName} />)}
               </div>
             ) : (
-              <p className="text-sm text-[#c8c8c8]" data-testid="cal-month-hint">← {t("cal.empty")}</p>
+              <p className="text-sm text-muted-foreground" data-testid="cal-month-hint">← {t("cal.empty")}</p>
             )}
           </div>
         ) : upcoming.length === 0 && past.length === 0 ? (
           <EmptyState icon={CalendarDays} text={t("cal.empty")} testId="cal-empty" />
         ) : (
           <div className="space-y-3" data-testid="cal-list">
-            {upcoming.length === 0 && <p className="text-[#c8c8c8] mb-4" data-testid="cal-no-upcoming">{t("cal.empty")}</p>}
+            {upcoming.length === 0 && <p className="text-muted-foreground mb-4" data-testid="cal-no-upcoming">{t("cal.empty")}</p>}
             {upcoming.map((ev) => <EventRow key={ev.id} ev={ev} user={user} displayName={displayName} />)}
             {past.length > 0 && (
               <>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#c8c8c8] pt-8 pb-2">{t("cal.past")}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground pt-8 pb-2">{t("cal.past")}</p>
                 {past.slice(0, 10).map((ev) => <EventRow key={ev.id} ev={ev} dim user={user} displayName={displayName} />)}
               </>
             )}
