@@ -162,6 +162,15 @@
     color: transparent;
 }
 
+/* Safety net: without background-clip:text the gradient text would vanish. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+    .text-gold,
+    .text-gold-animate {
+        background-image: none;
+        color: oklch(var(--primary));
+    }
+}
+
 .text-gold-animate {
     background-image: var(--gradient-gold);
     background-size: 200% 100%;

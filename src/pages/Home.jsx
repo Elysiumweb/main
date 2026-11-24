@@ -18,6 +18,8 @@ import { fmtMatchDate } from "../lib/formatters";
 import { getEffectiveMatchStatus, useNowMs } from "../lib/matchStatus";
 import { Button } from "../components/ui/button";
 import { RiseTitle } from "../components/site/Headings";
+import { TiltCard } from "../components/site/TiltCard";
+import { Reveal } from "../components/site/Reveal";
 import { Badge } from "../components/ui/badge";
 import { partnerFichePath, partnerLogoSrc, visiblePartners } from "../lib/partners";
 
@@ -249,12 +251,24 @@ export default function Home() {
       )}
 
       {/* MANIFESTO */}
-      <section className="border-y border-border/25 bg-background/70 relative overflow-hidden" data-testid="home-manifesto" aria-labelledby="home-manifesto-h2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 grid lg:grid-cols-12 gap-8 items-center">
+      <section className="border-y border-border/25 bg-background/40 relative overflow-hidden" data-testid="home-manifesto" aria-labelledby="home-manifesto-h2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-16 sm:py-24 grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-4">
-            <OptimizedImage src="/brand/logo-vertical-gold.png" alt="Logo vertical Elysium" width="817" height="690" loading="lazy" className="w-40 sm:w-48 lg:w-56 h-auto mx-auto lg:mx-0 gold-glow" />
+            <Reveal>
+              <TiltCard max={8} className="panel clip-blade mx-auto aspect-square w-full max-w-xs p-8 lg:max-w-sm">
+                <OptimizedImage
+                  src="/brand/logo-vertical-gold.png"
+                  alt="Logo vertical Elysium"
+                  width="817"
+                  height="690"
+                  loading="lazy"
+                  className="tilt-pop h-full w-full object-contain animate-float-slow gold-glow"
+                />
+              </TiltCard>
+            </Reveal>
           </div>
           <div className="lg:col-span-8">
+            <Reveal delay={120}>
             <h2 id="home-manifesto-h2" className="eyebrow mb-4">{t("home.manifesto.title")}</h2>
             <p className="font-display text-3xl font-black uppercase leading-[1.05] sm:text-4xl lg:text-5xl mb-6">
               Not given. <span className="text-gold">Earned.</span>
@@ -262,6 +276,7 @@ export default function Home() {
             <p className="text-muted-foreground text-lg sm:text-xl leading-relaxed">
               {t("home.manifesto.text")}
             </p>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -305,7 +320,7 @@ export default function Home() {
           <div className="flex-1 gold-line opacity-50" />
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="relative panel clip-blade p-8 group overflow-hidden flex flex-col" data-testid="home-game-eva">
+          <TiltCard max={8} className="panel clip-blade p-8 group overflow-hidden flex flex-col" data-testid="home-game-eva">
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
             <div className="flex items-start justify-between">
               <p className="font-display font-black text-4xl text-primary">EVA</p>
@@ -316,8 +331,8 @@ export default function Home() {
             <Link to="/equipe?game=EVA" className="mt-6 inline-flex items-center gap-2 text-xs font-display uppercase tracking-[0.25em] text-primary hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
               {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
             </Link>
-          </div>
-          <div className="relative panel clip-blade-sm p-8 group overflow-hidden flex flex-col hover:border-primary/50 u-micro" data-testid="home-game-rl">
+          </TiltCard>
+          <TiltCard max={8} className="panel clip-blade p-8 group overflow-hidden flex flex-col hover:border-primary/50 u-micro" data-testid="home-game-rl">
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 motion-reduce:group-hover:opacity-0 transition-opacity duration-200 ease-out bg-gradient-to-br from-primary/[0.07] to-transparent pointer-events-none" />
             <div className="absolute -right-6 -top-6 w-24 h-24 opacity-10 pointer-events-none" aria-hidden="true">
               <div className="w-full h-full border-2 border-primary rotate-12" />
@@ -334,9 +349,9 @@ export default function Home() {
                 {t("home.games.discover")} <ArrowRight size={12} aria-hidden="true" />
               </Link>
             </div>
-          </div>
-          <div className="border border-border/25 bg-background/70 p-8 flex flex-col justify-center relative overflow-hidden">
-            <p className="font-display text-muted-foreground tracking-[0.3em] uppercase text-xs mb-3">Elysium • 2026</p>
+          </TiltCard>
+          <div className="panel clip-blade p-8 flex flex-col justify-center relative overflow-hidden">
+            <p className="eyebrow mb-3">Elysium • 2026</p>
             <p className="text-muted-foreground text-sm leading-relaxed">{t("home.games.pillars")}</p>
             <div className="mt-6 gold-line opacity-50" />
             <p className="mt-4 text-xs uppercase tracking-[0.3em] text-primary/70">Not given. Earned.</p>

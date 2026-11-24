@@ -1,19 +1,21 @@
 import { cn } from "../../lib/utils";
 
-/** Title whose letters rise one by one in 3D. */
+/**
+ * Title whose letters rise one by one in 3D.
+ * The animated letters are decorative; the accessible name is the plain text,
+ * so screen readers read one clean word instead of spelling it out.
+ */
 export function RiseTitle({ text, className }) {
   return (
-    <span aria-label={text} role="text">
-      {text.split("").map((ch, i) => (
-        <span
-          key={i}
-          aria-hidden="true"
-          className={cn("rise-letter", className)}
-          style={{ "--i": i }}
-        >
-          {ch === " " ? "\u00a0" : ch}
-        </span>
-      ))}
+    <span className="inline-block">
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {text.split("").map((ch, i) => (
+          <span key={i} className={cn("rise-letter", className)} style={{ "--i": i }}>
+            {ch === " " ? "\u00a0" : ch}
+          </span>
+        ))}
+      </span>
     </span>
   );
 }

@@ -615,7 +615,7 @@ export default function Admin() {
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 placeholder={t("admin.search.users")}
-                className="w-full bg-card border border-border/30 pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
+                className="clip-blade-sm w-full bg-card border border-border/30 pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
                 data-testid="admin-users-search"
               />
             </label>
@@ -697,7 +697,7 @@ export default function Admin() {
                 value={matchQuery}
                 onChange={(e) => setMatchQuery(e.target.value)}
                 placeholder={t("admin.search.matches")}
-                className="w-full bg-card border border-border/30 pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
+                className="clip-blade-sm w-full bg-card border border-border/30 pl-9 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
                 data-testid="admin-matches-search"
               />
             </label>
